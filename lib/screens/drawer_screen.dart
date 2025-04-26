@@ -120,7 +120,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: isSelected || isHovered
-                      ? AppColors.violet
+                      ? AppColors.primaryColor
                       : Colors.grey[800],
                 ),
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vrs_erp_figma/catalog/catalog.dart';
 
 import 'package:vrs_erp_figma/screens/home_screen.dart';
 import 'package:vrs_erp_figma/screens/login_screen.dart';
@@ -20,7 +21,7 @@ class MyApp extends StatelessWidget {
           '/splash':(context)=>SplashScreen(),
           '/login':(context)=>LoginScreen(),
         '/home':(context)=>HomeScreen(),
-        // '/catalog':(context)=>CatalogScreen(),
+        '/catalog':(context)=>CatalogPage(),
         // '/orderbooking':(context)=>OrderBooking(),
         // '/viewOrder':(context)=>ViewOrderScreen(),
         // '/viewOrders':(context)=>ViewOrderScreens()

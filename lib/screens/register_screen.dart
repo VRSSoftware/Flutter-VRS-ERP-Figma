@@ -400,7 +400,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       TextSpan(
                                         text: "Login here",
                                         style: TextStyle(
-                                          color: AppColors.violet,
+                                          color: AppColors.primaryColor,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -461,15 +461,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
               contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.violet, width: 2.0),
+                borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.violet, width: 3.0),
+                borderSide: BorderSide(color: AppColors.primaryColor, width: 3.0),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.violet, width: 2.0),
+                borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0),
               ),
               isDense: true,
               errorStyle: TextStyle(height: 0.9),
@@ -487,7 +487,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       height: 45,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
-        gradient: LinearGradient(colors: [AppColors.violet, AppColors.slateGray]),
+        gradient: LinearGradient(colors: [AppColors.primaryColor, AppColors.maroon]),
       ),
 
       child: ElevatedButton(

@@ -340,7 +340,7 @@ class _LoginPageState extends State<LoginScreen> {
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(30),
                                   gradient: LinearGradient(
-                                    colors: [AppColors.violet, AppColors.slateGray],
+                                    colors: [AppColors.primaryColor, AppColors.maroon],
                                     begin: Alignment.centerLeft,
                                     end: Alignment.centerRight,
                                   ),
@@ -388,7 +388,7 @@ class _LoginPageState extends State<LoginScreen> {
                                           TextSpan(
                                             text: "Register here",
                                             style: TextStyle(
-                                              color: AppColors.violet,
+                                              color: AppColors.primaryColor,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
@@ -454,15 +454,15 @@ class _LoginPageState extends State<LoginScreen> {
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.violet, width: 2.0),
+                borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.violet, width: 3.0),
+                borderSide: BorderSide(color: AppColors.primaryColor, width: 3.0),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.violet, width: 2.0),
+                borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0),
               ),
               errorStyle: TextStyle(height: 0.7),
             ),
@@ -505,15 +505,15 @@ class _LoginPageState extends State<LoginScreen> {
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.violet, width: 2.0),
+                borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.violet, width: 3.0),
+                borderSide: BorderSide(color: AppColors.primaryColor, width: 3.0),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.violet, width: 2.0),
+                borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0),
               ),
               errorStyle: TextStyle(height: 0.7),
             ),
