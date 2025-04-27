@@ -834,6 +834,7 @@ import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/catalog/filter.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
+import 'package:vrs_erp_figma/models/style.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/catalog/catalog.dart'; // Ensure you have this model
 import 'package:http/http.dart' as http;
@@ -852,7 +853,7 @@ class _CatalogPageState extends State<CatalogPage> {
   List<String> selectedStyles = [];
   List<String> selectedShades = []; // For storing selected shades
   List<Catalog> catalogItems = [];
-
+  List<Style> styles = []; // For storing the styles
   String? itemKey;
   String? itemSubGrpKey;
   String? coBr;
@@ -872,6 +873,9 @@ class _CatalogPageState extends State<CatalogPage> {
           fcYrId = args['fcYrId']?.toString();
         });
         _fetchCatalogItems();
+        if (itemKey != null) {
+          _fetchStylesByItemKey(itemKey!); // Fetch styles dynamically
+        }
       }
     });
   }
@@ -888,6 +892,18 @@ class _CatalogPageState extends State<CatalogPage> {
       });
     } catch (e) {
       print('Failed to load catalog items: $e');
+    }
+  }
+
+  // Fetch styles dynamically based on the itemKey
+  Future<void> _fetchStylesByItemKey(String itemKey) async {
+    try {
+      final fetchedStyles = await ApiService.fetchStylesByItemKey(itemKey);
+      setState(() {
+        styles = fetchedStyles;
+      });
+    } catch (e) {
+      print('Failed to load styles: $e');
     }
   }
 
@@ -926,9 +942,7 @@ class _CatalogPageState extends State<CatalogPage> {
       ),
       body: Column(
         children: [
-          // Horizontal Shade Selection
-          _buildShadeSelection(),
-          // Main Catalog View (Grid/List/Expanded)
+          _buildStyleSelection(),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -948,8 +962,55 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
+  // Horizontal Style Selection
+  Widget _buildStyleSelection() {
+    return Container(
+      height: 50,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            SizedBox(width: 16),
+            ...styles.map((style) {
+              bool isSelected = selectedStyles.contains(style.styleCode);
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: OutlinedButton(
+                  onPressed: () {
+                    setState(() {
+                      if (isSelected) {
+                        selectedStyles.remove(style.styleCode);
+                      } else {
+                        selectedStyles.add(style.styleCode);
+                      }
+                    });
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(
+                      color: isSelected
+                          ? AppColors.primaryColor
+                          : Colors.grey,
+                    ),
+                    backgroundColor: Colors.white,
+                    foregroundColor: isSelected
+                        ? AppColors.primaryColor
+                        : Colors.grey,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(style.styleCode, style: TextStyle(fontSize: 12)),
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildShadeSelection() {
-    // Extract all unique shades from the catalog items
     final allShades = catalogItems
         .expand((item) => item.shadeName?.split(',') ?? [])
         .toSet()
@@ -1120,7 +1181,7 @@ class _CatalogPageState extends State<CatalogPage> {
     return '${AppConstants.BASE_URL}/images/$imageName';
   }
 
-  Widget _buildBottomButtons() {
+    Widget _buildBottomButtons() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       color: Colors.white,
@@ -1195,7 +1256,7 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
-    void _showFilterDialog() {
+  void _showFilterDialog() {
     Navigator.push(
       context,
       PageRouteBuilder(
