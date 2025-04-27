@@ -11,7 +11,7 @@ class AppColors {
   static const Color primaryColor = Color(0xFF4A3780); // Primary (Purple shade)
 
   // Secondary color
-  static const Color secondaryColor = Color(0xFFE7E2F3); // Secondary (Light Purple shade)
+  static const Color secondaryColor = Color.fromARGB(255, 249, 249, 250); // Secondary (Light Purple shade)
 
   // Base colors
   static const Color baseColor =  Color(0xFFbcb8ce);  // Base 
