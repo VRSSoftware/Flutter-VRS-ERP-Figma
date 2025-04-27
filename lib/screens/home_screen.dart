@@ -27,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String? _selectedCategoryKey = '-1';
   String? _selectedCategoryName = 'All';
-  String? coBr= '01';
+  String? coBr = '01';
   String? fcYrId = '24';
   List<Category> _categories = [];
   List<Item> _items = [];
@@ -70,8 +70,6 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Error fetching categories: $e');
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -296,10 +294,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   _items.map((item) {
                     return GestureDetector(
                       onTap: () {
+                        print(item.itemKey);
+                        print(item.itemSubGrpKey);
                         Navigator.pushNamed(
                           context,
                           '/catalog',
-                          arguments: item.itemKey,
+                          arguments: {
+                            'itemKey': item.itemKey,
+                            'itemSubGrpKey': item.itemSubGrpKey,
+                            'coBr': coBr,
+                            'fcYrId': fcYrId,
+                          },
                         );
                       },
                       child: Chip(

@@ -14,7 +14,7 @@ class ApiService {
     final response = await http.get(
       Uri.parse('${AppConstants.BASE_URL}/itemSubGrp'),
     );
-   // print("response data:${response.body}");
+    print("RRRRRRRRRRRRRRRRRresponse data:${response.body}");
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       return data.map((json) => Category.fromJson(json)).toList();
@@ -30,9 +30,9 @@ class ApiService {
     final response = await http.get(
       Uri.parse('${AppConstants.BASE_URL}/item/$categoryKey'),
     );
-    // print(
-    //   "Item API response for $categoryKey: ${response.body}",
-    // );
+    print(
+      "Item API response for $categoryKey: ${response.body}",
+    );
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
@@ -47,9 +47,10 @@ class ApiService {
     final response = await http.get(
       Uri.parse('${AppConstants.BASE_URL}/item'),
     );
-    // print(
-    //   "Item API response for $categoryKey: ${response.body}",
-    // );
+
+    print(
+      "@@@@@@@@@@@@@@@@@@Item API response for${response.body}",
+    );
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
@@ -181,6 +182,46 @@ class ApiService {
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed to fetch barcode details');
+    }
+  }
+
+
+  static Future<List<Catalog>> fetchCatalogItem({
+    required String itemSubGrpKey,
+    required String itemKey,
+    required String cobr,
+    String? brandKey,
+    String? styleKey,
+    String? shadeKey,
+    String? sizeKey,
+    String? fromMRP,
+    String? toMRP,
+  }) async {
+    final url = Uri.parse('${AppConstants.BASE_URL}/catalog');
+
+    final Map<String, dynamic> body = {
+      "itemSubGrpKey": itemSubGrpKey,
+      "itemKey": itemKey,
+      "brandKey": brandKey,
+      "styleKey": styleKey,
+      "shadeKey": shadeKey,
+      "sizeKey": sizeKey,
+      "fromMRP": fromMRP,
+      "toMRP": toMRP,
+      "cobr": cobr,
+    };
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => Catalog.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load catalog');
     }
   }
 }
