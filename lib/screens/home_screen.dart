@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
@@ -23,12 +22,16 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   int _currentIndex = 0;
-final CarouselSliderController _carouselController = CarouselSliderController();
+  final CarouselSliderController _carouselController =
+      CarouselSliderController();
 
-  String? _selectedCategoryKey;
-  String? _selectedCategoryName;
+  String? _selectedCategoryKey = '-1';
+  String? _selectedCategoryName = 'All';
+  String? coBr= '01';
+  String? fcYrId = '24';
   List<Category> _categories = [];
   List<Item> _items = [];
+  List<Item> _allItems = [];
 
   bool _isLoadingCategories = true;
   bool _isLoadingItems = false;
@@ -37,13 +40,30 @@ final CarouselSliderController _carouselController = CarouselSliderController();
   void initState() {
     super.initState();
     _fetchCategories();
+    fetchAllItems();
   }
 
   Future<void> _fetchCategories() async {
     try {
+      final items = await ApiService.fetchAllItems();
+      setState(() {
+        _items = items;
+        _allItems = items;
+        // _isLoadingCategories = false;
+      });
+    } catch (e) {
+      print('Error fetching categories: $e');
+    }
+  }
+
+  Future<void> fetchAllItems() async {
+    try {
       final categories = await ApiService.fetchCategories();
       setState(() {
-        _categories = categories;
+        _categories = [
+          Category(itemSubGrpKey: '-1', itemSubGrpName: "ALL"),
+          ...categories,
+        ];
         _isLoadingCategories = false;
       });
     } catch (e) {
@@ -51,22 +71,7 @@ final CarouselSliderController _carouselController = CarouselSliderController();
     }
   }
 
-  Future<void> _fetchItems(String categoryKey, String categoryName) async {
-    try {
-      setState(() {
-        _isLoadingItems = true;
-        _selectedCategoryKey = categoryKey;
-        _selectedCategoryName = categoryName;
-      });
-      final items = await ApiService.fetchItemsByCategory(categoryKey);
-      setState(() {
-        _items = items;
-        _isLoadingItems = false;
-      });
-    } catch (e) {
-      print('Error fetching items: $e');
-    }
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -78,10 +83,11 @@ final CarouselSliderController _carouselController = CarouselSliderController();
         backgroundColor: AppColors.primaryColor,
         elevation: 1,
         leading: Builder(
-          builder: (context) => IconButton(
-            icon: Icon(Icons.menu, color: AppColors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
+          builder:
+              (context) => IconButton(
+                icon: Icon(Icons.menu, color: AppColors.white),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
         ),
       ),
       body: Padding(
@@ -141,7 +147,11 @@ final CarouselSliderController _carouselController = CarouselSliderController();
                             top: 80,
                             child: GestureDetector(
                               onTap: () => _carouselController.previousPage(),
-                              child: Icon(Icons.arrow_left, color: Colors.white, size: 40),
+                              child: Icon(
+                                Icons.arrow_left,
+                                color: Colors.white,
+                                size: 40,
+                              ),
                             ),
                           ),
                           Positioned(
@@ -149,7 +159,11 @@ final CarouselSliderController _carouselController = CarouselSliderController();
                             top: 80,
                             child: GestureDetector(
                               onTap: () => _carouselController.nextPage(),
-                              child: Icon(Icons.arrow_right, color: Colors.white, size: 40),
+                              child: Icon(
+                                Icons.arrow_right,
+                                color: Colors.white,
+                                size: 40,
+                              ),
                             ),
                           ),
                         ],
@@ -157,58 +171,94 @@ final CarouselSliderController _carouselController = CarouselSliderController();
                       SizedBox(height: 10),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: garmentImages.map((image) {
-                          int index = garmentImages.indexOf(image);
-                          return AnimatedContainer(
-                            duration: Duration(milliseconds: 300),
-                            margin: EdgeInsets.symmetric(horizontal: 4),
-                            height: 8,
-                            width: 8,
-                            decoration: BoxDecoration(
-                              color: _currentIndex == index ? AppColors.primaryColor : Colors.grey,
-                              shape: BoxShape.circle,
-                            ),
-                          );
-                        }).toList(),
+                        children:
+                            garmentImages.map((image) {
+                              int index = garmentImages.indexOf(image);
+                              return AnimatedContainer(
+                                duration: Duration(milliseconds: 300),
+                                margin: EdgeInsets.symmetric(horizontal: 4),
+                                height: 8,
+                                width: 8,
+                                decoration: BoxDecoration(
+                                  color:
+                                      _currentIndex == index
+                                          ? AppColors.primaryColor
+                                          : Colors.grey,
+                                  shape: BoxShape.circle,
+                                ),
+                              );
+                            }).toList(),
                       ),
                       SizedBox(height: 20),
                       _buildMainButtons(context, constraints.maxWidth),
                       SizedBox(height: 20),
                       Text(
                         "Categories",
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                       SizedBox(height: 10),
                       _isLoadingCategories
                           ? Center(child: CircularProgressIndicator())
                           : Wrap(
-                              spacing: 10,
-                              children: _categories.map((category) {
-                                return OutlinedButton(
-                                  onPressed: () {
-                                    _fetchItems(category.itemSubGrpKey, category.itemSubGrpName);
-                                  },
-                                  style: ButtonStyle(
-                                    backgroundColor: MaterialStateProperty.all(
-                                      _selectedCategoryKey == category.itemSubGrpKey
-                                          ? AppColors.primaryColor
-                                          : Colors.white,
+                            spacing: 10,
+                            children:
+                                _categories.map((category) {
+                                  return OutlinedButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _selectedCategoryKey =
+                                            category.itemSubGrpKey;
+                                        _selectedCategoryName =
+                                            category.itemSubGrpName;
+
+                                        // Filter items based on the selected category
+                                        if (_selectedCategoryKey == '-1') {
+                                          // Show all items if "All" is selected
+                                          _items = _allItems;
+                                        } else {
+                                          _items =
+                                              _allItems
+                                                  .where(
+                                                    (item) =>
+                                                        item.itemSubGrpKey ==
+                                                        _selectedCategoryKey,
+                                                  )
+                                                  .toList();
+                                        }
+                                      });
+                                    },
+
+                                    style: ButtonStyle(
+                                      backgroundColor:
+                                          MaterialStateProperty.all(
+                                            _selectedCategoryKey ==
+                                                    category.itemSubGrpKey
+                                                ? AppColors.primaryColor
+                                                : Colors.white,
+                                          ),
+                                      side: MaterialStateProperty.all(
+                                        BorderSide(
+                                          color: AppColors.primaryColor,
+                                          width: 2,
+                                        ),
+                                      ),
                                     ),
-                                    side: MaterialStateProperty.all(
-                                      BorderSide(color: AppColors.primaryColor, width: 2),
+                                    child: Text(
+                                      category.itemSubGrpName,
+                                      style: TextStyle(
+                                        color:
+                                            _selectedCategoryKey ==
+                                                    category.itemSubGrpKey
+                                                ? Colors.white
+                                                : AppColors.primaryColor,
+                                      ),
                                     ),
-                                  ),
-                                  child: Text(
-                                    category.itemSubGrpName,
-                                    style: TextStyle(
-                                      color: _selectedCategoryKey == category.itemSubGrpKey
-                                          ? Colors.white
-                                          : AppColors.primaryColor,
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
+                                  );
+                                }).toList(),
+                          ),
                       SizedBox(height: 20),
                       if (_selectedCategoryKey != null) _buildCategoryItems(),
                       Spacer(),
@@ -225,7 +275,8 @@ final CarouselSliderController _carouselController = CarouselSliderController();
           if (index == 1) Navigator.pushNamed(context, '/catalog');
           if (index == 2) Navigator.pushNamed(context, '/orderbooking');
         },
-     ) );
+      ),
+    );
   }
 
   Widget _buildCategoryItems() {
@@ -240,27 +291,28 @@ final CarouselSliderController _carouselController = CarouselSliderController();
         _isLoadingItems
             ? Center(child: CircularProgressIndicator())
             : Wrap(
-                spacing: 10,
-                children: _items.map((item) {
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(
-                        context,
-                        '/catalog',
-                        arguments: item.itemKey,
-                      );
-                    },
-                    child: Chip(
-                      label: Text(item.itemName),
-                      backgroundColor: Colors.white,
-                      shape: StadiumBorder(
-                        side: BorderSide(color: Colors.grey.shade300),
+              spacing: 10,
+              children:
+                  _items.map((item) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/catalog',
+                          arguments: item.itemKey,
+                        );
+                      },
+                      child: Chip(
+                        label: Text(item.itemName),
+                        backgroundColor: Colors.white,
+                        shape: StadiumBorder(
+                          side: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        elevation: 2,
                       ),
-                      elevation: 2,
-                    ),
-                  );
-                }).toList(),
-              ),
+                    );
+                  }).toList(),
+            ),
       ],
     );
   }

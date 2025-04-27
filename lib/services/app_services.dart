@@ -42,6 +42,23 @@ class ApiService {
     }
   }
 
+  static Future<List<Item>> fetchAllItems() async {
+
+    final response = await http.get(
+      Uri.parse('${AppConstants.BASE_URL}/item'),
+    );
+    // print(
+    //   "Item API response for $categoryKey: ${response.body}",
+    // );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((json) => Item.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load items  ');
+    }
+  }
+
   static Future<List<Style>> fetchStylesByItemKey(String itemKey) async {
     if (itemKey.isEmpty) {
       throw Exception('Invalid item selected');
