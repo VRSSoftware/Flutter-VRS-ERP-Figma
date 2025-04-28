@@ -1,5 +1,14 @@
+import 'dart:io';
+import 'dart:ui';
+import 'dart:ui' as pw;
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:share_plus/share_plus.dart';
 import 'package:vrs_erp_figma/catalog/filter.dart';
+import 'package:vrs_erp_figma/catalog/share_option_screen.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
 import 'package:vrs_erp_figma/models/shade.dart';
@@ -26,12 +35,14 @@ class _CatalogPageState extends State<CatalogPage> {
   String? itemSubGrpKey;
   String? coBr;
   String? fcYrId;
+  List<Catalog> selectedItems = [];
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
       if (args != null) {
         setState(() {
@@ -82,6 +93,7 @@ class _CatalogPageState extends State<CatalogPage> {
       print('Failed to load styles: $e');
     }
   }
+
   Future<void> _fetchShadesByItemKey(String itemKey) async {
     try {
       final fetchedShades = await ApiService.fetchShadesByItemKey(itemKey);
@@ -105,71 +117,83 @@ class _CatalogPageState extends State<CatalogPage> {
     }
   }
 
-@override
-Widget build(BuildContext context) {
-  final screenWidth = MediaQuery.of(context).size.width;
-  final isLargeScreen = screenWidth > 600;
-  final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isLargeScreen = screenWidth > 600;
+    final isPortrait =
+        MediaQuery.of(context).orientation == Orientation.portrait;
 
-  return Scaffold(
-    backgroundColor: Colors.white,
-    drawer: DrawerScreen(),
-    appBar: AppBar(
-      title: Text('Catalog', style: TextStyle(color: Colors.white)),
-      backgroundColor: AppColors.primaryColor,
-      elevation: 1,
-      leading: Builder(
-        builder: (context) => IconButton(
-          icon: Icon(Icons.menu, color: Colors.white),
-          onPressed: () => Scaffold.of(context).openDrawer(),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      drawer: DrawerScreen(),
+      appBar: AppBar(
+        title: Text('Catalog', style: TextStyle(color: Colors.white)),
+        backgroundColor: AppColors.primaryColor,
+        elevation: 1,
+        leading: Builder(
+          builder:
+              (context) => IconButton(
+                icon: Icon(Icons.menu, color: Colors.white),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
         ),
-      ),
-      actions: [
-        IconButton(
-          icon: Icon(
-            viewOption == 0
-                ? Icons.grid_on
-                : viewOption == 1
-                    ? Icons.view_list
-                    : Icons.expand,
-            color: Colors.white,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.share, color: Colors.white),
+            onPressed: _showShareOptions,
           ),
-          onPressed: () {
-            setState(() {
-              viewOption = (viewOption + 1) % 3;
-            });
-          },
-        ),
-      ],
-    ),
-    body: Column(
-      children: [
-   //     _buildStyleSelection(isLargeScreen),
-        Expanded(
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: isLargeScreen ? 16.0 : 8.0, 
-              vertical: 8.0
+          IconButton(
+            icon: Icon(
+              viewOption == 0
+                  ? Icons.grid_on
+                  : viewOption == 1
+                  ? Icons.view_list
+                  : Icons.expand,
+              color: Colors.white,
             ),
-            child: catalogItems.isEmpty
-                ? Center(child: CircularProgressIndicator())
-                : LayoutBuilder(
-                    builder: (context, constraints) {
-                      if (viewOption == 0) {
-                        return _buildGridView(constraints, isLargeScreen, isPortrait);
-                      } else if (viewOption == 1) {
-                        return _buildListView(constraints, isLargeScreen);
-                      }
-                      return _buildExpandedView(isLargeScreen);
-                    },
-                  ),
+            onPressed: () {
+              setState(() {
+                viewOption = (viewOption + 1) % 3;
+              });
+            },
           ),
-        ),
-        _buildBottomButtons(isLargeScreen),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+      body: Column(
+        children: [
+          //     _buildStyleSelection(isLargeScreen),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isLargeScreen ? 16.0 : 8.0,
+                vertical: 8.0,
+              ),
+              child:
+                  catalogItems.isEmpty
+                      ? Center(child: CircularProgressIndicator())
+                      : LayoutBuilder(
+                        builder: (context, constraints) {
+                          if (viewOption == 0) {
+                            return _buildGridView(
+                              constraints,
+                              isLargeScreen,
+                              isPortrait,
+                            );
+                          } else if (viewOption == 1) {
+                            return _buildListView(constraints, isLargeScreen);
+                          }
+                          return _buildExpandedView(isLargeScreen);
+                        },
+                      ),
+            ),
+          ),
+          _buildBottomButtons(isLargeScreen),
+        ],
+      ),
+    );
+  }
+
   Widget _buildStyleSelection(bool isLargeScreen) {
     return Container(
       height: isLargeScreen ? 60 : 50,
@@ -185,23 +209,28 @@ Widget build(BuildContext context) {
                 onPressed: () => setState(() => selectedStyles.clear()),
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(
-                    color: selectedStyles.isEmpty
-                        ? AppColors.primaryColor
-                        : Colors.grey,
+                    color:
+                        selectedStyles.isEmpty
+                            ? AppColors.primaryColor
+                            : Colors.grey,
                   ),
                   backgroundColor: Colors.white,
-                  foregroundColor: selectedStyles.isEmpty
-                      ? AppColors.primaryColor
-                      : Colors.grey,
+                  foregroundColor:
+                      selectedStyles.isEmpty
+                          ? AppColors.primaryColor
+                          : Colors.grey,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                   padding: EdgeInsets.symmetric(
                     horizontal: isLargeScreen ? 20 : 16,
-                    vertical: isLargeScreen ? 16 : 12),
+                    vertical: isLargeScreen ? 16 : 12,
+                  ),
                 ),
-                child: Text('ALL', 
-                  style: TextStyle(fontSize: isLargeScreen ? 14 : 12)),
+                child: Text(
+                  'ALL',
+                  style: TextStyle(fontSize: isLargeScreen ? 14 : 12),
+                ),
               ),
             ),
             ...styles.map((style) {
@@ -209,32 +238,33 @@ Widget build(BuildContext context) {
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: OutlinedButton(
-                  onPressed: () => setState(() {
-                    if (isSelected) {
-                      selectedStyles.remove(style.styleCode);
-                    } else {
-                      selectedStyles.add(style.styleCode);
-                    }
-                  }),
+                  onPressed:
+                      () => setState(() {
+                        if (isSelected) {
+                          selectedStyles.remove(style.styleCode);
+                        } else {
+                          selectedStyles.add(style.styleCode);
+                        }
+                      }),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(
-                      color: isSelected
-                          ? AppColors.primaryColor
-                          : Colors.grey,
+                      color: isSelected ? AppColors.primaryColor : Colors.grey,
                     ),
                     backgroundColor: Colors.white,
-                    foregroundColor: isSelected
-                        ? AppColors.primaryColor
-                        : Colors.grey,
+                    foregroundColor:
+                        isSelected ? AppColors.primaryColor : Colors.grey,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                     padding: EdgeInsets.symmetric(
                       horizontal: isLargeScreen ? 20 : 16,
-                      vertical: isLargeScreen ? 16 : 12),
+                      vertical: isLargeScreen ? 16 : 12,
+                    ),
                   ),
-                  child: Text(style.styleCode, 
-                    style: TextStyle(fontSize: isLargeScreen ? 14 : 12)),
+                  child: Text(
+                    style.styleCode,
+                    style: TextStyle(fontSize: isLargeScreen ? 14 : 12),
+                  ),
                 ),
               );
             }).toList(),
@@ -244,27 +274,33 @@ Widget build(BuildContext context) {
     );
   }
 
-Widget _buildGridView(BoxConstraints constraints, bool isLargeScreen, bool isPortrait) {
-  final filteredItems = _getFilteredItems();
-  final crossAxisCount = isPortrait
-      ? (isLargeScreen ? 3 : 2)
-      : (constraints.maxWidth ~/ 300).clamp(3, 4);
+  Widget _buildGridView(
+    BoxConstraints constraints,
+    bool isLargeScreen,
+    bool isPortrait,
+  ) {
+    final filteredItems = _getFilteredItems();
+    final crossAxisCount =
+        isPortrait
+            ? (isLargeScreen ? 3 : 2)
+            : (constraints.maxWidth ~/ 300).clamp(3, 4);
 
-  return GridView.builder(
-    padding: const EdgeInsets.all(8.0),
-    shrinkWrap: true,
-    physics: const AlwaysScrollableScrollPhysics(),
-    itemCount: filteredItems.length,
-    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: crossAxisCount,
-      crossAxisSpacing: isLargeScreen ? 14.0 : 8.0,
-      mainAxisSpacing: isLargeScreen ? 1.0 : 8.0,
-      childAspectRatio: _getChildAspectRatio(constraints, isLargeScreen),
-    ),
-    itemBuilder: (context, index) => _buildItemCard(filteredItems[index], isLargeScreen),
-  );
-}
-
+    return GridView.builder(
+      padding: const EdgeInsets.all(8.0),
+      shrinkWrap: true,
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: filteredItems.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: isLargeScreen ? 14.0 : 8.0,
+        mainAxisSpacing: isLargeScreen ? 1.0 : 8.0,
+        childAspectRatio: _getChildAspectRatio(constraints, isLargeScreen),
+      ),
+      itemBuilder:
+          (context, index) =>
+              _buildItemCard(filteredItems[index], isLargeScreen),
+    );
+  }
 
   double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
     if (constraints.maxWidth > 1000) return 0.75;
@@ -283,7 +319,8 @@ Widget _buildGridView(BoxConstraints constraints, bool isLargeScreen, bool isPor
           child: Card(
             elevation: 4,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Padding(
               padding: EdgeInsets.all(isLargeScreen ? 12.0 : 8.0),
               child: Row(
@@ -312,15 +349,22 @@ Widget _buildGridView(BoxConstraints constraints, bool isLargeScreen, bool isPor
                           item.itemName,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: isLargeScreen ? 18 : 16),
+                            fontSize: isLargeScreen ? 18 : 16,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                         SizedBox(height: 4),
-                        _buildDetailText('Style: ${item.styleCode}', isLargeScreen),
+                        _buildDetailText(
+                          'Style: ${item.styleCode}',
+                          isLargeScreen,
+                        ),
                         _buildDetailText('MRP: ${item.mrp}', isLargeScreen),
                         _buildDetailText('WSP: ${item.wsp}', isLargeScreen),
-                        _buildDetailText('Shade: ${item.shadeName}', isLargeScreen),
+                        _buildDetailText(
+                          'Shade: ${item.shadeName}',
+                          isLargeScreen,
+                        ),
                       ],
                     ),
                   ),
@@ -341,9 +385,13 @@ Widget _buildGridView(BoxConstraints constraints, bool isLargeScreen, bool isPor
         final item = filteredItems[index];
         return Card(
           elevation: 4,
-          margin: EdgeInsets.symmetric(vertical: 8, horizontal: isLargeScreen ? 16 : 8),
+          margin: EdgeInsets.symmetric(
+            vertical: 8,
+            horizontal: isLargeScreen ? 16 : 8,
+          ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Column(
             children: [
               AspectRatio(
@@ -366,7 +414,8 @@ Widget _buildGridView(BoxConstraints constraints, bool isLargeScreen, bool isPor
                       item.itemName,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: isLargeScreen ? 24 : 20),
+                        fontSize: isLargeScreen ? 24 : 20,
+                      ),
                     ),
                     SizedBox(height: 8),
                     _buildDetailText('Style: ${item.styleCode}', isLargeScreen),
@@ -390,183 +439,207 @@ Widget _buildGridView(BoxConstraints constraints, bool isLargeScreen, bool isPor
         text,
         style: TextStyle(
           fontSize: isLargeScreen ? 16 : 14,
-          color: Colors.grey[700]),
+          color: Colors.grey[700],
+        ),
       ),
     );
   }
 
-Widget _buildItemCard(Catalog item, bool isLargeScreen) {
-  return Card(
-    elevation: 4,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(12),
-            topRight: Radius.circular(12),
-          ),
-          child: Image.network(
-            _getImageUrl(item),
-            height: 140, // <<< fixed height like your working code
-            width: double.infinity,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                height: 140,
-                width: double.infinity,
-                color: Colors.grey.shade300,
-                child: const Center(child: Icon(Icons.error)),
-              );
-            },
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.all(isLargeScreen ? 10 : 8),
-          child: Text(
-            item.styleCode,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: isLargeScreen ? 16 : 14,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: Text(
-            item.itemName,
-            style: TextStyle(
-              fontSize: isLargeScreen ? 14 : 13,
-              color: Colors.grey.shade700,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
-            'MRP ₹${item.mrp}  WSP ₹${item.wsp}',
-            style: TextStyle(
-              fontSize: isLargeScreen ? 13 : 12,
-              color: Colors.green.shade700,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
+ Widget _buildItemCard(Catalog item, bool isLargeScreen) {
+    bool isSelected = selectedItems.contains(item);
 
+    return GestureDetector(
+      onTap: () => _toggleItemSelection(item),
+      onLongPress: () => _enableMultiSelect(item),
+      child: Card(
+        elevation: isSelected ? 8 : 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        color: isSelected ? Colors.blue.shade50 : Colors.white,
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                  child: Image.network(
+                    _getImageUrl(item),
+                    height: 140,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 140,
+                        width: double.infinity,
+                        color: Colors.grey.shade300,
+                        child: const Center(child: Icon(Icons.error)),
+                      );
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(isLargeScreen ? 10 : 8),
+                  child: Text(
+                    item.styleCode,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: isLargeScreen ? 16 : 14,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Text(
+                    item.itemName,
+                    style: TextStyle(
+                      fontSize: isLargeScreen ? 14 : 13,
+                      color: Colors.grey.shade700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    'MRP ₹${item.mrp}  WSP ₹${item.wsp}',
+                    style: TextStyle(
+                      fontSize: isLargeScreen ? 13 : 12,
+                      color: Colors.green.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (isSelected)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.check_circle,
+                    color: AppColors.primaryColor,
+                    size: 24,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  
   Widget _buildBottomButtons(bool isLargeScreen) {
     return SafeArea(
       child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: isLargeScreen ? 24 : 12,
-          vertical: 12),
+          vertical: 12,
+        ),
         color: Colors.white,
-        child: isLargeScreen
-            ? Row(
-                children: _buildButtonChildren(isLargeScreen),
-              )
-            : Wrap(
-                alignment: WrapAlignment.spaceEvenly,
-                spacing: 8,
-                runSpacing: 8,
-                children: _buildButtonChildren(isLargeScreen),
-              ),
+        child:
+            isLargeScreen
+                ? Row(children: _buildButtonChildren(isLargeScreen))
+                : Wrap(
+                  alignment: WrapAlignment.spaceEvenly,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _buildButtonChildren(isLargeScreen),
+                ),
       ),
     );
   }
 
-List<Widget> _buildButtonChildren(bool isLargeScreen) {
-  return [
-    Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween, // Align buttons in a row with space between
-      children: [
-        Expanded(
-          child: _buildFilterButton('New Arrival', isLargeScreen),
-        ),
-        SizedBox(width: 8), // Add space between buttons
-        Expanded(
-          child: _buildFilterButton('Featured', isLargeScreen),
-        ),
-        SizedBox(width: 8), // Add space between buttons
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: _showFilterDialog,
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: AppColors.primaryColor),
-              backgroundColor: Colors.white,
-              foregroundColor: AppColors.primaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8)),
-              padding: EdgeInsets.symmetric(
-                horizontal: isLargeScreen ? 24 : 16,
-                vertical: 12), // Reduced vertical padding
+  List<Widget> _buildButtonChildren(bool isLargeScreen) {
+    return [
+      Row(
+        mainAxisAlignment:
+            MainAxisAlignment
+                .spaceBetween, // Align buttons in a row with space between
+        children: [
+          Expanded(child: _buildFilterButton('New Arrival', isLargeScreen)),
+          SizedBox(width: 8), // Add space between buttons
+          Expanded(child: _buildFilterButton('Featured', isLargeScreen)),
+          SizedBox(width: 8), // Add space between buttons
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _showFilterDialog,
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: AppColors.primaryColor),
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isLargeScreen ? 24 : 16,
+                  vertical: 12,
+                ), // Reduced vertical padding
+              ),
+              icon: Icon(Icons.filter_list, size: isLargeScreen ? 24 : 20),
+              label: Text(
+                'Filter',
+                style: TextStyle(fontSize: isLargeScreen ? 16 : 14),
+              ),
             ),
-            icon: Icon(Icons.filter_list, size: isLargeScreen ? 24 : 20),
-            label: Text('Filter', style: TextStyle(fontSize: isLargeScreen ? 16 : 14)),
           ),
-        ),
-      ],
-    ),
-  ];
-}
-
-Widget _buildFilterButton(String label, bool isLargeScreen) {
-  return OutlinedButton(
-    onPressed: () => setState(() => filterOption = label),
-    style: OutlinedButton.styleFrom(
-      side: BorderSide(
-        color: filterOption == label
-            ? AppColors.primaryColor
-            : Colors.grey,
+        ],
       ),
-      backgroundColor: Colors.white,
-      foregroundColor: filterOption == label
-          ? AppColors.primaryColor
-          : Colors.grey,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8)),
-      padding: EdgeInsets.symmetric(
-        vertical: isLargeScreen ? 16 : 12,
-        horizontal: isLargeScreen ? 24 : 16),
-    ),
-    child: Text(
-      label,
-      style: TextStyle(fontSize: isLargeScreen ? 16 : 14),
-    ),
-  );
-}
+    ];
+  }
 
+  Widget _buildFilterButton(String label, bool isLargeScreen) {
+    return OutlinedButton(
+      onPressed: () => setState(() => filterOption = label),
+      style: OutlinedButton.styleFrom(
+        side: BorderSide(
+          color: filterOption == label ? AppColors.primaryColor : Colors.grey,
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor:
+            filterOption == label ? AppColors.primaryColor : Colors.grey,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        padding: EdgeInsets.symmetric(
+          vertical: isLargeScreen ? 16 : 12,
+          horizontal: isLargeScreen ? 24 : 16,
+        ),
+      ),
+      child: Text(label, style: TextStyle(fontSize: isLargeScreen ? 16 : 14)),
+    );
+  }
 
   List<Catalog> _getFilteredItems() {
     var filteredItems = catalogItems;
 
     if (selectedStyles.isNotEmpty) {
-      filteredItems = filteredItems
-          .where((item) => selectedStyles.contains(item.styleCode))
-          .toList();
+      filteredItems =
+          filteredItems
+              .where((item) => selectedStyles.contains(item.styleCode))
+              .toList();
     }
 
     if (selectedShades.isNotEmpty) {
-      filteredItems = filteredItems.where((item) {
-        final shades = item.shadeName?.split(',') ?? [];
-        return shades.any((shade) => selectedShades.contains(shade));
-      }).toList();
+      filteredItems =
+          filteredItems.where((item) {
+            final shades = item.shadeName?.split(',') ?? [];
+            return shades.any((shade) => selectedShades.contains(shade));
+          }).toList();
     }
 
     return filteredItems;
   }
-
-
 
   String _getImageUrl(Catalog catalog) {
     if (catalog.fullImagePath.startsWith('http')) {
@@ -576,22 +649,23 @@ Widget _buildFilterButton(String label, bool isLargeScreen) {
     return '${AppConstants.BASE_URL}/images/$imageName';
   }
 
- void _showFilterDialog() {
-  Navigator.push(
-    context,
-    PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) => FilterPage(),
-      settings: RouteSettings(  // Add this block
-        arguments: {
-          'itemKey': itemKey,
-          'itemSubGrpKey': itemSubGrpKey,
-          'coBr': coBr,
-          'fcYrId': fcYrId,
-          'styles': styles,
-           'shades': shades,  // Add shades list
-          'sizes': sizes,
-        },
-      ),
+  void _showFilterDialog() {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => FilterPage(),
+        settings: RouteSettings(
+          // Add this block
+          arguments: {
+            'itemKey': itemKey,
+            'itemSubGrpKey': itemSubGrpKey,
+            'coBr': coBr,
+            'fcYrId': fcYrId,
+            'styles': styles,
+            'shades': shades, // Add shades list
+            'sizes': sizes,
+          },
+        ),
         transitionDuration: Duration(milliseconds: 500),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           final begin = Offset(0.0, 1.0);
@@ -610,4 +684,272 @@ Widget _buildFilterButton(String label, bool isLargeScreen) {
     );
   }
 
+  Future<void> _shareSelectedItems({
+    required String shareType,
+    bool includeDesign = true,
+    bool includeShade = true,
+    bool includeRate = true,
+    bool includeSize = true,
+    bool includeProduct = true,
+    bool includeRemark = true,
+  }) async {
+    if (selectedItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select items to share')),
+      );
+      return;
+    }
+
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Preparing items for sharing...'),
+            ],
+          ),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      final tempDir = await getTemporaryDirectory();
+      List<String> filePaths = [];
+
+      for (var item in selectedItems) {
+        try {
+          final imageUrl = _getImageUrl(item);
+          if (imageUrl.isNotEmpty && imageUrl.startsWith('http')) {
+            final response = await http.get(Uri.parse(imageUrl));
+            if (response.statusCode == 200) {
+              final imageFile = File(
+                '${tempDir.path}/share_${item.itemKey}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+              );
+              await imageFile.writeAsBytes(response.bodyBytes);
+
+              // Build text based on selected options in the new format
+              String overlayText = '';
+              if (includeProduct) overlayText += 'Product: ${item.itemName}\n';
+              if (includeDesign) overlayText += 'Design: ${item.styleCode}\n';
+              if (includeShade) overlayText += 'Shade: ${item.shadeName}\n';
+              if (includeRate) overlayText += 'Rate: ₹${item.mrp}\n';
+              if (includeSize) overlayText += 'Size: ${item.sizeName}\n';
+              if (includeRemark && item.remark.isNotEmpty)
+                overlayText += 'Remark: ${item.remark}\n';
+
+              final overlayImageFile = await _overlayTextOnImage(
+                imageFile,
+                overlayText,
+              );
+              filePaths.add(overlayImageFile.path);
+            }
+          }
+        } catch (e) {
+          print('Error downloading image for ${item.itemName}: $e');
+        }
+      }
+
+      if (filePaths.isNotEmpty) {
+        if (shareType == 'pdf') {
+          final pdf = pw.Document();
+          for (var path in filePaths) {
+            final image = pw.MemoryImage(File(path).readAsBytesSync());
+            pdf.addPage(
+              pw.Page(
+                build:
+                    (pw.Context context) => pw.Center(child: pw.Image(image)),
+              ),
+            );
+          }
+          final pdfFile = File(
+            '${tempDir.path}/catalog_${DateTime.now().millisecondsSinceEpoch}.pdf',
+          );
+          await pdfFile.writeAsBytes(await pdf.save());
+          await Share.shareXFiles([
+            XFile(pdfFile.path),
+          ], subject: 'Catalog Items PDF from VRS ERP');
+        } else {
+          await Share.shareFiles(
+            filePaths,
+            subject: 'Catalog Items from VRS ERP',
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No items available to share.')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to share items: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<File> _overlayTextOnImage(File imageFile, String fullText) async {
+    final image = await decodeImageFromList(imageFile.readAsBytesSync());
+
+    // Split the text into multiple lines based on the image width
+    List<String> selectedTexts = [];
+    selectedTexts.add("Product Details:");
+    selectedTexts.add("${fullText}"); // Or pass dynamic text pieces here
+
+    // Calculate total height needed (image height + text area height)
+    double textAreaHeight = 0.0;
+    const padding = 10.0;
+    const lineHeight = 30.0; // Adjust for line height if needed
+
+    // Create a list of TextPainters to calculate height required by the text
+    List<TextPainter> textPainters = [];
+    const textStyle = TextStyle(
+      color: Colors.white,
+      fontSize: 16,
+      fontWeight: FontWeight.bold,
+    );
+
+    for (String text in selectedTexts) {
+      final textPainter = TextPainter(
+        text: TextSpan(text: text, style: textStyle),
+        textDirection: TextDirection.ltr,
+        maxLines: null,
+      );
+      textPainter.layout(minWidth: 0, maxWidth: image.width - 2 * padding);
+      textPainters.add(textPainter);
+      textAreaHeight += textPainter.height + lineHeight;
+    }
+
+    double totalHeight = image.height.toDouble() + textAreaHeight;
+
+    final pictureRecorder = PictureRecorder();
+    final canvas = Canvas(
+      pictureRecorder,
+      Rect.fromPoints(
+        Offset(0, 0),
+        Offset(image.width.toDouble(), totalHeight),
+      ),
+    );
+
+    // 1. Draw the original image at the top
+    canvas.drawImage(image, Offset(0, 0), Paint());
+
+    // Set text style
+    final textBackgroundPaint = Paint()..color = Colors.black.withValues();
+
+    // Calculate positions for text - starting below the image
+    double yPos = image.height + padding;
+    for (int i = 0; i < textPainters.length; i++) {
+      final textPainter = textPainters[i];
+
+      // Draw background box
+      final rect = Rect.fromLTWH(
+        padding,
+        yPos,
+        textPainter.width + padding,
+        textPainter.height + padding,
+      );
+      canvas.drawRect(rect, textBackgroundPaint);
+
+      // Draw the text
+      textPainter.paint(canvas, Offset(padding + 5, yPos + 5));
+      yPos += textPainter.height + lineHeight; // Move to next line position
+    }
+
+    final picture = pictureRecorder.endRecording();
+    final img = await picture.toImage(image.width, totalHeight.toInt());
+    final byteData = await img.toByteData(format: ImageByteFormat.png);
+    final buffer = byteData!.buffer.asUint8List();
+    final outputFile = File(
+      '${(await getTemporaryDirectory()).path}/image_with_text_below.png',
+    );
+    await outputFile.writeAsBytes(buffer);
+
+    return outputFile;
+  }
+
+  void _toggleItemSelection(Catalog item) {
+    setState(() {
+      if (selectedItems.contains(item)) {
+        selectedItems.remove(item);
+      } else {
+        selectedItems.add(item);
+      }
+    });
+  }
+
+  void _enableMultiSelect(Catalog item) {
+    setState(() {
+      if (!selectedItems.contains(item)) {
+        selectedItems.add(item);
+      }
+    });
+  }
+
+  void _showShareOptions() {
+    if (selectedItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select items to share')),
+      );
+      return;
+    }
+
+    bool includeDesign = true;
+    bool includeShade = true;
+    bool includeRate = true;
+    bool includeSize = true;
+    bool includeProduct = true;
+    bool includeRemark = true;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return ShareOptionsPage(
+          onImageShare: () {
+            Navigator.pop(context);
+            _shareSelectedItems(
+              shareType: 'image',
+              includeDesign: includeDesign,
+              includeShade: includeShade,
+              includeRate: includeRate,
+              includeSize: includeSize,
+              includeProduct: includeProduct,
+              includeRemark: includeRemark,
+            );
+          },
+          onPDFShare: () {
+            Navigator.pop(context);
+            _shareSelectedItems(
+              shareType: 'pdf',
+              includeDesign: includeDesign,
+              includeShade: includeShade,
+              includeRate: includeRate,
+              includeSize: includeSize,
+              includeProduct: includeProduct,
+              includeRemark: includeRemark,
+            );
+          },
+          onWeblinkShare: () {
+            Navigator.pop(context);
+            _shareSelectedItems(shareType: 'pdf');
+          },
+          onVideoShare: () {
+            Navigator.pop(context);
+            _shareSelectedItems(shareType: 'pdf');
+          },
+          onQRCodeShare: () {
+            Navigator.pop(context);
+            _shareSelectedItems(shareType: 'pdf');
+          },
+          onToggleOptions: (design, shade, rate, size, product, remark) {
+            includeDesign = design;
+            includeShade = shade;
+            includeRate = rate;
+            includeSize = size;
+            includeProduct = product;
+            includeRemark = remark;
+          },
+        );
+      },
+    );
+  }
 }
