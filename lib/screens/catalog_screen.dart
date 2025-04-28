@@ -199,7 +199,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                               alignment: WrapAlignment.start, // Align to the start
                               children: _categories.map((category) {
                                 return Container(
-                                  width: (MediaQuery.of(context).size.width - 40) / 3, // Ensure 3 buttons per row
+                                  width: (MediaQuery.of(context).size.width - 60) / 3, // Ensure 3 buttons per row
                                   child: OutlinedButton(
                                     onPressed: () {
                                       setState(() {
@@ -256,8 +256,10 @@ class _CatalogScreenState extends State<CatalogScreen> {
       ),
     );
   }
-
 Widget _buildCategoryItems() {
+  double buttonWidth = (MediaQuery.of(context).size.width - 60) / 3; // 3 buttons per row
+  double buttonHeight = 50; // Fixed height for buttons
+
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -269,15 +271,22 @@ Widget _buildCategoryItems() {
       _isLoadingItems
           ? Center(child: CircularProgressIndicator())
           : Wrap(
-              spacing: 10, // Horizontal space between buttons
-              runSpacing: 10, // Vertical space between rows
-              alignment: WrapAlignment.start, // Align to the start
+              spacing: 10,
+              runSpacing: 10,
+              alignment: WrapAlignment.start,
               children: _items.map((item) {
-                return Container(
-                  width: (MediaQuery.of(context).size.width - 40) / 3, // Ensure 3 buttons per row
-                  height: 50, // Fixed height for buttons
-                  child: GestureDetector(
-                    onTap: () {
+                return SizedBox(
+                  width: buttonWidth,
+                  height: buttonHeight,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: Colors.grey.shade300),
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    onPressed: () {
                       print(item.itemKey);
                       print(item.itemSubGrpKey);
                       Navigator.pushNamed(
@@ -291,13 +300,15 @@ Widget _buildCategoryItems() {
                         },
                       );
                     },
-                    child: Chip(
-                      label: Text(item.itemName),
-                      backgroundColor: Colors.white,
-                      shape: StadiumBorder(
-                        side: BorderSide(color: Colors.grey.shade300),
+                    child: Text(
+                      item.itemName,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontSize: 14,
                       ),
-                      elevation: 2,
+                      overflow: TextOverflow.ellipsis, // if name is too long
+                      maxLines: 1,
                     ),
                   ),
                 );
