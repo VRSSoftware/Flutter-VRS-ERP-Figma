@@ -1,11 +1,11 @@
-class Size {
+class Sizes {
   final String itemSizeKey;
   final String sizeName;
 
-  Size({required this.itemSizeKey, required this.sizeName});
+  Sizes({required this.itemSizeKey, required this.sizeName});
 
-  factory Size.fromJson(Map<String, dynamic> json) {
-    return Size(
+  factory Sizes.fromJson(Map<String, dynamic> json) {
+    return Sizes(
       itemSizeKey: json['itemSizeKey'] ?? '',
       sizeName: json['sizeName'] ?? '',
     );

@@ -77,6 +77,66 @@ class ApiService {
     }
   }
 
+  // Fetch Shades by Item Key (returning Shade objects)
+  static Future<List<Shade>> fetchShadesByItemKey(String itemKey) async {
+    if (itemKey.isEmpty) {
+      throw Exception('Invalid item selected');
+    }
+
+    final response = await http.get(
+      Uri.parse('${AppConstants.BASE_URL}/shade/GetShadeByItem/$itemKey'),
+    );
+   print(
+      "ShADEEEEEEEEEEEEEEEEEEE API response for${response.body}",
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      // Return a list of Shade objects
+      return data.map((json) => Shade.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load shades for itemKey: $itemKey');
+    }
+  }
+
+  // Fetch Style Sizes by Item Key (returning StyleSize objects)
+  static Future<List<Sizes>> fetchStylesSizeByItemKey(String itemKey) async {
+    if (itemKey.isEmpty) {
+      throw Exception('Invalid item selected');
+    }
+
+    final response = await http.get(
+      Uri.parse('${AppConstants.BASE_URL}/stylesize/GetStylesSizeByItem/$itemKey'),
+    );
+   print(
+      "SizeeeeeeeeeeeeeeeeeAPI response for${response.body}",
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      // Return a list of StyleSize objects
+      return data.map((json) => Sizes.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load style sizes for itemKey: $itemKey');
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static Future<List<Shade>> fetchShadesByStyleKey(String styleKey) async {
     if (styleKey.isEmpty) {
       throw Exception('Invalid style selected');
@@ -94,7 +154,7 @@ class ApiService {
     }
   }
 
-  static Future<List<Size>> fetchSizesByStyleKey(String styleKey) async {
+  static Future<List<Sizes>> fetchSizesByStyleKey(String styleKey) async {
     if (styleKey.isEmpty) {
       throw Exception('Invalid style selected');
     }
@@ -105,7 +165,7 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
-      return data.map((json) => Size.fromJson(json)).toList();
+      return data.map((json) => Sizes.fromJson(json)).toList();
     } else {
       throw Exception('Failed to load sizes for styleKey: $styleKey');
     }
