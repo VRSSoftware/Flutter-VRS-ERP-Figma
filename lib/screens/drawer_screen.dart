@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/screens/login_screen.dart'; // Import your LoginScreen
 
 class DrawerScreen extends StatefulWidget {
   @override
@@ -44,7 +45,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
 
   void _navigateTo(String section, String route) {
     if (selectedSection == section) {
-      Navigator.pop(context); 
+      Navigator.pop(context);
       return;
     }
 
@@ -68,6 +69,8 @@ class _DrawerScreenState extends State<DrawerScreen> {
                     title,
                     _getRouteFromSection(title),
                   )),
+              const Divider(),
+              _buildLogoutButton(),
             ],
           ),
         ),
@@ -122,6 +125,46 @@ class _DrawerScreenState extends State<DrawerScreen> {
                   color: isSelected || isHovered
                       ? AppColors.primaryColor
                       : Colors.grey[800],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton() {
+    return MouseRegion(
+      onEnter: (_) => setState(() => hoveredSection = 'Logout'),
+      onExit: (_) => setState(() => hoveredSection = null),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            Navigator.pop(context); // Close the drawer
+            Navigator.pushReplacementNamed(context, '/login'); // Navigate to login screen
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: hoveredSection == 'Logout'
+                  ? const Color.fromARGB(255, 222, 187, 231)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: ListTile(
+              leading: Icon(
+                Icons.exit_to_app, // Logout icon
+                size: 24,
+                color: hoveredSection == 'Logout' ? AppColors.primaryColor : Colors.grey[800],
+              ),
+              title: Text(
+                'Logout',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: hoveredSection == 'Logout' ? AppColors.primaryColor : Colors.grey[800],
                 ),
               ),
             ),

@@ -199,8 +199,6 @@
 //   }
 // }
 
-
-
 import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/shade.dart';
@@ -222,133 +220,152 @@ class _FilterPageState extends State<FilterPage> {
   List<String> selectedShadeCodes = [];
   List<String> selectedSizeNames = [];
 
-  bool isCheckboxMode = false; // To toggle between dropdown and checkbox mode
+  List<String> filteredStyles = [];
+  List<String> filteredShades = [];
+  List<String> filteredSizes = [];
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Access arguments after context is fully initialized
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
     if (args != null) {
       styles = args['styles'] is List<Style> ? args['styles'] : [];
       shades = args['shades'] is List<Shade> ? args['shades'] : [];
       sizes = args['sizes'] is List<Sizes> ? args['sizes'] : [];
+      filteredStyles = styles.map((style) => style.styleCode).toList();
+      filteredShades = shades.map((shade) => shade.shadeName).toList();
+      filteredSizes = sizes.map((size) => size.sizeName).toList();
     }
   }
 
-Future<void> _showMultiSelectDialog(
-  BuildContext context,
-  String title,
-  List<String> items,
-  List<String> selectedItems,
-  Function(List<String>) onChanged,
-) {
-  return showDialog(
-    context: context,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: Text(title),
-            content: SingleChildScrollView(
-              child: Column(
-                children: items.map((item) {
-                  // Check if this item is already selected
-                  bool isSelected = selectedItems.contains(item);
-
-                  return ListTile(
-                    title: Text(item),
-                    trailing: Icon(
-                      isSelected ? Icons.check_circle : Icons.check_circle_outline,
-                      color: isSelected ? Colors.green : null,
-                    ),
-                    onTap: () {
-                      // Update the selection state
-                      setState(() {
-                        if (isSelected) {
-                          selectedItems.remove(item);  // Remove if already selected
-                        } else {
-                          selectedItems.add(item);     // Add if not selected
-                        }
-                      });
-                      onChanged(selectedItems); // Update the main state immediately
-                    },
-                  );
-                }).toList(),
-              ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.pop(context), // Close the dialog after selection
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () {
-                  onChanged(List.from(selectedItems)); // Pass updated selected items
-                  Navigator.pop(context); // Close the dialog
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
-
-  // Method to build checkbox section in a 3-column grid
-  Widget _buildCheckboxSection(
+  // Method to build searchable dropdown with multiselect functionality
+  Widget _buildDropdownSection(
+    BuildContext context,
     String title,
     List<String> items,
     List<String> selectedItems,
     Function(List<String>) onChanged,
   ) {
-    List<Widget> rows = [];
-    // Split the items into rows of 3
-    for (int i = 0; i < items.length; i += 3) {
-      // Get up to 3 items for the current row
-      List<String> rowItems = items.sublist(i, i + 3 > items.length ? items.length : i + 3);
-      rows.add(
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: rowItems.map((item) {
-            bool isSelected = selectedItems.contains(item);
-            return Expanded(
-              child: Row(
-                children: [
-                  Checkbox(
-                    value: isSelected,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        if (value == true) {
-                          selectedItems.add(item);
-                        } else {
-                          selectedItems.remove(item);
-                        }
-                      });
-                      onChanged(selectedItems);
-                    },
-                  ),
-                  Expanded(child: Text(item, overflow: TextOverflow.ellipsis)),
-                ],
-              ),
-            );
-          }).toList(),
-        ),
-      );
-    }
+    TextEditingController searchController = TextEditingController();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('$title:', style: TextStyle(fontSize: 16)),
-        // Use SingleChildScrollView here to allow scrolling for checkboxes
-        SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: Column(
-            children: rows,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  selectedItems.clear();
+                  selectedItems.addAll(items);
+                });
+                onChanged(selectedItems);
+              },
+              child: Text('Select All', style: TextStyle(color: Colors.blue)),
+            ),
+            Icon(Icons.arrow_drop_down),
+          ],
+        ),
+        SizedBox(height: 8),
+        // Searchable Dropdown Section
+        GestureDetector(
+          onTap: () {
+            showModalBottomSheet(
+              context: context,
+              builder: (context) {
+                return Container(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextField(
+                        controller: searchController,
+                        decoration: InputDecoration(hintText: 'Search $title'),
+                        onChanged: (query) {
+                          setState(() {
+                            if (title == 'Select Styles') {
+                              filteredStyles = items
+                                  .where((item) => item.toLowerCase().contains(query.toLowerCase()))
+                                  .toList();
+                            } else if (title == 'Select Shades') {
+                              filteredShades = items
+                                  .where((item) => item.toLowerCase().contains(query.toLowerCase()))
+                                  .toList();
+                            } else if (title == 'Select Sizes') {
+                              filteredSizes = items
+                                  .where((item) => item.toLowerCase().contains(query.toLowerCase()))
+                                  .toList();
+                            }
+                          });
+                        },
+                      ),
+                      Expanded(
+                        child: ListView(
+                          children: (title == 'Select Styles'
+                                  ? filteredStyles
+                                  : title == 'Select Shades'
+                                      ? filteredShades
+                                      : filteredSizes)
+                              .map((item) {
+                            bool isSelected = selectedItems.contains(item);
+                            return ListTile(
+                              title: Text(item),
+                              trailing: Icon(
+                                isSelected ? Icons.check_circle : Icons.check_circle_outline,
+                                color: isSelected ? Colors.green : null,
+                              ),
+                              onTap: () {
+                                setState(() {
+                                  if (isSelected) {
+                                    selectedItems.remove(item);
+                                  } else {
+                                    selectedItems.add(item);
+                                  }
+                                });
+                                onChanged(selectedItems);
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Wrap(
+                    spacing: 8.0,
+                    children: selectedItems.map((item) {
+                      return Chip(
+                        label: Text(item),
+                        deleteIcon: Icon(Icons.cut, size: 18),
+                        deleteIconColor: Colors.red,
+                        onDeleted: () {
+                          setState(() {
+                            selectedItems.remove(item);
+                          });
+                          onChanged(selectedItems);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ),
+                Icon(Icons.arrow_drop_down),
+              ],
+            ),
           ),
         ),
       ],
@@ -370,155 +387,51 @@ Future<void> _showMultiSelectDialog(
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        actions: [
-          // Toggle switch to switch between dropdown and checkbox mode
-          Switch(
-            value: isCheckboxMode,
-            onChanged: (value) {
-              setState(() {
-                isCheckboxMode = value;
-              });
-            },
-            activeColor: Colors.white,
-          ),
-          //Text(isCheckboxMode ? "Checkbox" : "Dropdown")
-        ],
       ),
-      body: SingleChildScrollView( // Wrap the entire body with SingleChildScrollView
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              // Conditional rendering based on `isCheckboxMode`
-              if (isCheckboxMode) ...[
-                // Style Checkbox List
-                _buildCheckboxSection(
-                  'Styles',
-                  styles.map((style) => style.styleCode).toList(),
-                  selectedStyleCodes,
-                  (updatedSelection) {
-                    setState(() {
-                      selectedStyleCodes = updatedSelection;
-                    });
-                  },
-                ),
-                SizedBox(height: 20),
-
-                // Shade Checkbox List
-                _buildCheckboxSection(
-                  'Shades',
-                  shades.map((shade) => shade.shadeName).toList(),
-                  selectedShadeCodes,
-                  (updatedSelection) {
-                    setState(() {
-                      selectedShadeCodes = updatedSelection;
-                    });
-                  },
-                ),
-                SizedBox(height: 20),
-
-                // Size Checkbox List
-                _buildCheckboxSection(
-                  'Sizes',
-                  sizes.map((size) => size.sizeName).toList(),
-                  selectedSizeNames,
-                  (updatedSelection) {
-                    setState(() {
-                      selectedSizeNames = updatedSelection;
-                    });
-                  },
-                ),
-              ] else ...[
-                // Style Dropdown with Multi-Select Dialog
-                _buildDropdownSection(
-                  context,
-                  'Select Styles',
-                  styles.map((style) => style.styleCode).toList(),
-                  selectedStyleCodes,
-                  (updatedSelection) {
-                    setState(() {
-                      selectedStyleCodes = updatedSelection;
-                    });
-                  },
-                ),
-                SizedBox(height: 20),
-
-                // Shade Dropdown with Multi-Select Dialog
-                _buildDropdownSection(
-                  context,
-                  'Select Shades',
-                  shades.map((shade) => shade.shadeName).toList(),
-                  selectedShadeCodes,
-                  (updatedSelection) {
-                    setState(() {
-                      selectedShadeCodes = updatedSelection;
-                    });
-                  },
-                ),
-                SizedBox(height: 20),
-
-                // Size Dropdown with Multi-Select Dialog
-                _buildDropdownSection(
-                  context,
-                  'Select Sizes',
-                  sizes.map((size) => size.sizeName).toList(),
-                  selectedSizeNames,
-                  (updatedSelection) {
-                    setState(() {
-                      selectedSizeNames = updatedSelection;
-                    });
-                  },
-                ),
-              ],
+              _buildDropdownSection(
+                context,
+                'Select Styles',
+                styles.map((style) => style.styleCode).toList(),
+                selectedStyleCodes,
+                (updatedSelection) {
+                  setState(() {
+                    selectedStyleCodes = updatedSelection;
+                  });
+                },
+              ),
+              SizedBox(height: 20),
+              _buildDropdownSection(
+                context,
+                'Select Shades',
+                shades.map((shade) => shade.shadeName).toList(),
+                selectedShadeCodes,
+                (updatedSelection) {
+                  setState(() {
+                    selectedShadeCodes = updatedSelection;
+                  });
+                },
+              ),
+              SizedBox(height: 20),
+              _buildDropdownSection(
+                context,
+                'Select Sizes',
+                sizes.map((size) => size.sizeName).toList(),
+                selectedSizeNames,
+                (updatedSelection) {
+                  setState(() {
+                    selectedSizeNames = updatedSelection;
+                  });
+                },
+              ),
             ],
           ),
         ),
       ),
     );
   }
-
-Widget _buildDropdownSection(
-  BuildContext context,
-  String title,
-  List<String> items,
-  List<String> selectedItems,
-  Function(List<String>) onChanged,
-) {
-  return GestureDetector(
-    onTap: () {
-      _showMultiSelectDialog(
-        context,
-        title,
-        items,
-        selectedItems,
-        onChanged,
-      );
-    },
-    child: Container(
-      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          // Only show selected items or placeholder text if nothing selected
-          Expanded(
-            child: Text(
-              selectedItems.isEmpty
-                  ? 'Select $title' // Display default text if nothing selected
-                  : selectedItems.join(', '), // Otherwise, show selected items
-              style: TextStyle(fontSize: 16),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-          ),
-          // Don't show icon inside the input field anymore
-          // If you want to show a dropdown arrow, you can add it when needed.
-        ],
-      ),
-    ),
-  );
-}
-
 }
