@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/catalog/toggle_option_screen.dart';
+import 'package:vrs_erp_figma/constants/app_constants.dart';
 
 class ShareOptionsPage extends StatelessWidget {
   final Function() onImageShare;
@@ -92,7 +93,7 @@ class ShareOptionsPage extends StatelessWidget {
     required BuildContext context,
   }) {
     return ListTile(
-      leading: Icon(icon, color: Colors.blue),
+      leading: Icon(icon, color:AppColors.primaryColor),
       title: Text(title),
       trailing: IconButton(
         icon: const Icon(Icons.more_vert),

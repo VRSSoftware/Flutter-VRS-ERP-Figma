@@ -578,7 +578,7 @@ class _CatalogPageState extends State<CatalogPage> {
                     'MRP ₹${item.mrp}  WSP ₹${item.wsp}',
                     style: TextStyle(
                       fontSize: isLargeScreen ? 13 : 12,
-                      color: Colors.green.shade700,
+                      color: AppColors.primaryColor,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -634,12 +634,8 @@ class _CatalogPageState extends State<CatalogPage> {
       Row(
         mainAxisAlignment:
             MainAxisAlignment
-                .spaceBetween, // Align buttons in a row with space between
+                .spaceBetween,
         children: [
-          // Expanded(child: _buildFilterButton('New Arrival', isLargeScreen)),
-          // SizedBox(width: 8), // Add space between buttons
-          // Expanded(child: _buildFilterButton('Featured', isLargeScreen)),
-          // SizedBox(width: 8), // Add space between buttons
           Expanded(
             child: OutlinedButton.icon(
               onPressed: _showFilterDialog,
