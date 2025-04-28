@@ -237,51 +237,66 @@ class _FilterPageState extends State<FilterPage> {
     }
   }
 
-  Future<void> _showMultiSelectDialog(
-    BuildContext context,
-    String title,
-    List<String> items,
-    List<String> selectedItems,
-    Function(List<String>) onChanged,
-  ) {
-    return showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(title),
-          content: SingleChildScrollView(
-            child: Column(
-              children: items.map((item) {
-                bool isSelected = selectedItems.contains(item);
-                return ListTile(
-                  title: Text(item),
-                  trailing: isSelected
-                      ? Icon(Icons.check_circle, color: Colors.green)
-                      : Icon(Icons.check_circle_outline),
-                  onTap: () {
-                    setState(() {
-                      if (isSelected) {
-                        selectedItems.remove(item);
-                      } else {
-                        selectedItems.add(item);
-                      }
-                    });
-                    onChanged(selectedItems); // Update the selection list
-                  },
-                );
-              }).toList(),
+Future<void> _showMultiSelectDialog(
+  BuildContext context,
+  String title,
+  List<String> items,
+  List<String> selectedItems,
+  Function(List<String>) onChanged,
+) {
+  return showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Text(title),
+            content: SingleChildScrollView(
+              child: Column(
+                children: items.map((item) {
+                  // Check if this item is already selected
+                  bool isSelected = selectedItems.contains(item);
+
+                  return ListTile(
+                    title: Text(item),
+                    trailing: Icon(
+                      isSelected ? Icons.check_circle : Icons.check_circle_outline,
+                      color: isSelected ? Colors.green : null,
+                    ),
+                    onTap: () {
+                      // Update the selection state
+                      setState(() {
+                        if (isSelected) {
+                          selectedItems.remove(item);  // Remove if already selected
+                        } else {
+                          selectedItems.add(item);     // Add if not selected
+                        }
+                      });
+                      onChanged(selectedItems); // Update the main state immediately
+                    },
+                  );
+                }).toList(),
+              ),
             ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Done'),
-            ),
-          ],
-        );
-      },
-    ) as Future<void>;
-  }
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.pop(context), // Close the dialog after selection
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  onChanged(List.from(selectedItems)); // Pass updated selected items
+                  Navigator.pop(context); // Close the dialog
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 
   // Method to build checkbox section in a 3-column grid
   Widget _buildCheckboxSection(
@@ -462,38 +477,48 @@ class _FilterPageState extends State<FilterPage> {
     );
   }
 
-  // Method to build dropdown section
-  Widget _buildDropdownSection(
-    BuildContext context,
-    String title,
-    List<String> items,
-    List<String> selectedItems,
-    Function(List<String>) onChanged,
-  ) {
-    return GestureDetector(
-      onTap: () {
-        _showMultiSelectDialog(
-          context,
-          title,
-          items,
-          selectedItems,
-          onChanged,
-        );
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('$title: ${selectedItems.join(', ')}', style: TextStyle(fontSize: 16)),
-            Icon(Icons.arrow_drop_down),
-          ],
-        ),
+Widget _buildDropdownSection(
+  BuildContext context,
+  String title,
+  List<String> items,
+  List<String> selectedItems,
+  Function(List<String>) onChanged,
+) {
+  return GestureDetector(
+    onTap: () {
+      _showMultiSelectDialog(
+        context,
+        title,
+        items,
+        selectedItems,
+        onChanged,
+      );
+    },
+    child: Container(
+      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(8),
       ),
-    );
-  }
+      child: Row(
+        children: [
+          // Only show selected items or placeholder text if nothing selected
+          Expanded(
+            child: Text(
+              selectedItems.isEmpty
+                  ? 'Select $title' // Display default text if nothing selected
+                  : selectedItems.join(', '), // Otherwise, show selected items
+              style: TextStyle(fontSize: 16),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ),
+          // Don't show icon inside the input field anymore
+          // If you want to show a dropdown arrow, you can add it when needed.
+        ],
+      ),
+    ),
+  );
+}
+
 }

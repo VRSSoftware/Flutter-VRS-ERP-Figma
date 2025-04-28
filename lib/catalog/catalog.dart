@@ -144,7 +144,7 @@ Widget build(BuildContext context) {
     ),
     body: Column(
       children: [
-        _buildStyleSelection(isLargeScreen),
+   //     _buildStyleSelection(isLargeScreen),
         Expanded(
           child: Padding(
             padding: EdgeInsets.symmetric(
