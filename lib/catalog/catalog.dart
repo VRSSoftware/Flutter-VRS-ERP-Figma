@@ -139,10 +139,11 @@ class _CatalogPageState extends State<CatalogPage> {
               ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.share, color: Colors.white),
-            onPressed: _showShareOptions,
-          ),
+          if (selectedItems.isNotEmpty) // Only show when items are selected
+            IconButton(
+              icon: Icon(Icons.share, color: Colors.white),
+              onPressed: _showShareOptions,
+            ),
           IconButton(
             icon: Icon(
               viewOption == 0
@@ -314,60 +315,94 @@ class _CatalogPageState extends State<CatalogPage> {
       itemCount: filteredItems.length,
       itemBuilder: (context, index) {
         final item = filteredItems[index];
-        return Container(
-          margin: EdgeInsets.symmetric(vertical: 8),
-          child: Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: EdgeInsets.all(isLargeScreen ? 12.0 : 8.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        bool isSelected = selectedItems.contains(item);
+
+        return GestureDetector(
+          onTap: () => _toggleItemSelection(item),
+          onLongPress: () => _enableMultiSelect(item),
+          child: Container(
+            margin: EdgeInsets.symmetric(vertical: 8),
+            child: Card(
+              elevation: isSelected ? 8 : 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              color: isSelected ? Colors.blue.shade50 : Colors.white,
+              child: Stack(
                 children: [
-                  Flexible(
-                    flex: 2,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        _getImageUrl(item),
-                        fit: BoxFit.cover,
-                        height: isLargeScreen ? 120 : 100,
-                        width: isLargeScreen ? 120 : 100,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: isLargeScreen ? 16 : 8),
-                  Flexible(
-                    flex: 3,
-                    child: Column(
+                  Padding(
+                    padding: EdgeInsets.all(isLargeScreen ? 12.0 : 8.0),
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          item.itemName,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: isLargeScreen ? 18 : 16,
+                        Flexible(
+                          flex: 2,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              _getImageUrl(item),
+                              fit: BoxFit.cover,
+                              height: isLargeScreen ? 120 : 100,
+                              width: isLargeScreen ? 120 : 100,
+                            ),
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                        SizedBox(height: 4),
-                        _buildDetailText(
-                          'Style: ${item.styleCode}',
-                          isLargeScreen,
-                        ),
-                        _buildDetailText('MRP: ${item.mrp}', isLargeScreen),
-                        _buildDetailText('WSP: ${item.wsp}', isLargeScreen),
-                        _buildDetailText(
-                          'Shade: ${item.shadeName}',
-                          isLargeScreen,
+                        SizedBox(width: isLargeScreen ? 16 : 8),
+                        Flexible(
+                          flex: 3,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                item.itemName,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: isLargeScreen ? 18 : 16,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(height: 4),
+                              _buildDetailText(
+                                'Style: ${item.styleCode}',
+                                isLargeScreen,
+                              ),
+                              _buildDetailText(
+                                'MRP: ${item.mrp}',
+                                isLargeScreen,
+                              ),
+                              _buildDetailText(
+                                'WSP: ${item.wsp}',
+                                isLargeScreen,
+                              ),
+                              _buildDetailText(
+                                'Shade: ${item.shadeName}',
+                                isLargeScreen,
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
+                  if (isSelected)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.check_circle,
+                          color: AppColors.primaryColor,
+                          size: 24,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -383,49 +418,83 @@ class _CatalogPageState extends State<CatalogPage> {
       itemCount: filteredItems.length,
       itemBuilder: (context, index) {
         final item = filteredItems[index];
-        return Card(
-          elevation: 4,
-          margin: EdgeInsets.symmetric(
-            vertical: 8,
-            horizontal: isLargeScreen ? 16 : 8,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            children: [
-              AspectRatio(
-                aspectRatio: 5 / 9,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    _getImageUrl(item),
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        bool isSelected = selectedItems.contains(item);
+
+        return GestureDetector(
+          onTap: () => _toggleItemSelection(item),
+          onLongPress: () => _enableMultiSelect(item),
+          child: Card(
+            elevation: isSelected ? 8 : 4,
+            margin: EdgeInsets.symmetric(
+              vertical: 8,
+              horizontal: isLargeScreen ? 16 : 8,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            color: isSelected ? Colors.blue.shade50 : Colors.white,
+            child: Stack(
+              children: [
+                Column(
                   children: [
-                    Text(
-                      item.itemName,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: isLargeScreen ? 24 : 20,
+                    AspectRatio(
+                      aspectRatio: 5 / 9,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          _getImageUrl(item),
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                        ),
                       ),
                     ),
-                    SizedBox(height: 8),
-                    _buildDetailText('Style: ${item.styleCode}', isLargeScreen),
-                    _buildDetailText('MRP: ${item.mrp}', isLargeScreen),
-                    _buildDetailText('WSP: ${item.wsp}', isLargeScreen),
-                    _buildDetailText('Shade: ${item.shadeName}', isLargeScreen),
+                    Padding(
+                      padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.itemName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: isLargeScreen ? 24 : 20,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          _buildDetailText(
+                            'Style: ${item.styleCode}',
+                            isLargeScreen,
+                          ),
+                          _buildDetailText('MRP: ${item.mrp}', isLargeScreen),
+                          _buildDetailText('WSP: ${item.wsp}', isLargeScreen),
+                          _buildDetailText(
+                            'Shade: ${item.shadeName}',
+                            isLargeScreen,
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            ],
+                if (isSelected)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.check_circle,
+                        color: AppColors.primaryColor,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         );
       },
@@ -445,7 +514,7 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
- Widget _buildItemCard(Catalog item, bool isLargeScreen) {
+  Widget _buildItemCard(Catalog item, bool isLargeScreen) {
     bool isSelected = selectedItems.contains(item);
 
     return GestureDetector(
@@ -540,7 +609,6 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
-  
   Widget _buildBottomButtons(bool isLargeScreen) {
     return SafeArea(
       child: Container(
