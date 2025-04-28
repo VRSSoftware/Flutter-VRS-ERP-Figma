@@ -124,43 +124,41 @@ class _CatalogPageState extends State<CatalogPage> {
     final isPortrait =
         MediaQuery.of(context).orientation == Orientation.portrait;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      drawer: DrawerScreen(),
-      appBar: AppBar(
-        title: Text('Catalog', style: TextStyle(color: Colors.white)),
-        backgroundColor: AppColors.primaryColor,
-        elevation: 1,
-        leading: Builder(
-          builder:
-              (context) => IconButton(
-                icon: Icon(Icons.menu, color: Colors.white),
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
+  return Scaffold(
+  backgroundColor: Colors.white,
+  appBar: AppBar(
+    title: Text('Catalog', style: TextStyle(color: Colors.white)),
+    backgroundColor: AppColors.primaryColor,
+    elevation: 1,
+    leading: IconButton(
+      icon: Icon(Icons.arrow_back_ios, color: Colors.white), // <-- Back icon
+      onPressed: () {
+        Navigator.pop(context); // <-- Go back to previous screen
+      },
+    ),
+    actions: [
+      if (selectedItems.isNotEmpty) // Only show when items are selected
+        IconButton(
+          icon: Icon(Icons.share, color: Colors.white),
+          onPressed: _showShareOptions,
         ),
-        actions: [
-          if (selectedItems.isNotEmpty) // Only show when items are selected
-            IconButton(
-              icon: Icon(Icons.share, color: Colors.white),
-              onPressed: _showShareOptions,
-            ),
-          IconButton(
-            icon: Icon(
-              viewOption == 0
-                  ? Icons.grid_on
-                  : viewOption == 1
+      IconButton(
+        icon: Icon(
+          viewOption == 0
+              ? Icons.grid_on
+              : viewOption == 1
                   ? Icons.view_list
                   : Icons.expand,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              setState(() {
-                viewOption = (viewOption + 1) % 3;
-              });
-            },
-          ),
-        ],
+          color: Colors.white,
+        ),
+        onPressed: () {
+          setState(() {
+            viewOption = (viewOption + 1) % 3;
+          });
+        },
       ),
+    ],
+  ),
       body: Column(
         children: [
           //     _buildStyleSelection(isLargeScreen),
@@ -193,6 +191,7 @@ class _CatalogPageState extends State<CatalogPage> {
         ],
       ),
     );
+ 
   }
 
   Widget _buildStyleSelection(bool isLargeScreen) {
@@ -637,10 +636,10 @@ class _CatalogPageState extends State<CatalogPage> {
             MainAxisAlignment
                 .spaceBetween, // Align buttons in a row with space between
         children: [
-          Expanded(child: _buildFilterButton('New Arrival', isLargeScreen)),
-          SizedBox(width: 8), // Add space between buttons
-          Expanded(child: _buildFilterButton('Featured', isLargeScreen)),
-          SizedBox(width: 8), // Add space between buttons
+          // Expanded(child: _buildFilterButton('New Arrival', isLargeScreen)),
+          // SizedBox(width: 8), // Add space between buttons
+          // Expanded(child: _buildFilterButton('Featured', isLargeScreen)),
+          // SizedBox(width: 8), // Add space between buttons
           Expanded(
             child: OutlinedButton.icon(
               onPressed: _showFilterDialog,
