@@ -248,10 +248,13 @@ class _CatalogScreenState extends State<CatalogScreen> {
           },
         ),
       ),
-      bottomNavigationBar: BottomNavigationWidget(
+ bottomNavigationBar: BottomNavigationWidget(
+        currentIndex: 1, // 👈 Highlight Catalog icon
         onTap: (index) {
-          if (index == 1) Navigator.pushNamed(context, '/catalog');
+          if (index == 0) Navigator.pushNamed(context, '/home');
+          if (index == 1) return; // Already on Catalog
           if (index == 2) Navigator.pushNamed(context, '/orderbooking');
+          // Add others similarly...
         },
       ),
     );
