@@ -22,7 +22,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
   ];
 
   int _currentIndex = 0;
-  final CarouselSliderController _carouselController = CarouselSliderController();
+  final CarouselSliderController _carouselController =
+      CarouselSliderController();
 
   String? _selectedCategoryKey = '-1';
   String? _selectedCategoryName = 'All';
@@ -79,10 +80,11 @@ class _CatalogScreenState extends State<CatalogScreen> {
         backgroundColor: AppColors.primaryColor,
         elevation: 1,
         leading: Builder(
-          builder: (context) => IconButton(
-            icon: Icon(Icons.menu, color: AppColors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
+          builder:
+              (context) => IconButton(
+                icon: Icon(Icons.menu, color: AppColors.white),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
         ),
       ),
       body: Padding(
@@ -166,21 +168,23 @@ class _CatalogScreenState extends State<CatalogScreen> {
                       SizedBox(height: 10),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: garmentImages.map((image) {
-                          int index = garmentImages.indexOf(image);
-                          return AnimatedContainer(
-                            duration: Duration(milliseconds: 300),
-                            margin: EdgeInsets.symmetric(horizontal: 4),
-                            height: 8,
-                            width: 8,
-                            decoration: BoxDecoration(
-                              color: _currentIndex == index
-                                  ? AppColors.primaryColor
-                                  : Colors.grey,
-                              shape: BoxShape.circle,
-                            ),
-                          );
-                        }).toList(),
+                        children:
+                            garmentImages.map((image) {
+                              int index = garmentImages.indexOf(image);
+                              return AnimatedContainer(
+                                duration: Duration(milliseconds: 300),
+                                margin: EdgeInsets.symmetric(horizontal: 4),
+                                height: 8,
+                                width: 8,
+                                decoration: BoxDecoration(
+                                  color:
+                                      _currentIndex == index
+                                          ? AppColors.primaryColor
+                                          : Colors.grey,
+                                  shape: BoxShape.circle,
+                                ),
+                              );
+                            }).toList(),
                       ),
                       SizedBox(height: 15), // Reduced the top space
                       Text(
@@ -194,49 +198,68 @@ class _CatalogScreenState extends State<CatalogScreen> {
                       _isLoadingCategories
                           ? Center(child: CircularProgressIndicator())
                           : Wrap(
-                              spacing: 10,
-                              runSpacing: 10, // Vertical space between rows
-                              alignment: WrapAlignment.start, // Align to the start
-                              children: _categories.map((category) {
-                                return Container(
-                                  width: (MediaQuery.of(context).size.width - 60) / 3, // Ensure 3 buttons per row
-                                  child: OutlinedButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        _selectedCategoryKey = category.itemSubGrpKey;
-                                        _selectedCategoryName = category.itemSubGrpName;
+                            spacing: 10,
+                            runSpacing: 10, // Vertical space between rows
+                            alignment:
+                                WrapAlignment.start, // Align to the start
+                            children:
+                                _categories.map((category) {
+                                  return Container(
+                                    width:
+                                        (MediaQuery.of(context).size.width -
+                                            60) /
+                                        3, // Ensure 3 buttons per row
+                                    child: OutlinedButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          _selectedCategoryKey =
+                                              category.itemSubGrpKey;
+                                          _selectedCategoryName =
+                                              category.itemSubGrpName;
 
-                                        if (_selectedCategoryKey == '-1') {
-                                          _items = _allItems;
-                                        } else {
-                                          _items = _allItems
-                                              .where((item) => item.itemSubGrpKey == _selectedCategoryKey)
-                                              .toList();
-                                        }
-                                      });
-                                    },
-                                    style: ButtonStyle(
-                                      backgroundColor: MaterialStateProperty.all(
-                                        _selectedCategoryKey == category.itemSubGrpKey
-                                            ? AppColors.primaryColor
-                                            : Colors.white,
+                                          if (_selectedCategoryKey == '-1') {
+                                            _items = _allItems;
+                                          } else {
+                                            _items =
+                                                _allItems
+                                                    .where(
+                                                      (item) =>
+                                                          item.itemSubGrpKey ==
+                                                          _selectedCategoryKey,
+                                                    )
+                                                    .toList();
+                                          }
+                                        });
+                                      },
+                                      style: ButtonStyle(
+                                        backgroundColor:
+                                            MaterialStateProperty.all(
+                                              _selectedCategoryKey ==
+                                                      category.itemSubGrpKey
+                                                  ? AppColors.primaryColor
+                                                  : Colors.white,
+                                            ),
+                                        side: MaterialStateProperty.all(
+                                          BorderSide(
+                                            color: AppColors.primaryColor,
+                                            width: 2,
+                                          ),
+                                        ),
                                       ),
-                                      side: MaterialStateProperty.all(
-                                        BorderSide(color: AppColors.primaryColor, width: 2),
+                                      child: Text(
+                                        category.itemSubGrpName,
+                                        style: TextStyle(
+                                          color:
+                                              _selectedCategoryKey ==
+                                                      category.itemSubGrpKey
+                                                  ? Colors.white
+                                                  : AppColors.primaryColor,
+                                        ),
                                       ),
                                     ),
-                                    child: Text(
-                                      category.itemSubGrpName,
-                                      style: TextStyle(
-                                        color: _selectedCategoryKey == category.itemSubGrpKey
-                                            ? Colors.white
-                                            : AppColors.primaryColor,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
+                                  );
+                                }).toList(),
+                          ),
                       SizedBox(height: 20),
                       if (_selectedCategoryKey != null) _buildCategoryItems(),
                       Spacer(),
@@ -248,77 +271,75 @@ class _CatalogScreenState extends State<CatalogScreen> {
           },
         ),
       ),
- bottomNavigationBar: BottomNavigationWidget(
-        currentIndex: 1, // 👈 Highlight Catalog icon
+      bottomNavigationBar: BottomNavigationWidget(
+        currentIndex: 1,
         onTap: (index) {
           if (index == 0) Navigator.pushNamed(context, '/home');
-          if (index == 1) return; // Already on Catalog
+          if (index == 1) return; 
           if (index == 2) Navigator.pushNamed(context, '/orderbooking');
-          // Add others similarly...
+    
         },
       ),
     );
   }
-Widget _buildCategoryItems() {
-  double buttonWidth = (MediaQuery.of(context).size.width - 60) / 3; // 3 buttons per row
-  double buttonHeight = 50; // Fixed height for buttons
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        "Items in $_selectedCategoryName",
-        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-      ),
-      SizedBox(height: 10),
-      _isLoadingItems
-          ? Center(child: CircularProgressIndicator())
-          : Wrap(
+  Widget _buildCategoryItems() {
+    double buttonWidth = (MediaQuery.of(context).size.width - 60) / 3;
+    double buttonHeight = 50; 
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Items in $_selectedCategoryName",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        SizedBox(height: 10),
+        _isLoadingItems
+            ? Center(child: CircularProgressIndicator())
+            : Wrap(
               spacing: 10,
               runSpacing: 10,
               alignment: WrapAlignment.start,
-              children: _items.map((item) {
-                return SizedBox(
-                  width: buttonWidth,
-                  height: buttonHeight,
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.grey.shade300),
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    onPressed: () {
-                      print(item.itemKey);
-                      print(item.itemSubGrpKey);
-                      Navigator.pushNamed(
-                        context,
-                        '/catalogpage',
-                        arguments: {
-                          'itemKey': item.itemKey,
-                          'itemSubGrpKey': item.itemSubGrpKey,
-                          'coBr': coBr,
-                          'fcYrId': fcYrId,
+              children:
+                  _items.map((item) {
+                    return SizedBox(
+                      width: buttonWidth,
+                      height: buttonHeight,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.grey.shade300),
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        onPressed: () {
+                          print(item.itemKey);
+                          print(item.itemSubGrpKey);
+                          Navigator.pushNamed(
+                            context,
+                            '/catalogpage',
+                            arguments: {
+                              'itemKey': item.itemKey,
+                              'itemSubGrpKey': item.itemSubGrpKey,
+                              'coBr': coBr,
+                              'fcYrId': fcYrId,
+                            },
+                          );
                         },
-                      );
-                    },
-                    child: Text(
-                      item.itemName,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.black87,
-                        fontSize: 14,
+                        child: Text(
+                          item.itemName,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.black87, fontSize: 14),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       ),
-                      overflow: TextOverflow.ellipsis, // if name is too long
-                      maxLines: 1,
-                    ),
-                  ),
-                );
-              }).toList(),
+                    );
+                  }).toList(),
             ),
-    ],
-  );
-}
-
+      ],
+    );
+  }
 }

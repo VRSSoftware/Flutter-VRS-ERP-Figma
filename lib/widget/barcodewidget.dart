@@ -11,12 +11,11 @@ class BarcodeWiseWidget extends StatefulWidget {
   final ValueChanged<String> onFilterPressed;
   final Set<String> activeFilters;
 
-    const BarcodeWiseWidget({
-    super.key, 
+  const BarcodeWiseWidget({
+    super.key,
     required this.onFilterPressed,
     required this.activeFilters,
   });
-
 
   @override
   State<BarcodeWiseWidget> createState() => _BarcodeWiseWidgetState();
@@ -27,11 +26,11 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
   List<Map<String, dynamic>> _barcodeResults = [];
 
   Map<String, bool> _filters = {
-  'WSP': true,
-  'Sizes': true,
-  'Shades': true,
-  'StyleCode': true,
-};
+    'WSP': true,
+    'Sizes': true,
+    'Shades': true,
+    'StyleCode': true,
+  };
 
   @override
   void dispose() {
@@ -40,45 +39,45 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
   }
 
   void _showFilterPopup(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text('Select Fields to Show'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: _filters.keys.map((key) {
-            return CheckboxListTile(
-              title: Text(key),
-              value: _filters[key],
-              onChanged: (bool? value) {
-                setState(() {
-                  _filters[key] = value ?? true;
-                });
-                Navigator.pop(context);
-                _showFilterPopup(context); // Reopen dialog to show updated state
-              },
-            );
-          }).toList(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Done'),
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Select Fields to Show'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children:
+                _filters.keys.map((key) {
+                  return CheckboxListTile(
+                    title: Text(key),
+                    value: _filters[key],
+                    onChanged: (bool? value) {
+                      setState(() {
+                        _filters[key] = value ?? true;
+                      });
+                      Navigator.pop(context);
+                      _showFilterPopup(
+                        context,
+                      ); // Reopen dialog to show updated state
+                    },
+                  );
+                }).toList(),
           ),
-        ],
-      );
-    },
-  );
-}
-
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Done'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Future<void> _scanBarcode() async {
     final barcode = await Navigator.push<String>(
       context,
-      MaterialPageRoute(
-        builder: (context) => BarcodeScannerScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => BarcodeScannerScreen()),
     );
 
     if (barcode != null && barcode.isNotEmpty) {
@@ -88,34 +87,36 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
     }
   }
 
-  Future<void> _searchBarcode() async {
-    final barcode = _barcodeController.text.trim();
-    if (barcode.isEmpty) return;
+Future<void> _searchBarcode() async {
+  final barcode = _barcodeController.text.trim();
+  if (barcode.isEmpty) return;
 
-    try {
-      final result = await ApiService.getBarcodeDetails(barcode);
-      debugPrint("Barcode Result: $result");
+  FocusScope.of(context).unfocus(); // 👈 This removes the cursor
 
-      if (result is List && result.isNotEmpty) {
-        setState(() {
-          _barcodeResults = List<Map<String, dynamic>>.from(result);
-        });
-        widget.onFilterPressed(barcode);
-      } else {
-        setState(() {
-          _barcodeResults = [];
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No data found for this barcode')),
-        );
-      }
-    } catch (e) {
-      debugPrint("Error: $e");
+  try {
+    final result = await ApiService.getBarcodeDetails(barcode);
+    debugPrint("Barcode Result: $result");
+
+    if (result is List && result.isNotEmpty) {
+      setState(() {
+        _barcodeResults = List<Map<String, dynamic>>.from(result);
+      });
+      widget.onFilterPressed(barcode);
+    } else {
+      setState(() {
+        _barcodeResults = [];
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to fetch barcode details')),
+        const SnackBar(content: Text('No data found for this barcode')),
       );
     }
+  } catch (e) {
+    debugPrint("Error: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Failed to fetch barcode details')),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -170,23 +171,21 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
             ),
           ),
           onPressed: _searchBarcode,
-          child: const Text(
-            "Search",
-            style: TextStyle(color: Colors.white),
-          ),
+          child: const Text("Search", style: TextStyle(color: Colors.white)),
         ),
         const SizedBox(height: 12),
         if (_barcodeResults.isNotEmpty)
           Column(
-            children: _barcodeResults.map((item) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: BarcodeItemCard(
-  catalogItem: item,
-  activeFilters: widget.activeFilters,
-)
-              );
-            }).toList(),
+            children:
+                _barcodeResults.map((item) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: BarcodeItemCard(
+                      catalogItem: item,
+                      activeFilters: widget.activeFilters,
+                    ),
+                  );
+                }).toList(),
           ),
       ],
     );

@@ -21,18 +21,18 @@ class CatalogItem {
     required this.wsp,
   });
 
+
   factory CatalogItem.fromJson(Map<String, dynamic> json) {
     return CatalogItem(
-      styleCode: json['styleCode'],
-      shadeName: json['shadeName'],
-      sizeName: json['sizeName'],
-      clQty: int.tryParse(json['clqty'].toString()) ?? 0,
-      mrp: double.tryParse(json['mrp'].toString()) ?? 0,
-      wsp: double.tryParse(json['wsp'].toString()) ?? 0,
+      styleCode: json['styleCode']?.toString() ?? '',
+      shadeName: json['shadeName']?.toString() ?? '',
+      sizeName: json['sizeName']?.toString() ?? '',
+      clQty: int.tryParse(json['clqty']?.toString() ?? '0') ?? 0,
+      mrp: double.tryParse(json['mrp']?.toString() ?? '0') ?? 0,
+      wsp: double.tryParse(json['wsp']?.toString() ?? '0') ?? 0,
     );
   }
 }
-
 class CatalogBookingTable extends StatefulWidget {
   final String itemSubGrpKey;
   final String itemKey;
@@ -45,6 +45,7 @@ class CatalogBookingTable extends StatefulWidget {
     required this.styleKey,
   });
 
+  
   @override
   State<CatalogBookingTable> createState() => _CatalogBookingTableState();
 }

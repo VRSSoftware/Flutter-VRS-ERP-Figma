@@ -25,7 +25,8 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
   ];
 
   int _currentIndex = 0;
-  final CarouselSliderController _carouselController = CarouselSliderController();
+  final CarouselSliderController _carouselController =
+      CarouselSliderController();
 
   String? _selectedCategoryKey = '-1';
   String? _selectedCategoryName = 'All';
@@ -41,11 +42,11 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
 
   Set<String> _activeFilters = {'mrp', 'wsp', 'shades', 'stylecode'};
 
-void _updateFilters(Set<String> newFilters) {
-  setState(() {
-    _activeFilters = newFilters;
-  });
-}
+  void _updateFilters(Set<String> newFilters) {
+    setState(() {
+      _activeFilters = newFilters;
+    });
+  }
 
   @override
   void initState() {
@@ -81,54 +82,59 @@ void _updateFilters(Set<String> newFilters) {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       drawer: DrawerScreen(),
-appBar: AppBar(
-  title: const Text(
-    'Order Booking',
-    style: TextStyle(color: Colors.white),
-  ),
-  backgroundColor: AppColors.primaryColor,
-  elevation: 1,
-  leading: Builder(
-    builder: (context) => IconButton(
-      icon: const Icon(Icons.menu, color: Colors.white),
-      onPressed: () => Scaffold.of(context).openDrawer(),
-    ),
-  ),
-  automaticallyImplyLeading: false,
-  actions: [
-    IconButton(
-  icon: const Icon(Icons.filter_list, color: Colors.white),
-  onPressed: () async {
-    final newFilters = await showDialog<Set<String>>(
-      context: context,
-      builder: (context) => FilterDialog(initialFilters: _activeFilters),
-    );
-    
-    if (newFilters != null) {
-      _updateFilters(newFilters);
-    }
-  },
-),
-    // Three-dot menu icon
-    Builder(
-      builder: (context) => IconButton(
-        icon: const Icon(Icons.more_vert, color: Colors.white),
-        onPressed: () async {
-          final RenderBox button =
-              context.findRenderObject() as RenderBox;
-          final Offset position = button.localToGlobal(Offset.zero);
-          showOrderMenu(context, position); // Show the additional menu when the three-dot icon is pressed
-        },
+      appBar: AppBar(
+        title: const Text(
+          'Order Booking',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: AppColors.primaryColor,
+        elevation: 1,
+        leading: Builder(
+          builder:
+              (context) => IconButton(
+                icon: const Icon(Icons.menu, color: Colors.white),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
+        ),
+        automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list, color: Colors.white),
+            onPressed: () async {
+              final newFilters = await showDialog<Set<String>>(
+                context: context,
+                builder:
+                    (context) => FilterDialog(initialFilters: _activeFilters),
+              );
+
+              if (newFilters != null) {
+                _updateFilters(newFilters);
+              }
+            },
+          ),
+          // Three-dot menu icon
+          Builder(
+            builder:
+                (context) => IconButton(
+                  icon: const Icon(Icons.more_vert, color: Colors.white),
+                  onPressed: () async {
+                    final RenderBox button =
+                        context.findRenderObject() as RenderBox;
+                    final Offset position = button.localToGlobal(Offset.zero);
+                    showOrderMenu(
+                      context,
+                      position,
+                    ); // Show the additional menu when the three-dot icon is pressed
+                  },
+                ),
+          ),
+        ],
       ),
-    ),
-  ],
-),
 
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -144,9 +150,10 @@ appBar: AppBar(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(
-                        width: isMobile
-                            ? double.infinity
-                            : (constraints.maxWidth / columnCount) - 24,
+                        width:
+                            isMobile
+                                ? double.infinity
+                                : (constraints.maxWidth / columnCount) - 24,
                         child: Row(
                           children: [
                             Checkbox(
@@ -167,19 +174,18 @@ appBar: AppBar(
 
                       if (showBarcodeWidget)
                         SizedBox(
-                          width: isMobile
-                              ? double.infinity
-                              : (constraints.maxWidth / columnCount) - 24,
+                          width:
+                              isMobile
+                                  ? double.infinity
+                                  : (constraints.maxWidth / columnCount) - 24,
                           child: BarcodeWiseWidget(
                             onFilterPressed: (barcode) {
                               print("Barcode: $barcode");
                               setState(() {
                                 hasFiltered = true;
-                                
                               });
-                              
                             },
-                             activeFilters: _activeFilters,
+                            activeFilters: _activeFilters,
                           ),
                         ),
 
@@ -196,49 +202,67 @@ appBar: AppBar(
                         _isLoadingCategories
                             ? Center(child: CircularProgressIndicator())
                             : Wrap(
-                                spacing: 10,
-                                runSpacing: 10,
-                                alignment: WrapAlignment.start,
-                                children: _categories.map((category) {
-                                  return Container(
-                                    width: (MediaQuery.of(context).size.width - 60) / 3,
-                                    child: OutlinedButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          _selectedCategoryKey = category.itemSubGrpKey;
-                                          _selectedCategoryName = category.itemSubGrpName;
+                              spacing: 10,
+                              runSpacing: 10,
+                              alignment: WrapAlignment.start,
+                              children:
+                                  _categories.map((category) {
+                                    return Container(
+                                      width:
+                                          (MediaQuery.of(context).size.width -
+                                              60) /
+                                          3,
+                                      child: OutlinedButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            _selectedCategoryKey =
+                                                category.itemSubGrpKey;
+                                            _selectedCategoryName =
+                                                category.itemSubGrpName;
 
-                                          if (_selectedCategoryKey == '-1') {
-                                            _items = _allItems;
-                                          } else {
-                                            _items = _allItems
-                                                .where((item) => item.itemSubGrpKey == _selectedCategoryKey)
-                                                .toList();
-                                          }
-                                        });
-                                      },
-                                      style: ButtonStyle(
-                                        backgroundColor: MaterialStateProperty.all(
-                                          _selectedCategoryKey == category.itemSubGrpKey
-                                              ? AppColors.primaryColor
-                                              : Colors.white,
+                                            if (_selectedCategoryKey == '-1') {
+                                              _items = _allItems;
+                                            } else {
+                                              _items =
+                                                  _allItems
+                                                      .where(
+                                                        (item) =>
+                                                            item.itemSubGrpKey ==
+                                                            _selectedCategoryKey,
+                                                      )
+                                                      .toList();
+                                            }
+                                          });
+                                        },
+                                        style: ButtonStyle(
+                                          backgroundColor:
+                                              MaterialStateProperty.all(
+                                                _selectedCategoryKey ==
+                                                        category.itemSubGrpKey
+                                                    ? AppColors.primaryColor
+                                                    : Colors.white,
+                                              ),
+                                          side: MaterialStateProperty.all(
+                                            BorderSide(
+                                              color: AppColors.primaryColor,
+                                              width: 2,
+                                            ),
+                                          ),
                                         ),
-                                        side: MaterialStateProperty.all(
-                                          BorderSide(color: AppColors.primaryColor, width: 2),
+                                        child: Text(
+                                          category.itemSubGrpName,
+                                          style: TextStyle(
+                                            color:
+                                                _selectedCategoryKey ==
+                                                        category.itemSubGrpKey
+                                                    ? Colors.white
+                                                    : AppColors.primaryColor,
+                                          ),
                                         ),
                                       ),
-                                      child: Text(
-                                        category.itemSubGrpName,
-                                        style: TextStyle(
-                                          color: _selectedCategoryKey == category.itemSubGrpKey
-                                              ? Colors.white
-                                              : AppColors.primaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
+                                    );
+                                  }).toList(),
+                            ),
                         SizedBox(height: 20),
                         if (_selectedCategoryKey != null) _buildCategoryItems(),
                       ],
@@ -252,7 +276,7 @@ appBar: AppBar(
           },
         ),
       ),
-     bottomNavigationBar: BottomNavigationWidget(
+      bottomNavigationBar: BottomNavigationWidget(
         currentIndex: 2, // 👈 Highlight Order icon
         onTap: (index) {
           if (index == 0) Navigator.pushNamed(context, '/home');
@@ -278,49 +302,47 @@ appBar: AppBar(
         _isLoadingItems
             ? Center(child: CircularProgressIndicator())
             : Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                alignment: WrapAlignment.start,
-                children: _items.map((item) {
-                  return SizedBox(
-                    width: buttonWidth,
-                    height: buttonHeight,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.grey.shade300),
-                        backgroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+              spacing: 10,
+              runSpacing: 10,
+              alignment: WrapAlignment.start,
+              children:
+                  _items.map((item) {
+                    return SizedBox(
+                      width: buttonWidth,
+                      height: buttonHeight,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.grey.shade300),
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        onPressed: () {
+                          print(item.itemKey);
+                          print(item.itemSubGrpKey);
+                          Navigator.pushNamed(
+                            context,
+                            '/orderpage',
+                            arguments: {
+                              'itemKey': item.itemKey,
+                              'itemSubGrpKey': item.itemSubGrpKey,
+                              'coBr': coBr,
+                              'fcYrId': fcYrId,
+                            },
+                          );
+                        },
+                        child: Text(
+                          item.itemName,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.black87, fontSize: 14),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
                       ),
-                      onPressed: () {
-                        print(item.itemKey);
-                        print(item.itemSubGrpKey);
-                        Navigator.pushNamed(
-                          context,
-                          '/catalogpage',
-                          arguments: {
-                            'itemKey': item.itemKey,
-                            'itemSubGrpKey': item.itemSubGrpKey,
-                            'coBr': coBr,
-                            'fcYrId': fcYrId,
-                          },
-                        );
-                      },
-                      child: Text(
-                        item.itemName,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.black87,
-                          fontSize: 14,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
+                    );
+                  }).toList(),
+            ),
       ],
     );
   }
