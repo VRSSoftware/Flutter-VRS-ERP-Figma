@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:vrs_erp_figma/constants/app_constants.dart';
 
-class FilterDialog extends StatefulWidget {
+
+class FilterMenuWidget extends StatefulWidget {
   final Set<String> initialFilters;
+  final void Function(Set<String>) onApply;
+  final VoidCallback onCancel;
 
-  const FilterDialog({super.key, required this.initialFilters});
+  const FilterMenuWidget({
+    super.key,
+    required this.initialFilters,
+    required this.onApply,
+    required this.onCancel,
+  });
 
   @override
-  _FilterDialogState createState() => _FilterDialogState();
+  State<FilterMenuWidget> createState() => _FilterMenuWidgetState();
 }
 
-class _FilterDialogState extends State<FilterDialog> {
+class _FilterMenuWidgetState extends State<FilterMenuWidget> {
   late Set<String> _selectedFilters;
 
   @override
@@ -18,71 +27,55 @@ class _FilterDialogState extends State<FilterDialog> {
     _selectedFilters = Set.from(widget.initialFilters);
   }
 
+  Widget _buildCheckbox(String label, String key) {
+    return CheckboxListTile(
+      title: Text(label),
+      value: _selectedFilters.contains(key),
+      onChanged: (bool? value) {
+        setState(() {
+          value ?? false
+              ? _selectedFilters.add(key)
+              : _selectedFilters.remove(key);
+        });
+      },
+      dense: true,
+      controlAffinity: ListTileControlAffinity.leading,
+      activeColor: AppColors.primaryColor,  // Using AppColors.primaryColor
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Filter Options'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CheckboxListTile(
-            title: const Text('MRP'),
-            value: _selectedFilters.contains('mrp'),
-            onChanged: (bool? value) {
-              setState(() {
-                value ?? false 
-                  ? _selectedFilters.add('mrp')
-                  : _selectedFilters.remove('mrp');
-              });
-            },
-          ),
-          CheckboxListTile(
-            title: const Text('WSP'),
-            value: _selectedFilters.contains('wsp'),
-            onChanged: (bool? value) {
-              setState(() {
-                value ?? false 
-                  ? _selectedFilters.add('wsp')
-                  : _selectedFilters.remove('wsp');
-              });
-            },
-          ),
-          CheckboxListTile(
-            title: const Text('Shades'),
-            value: _selectedFilters.contains('shades'),
-            onChanged: (bool? value) {
-              setState(() {
-                value ?? false 
-                  ? _selectedFilters.add('shades')
-                  : _selectedFilters.remove('shades');
-              });
-            },
-          ),
-          CheckboxListTile(
-            title: const Text('Style Code'),
-            value: _selectedFilters.contains('stylecode'),
-            onChanged: (bool? value) {
-              setState(() {
-                value ?? false 
-                  ? _selectedFilters.add('stylecode')
-                  : _selectedFilters.remove('stylecode');
-              });
-            },
-          ),
-        ],
+    return Card(
+      elevation: 4,
+      child: SizedBox(
+        width: 165,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildCheckbox('MRP', 'mrp'),
+            _buildCheckbox('WSP', 'wsp'),
+            _buildCheckbox('Shades', 'shades'),
+            _buildCheckbox('Style Code', 'stylecode'),
+            const Divider(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                TextButton(
+                  onPressed: widget.onCancel,
+                  child: const Text('Cancel'),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.primaryColor),  // Using AppColors.primaryColor for text color
+                ),
+                TextButton(
+                  onPressed: () => widget.onApply(_selectedFilters),
+                  child: const Text('Apply'),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.primaryColor),  // Using AppColors.primaryColor for text color
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context, _selectedFilters);
-          },
-          child: const Text('Apply'),
-        ),
-      ],
     );
   }
 }

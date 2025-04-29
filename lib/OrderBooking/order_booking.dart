@@ -16,13 +16,6 @@ class OrderBookingScreen extends StatefulWidget {
 }
 
 class _OrderBookingScreenState extends State<OrderBookingScreen> {
-  final List<String> garmentImages = [
-    'assets/garments/image_01.png',
-    'assets/garments/image_02.png',
-    'assets/garments/image_03.png',
-    'assets/garments/image_04.png',
-    'assets/garments/image_05.png',
-  ];
 
   int _currentIndex = 0;
   final CarouselSliderController _carouselController =
@@ -39,6 +32,7 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
   bool _isLoadingCategories = true;
   bool _isLoadingItems = false;
   bool hasFiltered = false;
+  
 
   Set<String> _activeFilters = {'mrp', 'wsp', 'shades', 'stylecode'};
 
@@ -87,54 +81,76 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       drawer: DrawerScreen(),
-      appBar: AppBar(
-        title: const Text(
-          'Order Booking',
-          style: TextStyle(color: Colors.white),
+appBar: AppBar(
+  title: Text(
+    showBarcodeWidget ? 'Barcode' : 'Order Booking',
+    style: const TextStyle(color: Colors.white),
+  ),
+  backgroundColor: AppColors.primaryColor,
+  elevation: 1,
+  leading: showBarcodeWidget
+      ? IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () {
+            setState(() {
+              showBarcodeWidget = false;
+            });
+          },
+        )
+      : Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
         ),
-        backgroundColor: AppColors.primaryColor,
-        elevation: 1,
-        leading: Builder(
-          builder:
-              (context) => IconButton(
-                icon: const Icon(Icons.menu, color: Colors.white),
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
-        ),
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list, color: Colors.white),
-            onPressed: () async {
-              final newFilters = await showDialog<Set<String>>(
-                context: context,
-                builder:
-                    (context) => FilterDialog(initialFilters: _activeFilters),
-              );
+  automaticallyImplyLeading: false,
+  actions: [
+    // Show filter icon only in barcode mode
+    if (showBarcodeWidget)
+      IconButton(
+        icon: const Icon(Icons.filter_list, color: Colors.white),
+        onPressed: () {
+          final overlay = Overlay.of(context);
+          final renderBox = context.findRenderObject() as RenderBox;
+          final position = renderBox.localToGlobal(Offset.zero);
 
-              if (newFilters != null) {
-                _updateFilters(newFilters);
-              }
-            },
-          ),
-          // Three-dot menu icon
-          Builder(
-            builder:
-                (context) => IconButton(
-                  icon: const Icon(Icons.more_vert, color: Colors.white),
-                  onPressed: () async {
-                    final RenderBox button =
-                        context.findRenderObject() as RenderBox;
-                    final Offset position = button.localToGlobal(Offset.zero);
-                    showOrderMenu(
-                      context,
-                      position,
-                    ); // Show the additional menu when the three-dot icon is pressed
+          late OverlayEntry entry;
+
+          entry = OverlayEntry(
+            builder: (context) => Positioned(
+              top: position.dy + kToolbarHeight,
+              right: 16,
+              child: Material(
+                color: Colors.transparent,
+                child: FilterMenuWidget(
+                  initialFilters: _activeFilters,
+                  onApply: (newFilters) {
+                    _updateFilters(newFilters);
+                    entry.remove();
                   },
+                  onCancel: () => entry.remove(),
                 ),
-          ),
-        ],
+              ),
+            ),
+          );
+
+          overlay.insert(entry);
+        },
       ),
+
+    // Always show the three-dot menu
+    Builder(
+      builder: (context) => IconButton(
+        icon: const Icon(Icons.more_vert, color: Colors.white),
+        onPressed: () {
+          final RenderBox button = context.findRenderObject() as RenderBox;
+          final Offset position = button.localToGlobal(Offset.zero);
+          showOrderMenu(context, position);
+        },
+      ),
+    ),
+  ],
+),
 
       body: Padding(
         padding: const EdgeInsets.all(16.0),

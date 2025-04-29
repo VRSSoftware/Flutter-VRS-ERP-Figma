@@ -1,7 +1,4 @@
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/widget/booknowwidget.dart';
 
@@ -33,63 +30,79 @@ class BarcodeItemCard extends StatelessWidget {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 3,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Image Section
           ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-            child: imageUrl.isNotEmpty
-                ? Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    height: 150,
-                    width: double.infinity,
-                    errorBuilder: (context, error, stackTrace) => 
-                        _buildImagePlaceholder(),
-                  )
-                : _buildImagePlaceholder(),
-          ),
-
-          // Product Details
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(brandName, style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                )),
-                const SizedBox(height: 4),
-                Text(shadeName, style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 14,
-                )),
-                const SizedBox(height: 8),
-                _buildDynamicDetails(),
-              ],
+            borderRadius: const BorderRadius.horizontal(
+              left: Radius.circular(12),
+            ),
+            child: SizedBox(
+              width: 120,
+              height: 150,
+              child: imageUrl.isNotEmpty
+                  ? Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => 
+                          _buildImagePlaceholder(),
+                    )
+                  : _buildImagePlaceholder(),
             ),
           ),
 
-          // Book Now Button
-          Padding(
-            padding: const EdgeInsets.all(12).copyWith(top: 0),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              onPressed: () => _showBookingDialog(context),
-              child: const Text(
-                'Book Now',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+          // Details and Button Section
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        brandName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        shadeName,
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildDynamicDetails(),
+                    ],
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: () => _showBookingDialog(context),
+                      child: const Text(
+                        'Book Now',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -99,11 +112,10 @@ class BarcodeItemCard extends StatelessWidget {
   }
 
   Widget _buildImagePlaceholder() {
-    return SizedBox(
-      height: 150,
-      child: ColoredBox(
-        color: Colors.grey.shade200,
-        child: const Icon(Icons.image_not_supported, size: 40),
+    return ColoredBox(
+      color: Colors.grey.shade200,
+      child: const Center(
+        child: Icon(Icons.image_not_supported, size: 40),
       ),
     );
   }
