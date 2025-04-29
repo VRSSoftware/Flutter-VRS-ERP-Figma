@@ -19,6 +19,7 @@ class _FilterPageState extends State<FilterPage> {
 
   List<Shade> selectedShades = [];
   List<Sizes> selectedSizes = [];
+  List<Style> selectedStyles = [];
   //List<String> selectedStyleCodes = [];
   List<String> selectedStyleKeys = [];
 
@@ -43,7 +44,13 @@ class _FilterPageState extends State<FilterPage> {
     if (args != null) {
       styles = args['styles'] is List<Style> ? args['styles'] : [];
       shades = args['shades'] is List<Shade> ? args['shades'] : [];
+      selectedShades =
+          args['selectedShades'] is List<Shade> ? args['selectedShades'] : [];
       sizes = args['sizes'] is List<Sizes> ? args['sizes'] : [];
+      selectedSizes =
+          args['selectedSizes'] is List<Sizes> ? args['selectedSizes'] : [];
+      fromMRPController.text = args['fromMRP'] is String ? args['fromMRP'] : "";
+      toMRPController.text = args['toMRP'] is String ? args['toMRP'] : "";
     }
   }
 
@@ -204,32 +211,33 @@ class _FilterPageState extends State<FilterPage> {
                     //     }
                     //   },
                     // ),
-                     DropdownSearch<String>.multiSelection(
-                    items: styles.map((style) => style.styleKey).toList(),
-                    selectedItems: selectedStyleKeys,
-                    onChanged: (selectedItems) {
-                      setState(() {
-                        selectedStyleKeys = List.from(selectedItems ?? []);
-                      });
-                    },
-                    popupProps: PopupPropsMultiSelection.menu(
-                      showSearchBox: true,
-                      searchFieldProps: TextFieldProps(
-                        decoration: InputDecoration(
-                          hintText: 'Search and select styles',
-                          border: OutlineInputBorder(),
+                    DropdownSearch<Style>.multiSelection(
+                      items: styles,
+                      selectedItems: selectedStyles,
+                      onChanged: (selectedItems) {
+                        selectedStyles.clear();
+                        selectedStyles.addAll(selectedItems ?? []);
+                      },
+                      popupProps: PopupPropsMultiSelection.menu(
+                        showSearchBox: true,
+                        searchFieldProps: TextFieldProps(
+                          decoration: InputDecoration(
+                            hintText: 'Search and select styles',
+                            border: OutlineInputBorder(),
+                          ),
                         ),
                       ),
+                      itemAsString: (Style s) => s.styleCode,
+                      compareFn: (a, b) => a.styleKey == b.styleKey,
+                      dropdownBuilder:
+                          (context, selectedItems) => Text(
+                            selectedItems.isEmpty
+                                ? 'Select styles'
+                                : selectedItems
+                                    .map((e) => e.styleCode)
+                                    .join(', '),
+                          ),
                     ),
-                    itemAsString: (String styleKey) => styleKey,
-                    dropdownBuilder: (context, selectedItems) {
-                      if (selectedItems == null || selectedItems.isEmpty) {
-                        return Text('Select Styles');
-                      } else {
-                        return Text(selectedItems.join(', '));
-                      }
-                    },
-                  ),
                   ],
                 ),
                 SizedBox(height: 20),
@@ -536,7 +544,7 @@ class _FilterPageState extends State<FilterPage> {
                 onPressed: () {
                   // Collect all selected values and return to previous screen
                   Map<String, dynamic> selectedFilters = {
-                    'styles': selectedStyleKeys,
+                    'styles': selectedStyles,
                     'shades': selectedShades,
                     'sizes': selectedSizes,
                     'fromMRP': fromMRPController.text,

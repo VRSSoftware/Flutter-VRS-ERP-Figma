@@ -26,7 +26,7 @@ class CatalogPage extends StatefulWidget {
 class _CatalogPageState extends State<CatalogPage> {
   String filterOption = 'New Arrival';
   int viewOption = 0;
-  List<String> selectedStyles = [];
+  List<Style> selectedStyles = [];
   List<Shade> selectedShades = [];
   List<Sizes> selectedSize = [];
   List<Catalog> catalogItems = [];
@@ -78,7 +78,7 @@ class _CatalogPageState extends State<CatalogPage> {
         itemSubGrpKey: itemSubGrpKey!,
         itemKey: itemKey!,
         cobr: coBr!,
-      //  styleKey: selectedStyles.length==0 ? null : selectedStyles[0],
+       styleKey: selectedStyles.length==0 ? null : selectedStyles[0].styleKey,
       shadeKey: selectedShades.length ==0? null : selectedShades.map((s) => s.shadeKey).join(','),
       sizeKey : selectedSize.length == 0 ? null : selectedSize.map((s) => s.itemSizeKey).join(','),
       fromMRP : fromMRP == "" ? null : fromMRP,
@@ -206,85 +206,6 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
-  Widget _buildStyleSelection(bool isLargeScreen) {
-    return Container(
-      height: isLargeScreen ? 60 : 50,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            SizedBox(width: isLargeScreen ? 24 : 8),
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: OutlinedButton(
-                onPressed: () => setState(() => selectedStyles.clear()),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(
-                    color:
-                        selectedStyles.isEmpty
-                            ? AppColors.primaryColor
-                            : Colors.grey,
-                  ),
-                  backgroundColor: Colors.white,
-                  foregroundColor:
-                      selectedStyles.isEmpty
-                          ? AppColors.primaryColor
-                          : Colors.grey,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isLargeScreen ? 20 : 16,
-                    vertical: isLargeScreen ? 16 : 12,
-                  ),
-                ),
-                child: Text(
-                  'ALL',
-                  style: TextStyle(fontSize: isLargeScreen ? 14 : 12),
-                ),
-              ),
-            ),
-            ...styles.map((style) {
-              bool isSelected = selectedStyles.contains(style.styleCode);
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: OutlinedButton(
-                  onPressed:
-                      () => setState(() {
-                        if (isSelected) {
-                          selectedStyles.remove(style.styleCode);
-                        } else {
-                          selectedStyles.add(style.styleCode);
-                        }
-                      }),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(
-                      color: isSelected ? AppColors.primaryColor : Colors.grey,
-                    ),
-                    backgroundColor: Colors.white,
-                    foregroundColor:
-                        isSelected ? AppColors.primaryColor : Colors.grey,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isLargeScreen ? 20 : 16,
-                      vertical: isLargeScreen ? 16 : 12,
-                    ),
-                  ),
-                  child: Text(
-                    style.styleCode,
-                    style: TextStyle(fontSize: isLargeScreen ? 14 : 12),
-                  ),
-                ),
-              );
-            }).toList(),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildGridView(
     BoxConstraints constraints,
@@ -739,6 +660,10 @@ class _CatalogPageState extends State<CatalogPage> {
             'styles': styles,
             'shades': shades,
             'sizes': sizes,
+            'selectedShades' : selectedShades,
+            'selectedSizes' : selectedSize,
+            'fromMRP' : fromMRP,
+            'toMRP' : toMRP,
           },
         ),
         transitionDuration: Duration(milliseconds: 500),
