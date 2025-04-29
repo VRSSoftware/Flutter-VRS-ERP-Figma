@@ -32,118 +32,139 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
     };
   }
 
-  void _showOptionsBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return SingleChildScrollView(
-              child: Container(
-                padding: EdgeInsets.only(
-                  left: 16,
-                  right: 16,
-                  top: 16,
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Select Fields to Include',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    _buildToggleOption('Design', options['design']!, (value) {
-                      setState(() => options['design'] = value);
-                    }),
-                    _buildToggleOption('Shade', options['shade']!, (value) {
-                      setState(() => options['shade'] = value);
-                    }),
-                    _buildToggleOption('Rate', options['rate']!, (value) {
-                      setState(() => options['rate'] = value);
-                    }),
-                    _buildToggleOption('Size', options['size']!, (value) {
-                      setState(() => options['size'] = value);
-                    }),
-                    _buildToggleOption('Product', options['product']!, (value) {
-                      setState(() => options['product'] = value);
-                    }),
-                    _buildToggleOption('Remark', options['remark']!, (value) {
-                      setState(() => options['remark'] = value);
-                    }),
-                    SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text('Done'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryColor,
-                          minimumSize: Size(double.infinity, 50),
+void _showOptionsBottomSheet(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return SingleChildScrollView(
+            child: Container(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Select Fields to Include',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildToggleOption('Design', options['design']!, (value) {
+                    setState(() => options['design'] = value);
+                  }),
+                  _buildToggleOption('Shade', options['shade']!, (value) {
+                    setState(() => options['shade'] = value);
+                  }),
+                  _buildToggleOption('Rate', options['rate']!, (value) {
+                    setState(() => options['rate'] = value);
+                  }),
+                  _buildToggleOption('Size', options['size']!, (value) {
+                    setState(() => options['size'] = value);
+                  }),
+                  _buildToggleOption('Product', options['product']!, (value) {
+                    setState(() => options['product'] = value);
+                  }),
+                  _buildToggleOption('Remark', options['remark']!, (value) {
+                    setState(() => options['remark'] = value);
+                  }),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Done'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        minimumSize: const Size(double.infinity, 50),
+                      ),
                     ),
-                  ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+
+
+@override
+Widget build(BuildContext context) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    constraints: BoxConstraints(
+      maxHeight: MediaQuery.of(context).size.height * 0.7,
+    ),
+    child: SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Download Options',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.7,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Download Options',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
               ),
-            ),
-            SizedBox(height: 16),
-            _buildDownloadOption(
-              context,
-              icon: Icons.image,
-              title: 'Download as Image',
-              onTap: () {
-                Navigator.pop(context);
-                widget.onDownload('image', options);
-              },
-              onOptionsTap: () => _showOptionsBottomSheet(context),
-            ),
-            SizedBox(height: 8),
-            _buildDownloadOption(
-              context,
-              icon: Icons.picture_as_pdf,
-              title: 'Download as PDF',
-              onTap: () {
-                Navigator.pop(context);
-                widget.onDownload('pdf', options);
-              },
-              onOptionsTap: () => _showOptionsBottomSheet(context),
-            ),
-            SizedBox(height: 16),
-          ],
-        ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildDownloadOption(
+            context,
+            icon: Icons.image,
+            title: 'Download as Image',
+            onTap: () {
+              Navigator.pop(context);
+              widget.onDownload('image', options);
+            },
+            onOptionsTap: () => _showOptionsBottomSheet(context),
+          ),
+          const SizedBox(height: 8),
+          _buildDownloadOption(
+            context,
+            icon: Icons.picture_as_pdf,
+            title: 'Download as PDF',
+            onTap: () {
+              Navigator.pop(context);
+              widget.onDownload('pdf', options);
+            },
+            onOptionsTap: () => _showOptionsBottomSheet(context),
+          ),
+          const SizedBox(height: 16),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildDownloadOption(
     BuildContext context, {

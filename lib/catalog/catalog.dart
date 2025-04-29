@@ -956,74 +956,73 @@ class _CatalogPageState extends State<CatalogPage> {
     });
   }
 
-  void _showShareOptions() {
-    if (selectedItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select items to share')),
-      );
-      return;
-    }
-
-    bool includeDesign = true;
-    bool includeShade = true;
-    bool includeRate = true;
-    bool includeSize = true;
-    bool includeProduct = true;
-    bool includeRemark = true;
-
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return ShareOptionsPage(
-          onImageShare: () {
-            Navigator.pop(context);
-            _shareSelectedItems(
-              shareType: 'image',
-              includeDesign: includeDesign,
-              includeShade: includeShade,
-              includeRate: includeRate,
-              includeSize: includeSize,
-              includeProduct: includeProduct,
-              includeRemark: includeRemark,
-            );
-          },
-          onPDFShare: () {
-            Navigator.pop(context);
-            _shareSelectedItems(
-              shareType: 'pdf',
-              includeDesign: includeDesign,
-              includeShade: includeShade,
-              includeRate: includeRate,
-              includeSize: includeSize,
-              includeProduct: includeProduct,
-              includeRemark: includeRemark,
-            );
-          },
-          onWeblinkShare: () {
-            Navigator.pop(context);
-            _shareSelectedItems(shareType: 'pdf');
-          },
-          onVideoShare: () {
-            Navigator.pop(context);
-            _shareSelectedItems(shareType: 'pdf');
-          },
-          onQRCodeShare: () {
-            Navigator.pop(context);
-            _shareSelectedItems(shareType: 'pdf');
-          },
-          onToggleOptions: (design, shade, rate, size, product, remark) {
-            includeDesign = design;
-            includeShade = shade;
-            includeRate = rate;
-            includeSize = size;
-            includeProduct = product;
-            includeRemark = remark;
-          },
-        );
-      },
+void _showShareOptions() {
+  if (selectedItems.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please select items to share')),
     );
+    return;
   }
 
+  bool includeDesign = false;
+  bool includeShade = false;
+  bool includeRate = false;
+  bool includeSize = false;
+  bool includeProduct = false;
+  bool includeRemark = false;
+
+  showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) {
+      return ShareOptionsPage(
+        onImageShare: () {
+          Navigator.pop(context);
+          _shareSelectedItems(
+            shareType: 'image',
+            includeDesign: includeDesign,
+            includeShade: includeShade,
+            includeRate: includeRate,
+            includeSize: includeSize,
+            includeProduct: includeProduct,
+            includeRemark: includeRemark,
+          );
+        },
+        onPDFShare: () {
+          Navigator.pop(context);
+          _shareSelectedItems(
+            shareType: 'pdf',
+            includeDesign: includeDesign,
+            includeShade: includeShade,
+            includeRate: includeRate,
+            includeSize: includeSize,
+            includeProduct: includeProduct,
+            includeRemark: includeRemark,
+          );
+        },
+        onWeblinkShare: () {
+          Navigator.pop(context);
+          _shareSelectedItems(shareType: 'pdf');
+        },
+        onVideoShare: () {
+          Navigator.pop(context);
+          _shareSelectedItems(shareType: 'pdf');
+        },
+        onQRCodeShare: () {
+          Navigator.pop(context);
+          _shareSelectedItems(shareType: 'pdf');
+        },
+        onToggleOptions: (design, shade, rate, size, product, remark) {
+          includeDesign = design;
+          includeShade = shade;
+          includeRate = rate;
+          includeSize = size;
+          includeProduct = product;
+          includeRemark = remark;
+        },
+      );
+    },
+  );
+}
   // Add these methods to your _CatalogPageState class
   Future<void> _handleDownloadOption(
     String option, {
@@ -1169,6 +1168,7 @@ class _CatalogPageState extends State<CatalogPage> {
       );
     }
   }
+
 
 void _showDownloadOptions() {
   // No need to provide initial options - they'll default to false
