@@ -7,8 +7,8 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
+import 'package:vrs_erp_figma/catalog/download_options.dart';
 import 'package:vrs_erp_figma/catalog/filter.dart';
-import 'package:vrs_erp_figma/catalog/imagezoom.dart';
 import 'package:vrs_erp_figma/catalog/share_option_screen.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
@@ -26,9 +26,8 @@ class CatalogPage extends StatefulWidget {
 class _CatalogPageState extends State<CatalogPage> {
   String filterOption = 'New Arrival';
   int viewOption = 0;
-  List<Style> selectedStyles = [];
-  List<Shade> selectedShades = [];
-  List<Sizes> selectedSize = [];
+  List<String> selectedStyles = [];
+  List<String> selectedShades = [];
   List<Catalog> catalogItems = [];
   List<Style> styles = [];
   List<Shade> shades = [];
@@ -38,8 +37,6 @@ class _CatalogPageState extends State<CatalogPage> {
   String? coBr;
   String? fcYrId;
   List<Catalog> selectedItems = [];
-  String fromMRP = "";
-  String toMRP = "";
 
   @override
   void initState() {
@@ -77,15 +74,6 @@ class _CatalogPageState extends State<CatalogPage> {
         itemSubGrpKey: itemSubGrpKey!,
         itemKey: itemKey!,
         cobr: coBr!,
-        styleKey: selectedStyles.length == 0 ? null : selectedStyles[0].styleKey,
-        shadeKey: selectedShades.length == 0
-            ? null
-            : selectedShades.map((s) => s.shadeKey).join(','),
-        sizeKey: selectedSize.length == 0
-            ? null
-            : selectedSize.map((s) => s.itemSizeKey).join(','),
-        fromMRP: fromMRP == "" ? null : fromMRP,
-        toMRP: toMRP == "" ? null : toMRP,
       );
       setState(() {
         catalogItems = items;
@@ -147,28 +135,20 @@ class _CatalogPageState extends State<CatalogPage> {
           icon: Icon(
             Icons.arrow_back_ios,
             color: Colors.white,
-          ),
+          ), // <-- Back icon
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pop(context); // <-- Go back to previous screen
           },
         ),
+        // In your AppBar actions (replace the existing actions code)
         actions: [
-          if (selectedItems.isNotEmpty)
-            PopupMenuButton<String>(
+          if (selectedItems.isNotEmpty) // Only show when items are selected
+            IconButton(
               icon: Icon(Icons.download, color: Colors.white),
-              onSelected: (value) => _handleDownloadOption(value),
-              itemBuilder: (BuildContext context) => [
-                const PopupMenuItem<String>(
-                  value: 'image',
-                  child: Text('Download as Image'),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'pdf',
-                  child: Text('Download as PDF'),
-                ),
-              ],
+              onPressed:
+                  _showDownloadOptions, // New method to show download options
             ),
-          if (selectedItems.isNotEmpty)
+          if (selectedItems.isNotEmpty) // Only show when items are selected
             IconButton(
               icon: Icon(Icons.share, color: Colors.white),
               onPressed: _showShareOptions,
@@ -178,8 +158,8 @@ class _CatalogPageState extends State<CatalogPage> {
               viewOption == 0
                   ? Icons.grid_on
                   : viewOption == 1
-                      ? Icons.view_list
-                      : Icons.expand,
+                  ? Icons.view_list
+                  : Icons.expand,
               color: Colors.white,
             ),
             onPressed: () {
@@ -192,32 +172,114 @@ class _CatalogPageState extends State<CatalogPage> {
       ),
       body: Column(
         children: [
+          //     _buildStyleSelection(isLargeScreen),
           Expanded(
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: isLargeScreen ? 16.0 : 8.0,
                 vertical: 8.0,
               ),
-              child: catalogItems.isEmpty
-                  ? Center(child: CircularProgressIndicator())
-                  : LayoutBuilder(
-                      builder: (context, constraints) {
-                        if (viewOption == 0) {
-                          return _buildGridView(
-                            constraints,
-                            isLargeScreen,
-                            isPortrait,
-                          );
-                        } else if (viewOption == 1) {
-                          return _buildListView(constraints, isLargeScreen);
-                        }
-                        return _buildExpandedView(isLargeScreen);
-                      },
-                    ),
+              child:
+                  catalogItems.isEmpty
+                      ? Center(child: CircularProgressIndicator())
+                      : LayoutBuilder(
+                        builder: (context, constraints) {
+                          if (viewOption == 0) {
+                            return _buildGridView(
+                              constraints,
+                              isLargeScreen,
+                              isPortrait,
+                            );
+                          } else if (viewOption == 1) {
+                            return _buildListView(constraints, isLargeScreen);
+                          }
+                          return _buildExpandedView(isLargeScreen);
+                        },
+                      ),
             ),
           ),
           _buildBottomButtons(isLargeScreen),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStyleSelection(bool isLargeScreen) {
+    return Container(
+      height: isLargeScreen ? 60 : 50,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            SizedBox(width: isLargeScreen ? 24 : 8),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: OutlinedButton(
+                onPressed: () => setState(() => selectedStyles.clear()),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(
+                    color:
+                        selectedStyles.isEmpty
+                            ? AppColors.primaryColor
+                            : Colors.grey,
+                  ),
+                  backgroundColor: Colors.white,
+                  foregroundColor:
+                      selectedStyles.isEmpty
+                          ? AppColors.primaryColor
+                          : Colors.grey,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isLargeScreen ? 20 : 16,
+                    vertical: isLargeScreen ? 16 : 12,
+                  ),
+                ),
+                child: Text(
+                  'ALL',
+                  style: TextStyle(fontSize: isLargeScreen ? 14 : 12),
+                ),
+              ),
+            ),
+            ...styles.map((style) {
+              bool isSelected = selectedStyles.contains(style.styleCode);
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: OutlinedButton(
+                  onPressed:
+                      () => setState(() {
+                        if (isSelected) {
+                          selectedStyles.remove(style.styleCode);
+                        } else {
+                          selectedStyles.add(style.styleCode);
+                        }
+                      }),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(
+                      color: isSelected ? AppColors.primaryColor : Colors.grey,
+                    ),
+                    backgroundColor: Colors.white,
+                    foregroundColor:
+                        isSelected ? AppColors.primaryColor : Colors.grey,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isLargeScreen ? 20 : 16,
+                      vertical: isLargeScreen ? 16 : 12,
+                    ),
+                  ),
+                  child: Text(
+                    style.styleCode,
+                    style: TextStyle(fontSize: isLargeScreen ? 14 : 12),
+                  ),
+                ),
+              );
+            }).toList(),
+          ],
+        ),
       ),
     );
   }
@@ -228,9 +290,10 @@ class _CatalogPageState extends State<CatalogPage> {
     bool isPortrait,
   ) {
     final filteredItems = _getFilteredItems();
-    final crossAxisCount = isPortrait
-        ? (isLargeScreen ? 3 : 2)
-        : (constraints.maxWidth ~/ 300).clamp(3, 4);
+    final crossAxisCount =
+        isPortrait
+            ? (isLargeScreen ? 3 : 2)
+            : (constraints.maxWidth ~/ 300).clamp(3, 4);
 
     return GridView.builder(
       padding: const EdgeInsets.all(8.0),
@@ -243,14 +306,9 @@ class _CatalogPageState extends State<CatalogPage> {
         mainAxisSpacing: isLargeScreen ? 1.0 : 8.0,
         childAspectRatio: _getChildAspectRatio(constraints, isLargeScreen),
       ),
-      itemBuilder: (context, index) {
-        final item = filteredItems[index];
-
-        return GestureDetector(
-          onDoubleTap: () => _openImageZoom(context, item),
-          child: _buildItemCard(item, isLargeScreen),
-        );
-      },
+      itemBuilder:
+          (context, index) =>
+              _buildItemCard(filteredItems[index], isLargeScreen),
     );
   }
 
@@ -271,7 +329,6 @@ class _CatalogPageState extends State<CatalogPage> {
         return GestureDetector(
           onTap: () => _toggleItemSelection(item),
           onLongPress: () => _enableMultiSelect(item),
-          onDoubleTap: () => _openImageZoom(context, item),
           child: Container(
             margin: EdgeInsets.symmetric(vertical: 8),
             child: Card(
@@ -375,7 +432,6 @@ class _CatalogPageState extends State<CatalogPage> {
         return GestureDetector(
           onTap: () => _toggleItemSelection(item),
           onLongPress: () => _enableMultiSelect(item),
-          onDoubleTap: () => _openImageZoom(context, item),
           child: Card(
             elevation: isSelected ? 8 : 4,
             margin: EdgeInsets.symmetric(
@@ -467,22 +523,12 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
-  void _openImageZoom(BuildContext context, Catalog item) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ImageZoomScreen(imageUrl: _getImageUrl(item)),
-      ),
-    );
-  }
-
   Widget _buildItemCard(Catalog item, bool isLargeScreen) {
     bool isSelected = selectedItems.contains(item);
 
     return GestureDetector(
       onTap: () => _toggleItemSelection(item),
       onLongPress: () => _enableMultiSelect(item),
-      onDoubleTap: () => _openImageZoom(context, item),
       child: Card(
         elevation: isSelected ? 8 : 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -580,14 +626,15 @@ class _CatalogPageState extends State<CatalogPage> {
           vertical: 12,
         ),
         color: Colors.white,
-        child: isLargeScreen
-            ? Row(children: _buildButtonChildren(isLargeScreen))
-            : Wrap(
-                alignment: WrapAlignment.spaceEvenly,
-                spacing: 8,
-                runSpacing: 8,
-                children: _buildButtonChildren(isLargeScreen),
-              ),
+        child:
+            isLargeScreen
+                ? Row(children: _buildButtonChildren(isLargeScreen))
+                : Wrap(
+                  alignment: WrapAlignment.spaceEvenly,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _buildButtonChildren(isLargeScreen),
+                ),
       ),
     );
   }
@@ -610,7 +657,7 @@ class _CatalogPageState extends State<CatalogPage> {
                 padding: EdgeInsets.symmetric(
                   horizontal: isLargeScreen ? 24 : 16,
                   vertical: 12,
-                ),
+                ), // Reduced vertical padding
               ),
               icon: Icon(Icons.filter_list, size: isLargeScreen ? 24 : 20),
               label: Text(
@@ -624,13 +671,42 @@ class _CatalogPageState extends State<CatalogPage> {
     ];
   }
 
+  Widget _buildFilterButton(String label, bool isLargeScreen) {
+    return OutlinedButton(
+      onPressed: () => setState(() => filterOption = label),
+      style: OutlinedButton.styleFrom(
+        side: BorderSide(
+          color: filterOption == label ? AppColors.primaryColor : Colors.grey,
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor:
+            filterOption == label ? AppColors.primaryColor : Colors.grey,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        padding: EdgeInsets.symmetric(
+          vertical: isLargeScreen ? 16 : 12,
+          horizontal: isLargeScreen ? 24 : 16,
+        ),
+      ),
+      child: Text(label, style: TextStyle(fontSize: isLargeScreen ? 16 : 14)),
+    );
+  }
+
   List<Catalog> _getFilteredItems() {
     var filteredItems = catalogItems;
 
     if (selectedStyles.isNotEmpty) {
-      filteredItems = filteredItems
-          .where((item) => selectedStyles.contains(item.styleCode))
-          .toList();
+      filteredItems =
+          filteredItems
+              .where((item) => selectedStyles.contains(item.styleCode))
+              .toList();
+    }
+
+    if (selectedShades.isNotEmpty) {
+      filteredItems =
+          filteredItems.where((item) {
+            final shades = item.shadeName?.split(',') ?? [];
+            return shades.any((shade) => selectedShades.contains(shade));
+          }).toList();
     }
 
     return filteredItems;
@@ -644,24 +720,21 @@ class _CatalogPageState extends State<CatalogPage> {
     return '${AppConstants.BASE_URL}/images/$imageName';
   }
 
-  void _showFilterDialog() async {
-    final result = await Navigator.push(
+  void _showFilterDialog() {
+    Navigator.push(
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) => FilterPage(),
         settings: RouteSettings(
+          // Add this block
           arguments: {
             'itemKey': itemKey,
             'itemSubGrpKey': itemSubGrpKey,
             'coBr': coBr,
             'fcYrId': fcYrId,
             'styles': styles,
-            'shades': shades,
+            'shades': shades, // Add shades list
             'sizes': sizes,
-            'selectedShades': selectedShades,
-            'selectedSizes': selectedSize,
-            'fromMRP': fromMRP,
-            'toMRP': toMRP,
           },
         ),
         transitionDuration: Duration(milliseconds: 500),
@@ -680,20 +753,6 @@ class _CatalogPageState extends State<CatalogPage> {
         },
       ),
     );
-
-    if (result != null) {
-      Map<String, dynamic> selectedFilters = result;
-
-      setState(() {
-        selectedStyles = selectedFilters['styles'];
-        selectedSize = selectedFilters['sizes'];
-        selectedShades = selectedFilters['shades'];
-        fromMRP = selectedFilters['fromMRP'];
-        toMRP = selectedFilters['toMRP'];
-      });
-
-      _fetchCatalogItems();
-    }
   }
 
   Future<void> _shareSelectedItems({
@@ -740,6 +799,7 @@ class _CatalogPageState extends State<CatalogPage> {
               );
               await imageFile.writeAsBytes(response.bodyBytes);
 
+              // Build text based on selected options in the new format
               String overlayText = '';
               if (includeProduct) overlayText += 'Product: ${item.itemName}\n';
               if (includeDesign) overlayText += 'Design: ${item.styleCode}\n';
@@ -768,7 +828,8 @@ class _CatalogPageState extends State<CatalogPage> {
             final image = pw.MemoryImage(File(path).readAsBytesSync());
             pdf.addPage(
               pw.Page(
-                build: (pw.Context context) => pw.Center(child: pw.Image(image)),
+                build:
+                    (pw.Context context) => pw.Center(child: pw.Image(image)),
               ),
             );
           }
@@ -800,14 +861,17 @@ class _CatalogPageState extends State<CatalogPage> {
   Future<File> _overlayTextOnImage(File imageFile, String fullText) async {
     final image = await decodeImageFromList(imageFile.readAsBytesSync());
 
+    // Split the text into multiple lines based on the image width
     List<String> selectedTexts = [];
-    selectedTexts.add("Product Details:");
-    selectedTexts.add("${fullText}");
+    //selectedTexts.add("Product Details:");
+    selectedTexts.add("${fullText}"); // Or pass dynamic text pieces here
 
+    // Calculate total height needed (image height + text area height)
     double textAreaHeight = 0.0;
     const padding = 10.0;
-    const lineHeight = 30.0;
+    const lineHeight = 30.0; // Adjust for line height if needed
 
+    // Create a list of TextPainters to calculate height required by the text
     List<TextPainter> textPainters = [];
     const textStyle = TextStyle(
       color: Colors.white,
@@ -837,14 +901,18 @@ class _CatalogPageState extends State<CatalogPage> {
       ),
     );
 
+    // 1. Draw the original image at the top
     canvas.drawImage(image, Offset(0, 0), Paint());
 
+    // Set text style
     final textBackgroundPaint = Paint()..color = Colors.black.withValues();
 
+    // Calculate positions for text - starting below the image
     double yPos = image.height + padding;
     for (int i = 0; i < textPainters.length; i++) {
       final textPainter = textPainters[i];
 
+      // Draw background box
       final rect = Rect.fromLTWH(
         padding,
         yPos,
@@ -853,8 +921,9 @@ class _CatalogPageState extends State<CatalogPage> {
       );
       canvas.drawRect(rect, textBackgroundPaint);
 
+      // Draw the text
       textPainter.paint(canvas, Offset(padding + 5, yPos + 5));
-      yPos += textPainter.height + lineHeight;
+      yPos += textPainter.height + lineHeight; // Move to next line position
     }
 
     final picture = pictureRecorder.endRecording();
@@ -955,7 +1024,16 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
-  Future<void> _handleDownloadOption(String option) async {
+  // Add these methods to your _CatalogPageState class
+  Future<void> _handleDownloadOption(
+    String option, {
+    bool includeDesign = true,
+    bool includeShade = true,
+    bool includeRate = true,
+    bool includeSize = true,
+    bool includeProduct = true,
+    bool includeRemark = true,
+  }) async {
     if (selectedItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select items to download')),
@@ -1001,20 +1079,29 @@ class _CatalogPageState extends State<CatalogPage> {
               final response = await http.get(Uri.parse(imageUrl));
               if (response.statusCode == 200) {
                 final image = pw.MemoryImage(response.bodyBytes);
+
+                // Build text based on selected options
+                String detailsText = '';
+                if (includeProduct)
+                  detailsText += 'Product: ${item.itemName}\n';
+                if (includeDesign) detailsText += 'Design: ${item.styleCode}\n';
+                if (includeShade) detailsText += 'Shade: ${item.shadeName}\n';
+                if (includeRate) detailsText += 'MRP: ₹${item.mrp}\n';
+                if (includeRate) detailsText += 'WSP: ₹${item.wsp}\n';
+                if (includeSize) detailsText += 'Size: ${item.sizeName}\n';
+                if (includeRemark && item.remark.isNotEmpty)
+                  detailsText += 'Remark: ${item.remark}\n';
+
                 pdf.addPage(
                   pw.Page(
-                    build: (pw.Context context) => pw.Column(
-                      children: [
-                        pw.Image(image),
-                        pw.SizedBox(height: 10),
-                        pw.Text('Style: ${item.styleCode}'),
-                        pw.Text('Product: ${item.itemName}'),
-                        pw.Text('MRP: ₹${item.mrp}'),
-                        pw.Text('WSP: ₹${item.wsp}'),
-                        pw.Text('Shade: ${item.shadeName}'),
-                        pw.Text('Size: ${item.sizeName}'),
-                      ],
-                    ),
+                    build:
+                        (pw.Context context) => pw.Column(
+                          children: [
+                            pw.Image(image),
+                            pw.SizedBox(height: 10),
+                            pw.Text(detailsText),
+                          ],
+                        ),
                   ),
                 );
               }
@@ -1038,10 +1125,28 @@ class _CatalogPageState extends State<CatalogPage> {
             if (imageUrl.isNotEmpty && imageUrl.startsWith('http')) {
               final response = await http.get(Uri.parse(imageUrl));
               if (response.statusCode == 200) {
-                final imageFile = File(
+                // Build text based on selected options
+                String detailsText = '';
+                if (includeProduct)
+                  detailsText += 'Product: ${item.itemName}\n';
+                if (includeDesign) detailsText += 'Design: ${item.styleCode}\n';
+                if (includeShade) detailsText += 'Shade: ${item.shadeName}\n';
+                if (includeRate) detailsText += 'MRP: ₹${item.mrp}\n';
+                if (includeRate) detailsText += 'WSP: ₹${item.wsp}\n';
+                if (includeSize) detailsText += 'Size: ${item.sizeName}\n';
+                if (includeRemark && item.remark.isNotEmpty)
+                  detailsText += 'Remark: ${item.remark}\n';
+
+                final imageFile = await _overlayTextOnImage(
+                  File('${downloadsDir?.path}/temp_image.jpg')
+                    ..writeAsBytesSync(response.bodyBytes),
+                  detailsText,
+                );
+
+                final finalFile = File(
                   '${downloadsDir?.path}/catalog_${item.styleCode}_${count}_$timestamp.jpg',
                 );
-                await imageFile.writeAsBytes(response.bodyBytes);
+                await imageFile.copy(finalFile.path);
                 count++;
               }
             }
@@ -1052,7 +1157,10 @@ class _CatalogPageState extends State<CatalogPage> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('${selectedItems.length} images downloaded to Downloads folder')),
+            content: Text(
+              '${selectedItems.length} images downloaded to Downloads folder',
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -1060,5 +1168,81 @@ class _CatalogPageState extends State<CatalogPage> {
         SnackBar(content: Text('Download failed: ${e.toString()}')),
       );
     }
+  }
+
+void _showDownloadOptions() {
+  // No need to provide initial options - they'll default to false
+  showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) {
+      return DownloadOptionsSheet(
+        onDownload: (type, selectedOptions) {
+          _handleDownloadOption(
+            type,
+            includeDesign: selectedOptions['design'] ?? false,
+            includeShade: selectedOptions['shade'] ?? false,
+            includeRate: selectedOptions['rate'] ?? false,
+            includeSize: selectedOptions['size'] ?? false,
+            includeProduct: selectedOptions['product'] ?? false,
+            includeRemark: selectedOptions['remark'] ?? false,
+          );
+        },
+      );
+    },
+  );
+}
+
+
+  Widget _buildDownloadOptionWithMenu(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return Row(
+      children: [
+        Expanded(
+          child: InkWell(
+            onTap: onTap,
+            child: Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(icon, color: AppColors.primaryColor),
+                  SizedBox(width: 12),
+                  Text(title),
+                ],
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: 8),
+        PopupMenuButton<String>(
+          icon: Icon(Icons.more_vert, size: 20),
+          itemBuilder:
+              (BuildContext context) => [
+                PopupMenuItem<String>(
+                  value: 'info',
+                  child: Text('Info about this option'),
+                ),
+              ],
+          onSelected: (value) {
+            if (value == 'info') {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '$title downloads selected items in this format',
+                  ),
+                ),
+              );
+            }
+          },
+        ),
+      ],
+    );
   }
 }
