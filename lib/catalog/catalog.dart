@@ -38,9 +38,8 @@ class _CatalogPageState extends State<CatalogPage> {
   String? coBr;
   String? fcYrId;
   List<Catalog> selectedItems = [];
-  String fromMRP="";
+  String fromMRP = "";
   String toMRP = "";
-
 
   @override
   void initState() {
@@ -78,11 +77,15 @@ class _CatalogPageState extends State<CatalogPage> {
         itemSubGrpKey: itemSubGrpKey!,
         itemKey: itemKey!,
         cobr: coBr!,
-       styleKey: selectedStyles.length==0 ? null : selectedStyles[0].styleKey,
-      shadeKey: selectedShades.length ==0? null : selectedShades.map((s) => s.shadeKey).join(','),
-      sizeKey : selectedSize.length == 0 ? null : selectedSize.map((s) => s.itemSizeKey).join(','),
-      fromMRP : fromMRP == "" ? null : fromMRP,
-      toMRP : toMRP == ""? null : toMRP
+        styleKey: selectedStyles.length == 0 ? null : selectedStyles[0].styleKey,
+        shadeKey: selectedShades.length == 0
+            ? null
+            : selectedShades.map((s) => s.shadeKey).join(','),
+        sizeKey: selectedSize.length == 0
+            ? null
+            : selectedSize.map((s) => s.itemSizeKey).join(','),
+        fromMRP: fromMRP == "" ? null : fromMRP,
+        toMRP: toMRP == "" ? null : toMRP,
       );
       setState(() {
         catalogItems = items;
@@ -144,13 +147,28 @@ class _CatalogPageState extends State<CatalogPage> {
           icon: Icon(
             Icons.arrow_back_ios,
             color: Colors.white,
-          ), // <-- Back icon
+          ),
           onPressed: () {
-            Navigator.pop(context); // <-- Go back to previous screen
+            Navigator.pop(context);
           },
         ),
         actions: [
-          if (selectedItems.isNotEmpty) // Only show when items are selected
+          if (selectedItems.isNotEmpty)
+            PopupMenuButton<String>(
+              icon: Icon(Icons.download, color: Colors.white),
+              onSelected: (value) => _handleDownloadOption(value),
+              itemBuilder: (BuildContext context) => [
+                const PopupMenuItem<String>(
+                  value: 'image',
+                  child: Text('Download as Image'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'pdf',
+                  child: Text('Download as PDF'),
+                ),
+              ],
+            ),
+          if (selectedItems.isNotEmpty)
             IconButton(
               icon: Icon(Icons.share, color: Colors.white),
               onPressed: _showShareOptions,
@@ -160,8 +178,8 @@ class _CatalogPageState extends State<CatalogPage> {
               viewOption == 0
                   ? Icons.grid_on
                   : viewOption == 1
-                  ? Icons.view_list
-                  : Icons.expand,
+                      ? Icons.view_list
+                      : Icons.expand,
               color: Colors.white,
             ),
             onPressed: () {
@@ -174,30 +192,28 @@ class _CatalogPageState extends State<CatalogPage> {
       ),
       body: Column(
         children: [
-          //     _buildStyleSelection(isLargeScreen),
           Expanded(
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: isLargeScreen ? 16.0 : 8.0,
                 vertical: 8.0,
               ),
-              child:
-                  catalogItems.isEmpty
-                      ? Center(child: CircularProgressIndicator())
-                      : LayoutBuilder(
-                        builder: (context, constraints) {
-                          if (viewOption == 0) {
-                            return _buildGridView(
-                              constraints,
-                              isLargeScreen,
-                              isPortrait,
-                            );
-                          } else if (viewOption == 1) {
-                            return _buildListView(constraints, isLargeScreen);
-                          }
-                          return _buildExpandedView(isLargeScreen);
-                        },
-                      ),
+              child: catalogItems.isEmpty
+                  ? Center(child: CircularProgressIndicator())
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (viewOption == 0) {
+                          return _buildGridView(
+                            constraints,
+                            isLargeScreen,
+                            isPortrait,
+                          );
+                        } else if (viewOption == 1) {
+                          return _buildListView(constraints, isLargeScreen);
+                        }
+                        return _buildExpandedView(isLargeScreen);
+                      },
+                    ),
             ),
           ),
           _buildBottomButtons(isLargeScreen),
@@ -206,17 +222,15 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
-
   Widget _buildGridView(
     BoxConstraints constraints,
     bool isLargeScreen,
     bool isPortrait,
   ) {
     final filteredItems = _getFilteredItems();
-    final crossAxisCount =
-        isPortrait
-            ? (isLargeScreen ? 3 : 2)
-            : (constraints.maxWidth ~/ 300).clamp(3, 4);
+    final crossAxisCount = isPortrait
+        ? (isLargeScreen ? 3 : 2)
+        : (constraints.maxWidth ~/ 300).clamp(3, 4);
 
     return GridView.builder(
       padding: const EdgeInsets.all(8.0),
@@ -233,11 +247,7 @@ class _CatalogPageState extends State<CatalogPage> {
         final item = filteredItems[index];
 
         return GestureDetector(
-          onDoubleTap:
-              () => _openImageZoom(
-                context,
-                item,
-              ), // Add double tap to zoom functionality
+          onDoubleTap: () => _openImageZoom(context, item),
           child: _buildItemCard(item, isLargeScreen),
         );
       },
@@ -570,15 +580,14 @@ class _CatalogPageState extends State<CatalogPage> {
           vertical: 12,
         ),
         color: Colors.white,
-        child:
-            isLargeScreen
-                ? Row(children: _buildButtonChildren(isLargeScreen))
-                : Wrap(
-                  alignment: WrapAlignment.spaceEvenly,
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _buildButtonChildren(isLargeScreen),
-                ),
+        child: isLargeScreen
+            ? Row(children: _buildButtonChildren(isLargeScreen))
+            : Wrap(
+                alignment: WrapAlignment.spaceEvenly,
+                spacing: 8,
+                runSpacing: 8,
+                children: _buildButtonChildren(isLargeScreen),
+              ),
       ),
     );
   }
@@ -601,7 +610,7 @@ class _CatalogPageState extends State<CatalogPage> {
                 padding: EdgeInsets.symmetric(
                   horizontal: isLargeScreen ? 24 : 16,
                   vertical: 12,
-                ), // Reduced vertical padding
+                ),
               ),
               icon: Icon(Icons.filter_list, size: isLargeScreen ? 24 : 20),
               label: Text(
@@ -619,19 +628,10 @@ class _CatalogPageState extends State<CatalogPage> {
     var filteredItems = catalogItems;
 
     if (selectedStyles.isNotEmpty) {
-      filteredItems =
-          filteredItems
-              .where((item) => selectedStyles.contains(item.styleCode))
-              .toList();
+      filteredItems = filteredItems
+          .where((item) => selectedStyles.contains(item.styleCode))
+          .toList();
     }
-
-    // if (selectedShades.isNotEmpty) {
-    //   filteredItems =
-    //       filteredItems.where((item) {
-    //         final shades = item.shadeName?.split(',') ?? [];
-    //         return shades.any((shade) => selectedShades.contains(shade));
-    //       }).toList();
-    // }
 
     return filteredItems;
   }
@@ -645,13 +645,11 @@ class _CatalogPageState extends State<CatalogPage> {
   }
 
   void _showFilterDialog() async {
-    // Push FilterPage and wait for the selected filters
     final result = await Navigator.push(
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) => FilterPage(),
         settings: RouteSettings(
-          // Pass initial data as arguments
           arguments: {
             'itemKey': itemKey,
             'itemSubGrpKey': itemSubGrpKey,
@@ -660,10 +658,10 @@ class _CatalogPageState extends State<CatalogPage> {
             'styles': styles,
             'shades': shades,
             'sizes': sizes,
-            'selectedShades' : selectedShades,
-            'selectedSizes' : selectedSize,
-            'fromMRP' : fromMRP,
-            'toMRP' : toMRP,
+            'selectedShades': selectedShades,
+            'selectedSizes': selectedSize,
+            'fromMRP': fromMRP,
+            'toMRP': toMRP,
           },
         ),
         transitionDuration: Duration(milliseconds: 500),
@@ -683,42 +681,18 @@ class _CatalogPageState extends State<CatalogPage> {
       ),
     );
 
-    // Handle the result after returning from the FilterPage
     if (result != null) {
-      // The result will contain the selected filter values
       Map<String, dynamic> selectedFilters = result;
 
-      // Example of how to handle the selected filters
-
-      // var selectedShades = selectedFilters['shades'];
-      // var selectedShade = selectedFilters['shades'];
-      // var selectedSizes = selectedFilters['sizes'];
-      // var fromMRP = selectedFilters['fromMRP'];
-      // var toMRP = selectedFilters['toMRP'];
-      // var fromDate = selectedFilters['fromDate'];
-      // var toDate = selectedFilters['toDate'];
-      // var shadeKeysString = selectedShades.map((s) => s.shadeKey).join(',');
-      // var sizeKeysString = selectedSizes.map((s) => s.itemSizeKey).join(',');
-      // print('Selected Styles: ${selectedFilters['styles']}');
-      // print('Selected Shades: $selectedShades');
-      // print('Selected Sizes: $selectedSizes');
-      // print('From MRP: $fromMRP');
-      // print('To MRP: $toMRP');
-      // print('From Date: $fromDate');
-      // print('To Date: $toDate');
-      // print('Selected Shades (shadeKey): $shadeKeysString');
-      // print('Selected Sizes (itemSizeKey): $sizeKeysString');
       setState(() {
         selectedStyles = selectedFilters['styles'];
-      selectedSize =   selectedFilters['sizes'];
-      selectedShades = selectedFilters['shades'];
-      fromMRP = selectedFilters['fromMRP'];
-      toMRP = selectedFilters['toMRP'];
-
+        selectedSize = selectedFilters['sizes'];
+        selectedShades = selectedFilters['shades'];
+        fromMRP = selectedFilters['fromMRP'];
+        toMRP = selectedFilters['toMRP'];
       });
 
       _fetchCatalogItems();
-      // You can now update the UI or make network calls based on the selected filters.
     }
   }
 
@@ -766,7 +740,6 @@ class _CatalogPageState extends State<CatalogPage> {
               );
               await imageFile.writeAsBytes(response.bodyBytes);
 
-              // Build text based on selected options in the new format
               String overlayText = '';
               if (includeProduct) overlayText += 'Product: ${item.itemName}\n';
               if (includeDesign) overlayText += 'Design: ${item.styleCode}\n';
@@ -795,8 +768,7 @@ class _CatalogPageState extends State<CatalogPage> {
             final image = pw.MemoryImage(File(path).readAsBytesSync());
             pdf.addPage(
               pw.Page(
-                build:
-                    (pw.Context context) => pw.Center(child: pw.Image(image)),
+                build: (pw.Context context) => pw.Center(child: pw.Image(image)),
               ),
             );
           }
@@ -828,17 +800,14 @@ class _CatalogPageState extends State<CatalogPage> {
   Future<File> _overlayTextOnImage(File imageFile, String fullText) async {
     final image = await decodeImageFromList(imageFile.readAsBytesSync());
 
-    // Split the text into multiple lines based on the image width
     List<String> selectedTexts = [];
     selectedTexts.add("Product Details:");
-    selectedTexts.add("${fullText}"); // Or pass dynamic text pieces here
+    selectedTexts.add("${fullText}");
 
-    // Calculate total height needed (image height + text area height)
     double textAreaHeight = 0.0;
     const padding = 10.0;
-    const lineHeight = 30.0; // Adjust for line height if needed
+    const lineHeight = 30.0;
 
-    // Create a list of TextPainters to calculate height required by the text
     List<TextPainter> textPainters = [];
     const textStyle = TextStyle(
       color: Colors.white,
@@ -868,18 +837,14 @@ class _CatalogPageState extends State<CatalogPage> {
       ),
     );
 
-    // 1. Draw the original image at the top
     canvas.drawImage(image, Offset(0, 0), Paint());
 
-    // Set text style
     final textBackgroundPaint = Paint()..color = Colors.black.withValues();
 
-    // Calculate positions for text - starting below the image
     double yPos = image.height + padding;
     for (int i = 0; i < textPainters.length; i++) {
       final textPainter = textPainters[i];
 
-      // Draw background box
       final rect = Rect.fromLTWH(
         padding,
         yPos,
@@ -888,9 +853,8 @@ class _CatalogPageState extends State<CatalogPage> {
       );
       canvas.drawRect(rect, textBackgroundPaint);
 
-      // Draw the text
       textPainter.paint(canvas, Offset(padding + 5, yPos + 5));
-      yPos += textPainter.height + lineHeight; // Move to next line position
+      yPos += textPainter.height + lineHeight;
     }
 
     final picture = pictureRecorder.endRecording();
@@ -989,5 +953,112 @@ class _CatalogPageState extends State<CatalogPage> {
         );
       },
     );
+  }
+
+  Future<void> _handleDownloadOption(String option) async {
+    if (selectedItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select items to download')),
+      );
+      return;
+    }
+
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Preparing download...'),
+            ],
+          ),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      Directory? downloadsDir;
+      if (Platform.isAndroid) {
+        downloadsDir = Directory('/storage/emulated/0/Download');
+        if (!await downloadsDir.exists()) {
+          downloadsDir = await getExternalStorageDirectory();
+        }
+      } else {
+        downloadsDir = await getApplicationDocumentsDirectory();
+      }
+
+      final now = DateTime.now();
+      final timestamp =
+          '${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}';
+
+      if (option == 'pdf') {
+        final pdf = pw.Document();
+
+        for (var item in selectedItems) {
+          try {
+            final imageUrl = _getImageUrl(item);
+            if (imageUrl.isNotEmpty && imageUrl.startsWith('http')) {
+              final response = await http.get(Uri.parse(imageUrl));
+              if (response.statusCode == 200) {
+                final image = pw.MemoryImage(response.bodyBytes);
+                pdf.addPage(
+                  pw.Page(
+                    build: (pw.Context context) => pw.Column(
+                      children: [
+                        pw.Image(image),
+                        pw.SizedBox(height: 10),
+                        pw.Text('Style: ${item.styleCode}'),
+                        pw.Text('Product: ${item.itemName}'),
+                        pw.Text('MRP: ₹${item.mrp}'),
+                        pw.Text('WSP: ₹${item.wsp}'),
+                        pw.Text('Shade: ${item.shadeName}'),
+                        pw.Text('Size: ${item.sizeName}'),
+                      ],
+                    ),
+                  ),
+                );
+              }
+            }
+          } catch (e) {
+            print('Error processing item ${item.itemName}: $e');
+          }
+        }
+
+        final pdfFile = File('${downloadsDir?.path}/catalog_$timestamp.pdf');
+        await pdfFile.writeAsBytes(await pdf.save());
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PDF downloaded to ${pdfFile.path}')),
+        );
+      } else if (option == 'image') {
+        int count = 1;
+        for (var item in selectedItems) {
+          try {
+            final imageUrl = _getImageUrl(item);
+            if (imageUrl.isNotEmpty && imageUrl.startsWith('http')) {
+              final response = await http.get(Uri.parse(imageUrl));
+              if (response.statusCode == 200) {
+                final imageFile = File(
+                  '${downloadsDir?.path}/catalog_${item.styleCode}_${count}_$timestamp.jpg',
+                );
+                await imageFile.writeAsBytes(response.bodyBytes);
+                count++;
+              }
+            }
+          } catch (e) {
+            print('Error downloading image for ${item.itemName}: $e');
+          }
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('${selectedItems.length} images downloaded to Downloads folder')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Download failed: ${e.toString()}')),
+      );
+    }
   }
 }
