@@ -42,10 +42,13 @@ class HomeScreen extends StatelessWidget {
           },
         ),
       ),
-       bottomNavigationBar: BottomNavigationWidget(
+          bottomNavigationBar: BottomNavigationWidget(
+        currentIndex: 0, // 👈 Highlight Catalog icon
         onTap: (index) {
+          if (index == 0) return;
           if (index == 1) Navigator.pushNamed(context, '/catalog');
           if (index == 2) Navigator.pushNamed(context, '/orderbooking');
+          // Add others similarly...
         },
       ),
     );

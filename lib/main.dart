@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vrs_erp_figma/OrderBooking/order_booking.dart';
 import 'package:vrs_erp_figma/catalog/catalog.dart';
 import 'package:vrs_erp_figma/screens/catalog_screen.dart';
 
@@ -26,8 +27,8 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginScreen(),
         '/home': (context) => HomeScreen(),
         '/catalog': (context) => CatalogScreen(),
-        '/catalogpage':(context) =>CatalogPage()
-        // '/orderbooking':(context)=>OrderBooking(),
+        '/catalogpage':(context) =>CatalogPage(),
+        '/orderbooking':(context)=>OrderBookingScreen(),
         // '/viewOrder':(context)=>ViewOrderScreen(),
         // '/viewOrders':(context)=>ViewOrderScreens()
       },
