@@ -433,44 +433,77 @@ class _CatalogPageState extends State<CatalogPage> {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
 
-Row(
-  children: [
-    // Shades label with no extra padding
-    Text(
-      'Shades:',
-      style: TextStyle(
-        fontWeight: FontWeight.w500,
-        fontSize: isLargeScreen ? 14 : 13,
-        color: Colors.grey[800],
-      ),
-    ),
-    SizedBox(width: 8),
-    // Make the list of shades scrollable
-    Expanded(
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: shades.map((shade) {
-            return Padding(
-              padding: const EdgeInsets.only(right: 6),
-              child: Text(
-                shade,
-                style: TextStyle(
-                  fontSize: isLargeScreen ? 13 : 12,
-                  color: Colors.grey[700],
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ),
-    ),
-  ],
-),
+                              // Add Sizes Row here
+                              if (item.sizeName.isNotEmpty)
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _buildDetailText(
+                                        'Sizes',
+                                        '',
+                                        isLargeScreen,
+                                      ),
+                                      ...item.sizeName.split(',').map((size) {
+                                        return Padding(
+                                          padding: const EdgeInsets.only(
+                                            right: 6,
+                                          ),
+                                          child: Text(
+                                            size.trim(),
+                                            style: TextStyle(
+                                              fontSize: isLargeScreen ? 14 : 13,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ],
+                                  ),
+                                ),
+                              const SizedBox(height: 4),
 
-
+                              Row(
+                                children: [
+                                  // Shades label with no extra padding
+                                  Text(
+                                    'Shades:',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: isLargeScreen ? 14 : 13,
+                                      color: Colors.grey[800],
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  // Make the list of shades scrollable
+                                  Expanded(
+                                    child: SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: Row(
+                                        children:
+                                            shades.map((shade) {
+                                              return Padding(
+                                                padding: const EdgeInsets.only(
+                                                  right: 6,
+                                                ),
+                                                child: Text(
+                                                  shade,
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        isLargeScreen ? 13 : 12,
+                                                    color: Colors.grey[700],
+                                                  ),
+                                                ),
+                                              );
+                                            }).toList(),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),
@@ -582,64 +615,91 @@ Row(
                               Expanded(
                                 child: _buildDetailText(
                                   'MRP', // The label
-                                  item.mrp
-                                      .toStringAsFixed(2), // Convert to string if necessary
+                                  item.mrp.toStringAsFixed(
+                                    2,
+                                  ), // Convert to string if necessary
                                   isLargeScreen, // The boolean indicating large screen size
                                 ),
                               ),
                               Expanded(
                                 child: _buildDetailText(
                                   'WSP', // The label
-                                  item.wsp
-                                      .toStringAsFixed(2), // Convert to string if necessary
+                                  item.wsp.toStringAsFixed(
+                                    2,
+                                  ), // Convert to string if necessary
                                   isLargeScreen, // The boolean indicating large screen size
                                 ),
                               ),
                             ],
                           ),
 
+                          // Add Sizes Row here
+                          if (item.sizeName.isNotEmpty)
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildDetailText('Sizes', '', isLargeScreen),
+                                  ...item.sizeName.split(',').map((size) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 6),
+                                      child: Text(
+                                        size.trim(),
+                                        style: TextStyle(
+                                          fontSize: isLargeScreen ? 14 : 13,
+                                          color: Colors.grey[700],
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ],
+                              ),
+                            ),
+
                           SizedBox(height: 10),
 
-                     
-           Row(
-  children: [
-    // Shades label with no extra padding
-    Text(
-      'Shades:',
-      style: TextStyle(
-        fontWeight: FontWeight.w500,
-        fontSize: isLargeScreen ? 14 : 13,
-        color: Colors.grey[800],
-      ),
-    ),
-    SizedBox(width: 8),
-    // Make the list of shades scrollable
-    Expanded(
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: shades.map((shade) {
-            return Padding(
-              padding: const EdgeInsets.only(right: 6),
-              child: Text(
-                shade,
-                style: TextStyle(
-                  fontSize: isLargeScreen ? 13 : 12,
-                  color: Colors.grey[700],
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ),
-    ),
-  ],
-),
-
+                          Row(
+                            children: [
+                              // Shades label with no extra padding
+                              Text(
+                                'Shades:',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: isLargeScreen ? 14 : 13,
+                                  color: Colors.grey[800],
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              // Make the list of shades scrollable
+                              Expanded(
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    children:
+                                        shades.map((shade) {
+                                          return Padding(
+                                            padding: const EdgeInsets.only(
+                                              right: 6,
+                                            ),
+                                            child: Text(
+                                              shade,
+                                              style: TextStyle(
+                                                fontSize:
+                                                    isLargeScreen ? 13 : 12,
+                                                color: Colors.grey[700],
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
-                
                   ],
                 ),
                 if (isSelected)
@@ -757,17 +817,17 @@ Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                                item.itemName,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: isLargeScreen ? 18 : 16,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                        item.itemName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: isLargeScreen ? 18 : 16,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       _buildDetailText('Style', item.styleCode, isLargeScreen),
                       const SizedBox(height: 4),
-                    
+
                       const SizedBox(height: 4),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -788,40 +848,62 @@ Row(
                           ),
                         ],
                       ),
-                      
+                      const SizedBox(height: 4),
+
+                      // Add Sizes Row here
+                      if (item.sizeName.isNotEmpty)
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildDetailText('Sizes', '', isLargeScreen),
+                              ...item.sizeName.split(',').map((size) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: Text(
+                                    size.trim(),
+                                    style: TextStyle(
+                                      fontSize: isLargeScreen ? 14 : 13,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ),
 
-               /// Shades as comma-separated plain text
-/// Shades in horizontal scroll using _buildDetailText
-Padding(
-  padding: EdgeInsets.symmetric(
-    horizontal: isLargeScreen ? 12 : 10,
-    vertical: 4,
-  ),
-  child: SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildDetailText('Shades', '', isLargeScreen),
-        ...shades.map((shade) {
-          return Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: Text(
-              shade,
-              style: TextStyle(
-                fontSize: isLargeScreen ? 14 : 13,
-                color: Colors.grey[700],
-              ),
-            ),
-          );
-        }).toList(),
-      ],
-    ),
-  ),
-),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isLargeScreen ? 12 : 10,
+                    vertical: 4,
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildDetailText('Shades', '', isLargeScreen),
+                        ...shades.map((shade) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: Text(
+                              shade,
+                              style: TextStyle(
+                                fontSize: isLargeScreen ? 14 : 13,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                    ),
+                  ),
+                ),
 
                 const SizedBox(height: 8),
               ],
@@ -976,7 +1058,6 @@ Padding(
             'toMRP': toMRP,
             'WSPfrom': WSPfrom,
             'WSPto': WSPto,
-
           },
         ),
         transitionDuration: Duration(milliseconds: 500),
@@ -1030,12 +1111,11 @@ Padding(
         toMRP = selectedFilters['toMRP'];
         WSPfrom = selectedFilters['WSPfrom'];
         WSPto = selectedFilters['WSPto'];
-        
       });
       print("aaaaaaaa  ${selectedFilters['styles']}");
       print("aaaaaaaa  ${selectedFilters['WSPfrom']}");
       print("aaaaaaaa  ${selectedFilters['WSPto']}");
- 
+
       _fetchCatalogItems();
     }
   }
