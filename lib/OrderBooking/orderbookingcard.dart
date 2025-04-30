@@ -27,9 +27,27 @@ class BarcodeItemCard extends StatelessWidget {
     final fullImagePath = catalogItem['fullImagePath']?.toString() ?? '';
     final imageUrl = _getImageUrl(fullImagePath);
 
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+return Container(
+  decoration: const BoxDecoration(
+    borderRadius: BorderRadius.only(
+      topLeft: Radius.circular(12),
+      bottomLeft: Radius.circular(12),
+    ),
+    border: Border(
+      left: BorderSide(width: 6.0, color: Colors.yellow),
+    ),
+  ),
+  child: ClipRRect(
+    borderRadius: const BorderRadius.only(
+      topLeft: Radius.circular(12),
+      bottomLeft: Radius.circular(12),
+    ),
+    child: Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       elevation: 3,
+      margin: EdgeInsets.zero,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -45,7 +63,7 @@ class BarcodeItemCard extends StatelessWidget {
                   ? Image.network(
                       imageUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => 
+                      errorBuilder: (context, error, stackTrace) =>
                           _buildImagePlaceholder(),
                     )
                   : _buildImagePlaceholder(),
@@ -108,7 +126,10 @@ class BarcodeItemCard extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ),
+  ),
+);
+
   }
 
   Widget _buildImagePlaceholder() {

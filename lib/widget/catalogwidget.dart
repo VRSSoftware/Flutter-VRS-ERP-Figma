@@ -3,7 +3,6 @@ import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
 import 'package:vrs_erp_figma/widget/booknowwidget.dart';
 
-
 class CatalogItemCard extends StatelessWidget {
   final Catalog catalog;
   final bool isSelected;
@@ -13,7 +12,8 @@ class CatalogItemCard extends StatelessWidget {
   final VoidCallback onAddToCart;
   final double? width;
   final double imageHeight;
-  final bool bookNowButton ;
+  final bool bookNowButton;
+  final Set<String> activeFilters;
 
   const CatalogItemCard({
     Key? key,
@@ -22,9 +22,10 @@ class CatalogItemCard extends StatelessWidget {
     required this.isLiked,
     required this.onSelect,
     required this.onLike,
-    required this.onAddToCart, // Make sure to pass the onAddToCart callback
+    required this.onAddToCart,
+    required this.activeFilters,
     this.width,
-    this.imageHeight = 200, // Default image height
+    this.imageHeight = 200,
     this.bookNowButton = true,
   }) : super(key: key);
 
@@ -42,8 +43,7 @@ class CatalogItemCard extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isSmallScreen =
-            constraints.maxWidth < 600; // Threshold for small screens
+        final isSmallScreen = constraints.maxWidth < 600;
 
         return SizedBox(
           width: width ?? double.infinity,
@@ -53,24 +53,22 @@ class CatalogItemCard extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
               side: BorderSide(
-                color:
-                    isSelected
-                        ? const Color.fromARGB(255, 228, 36, 36)
-                        : Colors.grey.shade300,
+                color: isSelected
+                    ? const Color.fromARGB(255, 228, 36, 36)
+                    : Colors.grey.shade300,
                 width: isSelected ? 2 : 1,
               ),
             ),
             elevation: 2,
             child: InkWell(
-              onTap: onSelect, // Card tap triggers selection
+              onTap: onSelect,
               borderRadius: BorderRadius.circular(12),
               child: Stack(
-                // Use a Stack to overlay the cart icon
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _buildImageSection(constraints), // Image Section
+                      _buildImageSection(constraints),
                       if (!isSmallScreen)
                         _buildDetailsSection(isDarkMode, context),
                       if (isSmallScreen)
@@ -96,7 +94,7 @@ class CatalogItemCard extends StatelessWidget {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
           child: Image.network(
             _getImageUrl(),
-            fit: BoxFit.fitWidth, // Full width, height adjusts automatically
+            fit: BoxFit.fitWidth,
             width: double.infinity,
             loadingBuilder: (context, child, loadingProgress) {
               if (loadingProgress == null) return child;
@@ -127,26 +125,6 @@ class CatalogItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildLikeButton() {
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color:
-            isLiked
-                ? Colors.red
-                : Colors.transparent, // Red background when liked
-      ),
-      child: IconButton(
-        icon: Icon(
-          isLiked ? Icons.favorite : Icons.favorite_border,
-          color: isLiked ? Colors.white : Colors.grey, // White icon when liked
-          size: 24,
-        ),
-        onPressed: onLike, // Toggle like on press
-      ),
-    );
-  }
-
   Widget _buildSelectedIndicator() {
     return Container(
       padding: const EdgeInsets.all(4),
@@ -155,6 +133,23 @@ class CatalogItemCard extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       child: const Icon(Icons.check, color: Colors.white, size: 16),
+    );
+  }
+
+  Widget _buildLikeButton() {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isLiked ? Colors.red : Colors.transparent,
+      ),
+      child: IconButton(
+        icon: Icon(
+          isLiked ? Icons.favorite : Icons.favorite_border,
+          color: isLiked ? Colors.white : Colors.grey,
+          size: 24,
+        ),
+        onPressed: onLike,
+      ),
     );
   }
 
@@ -168,64 +163,56 @@ class CatalogItemCard extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              catalog.styleCode,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            _buildLikeButton(), // Add like button here
-          ],
-        ),
-        //const SizedBox(height: 2),
-        if (catalog.brandName.isNotEmpty)
-          Text(
-            '${catalog.brandName}',
-            style: TextStyle(fontSize: 16, color: greyColor),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        const SizedBox(height: 6),
-        if (catalog.sizeName.isNotEmpty)
-          Text(
-            'Size: ${catalog.sizeName}',
-            style: TextStyle(fontSize: 12, color: greyColor),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        const SizedBox(height: 4),
-        if (catalog.shadeName.isNotEmpty)
-          Text(
-            'Shade: ${catalog.shadeName}',
-            style: TextStyle(fontSize: 12, color: greyColor),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-
-        // const SizedBox(height: 4),
-        const SizedBox(height: 4),
-        Text(
-          'MRP: ₹${catalog.mrp.toStringAsFixed(2)}',
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            Text('Stock: ', style: TextStyle(fontSize: 12, color: greyColor)),
-            Text(
-              catalog.clqty.toString(),
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: catalog.clqty > 0 ? Colors.green : Colors.red,
+            if (activeFilters.contains('stylecode'))
+              Text(
+                catalog.styleCode,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
+            _buildLikeButton(),
           ],
         ),
+        const SizedBox(height: 6),
+        if (activeFilters.contains('shades') && catalog.shadeName.isNotEmpty)
+          _buildDetailRow('Shade', catalog.shadeName, greyColor),
+        if (activeFilters.contains('size') && catalog.sizeName.isNotEmpty)
+          _buildDetailRow('Size', catalog.sizeName, greyColor),
+        if (activeFilters.contains('mrp'))
+          _buildDetailRow('MRP', '₹${catalog.mrp.toStringAsFixed(2)}', greyColor),
+        if (activeFilters.contains('wsp'))
+          _buildDetailRow('WSP', '₹${catalog.wsp.toStringAsFixed(2)}', greyColor),
+        _buildStockRow(greyColor),
         const SizedBox(height: 8),
-        bookNowButton ? _buildBookNowButton(context) : Container(),
+        if (bookNowButton) _buildBookNowButton(context),
+      ],
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, Color? color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Text(
+        '$label: $value',
+        style: TextStyle(fontSize: 12, color: color),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
+  Widget _buildStockRow(Color? color) {
+    return Row(
+      children: [
+        Text('Stock: ', style: TextStyle(fontSize: 12, color: color)),
+        Text(
+          catalog.clqty.toString(),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: catalog.clqty > 0 ? Colors.green : Colors.red,
+          ),
+        ),
       ],
     );
   }
@@ -239,9 +226,7 @@ class CatalogItemCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 10),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        onPressed: () {
-          _showBookingDialog(context);
-        },
+        onPressed: () => _showBookingDialog(context),
         child: const Text(
           'Book Now',
           style: TextStyle(

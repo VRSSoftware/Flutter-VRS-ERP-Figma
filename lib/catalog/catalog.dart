@@ -9,6 +9,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
 import 'package:vrs_erp_figma/catalog/download_options.dart';
 import 'package:vrs_erp_figma/catalog/filter.dart';
+import 'package:vrs_erp_figma/catalog/imagezoom.dart';
 import 'package:vrs_erp_figma/catalog/share_option_screen.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
@@ -235,9 +236,18 @@ class _CatalogPageState extends State<CatalogPage> {
         mainAxisSpacing: isLargeScreen ? 1.0 : 8.0,
         childAspectRatio: _getChildAspectRatio(constraints, isLargeScreen),
       ),
-      itemBuilder:
-          (context, index) =>
-              _buildItemCard(filteredItems[index], isLargeScreen),
+      itemBuilder: (context, index) {
+        final item = filteredItems[index];
+
+        return GestureDetector(
+          onDoubleTap:
+              () => _openImageZoom(
+                context,
+                item,
+              ), // Add double tap to zoom functionality
+          child: _buildItemCard(item, isLargeScreen),
+        );
+      },
     );
   }
 
@@ -246,7 +256,6 @@ class _CatalogPageState extends State<CatalogPage> {
     if (constraints.maxWidth > 600) return 0.7;
     return 0.65;
   }
-
   Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
     final filteredItems = _getFilteredItems();
     return ListView.builder(
@@ -258,6 +267,7 @@ class _CatalogPageState extends State<CatalogPage> {
         return GestureDetector(
           onTap: () => _toggleItemSelection(item),
           onLongPress: () => _enableMultiSelect(item),
+          onDoubleTap: () => _openImageZoom(context, item),
           child: Container(
             margin: EdgeInsets.symmetric(vertical: 8),
             child: Card(
@@ -361,6 +371,7 @@ class _CatalogPageState extends State<CatalogPage> {
         return GestureDetector(
           onTap: () => _toggleItemSelection(item),
           onLongPress: () => _enableMultiSelect(item),
+          onDoubleTap: () => _openImageZoom(context, item),
           child: Card(
             elevation: isSelected ? 8 : 4,
             margin: EdgeInsets.symmetric(
@@ -438,7 +449,6 @@ class _CatalogPageState extends State<CatalogPage> {
       },
     );
   }
-
   Widget _buildDetailText(String text, bool isLargeScreen) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4),
@@ -452,12 +462,22 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
+ void _openImageZoom(BuildContext context, Catalog item) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ImageZoomScreen(imageUrl: _getImageUrl(item)),
+      ),
+    );
+  }
+
   Widget _buildItemCard(Catalog item, bool isLargeScreen) {
     bool isSelected = selectedItems.contains(item);
 
     return GestureDetector(
       onTap: () => _toggleItemSelection(item),
       onLongPress: () => _enableMultiSelect(item),
+      onDoubleTap: () => _openImageZoom(context, item),
       child: Card(
         elevation: isSelected ? 8 : 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -546,7 +566,6 @@ class _CatalogPageState extends State<CatalogPage> {
       ),
     );
   }
-
   Widget _buildBottomButtons(bool isLargeScreen) {
     return SafeArea(
       child: Container(

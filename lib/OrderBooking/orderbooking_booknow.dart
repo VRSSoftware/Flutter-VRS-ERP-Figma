@@ -35,6 +35,8 @@ class _OrderPageState extends State<OrderPage> {
   String fromMRP = "";
   String toMRP = "";
 
+   List<String> addedItems = [];
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +51,11 @@ class _OrderPageState extends State<OrderPage> {
           coBr = args['coBr']?.toString();
           fcYrId = args['fcYrId']?.toString();
         });
+        
+                if (coBr != null && fcYrId != null) {
+          _fetchAddedItems(coBr!, fcYrId!);
+        }
+
 
         // Only fetch catalog items after setting the arguments
         if (itemSubGrpKey != null && itemKey != null && coBr != null) {
@@ -64,6 +71,24 @@ class _OrderPageState extends State<OrderPage> {
     });
   }
 
+    Future<void> _fetchAddedItems(String coBrId, String userId) async {
+    try {
+      final barcode = ''; // Replace with the actual barcode value if available
+      final addedItemsList = await ApiService.fetchAddedItems(
+        coBrId: coBrId,
+        userId: userId,
+        fcYrId: fcYrId!,
+        barcode: barcode,
+      );
+      setState(() {
+        addedItems = addedItemsList; // Store the fetched added items
+      });
+      print("abcddddddddddddddddddddd");
+      print(addedItems);
+    } catch (e) {
+      print('Failed to fetch added items: $e');
+    }
+  }
   // Fetch Catalog Items
   Future<void> _fetchCatalogItems() async {
     try {
@@ -225,7 +250,7 @@ class _OrderPageState extends State<OrderPage> {
 
         return GestureDetector(
           onDoubleTap: () => _openImageZoom(context, item),
-          child: _buildItemCard(item, isLargeScreen),
+          child: _buildItemCard(item, isLargeScreen ,addedItems),
         );
       },
     );
@@ -459,7 +484,7 @@ Widget _buildExpandedView(bool isLargeScreen) {
     );
   }
 
-  Widget _buildItemCard(Catalog item, bool isLargeScreen) {
+  Widget _buildItemCard(Catalog item, bool isLargeScreen,List<String> addedItems) {
     bool isSelected = selectedItems.contains(item);
 
     return GestureDetector(
@@ -567,30 +592,39 @@ Widget _buildExpandedView(bool isLargeScreen) {
                       ),
                     ),
                   ),
-                Positioned(
-                  bottom: 3,
-                  left: 8,
-                  right: 8,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
-                      padding:
-                          EdgeInsets
-                              .zero, // Remove internal padding for no space inside the button
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onPressed: () => _showBookingDialog(context, item),
-                    child: Text(
-                      'BOOK NOW',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: isLargeScreen ? 10 : 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+Positioned(
+  bottom: 3,
+  left: 8,
+  right: 8,
+  child: ElevatedButton(
+    style: ButtonStyle(
+      backgroundColor: MaterialStateProperty.all(
+        addedItems.contains(item.styleCode)
+            ? Colors.green
+            : AppColors.primaryColor,
+      ),
+      padding: MaterialStateProperty.all(EdgeInsets.zero),
+      shape: MaterialStateProperty.all(
+        RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    ),
+    onPressed: addedItems.contains(item.styleCode)
+        ? null
+        : () => _showBookingDialog(context, item),
+    child: Text(
+      addedItems.contains(item.styleCode) ? 'Added' : 'BOOK NOW',
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: isLargeScreen ? 10 : 12,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  ),
+
+
+
                 ),
               ],
             );

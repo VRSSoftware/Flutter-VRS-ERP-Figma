@@ -14,11 +14,11 @@ class CatalogScreen extends StatefulWidget {
 
 class _CatalogScreenState extends State<CatalogScreen> {
   final List<String> garmentImages = [
-    'assets/garments/image_01.png',
-    'assets/garments/image_02.png',
-    'assets/garments/image_03.png',
-    'assets/garments/image_04.png',
-    'assets/garments/image_05.png',
+    'assets/images/garment.png',
+    'assets/images/garment.png',
+    'assets/images/garment.png',
+    'assets/images/garment.png',
+    'assets/images/garment.png',
   ];
 
   int _currentIndex = 0;
@@ -284,7 +284,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
   }
 
   Widget _buildCategoryItems() {
-    double buttonWidth = (MediaQuery.of(context).size.width - 60) / 3;
+    double buttonWidth = (MediaQuery.of(context).size.width - 60) / 2;
     double buttonHeight = 50; 
 
     return Column(
@@ -342,4 +342,5 @@ class _CatalogScreenState extends State<CatalogScreen> {
       ],
     );
   }
+
 }

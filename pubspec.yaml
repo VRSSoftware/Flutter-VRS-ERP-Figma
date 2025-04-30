@@ -93,6 +93,7 @@ flutter:
     - assets/images/background.png
     - assets/images/new_logo.png
     - assets/images/logo.png
+    - assets/images/garment.png
     - assets/images/barcode.png
     - assets/garments/image_01.png
     - assets/garments/image_02.png

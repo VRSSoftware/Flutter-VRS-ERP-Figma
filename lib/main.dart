@@ -6,7 +6,9 @@ import 'package:vrs_erp_figma/screens/catalog_screen.dart';
 
 import 'package:vrs_erp_figma/screens/home_screen.dart';
 import 'package:vrs_erp_figma/screens/login_screen.dart';
-import 'package:vrs_erp_figma/screens/splash_screen.dart'; 
+import 'package:vrs_erp_figma/screens/splash_screen.dart';
+import 'package:vrs_erp_figma/viewOrder/view_order.dart';
+import 'package:vrs_erp_figma/viewOrder/view_order_screen.dart'; 
 
 void main() {
   runApp(const MyApp());
@@ -30,10 +32,9 @@ class MyApp extends StatelessWidget {
         '/catalog': (context) => CatalogScreen(),
         '/catalogpage':(context) =>CatalogPage(),
         '/orderbooking':(context)=>OrderBookingScreen(),
-        '/orderpage':(context)=>OrderPage()
-      
-        // '/viewOrder':(context)=>ViewOrderScreen(),
-        // '/viewOrders':(context)=>ViewOrderScreens()
+        '/orderpage':(context)=>OrderPage(),
+        '/viewOrder':(context)=>ViewOrderScreen(),
+        '/viewOrders':(context)=>ViewOrderScreens()
       },
 
       home: HomeScreen(),
