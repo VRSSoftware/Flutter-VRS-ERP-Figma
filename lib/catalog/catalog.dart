@@ -420,14 +420,14 @@ class _CatalogPageState extends State<CatalogPage> {
                                   Expanded(
                                     child: _buildDetailText(
                                       'MRP',
-                                      item.mrp.toString(),
+                                      item.mrp.toStringAsFixed(2),
                                       isLargeScreen,
                                     ),
                                   ),
                                   Expanded(
                                     child: _buildDetailText(
                                       'WSP',
-                                      item.wsp.toString(),
+                                      item.wsp.toStringAsFixed(2),
                                       isLargeScreen,
                                     ),
                                   ),
@@ -583,7 +583,7 @@ Row(
                                 child: _buildDetailText(
                                   'MRP', // The label
                                   item.mrp
-                                      .toString(), // Convert to string if necessary
+                                      .toStringAsFixed(2), // Convert to string if necessary
                                   isLargeScreen, // The boolean indicating large screen size
                                 ),
                               ),
@@ -591,7 +591,7 @@ Row(
                                 child: _buildDetailText(
                                   'WSP', // The label
                                   item.wsp
-                                      .toString(), // Convert to string if necessary
+                                      .toStringAsFixed(2), // Convert to string if necessary
                                   isLargeScreen, // The boolean indicating large screen size
                                 ),
                               ),
@@ -775,14 +775,14 @@ Row(
                           Expanded(
                             child: _buildDetailText(
                               'MRP',
-                              item.mrp.toString(),
+                              item.mrp.toStringAsFixed(2),
                               isLargeScreen,
                             ),
                           ),
                           Expanded(
                             child: _buildDetailText(
                               'WSP',
-                              item.wsp.toString(),
+                              item.wsp.toStringAsFixed(2),
                               isLargeScreen,
                             ),
                           ),
