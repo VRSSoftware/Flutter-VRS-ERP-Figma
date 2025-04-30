@@ -975,47 +975,42 @@ class _CatalogPageState extends State<CatalogPage> {
     return '${AppConstants.BASE_URL}/images/$imageName';
   }
 
-  void _showFilterDialog() async {
-    // Push FilterPage and wait for the selected filters
-    final result = await Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => FilterPage(),
-        settings: RouteSettings(
-          // Pass initial data as arguments
-          arguments: {
-            'itemKey': itemKey,
-            'itemSubGrpKey': itemSubGrpKey,
-            'coBr': coBr,
-            'fcYrId': fcYrId,
-            'styles': styles,
-            'shades': shades,
-            'sizes': sizes,
-            'selectedShades': selectedShades,
-            'selectedSizes': selectedSize,
-            'selectedStyles': selectedStyles,
-            'fromMRP': fromMRP,
-            'toMRP': toMRP,
-            'WSPfrom': WSPfrom,
-            'WSPto': WSPto,
-          },
-        ),
-        transitionDuration: Duration(milliseconds: 500),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          final begin = Offset(0.0, 1.0);
-          final end = Offset.zero;
-          final curve = Curves.easeInOut;
-
-          var tween = Tween(
-            begin: begin,
-            end: end,
-          ).chain(CurveTween(curve: curve));
-          var offsetAnimation = animation.drive(tween);
-
-          return SlideTransition(position: offsetAnimation, child: child);
+void _showFilterDialog() async {
+  final result = await Navigator.push(
+    context,
+    PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) => FilterPage(),
+      settings: RouteSettings(
+        arguments: {
+          'itemKey': itemKey,
+          'itemSubGrpKey': itemSubGrpKey,
+          'coBr': coBr,
+          'fcYrId': fcYrId,
+          'styles': styles,
+          'shades': shades,
+          'sizes': sizes,
+          'selectedShades': selectedShades,
+          'selectedSizes': selectedSize,
+          'selectedStyles': selectedStyles,
+          'fromMRP': fromMRP,
+          'toMRP': toMRP,
+          'WSPfrom': WSPfrom,
+          'WSPto': WSPto,
         },
       ),
-    );
+      transitionDuration: Duration(milliseconds: 500),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return ScaleTransition(
+          scale: animation,
+          alignment: Alignment.bottomRight, // Open from bottom right corner
+          child: FadeTransition(
+            opacity: animation,
+            child: child,
+          ),
+        );
+      },
+    ),
+  );
 
     // Handle the result after returning from the FilterPage
     if (result != null) {
