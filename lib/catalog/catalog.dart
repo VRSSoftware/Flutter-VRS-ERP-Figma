@@ -640,19 +640,20 @@ class _CatalogPageState extends State<CatalogPage> {
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _buildDetailText('Sizes', '', isLargeScreen),
-                                  ...item.sizeName.split(',').map((size) {
-                                    return Padding(
-                                      padding: const EdgeInsets.only(right: 6),
-                                      child: Text(
-                                        size.trim(),
-                                        style: TextStyle(
-                                          fontSize: isLargeScreen ? 14 : 13,
-                                          color: Colors.grey[700],
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
+                                  Text('Size : ${item.sizeDetails}')
+                                  // _buildDetailText('Sizes', '', isLargeScreen),
+                                  // ...item.sizeName.split(',').map((size) {
+                                  //   return Padding(
+                                  //     padding: const EdgeInsets.only(right: 6),
+                                  //     child: Text(
+                                  //       size.trim(),
+                                  //       style: TextStyle(
+                                  //         fontSize: isLargeScreen ? 14 : 13,
+                                  //         color: Colors.grey[700],
+                                  //       ),
+                                  //     ),
+                                  //   );
+                                  // }).toList(),
                                 ],
                               ),
                             ),
