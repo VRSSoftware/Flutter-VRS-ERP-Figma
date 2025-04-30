@@ -43,6 +43,8 @@ class _CatalogPageState extends State<CatalogPage> {
   List<Sizes> selectedSize = [];
   String fromMRP = "";
   String toMRP = "";
+  String WSPto = "";
+  String WSPfrom = "";
 
   @override
   void initState() {
@@ -95,21 +97,56 @@ class _CatalogPageState extends State<CatalogPage> {
         fromMRP: fromMRP == "" ? null : fromMRP,
         toMRP: toMRP == "" ? null : toMRP,
       );
-      setState(() {
-        if (selectedStyles.isEmpty) {
-          catalogItems = items;
-        } else {
-          final selectedStyleKeys =
-              selectedStyles.map((style) => style.styleKey).toSet();
 
-          catalogItems =
-              items
-                  .where(
-                    (catalog) => selectedStyleKeys.contains(catalog.styleKey),
-                  )
-                  .toList();
+      if (selectedStyles.isEmpty && WSPfrom == "" && WSPto == "") {
+        setState(() {
+          catalogItems = items;
+        });
+      } else {
+        final selectedStyleKeys =
+            selectedStyles.map((style) => style.styleKey).toSet();
+
+        List<Catalog> filtredCatlogs =
+            items
+                .where(
+                  (catalog) => selectedStyleKeys.contains(catalog.styleKey),
+                )
+                .toList();
+        if (WSPfrom == "" && WSPto == "") {
+          setState(() {
+            catalogItems = filtredCatlogs;
+          });
+        } else {
+          double? wspFrom = double.tryParse(WSPfrom);
+          double? wspTo = double.tryParse(WSPto);
+
+          List<Catalog> wspFilteredCatalogs = filtredCatlogs;
+
+          if (wspFrom != null && wspTo != null) {
+            wspFilteredCatalogs =
+                wspFilteredCatalogs
+                    .where(
+                      (catalog) =>
+                          catalog.wsp >= wspFrom && catalog.wsp <= wspTo,
+                    )
+                    .toList();
+          } else if (wspFrom != null) {
+            wspFilteredCatalogs =
+                wspFilteredCatalogs
+                    .where((catalog) => catalog.wsp >= wspFrom)
+                    .toList();
+          } else if (wspTo != null) {
+            wspFilteredCatalogs =
+                wspFilteredCatalogs
+                    .where((catalog) => catalog.wsp <= wspTo)
+                    .toList();
+          }
+
+          setState(() {
+            catalogItems = wspFilteredCatalogs;
+          });
         }
-      });
+      }
     } catch (e) {
       print('Failed to load catalog items: $e');
     }
@@ -243,40 +280,43 @@ class _CatalogPageState extends State<CatalogPage> {
       ),
     );
   }
-Widget _buildGridView(
-  BoxConstraints constraints,
-  bool isLargeScreen,
-  bool isPortrait,
-) {
-  final filteredItems = _getFilteredItems();
-  final crossAxisCount = isPortrait
-      ? (isLargeScreen ? 3 : 2)
-      : (constraints.maxWidth ~/ 300).clamp(3, 4);
 
-  return GridView.builder(
-    padding: const EdgeInsets.all(8.0),
-    shrinkWrap: true,
-    physics: const AlwaysScrollableScrollPhysics(),
-    itemCount: filteredItems.length,
-    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: crossAxisCount,
-      crossAxisSpacing: isLargeScreen ? 14.0 : 8.0,
-      mainAxisSpacing: isLargeScreen ? 1.0 : 8.0,
-      childAspectRatio: _getChildAspectRatio(constraints, isLargeScreen),
-    ),
-    itemBuilder: (context, index) {
-      final item = filteredItems[index];
+  Widget _buildGridView(
+    BoxConstraints constraints,
+    bool isLargeScreen,
+    bool isPortrait,
+  ) {
+    final filteredItems = _getFilteredItems();
+    final crossAxisCount =
+        isPortrait
+            ? (isLargeScreen ? 3 : 2)
+            : (constraints.maxWidth ~/ 300).clamp(3, 4);
 
-      return GestureDetector(
-        onDoubleTap: () => _openImageZoom(
-          context,
-          item,
-        ), // Add double tap to zoom functionality
-        child: _buildItemCard(item, isLargeScreen),
-      );
-    },
-  );
-}
+    return GridView.builder(
+      padding: const EdgeInsets.all(8.0),
+      shrinkWrap: true,
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: filteredItems.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: isLargeScreen ? 14.0 : 8.0,
+        mainAxisSpacing: isLargeScreen ? 1.0 : 8.0,
+        childAspectRatio: _getChildAspectRatio(constraints, isLargeScreen),
+      ),
+      itemBuilder: (context, index) {
+        final item = filteredItems[index];
+
+        return GestureDetector(
+          onDoubleTap:
+              () => _openImageZoom(
+                context,
+                item,
+              ), // Add double tap to zoom functionality
+          child: _buildItemCard(item, isLargeScreen),
+        );
+      },
+    );
+  }
 
   double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
     if (constraints.maxWidth > 1000) return 0.75;
@@ -359,27 +399,41 @@ Widget _buildGridView(
                               const SizedBox(height: 4),
 
                               /// Row 1: Style, MRP, WSP in a single row
-                             // Row 1: Style, MRP, WSP in a single row
-Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    Expanded(
-      child: _buildDetailText('Style', item.styleCode, isLargeScreen),
-    ),
-  ],
-),
-const SizedBox(height: 4),
-Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    Expanded(
-      child: _buildDetailText('MRP', item.mrp.toString(), isLargeScreen),
-    ),
-    Expanded(
-      child: _buildDetailText('WSP', item.wsp.toString(), isLargeScreen),
-    ),
-  ],
-),
+                              // Row 1: Style, MRP, WSP in a single row
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: _buildDetailText(
+                                      'Style',
+                                      item.styleCode,
+                                      isLargeScreen,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: _buildDetailText(
+                                      'MRP',
+                                      item.mrp.toString(),
+                                      isLargeScreen,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: _buildDetailText(
+                                      'WSP',
+                                      item.wsp.toString(),
+                                      isLargeScreen,
+                                    ),
+                                  ),
+                                ],
+                              ),
                               const SizedBox(height: 8),
 
                               /// Row 2: Shade in separate rounded circles
@@ -518,33 +572,34 @@ Row(
                           SizedBox(height: 8),
 
                           /// Row 2: Style, MRP, WSP
-                    Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    Expanded(
-      child: _buildDetailText(
-        'Style',  // The label
-        item.styleCode,  // The value
-        isLargeScreen,   // The boolean indicating large screen size
-      ),
-    ),
-    Expanded(
-      child: _buildDetailText(
-        'MRP',  // The label
-        item.mrp.toString(),  // Convert to string if necessary
-        isLargeScreen,   // The boolean indicating large screen size
-      ),
-    ),
-    Expanded(
-      child: _buildDetailText(
-        'WSP',  // The label
-        item.wsp.toString(),  // Convert to string if necessary
-        isLargeScreen,   // The boolean indicating large screen size
-      ),
-    ),
-  ],
-),
-
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: _buildDetailText(
+                                  'Style', // The label
+                                  item.styleCode, // The value
+                                  isLargeScreen, // The boolean indicating large screen size
+                                ),
+                              ),
+                              Expanded(
+                                child: _buildDetailText(
+                                  'MRP', // The label
+                                  item.mrp
+                                      .toString(), // Convert to string if necessary
+                                  isLargeScreen, // The boolean indicating large screen size
+                                ),
+                              ),
+                              Expanded(
+                                child: _buildDetailText(
+                                  'WSP', // The label
+                                  item.wsp
+                                      .toString(), // Convert to string if necessary
+                                  isLargeScreen, // The boolean indicating large screen size
+                                ),
+                              ),
+                            ],
+                          ),
 
                           SizedBox(height: 10),
 
@@ -615,34 +670,34 @@ Row(
       },
     );
   }
-Widget _buildDetailText(String label, String value, bool isLargeScreen) {
-  return AutoSizeText.rich(
-    TextSpan(
-      children: [
-        TextSpan(
-          text: '$label: ',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[700],
+
+  Widget _buildDetailText(String label, String value, bool isLargeScreen) {
+    return AutoSizeText.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: '$label: ',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
+            ),
           ),
-        ),
-        TextSpan(
-          text: value,
-          style: TextStyle(
-            fontWeight: FontWeight.normal,
-            color: Colors.grey[700],
+          TextSpan(
+            text: value,
+            style: TextStyle(
+              fontWeight: FontWeight.normal,
+              color: Colors.grey[700],
+            ),
           ),
-        ),
-      ],
-    ),
-    maxLines: 1,
-    minFontSize: 10,
-    style: TextStyle(
-      fontSize: isLargeScreen ? 16 : 14,
-    ),
-    overflow: TextOverflow.ellipsis,
-  );
-}
+        ],
+      ),
+      maxLines: 1,
+      minFontSize: 10,
+      style: TextStyle(fontSize: isLargeScreen ? 16 : 14),
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
   void _openImageZoom(BuildContext context, Catalog item) {
     Navigator.push(
       context,
@@ -652,140 +707,152 @@ Widget _buildDetailText(String label, String value, bool isLargeScreen) {
     );
   }
 
-Widget _buildItemCard(Catalog item, bool isLargeScreen) {
-  bool isSelected = selectedItems.contains(item);
+  Widget _buildItemCard(Catalog item, bool isLargeScreen) {
+    bool isSelected = selectedItems.contains(item);
 
-  // Safely split and trim shades (if it's a comma-separated string)
-  List<String> shades = item.shadeName.split(',').map((s) => s.trim()).toList();
+    // Safely split and trim shades (if it's a comma-separated string)
+    List<String> shades =
+        item.shadeName.split(',').map((s) => s.trim()).toList();
 
-  return GestureDetector(
-    onTap: () => _toggleItemSelection(item),
-    onLongPress: () => _enableMultiSelect(item),
-    onDoubleTap: () => _openImageZoom(context, item),
-    child: Card(
-      elevation: isSelected ? 8 : 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: isSelected ? Colors.blue.shade50 : Colors.white,
-      child: Stack(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
-                ),
-                child: Image.network(
-                  _getImageUrl(item),
-                  height: 140,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      height: 140,
-                      width: double.infinity,
-                      color: Colors.grey.shade300,
-                      child: Image.asset(
-                        'assets/images/default.png',
-                        fit: BoxFit.cover,
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-              /// Style & Item Name
-              Padding(
-                padding: EdgeInsets.symmetric(
-                    horizontal: isLargeScreen ? 12 : 10, vertical: 6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildDetailText('Style', item.styleCode, isLargeScreen),
-                    const SizedBox(height: 4),
-                    Text(
-                      item.itemName,
-                      style: TextStyle(
-                        fontSize: isLargeScreen ? 14 : 13,
-                        color: Colors.grey.shade700,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: _buildDetailText(
-                              'MRP', item.mrp.toString(), isLargeScreen),
-                        ),
-                        Expanded(
-                          child: _buildDetailText(
-                              'WSP', item.wsp.toString(), isLargeScreen),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              /// Shades as rounded chips
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: shades.map((shade) {
+    return GestureDetector(
+      onTap: () => _toggleItemSelection(item),
+      onLongPress: () => _enableMultiSelect(item),
+      onDoubleTap: () => _openImageZoom(context, item),
+      child: Card(
+        elevation: isSelected ? 8 : 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        color: isSelected ? Colors.blue.shade50 : Colors.white,
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                  child: Image.network(
+                    _getImageUrl(item),
+                    height: 140,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
                       return Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.grey.shade400),
-                        ),
-                        child: Text(
-                          shade,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            fontSize: isLargeScreen ? 14 : 13,
-                          ),
+                        height: 140,
+                        width: double.infinity,
+                        color: Colors.grey.shade300,
+                        child: Image.asset(
+                          'assets/images/default.png',
+                          fit: BoxFit.cover,
                         ),
                       );
-                    }).toList(),
+                    },
+                  ),
+                ),
+
+                /// Style & Item Name
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isLargeScreen ? 12 : 10,
+                    vertical: 6,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildDetailText('Style', item.styleCode, isLargeScreen),
+                      const SizedBox(height: 4),
+                      Text(
+                        item.itemName,
+                        style: TextStyle(
+                          fontSize: isLargeScreen ? 14 : 13,
+                          color: Colors.grey.shade700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: _buildDetailText(
+                              'MRP',
+                              item.mrp.toString(),
+                              isLargeScreen,
+                            ),
+                          ),
+                          Expanded(
+                            child: _buildDetailText(
+                              'WSP',
+                              item.wsp.toString(),
+                              isLargeScreen,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                /// Shades as rounded chips
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children:
+                          shades.map((shade) {
+                            return Container(
+                              margin: const EdgeInsets.only(right: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.grey.shade400),
+                              ),
+                              child: Text(
+                                shade,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: isLargeScreen ? 14 : 13,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+
+            /// Selection Check Icon
+            if (isSelected)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.check_circle,
+                    color: AppColors.primaryColor,
+                    size: 24,
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-            ],
-          ),
-
-          /// Selection Check Icon
-          if (isSelected)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.check_circle,
-                  color: AppColors.primaryColor,
-                  size: 24,
-                ),
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildBottomButtons(bool isLargeScreen) {
     return SafeArea(
@@ -910,6 +977,9 @@ Widget _buildItemCard(Catalog item, bool isLargeScreen) {
             'selectedStyles': selectedStyles,
             'fromMRP': fromMRP,
             'toMRP': toMRP,
+            'WSPfrom': WSPfrom,
+            'WSPto': WSPto,
+
           },
         ),
         transitionDuration: Duration(milliseconds: 500),
@@ -961,13 +1031,14 @@ Widget _buildItemCard(Catalog item, bool isLargeScreen) {
         selectedShades = selectedFilters['shades'];
         fromMRP = selectedFilters['fromMRP'];
         toMRP = selectedFilters['toMRP'];
+        WSPfrom = selectedFilters['WSPfrom'];
+        WSPto = selectedFilters['WSPto'];
+        
       });
       print("aaaaaaaa  ${selectedFilters['styles']}");
-      print("aaaaaaaa  ${selectedFilters['sizes']}");
-      print("aaaaaaaa  ${selectedFilters['shades']}");
-      print("aaaaaaaa  ${selectedFilters['fromMRP']}");
-      print("aaaaaaaa  ${selectedFilters['toMRP']}");
-      print("aaaaaaaa  ${selectedFilters['styles']}");
+      print("aaaaaaaa  ${selectedFilters['WSPfrom']}");
+      print("aaaaaaaa  ${selectedFilters['WSPto']}");
+ 
       _fetchCatalogItems();
     }
   }

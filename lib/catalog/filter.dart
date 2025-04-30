@@ -54,6 +54,8 @@ class _FilterPageState extends State<FilterPage> {
           args['selectedSizes'] is List<Sizes> ? args['selectedSizes'] : [];
       fromMRPController.text = args['fromMRP'] is String ? args['fromMRP'] : "";
       toMRPController.text = args['toMRP'] is String ? args['toMRP'] : "";
+      wspFromController.text = args['WSPfrom'] is String ? args['WSPfrom'] : "";
+      wspToController.text = args['WSPto'] is String ? args['WSPto'] : "";
     }
     
   }
@@ -590,6 +592,8 @@ class _FilterPageState extends State<FilterPage> {
                     'toMRP': toMRPController.text,
                     'fromDate': fromDateController.text,
                     'toDate': toDateController.text,
+                    'WSPfrom':wspFromController.text,
+                    'WSPto':wspToController.text
                   };
                     print("selectedfiltersss ${selectedFilters}");
                   Navigator.pop(context, selectedFilters);
