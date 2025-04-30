@@ -37,6 +37,9 @@ class _CatalogPageState extends State<CatalogPage> {
   String? coBr;
   String? fcYrId;
   List<Catalog> selectedItems = [];
+  List<Sizes> selectedSize = [];
+  String fromMRP="";
+  String toMRP = "";
 
   @override
   void initState() {
@@ -720,21 +723,26 @@ class _CatalogPageState extends State<CatalogPage> {
     return '${AppConstants.BASE_URL}/images/$imageName';
   }
 
-  void _showFilterDialog() {
-    Navigator.push(
+  void _showFilterDialog() async {
+    // Push FilterPage and wait for the selected filters
+    final result = await Navigator.push(
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) => FilterPage(),
         settings: RouteSettings(
-          // Add this block
+          // Pass initial data as arguments
           arguments: {
             'itemKey': itemKey,
             'itemSubGrpKey': itemSubGrpKey,
             'coBr': coBr,
             'fcYrId': fcYrId,
             'styles': styles,
-            'shades': shades, // Add shades list
+            'shades': shades,
             'sizes': sizes,
+            'selectedShades' : selectedShades,
+            'selectedSizes' : selectedSize,
+            'fromMRP' : fromMRP,
+            'toMRP' : toMRP,
           },
         ),
         transitionDuration: Duration(milliseconds: 500),
@@ -753,6 +761,44 @@ class _CatalogPageState extends State<CatalogPage> {
         },
       ),
     );
+
+    // Handle the result after returning from the FilterPage
+    if (result != null) {
+      // The result will contain the selected filter values
+      Map<String, dynamic> selectedFilters = result;
+
+      // Example of how to handle the selected filters
+
+      // var selectedShades = selectedFilters['shades'];
+      // var selectedShade = selectedFilters['shades'];
+      // var selectedSizes = selectedFilters['sizes'];
+      // var fromMRP = selectedFilters['fromMRP'];
+      // var toMRP = selectedFilters['toMRP'];
+      // var fromDate = selectedFilters['fromDate'];
+      // var toDate = selectedFilters['toDate'];
+      // var shadeKeysString = selectedShades.map((s) => s.shadeKey).join(',');
+      // var sizeKeysString = selectedSizes.map((s) => s.itemSizeKey).join(',');
+      // print('Selected Styles: ${selectedFilters['styles']}');
+      // print('Selected Shades: $selectedShades');
+      // print('Selected Sizes: $selectedSizes');
+      // print('From MRP: $fromMRP');
+      // print('To MRP: $toMRP');
+      // print('From Date: $fromDate');
+      // print('To Date: $toDate');
+      // print('Selected Shades (shadeKey): $shadeKeysString');
+      // print('Selected Sizes (itemSizeKey): $sizeKeysString');
+      setState(() {
+        selectedStyles = selectedFilters['styles'];
+      selectedSize =   selectedFilters['sizes'];
+      selectedShades = selectedFilters['shades'];
+      fromMRP = selectedFilters['fromMRP'];
+      toMRP = selectedFilters['toMRP'];
+
+      });
+
+      _fetchCatalogItems();
+      // You can now update the UI or make network calls based on the selected filters.
+    }
   }
 
   Future<void> _shareSelectedItems({
