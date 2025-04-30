@@ -956,73 +956,74 @@ class _CatalogPageState extends State<CatalogPage> {
     });
   }
 
-void _showShareOptions() {
-  if (selectedItems.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please select items to share')),
+  void _showShareOptions() {
+    if (selectedItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select items to share')),
+      );
+      return;
+    }
+
+    bool includeDesign = false;
+    bool includeShade = false;
+    bool includeRate = false;
+    bool includeSize = false;
+    bool includeProduct = false;
+    bool includeRemark = false;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return ShareOptionsPage(
+          onImageShare: () {
+            Navigator.pop(context);
+            _shareSelectedItems(
+              shareType: 'image',
+              includeDesign: includeDesign,
+              includeShade: includeShade,
+              includeRate: includeRate,
+              includeSize: includeSize,
+              includeProduct: includeProduct,
+              includeRemark: includeRemark,
+            );
+          },
+          onPDFShare: () {
+            Navigator.pop(context);
+            _shareSelectedItems(
+              shareType: 'pdf',
+              includeDesign: includeDesign,
+              includeShade: includeShade,
+              includeRate: includeRate,
+              includeSize: includeSize,
+              includeProduct: includeProduct,
+              includeRemark: includeRemark,
+            );
+          },
+          onWeblinkShare: () {
+            Navigator.pop(context);
+            _shareSelectedItems(shareType: 'pdf');
+          },
+          onVideoShare: () {
+            Navigator.pop(context);
+            _shareSelectedItems(shareType: 'pdf');
+          },
+          onQRCodeShare: () {
+            Navigator.pop(context);
+            _shareSelectedItems(shareType: 'pdf');
+          },
+          onToggleOptions: (design, shade, rate, size, product, remark) {
+            includeDesign = design;
+            includeShade = shade;
+            includeRate = rate;
+            includeSize = size;
+            includeProduct = product;
+            includeRemark = remark;
+          },
+        );
+      },
     );
-    return;
   }
 
-  bool includeDesign = false;
-  bool includeShade = false;
-  bool includeRate = false;
-  bool includeSize = false;
-  bool includeProduct = false;
-  bool includeRemark = false;
-
-  showModalBottomSheet(
-    context: context,
-    builder: (BuildContext context) {
-      return ShareOptionsPage(
-        onImageShare: () {
-          Navigator.pop(context);
-          _shareSelectedItems(
-            shareType: 'image',
-            includeDesign: includeDesign,
-            includeShade: includeShade,
-            includeRate: includeRate,
-            includeSize: includeSize,
-            includeProduct: includeProduct,
-            includeRemark: includeRemark,
-          );
-        },
-        onPDFShare: () {
-          Navigator.pop(context);
-          _shareSelectedItems(
-            shareType: 'pdf',
-            includeDesign: includeDesign,
-            includeShade: includeShade,
-            includeRate: includeRate,
-            includeSize: includeSize,
-            includeProduct: includeProduct,
-            includeRemark: includeRemark,
-          );
-        },
-        onWeblinkShare: () {
-          Navigator.pop(context);
-          _shareSelectedItems(shareType: 'pdf');
-        },
-        onVideoShare: () {
-          Navigator.pop(context);
-          _shareSelectedItems(shareType: 'pdf');
-        },
-        onQRCodeShare: () {
-          Navigator.pop(context);
-          _shareSelectedItems(shareType: 'pdf');
-        },
-        onToggleOptions: (design, shade, rate, size, product, remark) {
-          includeDesign = design;
-          includeShade = shade;
-          includeRate = rate;
-          includeSize = size;
-          includeProduct = product;
-          includeRemark = remark;
-        },
-      );
-    },
-  );
-}
   // Add these methods to your _CatalogPageState class
   Future<void> _handleDownloadOption(
     String option, {
@@ -1070,6 +1071,8 @@ void _showShareOptions() {
 
       if (option == 'pdf') {
         final pdf = pw.Document();
+        final tempDir = await getTemporaryDirectory();
+        List<File> tempFiles = [];
 
         for (var item in selectedItems) {
           try {
@@ -1077,29 +1080,40 @@ void _showShareOptions() {
             if (imageUrl.isNotEmpty && imageUrl.startsWith('http')) {
               final response = await http.get(Uri.parse(imageUrl));
               if (response.statusCode == 200) {
-                final image = pw.MemoryImage(response.bodyBytes);
-
                 // Build text based on selected options
-                String detailsText = '';
+                String overlayText = '';
                 if (includeProduct)
-                  detailsText += 'Product: ${item.itemName}\n';
-                if (includeDesign) detailsText += 'Design: ${item.styleCode}\n';
-                if (includeShade) detailsText += 'Shade: ${item.shadeName}\n';
-                if (includeRate) detailsText += 'MRP: ₹${item.mrp}\n';
-                if (includeRate) detailsText += 'WSP: ₹${item.wsp}\n';
-                if (includeSize) detailsText += 'Size: ${item.sizeName}\n';
+                  overlayText += 'Product: ${item.itemName}\n';
+                if (includeDesign) overlayText += 'Design: ${item.styleCode}\n';
+                if (includeShade) overlayText += 'Shade: ${item.shadeName}\n';
+                if (includeRate) overlayText += 'MRP: ₹${item.mrp}\n';
+                if (includeRate) overlayText += 'WSP: ₹${item.wsp}\n';
+                if (includeSize) overlayText += 'Size: ${item.sizeName}\n';
                 if (includeRemark && item.remark.isNotEmpty)
-                  detailsText += 'Remark: ${item.remark}\n';
+                  overlayText += 'Remark: ${item.remark}\n';
 
+                // Save original image to temp file
+                final imageFile = File(
+                  '${tempDir.path}/temp_${item.itemKey}.jpg',
+                );
+                await imageFile.writeAsBytes(response.bodyBytes);
+
+                // Create overlay image
+                final overlayImageFile = await _overlayTextOnImage(
+                  imageFile,
+                  overlayText,
+                );
+                tempFiles.add(overlayImageFile);
+
+                // Add to PDF
                 pdf.addPage(
                   pw.Page(
                     build:
-                        (pw.Context context) => pw.Column(
-                          children: [
-                            pw.Image(image),
-                            pw.SizedBox(height: 10),
-                            pw.Text(detailsText),
-                          ],
+                        (pw.Context context) => pw.Center(
+                          child: pw.Image(
+                            pw.MemoryImage(overlayImageFile.readAsBytesSync()),
+                            fit: pw.BoxFit.contain,
+                          ),
                         ),
                   ),
                 );
@@ -1110,8 +1124,18 @@ void _showShareOptions() {
           }
         }
 
+        // Save PDF
         final pdfFile = File('${downloadsDir?.path}/catalog_$timestamp.pdf');
         await pdfFile.writeAsBytes(await pdf.save());
+
+        // Clean up temp files
+        for (var file in tempFiles) {
+          try {
+            await file.delete();
+          } catch (e) {
+            print('Error deleting temp file: $e');
+          }
+        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('PDF downloaded to ${pdfFile.path}')),
@@ -1125,27 +1149,32 @@ void _showShareOptions() {
               final response = await http.get(Uri.parse(imageUrl));
               if (response.statusCode == 200) {
                 // Build text based on selected options
-                String detailsText = '';
+                String overlayText = '';
                 if (includeProduct)
-                  detailsText += 'Product: ${item.itemName}\n';
-                if (includeDesign) detailsText += 'Design: ${item.styleCode}\n';
-                if (includeShade) detailsText += 'Shade: ${item.shadeName}\n';
-                if (includeRate) detailsText += 'MRP: ₹${item.mrp}\n';
-                if (includeRate) detailsText += 'WSP: ₹${item.wsp}\n';
-                if (includeSize) detailsText += 'Size: ${item.sizeName}\n';
+                  overlayText += 'Product: ${item.itemName}\n';
+                if (includeDesign) overlayText += 'Design: ${item.styleCode}\n';
+                if (includeShade) overlayText += 'Shade: ${item.shadeName}\n';
+                if (includeRate) overlayText += 'MRP: ₹${item.mrp}\n';
+                if (includeRate) overlayText += 'WSP: ₹${item.wsp}\n';
+                if (includeSize) overlayText += 'Size: ${item.sizeName}\n';
                 if (includeRemark && item.remark.isNotEmpty)
-                  detailsText += 'Remark: ${item.remark}\n';
+                  overlayText += 'Remark: ${item.remark}\n';
 
-                final imageFile = await _overlayTextOnImage(
-                  File('${downloadsDir?.path}/temp_image.jpg')
-                    ..writeAsBytesSync(response.bodyBytes),
-                  detailsText,
+                // Create overlay image
+                final tempFile = File('${downloadsDir?.path}/temp_image.jpg')
+                  ..writeAsBytesSync(response.bodyBytes);
+                final overlayImageFile = await _overlayTextOnImage(
+                  tempFile,
+                  overlayText,
                 );
+                await tempFile.delete();
 
+                // Save final image
                 final finalFile = File(
                   '${downloadsDir?.path}/catalog_${item.styleCode}_${count}_$timestamp.jpg',
                 );
-                await imageFile.copy(finalFile.path);
+                await overlayImageFile.copy(finalFile.path);
+                await overlayImageFile.delete();
                 count++;
               }
             }
@@ -1169,29 +1198,27 @@ void _showShareOptions() {
     }
   }
 
-
-void _showDownloadOptions() {
-  // No need to provide initial options - they'll default to false
-  showModalBottomSheet(
-    context: context,
-    builder: (BuildContext context) {
-      return DownloadOptionsSheet(
-        onDownload: (type, selectedOptions) {
-          _handleDownloadOption(
-            type,
-            includeDesign: selectedOptions['design'] ?? false,
-            includeShade: selectedOptions['shade'] ?? false,
-            includeRate: selectedOptions['rate'] ?? false,
-            includeSize: selectedOptions['size'] ?? false,
-            includeProduct: selectedOptions['product'] ?? false,
-            includeRemark: selectedOptions['remark'] ?? false,
-          );
-        },
-      );
-    },
-  );
-}
-
+  void _showDownloadOptions() {
+    // No need to provide initial options - they'll default to false
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return DownloadOptionsSheet(
+          onDownload: (type, selectedOptions) {
+            _handleDownloadOption(
+              type,
+              includeDesign: selectedOptions['design'] ?? false,
+              includeShade: selectedOptions['shade'] ?? false,
+              includeRate: selectedOptions['rate'] ?? false,
+              includeSize: selectedOptions['size'] ?? false,
+              includeProduct: selectedOptions['product'] ?? false,
+              includeRemark: selectedOptions['remark'] ?? false,
+            );
+          },
+        );
+      },
+    );
+  }
 
   Widget _buildDownloadOptionWithMenu(
     BuildContext context, {

@@ -14,7 +14,7 @@ class ApiService {
     final response = await http.get(
       Uri.parse('${AppConstants.BASE_URL}/itemSubGrp'),
     );
-    print("RRRRRRRRRRRRRRRRRresponse data:${response.body}");
+    // print("RRRRRRRRRRRRRRRRRresponse data:${response.body}");
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       return data.map((json) => Category.fromJson(json)).toList();
@@ -30,9 +30,7 @@ class ApiService {
     final response = await http.get(
       Uri.parse('${AppConstants.BASE_URL}/item/$categoryKey'),
     );
-    print(
-      "Item API response for $categoryKey: ${response.body}",
-    );
+    print("Item API response for $categoryKey: ${response.body}");
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
@@ -43,14 +41,9 @@ class ApiService {
   }
 
   static Future<List<Item>> fetchAllItems() async {
+    final response = await http.get(Uri.parse('${AppConstants.BASE_URL}/item'));
 
-    final response = await http.get(
-      Uri.parse('${AppConstants.BASE_URL}/item'),
-    );
-
-    print(
-      "@@@@@@@@@@@@@@@@@@Item API response for${response.body}",
-    );
+    // print("@@@@@@@@@@@@@@@@@@Item API response for${response.body}");
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
@@ -67,7 +60,7 @@ class ApiService {
     final response = await http.get(
       Uri.parse('${AppConstants.BASE_URL}/style/$itemKey'),
     );
-   // print("Style API response for $itemKey: ${response.body}");
+    // print("Style API response for $itemKey: ${response.body}");
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
@@ -86,9 +79,7 @@ class ApiService {
     final response = await http.get(
       Uri.parse('${AppConstants.BASE_URL}/shade/GetShadeByItem/$itemKey'),
     );
-   print(
-      "ShADEEEEEEEEEEEEEEEEEEE API response for${response.body}",
-    );
+    // print("ShADEEEEEEEEEEEEEEEEEEE API response for${response.body}");
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       // Return a list of Shade objects
@@ -105,11 +96,11 @@ class ApiService {
     }
 
     final response = await http.get(
-      Uri.parse('${AppConstants.BASE_URL}/stylesize/GetStylesSizeByItem/$itemKey'),
+      Uri.parse(
+        '${AppConstants.BASE_URL}/stylesize/GetStylesSizeByItem/$itemKey',
+      ),
     );
-   print(
-      "SizeeeeeeeeeeeeeeeeeAPI response for${response.body}",
-    );
+    // print("SizeeeeeeeeeeeeeeeeeAPI response for${response.body}");
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       // Return a list of StyleSize objects
@@ -119,24 +110,6 @@ class ApiService {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   static Future<List<Shade>> fetchShadesByStyleKey(String styleKey) async {
     if (styleKey.isEmpty) {
       throw Exception('Invalid style selected');
@@ -144,7 +117,7 @@ class ApiService {
     final response = await http.get(
       Uri.parse('${AppConstants.BASE_URL}/shade/$styleKey'),
     );
-  //  print("Shade API response for $styleKey: ${response.body}");
+    //  print("Shade API response for $styleKey: ${response.body}");
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
@@ -161,7 +134,7 @@ class ApiService {
     final response = await http.get(
       Uri.parse('${AppConstants.BASE_URL}/stylesize/$styleKey'),
     );
-   // print("Size API response for $styleKey: ${response.body}");
+    // print("Size API response for $styleKey: ${response.body}");
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
@@ -175,7 +148,7 @@ class ApiService {
     final response = await http.get(
       Uri.parse('${AppConstants.BASE_URL}/brand'),
     );
-  //  print("Brand API response: ${response.body}");
+    //  print("Brand API response: ${response.body}");
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
@@ -211,7 +184,7 @@ class ApiService {
         'coBr': coBr,
       }),
     );
-  //  print("response body:${response.body}");
+    //  print("response body:${response.body}");
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
@@ -221,9 +194,10 @@ class ApiService {
     }
   }
 
-
-   static Future<List<dynamic>> getBarcodeDetails(String barcode) async {
-    final url = Uri.parse('${AppConstants.BASE_URL}/orderBooking/GetBarcodeDetails');
+  static Future<List<dynamic>> getBarcodeDetails(String barcode) async {
+    final url = Uri.parse(
+      '${AppConstants.BASE_URL}/orderBooking/GetBarcodeDetails',
+    );
 
     final body = {
       "coBrId": "01",
@@ -237,14 +211,13 @@ class ApiService {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(body),
     );
-   print("response barcode:${response.body}");
+    print("response barcode:${response.body}");
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed to fetch barcode details');
     }
   }
-
 
   static Future<List<Catalog>> fetchCatalogItem({
     required String itemSubGrpKey,
@@ -284,7 +257,4 @@ class ApiService {
       throw Exception('Failed to load catalog');
     }
   }
-
-
-
 }
