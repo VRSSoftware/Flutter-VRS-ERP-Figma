@@ -47,11 +47,19 @@ class _FilterPageState extends State<FilterPage> {
       selectedShades =
           args['selectedShades'] is List<Shade> ? args['selectedShades'] : [];
       sizes = args['sizes'] is List<Sizes> ? args['sizes'] : [];
+      selectedStyles = args['selectedStyles'] is List<Style> ? args['selectedStyles'] : [];
       selectedSizes =
           args['selectedSizes'] is List<Sizes> ? args['selectedSizes'] : [];
       fromMRPController.text = args['fromMRP'] is String ? args['fromMRP'] : "";
       toMRPController.text = args['toMRP'] is String ? args['toMRP'] : "";
     }
+    print(styles);
+    print(shades);
+    print(shades);
+    print(shades);
+    print(shades);
+    print(shades);
+    print(shades);
   }
 
   Future<void> _selectDate(
@@ -179,7 +187,7 @@ class _FilterPageState extends State<FilterPage> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
             child: Column(
               children: [
-                // ✅ Shades Filter
+              
                 ExpansionTile(
                   title: Text('Select Styles'),
                   initiallyExpanded: true,
