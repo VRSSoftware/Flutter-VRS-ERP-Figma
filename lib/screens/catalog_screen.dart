@@ -283,64 +283,64 @@ class _CatalogScreenState extends State<CatalogScreen> {
     );
   }
 
-  Widget _buildCategoryItems() {
-    double buttonWidth = (MediaQuery.of(context).size.width - 60) / 2;
-    double buttonHeight = 50; 
+Widget _buildCategoryItems() {
+  double buttonWidth = (MediaQuery.of(context).size.width - 60) / 2;
+  double buttonHeight = 50; 
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Items in $_selectedCategoryName",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        SizedBox(height: 10),
-        _isLoadingItems
-            ? Center(child: CircularProgressIndicator())
-            : Wrap(
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        "Items in $_selectedCategoryName",
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      ),
+      SizedBox(height: 10),
+      _isLoadingItems
+          ? Center(child: CircularProgressIndicator())
+          : Wrap(
               spacing: 10,
               runSpacing: 10,
               alignment: WrapAlignment.start,
-              children:
-                  _items.map((item) {
-                    return SizedBox(
-                      width: buttonWidth,
-                      height: buttonHeight,
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.grey.shade300),
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        onPressed: () {
-                          print(item.itemKey);
-                          print(item.itemSubGrpKey);
-                          Navigator.pushNamed(
-                            context,
-                            '/catalogpage',
-                            arguments: {
-                              'itemKey': item.itemKey,
-                              'itemSubGrpKey': item.itemSubGrpKey,
-                              'coBr': coBr,
-                              'fcYrId': fcYrId,
-                            },
-                          );
-                        },
-                        child: Text(
-                          item.itemName,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.black87, fontSize: 14),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
+              children: _items.map((item) {
+                return SizedBox(
+                  width: buttonWidth,
+                  height: buttonHeight,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: Colors.grey.shade300),
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
                       ),
-                    );
-                  }).toList(),
+                    ),
+                    onPressed: () {
+                      print(item.itemKey);
+                      print(item.itemSubGrpKey);
+                      Navigator.pushNamed(
+                        context,
+                        '/catalogpage',
+                        arguments: {
+                          'itemKey': item.itemKey,
+                          'itemSubGrpKey': item.itemSubGrpKey,
+                          'coBr': coBr,
+                          'fcYrId': fcYrId,
+                        },
+                      );
+                    },
+                    child: SingleChildScrollView( // Enable horizontal scrolling
+                      scrollDirection: Axis.horizontal,
+                      child: Text(
+                        item.itemName,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.black87, fontSize: 14),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
-      ],
-    );
-  }
+    ],
+  );
+}
 
 }
