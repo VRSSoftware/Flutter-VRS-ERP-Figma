@@ -112,6 +112,7 @@ class _CatalogPageState extends State<CatalogPage> {
       print('Failed to load catalog items: $e');
     }
   }
+  
 
   // Fetch Styles by Item Key
   Future<void> _fetchStylesByItemKey(String itemKey) async {
