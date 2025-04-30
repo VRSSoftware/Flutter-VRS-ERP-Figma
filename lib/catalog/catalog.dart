@@ -77,6 +77,11 @@ class _CatalogPageState extends State<CatalogPage> {
         itemSubGrpKey: itemSubGrpKey!,
         itemKey: itemKey!,
         cobr: coBr!,
+       styleKey: selectedStyles.length==0 ? null : selectedStyles[0].styleKey,
+      shadeKey: selectedShades.length ==0? null : selectedShades.map((s) => s.shadeKey).join(','),
+      sizeKey : selectedSize.length == 0 ? null : selectedSize.map((s) => s.itemSizeKey).join(','),
+      fromMRP : fromMRP == "" ? null : fromMRP,
+      toMRP : toMRP == ""? null : toMRP
       );
       setState(() {
         catalogItems = items;
