@@ -13,7 +13,6 @@ class CatalogItemCard extends StatelessWidget {
   final double? width;
   final double imageHeight;
   final bool bookNowButton;
-  final Set<String> activeFilters;
 
   const CatalogItemCard({
     Key? key,
@@ -23,13 +22,14 @@ class CatalogItemCard extends StatelessWidget {
     required this.onSelect,
     required this.onLike,
     required this.onAddToCart,
-    required this.activeFilters,
+
     this.width,
     this.imageHeight = 200,
     this.bookNowButton = true,
   }) : super(key: key);
 
   String _getImageUrl() {
+    
     if (catalog.fullImagePath.startsWith('http')) {
       return catalog.fullImagePath;
     }
@@ -96,6 +96,7 @@ class CatalogItemCard extends StatelessWidget {
             _getImageUrl(),
             fit: BoxFit.fitWidth,
             width: double.infinity,
+            height: imageHeight,
             loadingBuilder: (context, child, loadingProgress) {
               if (loadingProgress == null) return child;
               return const Center(child: CircularProgressIndicator());
@@ -109,21 +110,17 @@ class CatalogItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildImageError() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.image_not_supported, size: 40),
-          const SizedBox(height: 8),
-          Text(
-            'Image not available',
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-          ),
-        ],
-      ),
-    );
-  }
+Widget _buildImageError() {
+  return ClipRRect(
+    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+    child: Image.asset(
+      'assets/images/default.png',
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: imageHeight,
+    ),
+  );
+}
 
   Widget _buildSelectedIndicator() {
     return Container(
@@ -153,41 +150,38 @@ class CatalogItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailsSection(bool isDarkMode, BuildContext context) {
-    final greyColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
+Widget _buildDetailsSection(bool isDarkMode, BuildContext context) {
+  final greyColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            if (activeFilters.contains('stylecode'))
-              Text(
-                catalog.styleCode,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            _buildLikeButton(),
-          ],
-        ),
-        const SizedBox(height: 6),
-        if (activeFilters.contains('shades') && catalog.shadeName.isNotEmpty)
-          _buildDetailRow('Shade', catalog.shadeName, greyColor),
-        if (activeFilters.contains('size') && catalog.sizeName.isNotEmpty)
-          _buildDetailRow('Size', catalog.sizeName, greyColor),
-        if (activeFilters.contains('mrp'))
-          _buildDetailRow('MRP', '₹${catalog.mrp.toStringAsFixed(2)}', greyColor),
-        if (activeFilters.contains('wsp'))
-          _buildDetailRow('WSP', '₹${catalog.wsp.toStringAsFixed(2)}', greyColor),
-        _buildStockRow(greyColor),
-        const SizedBox(height: 8),
-        if (bookNowButton) _buildBookNowButton(context),
-      ],
-    );
-  }
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            catalog.styleCode,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          _buildLikeButton(),
+        ],
+      ),
+      const SizedBox(height: 6),
+      if (catalog.shadeName.isNotEmpty)
+        _buildDetailRow('Shade', catalog.shadeName, greyColor),
+      if (catalog.sizeName.isNotEmpty)
+        _buildDetailRow('Size', catalog.sizeName, greyColor),
+      _buildDetailRow('MRP', '₹${catalog.mrp.toStringAsFixed(2)}', greyColor),
+      _buildDetailRow('WSP', '₹${catalog.wsp.toStringAsFixed(2)}', greyColor),
+      _buildStockRow(greyColor),
+      const SizedBox(height: 8),
+      if (bookNowButton) _buildBookNowButton(context),
+    ],
+  );
+}
 
   Widget _buildDetailRow(String label, String value, Color? color) {
     return Padding(

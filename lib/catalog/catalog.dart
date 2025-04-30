@@ -18,6 +18,7 @@ import 'package:vrs_erp_figma/models/size.dart';
 import 'package:vrs_erp_figma/models/style.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
+import 'package:vrs_erp_figma/widget/bottom_navbar.dart';
 
 class CatalogPage extends StatefulWidget {
   @override
@@ -112,7 +113,7 @@ class _CatalogPageState extends State<CatalogPage> {
       print('Failed to load catalog items: $e');
     }
   }
-  
+
 
   // Fetch Styles by Item Key
   Future<void> _fetchStylesByItemKey(String itemKey) async {
@@ -149,6 +150,7 @@ class _CatalogPageState extends State<CatalogPage> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -163,23 +165,16 @@ class _CatalogPageState extends State<CatalogPage> {
         backgroundColor: AppColors.primaryColor,
         elevation: 1,
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: Colors.white,
-          ), // <-- Back icon
-          onPressed: () {
-            Navigator.pop(context); // <-- Go back to previous screen
-          },
+          icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ),
-        // In your AppBar actions (replace the existing actions code)
         actions: [
-          if (selectedItems.isNotEmpty) // Only show when items are selected
+          if (selectedItems.isNotEmpty)
             IconButton(
               icon: Icon(Icons.download, color: Colors.white),
-              onPressed:
-                  _showDownloadOptions, // New method to show download options
+              onPressed: _showDownloadOptions,
             ),
-          if (selectedItems.isNotEmpty) // Only show when items are selected
+          if (selectedItems.isNotEmpty)
             IconButton(
               icon: Icon(Icons.share, color: Colors.white),
               onPressed: _showShareOptions,
@@ -203,7 +198,6 @@ class _CatalogPageState extends State<CatalogPage> {
       ),
       body: Column(
         children: [
-          //     _buildStyleSelection(isLargeScreen),
           Expanded(
             child: Padding(
               padding: EdgeInsets.symmetric(
@@ -229,8 +223,25 @@ class _CatalogPageState extends State<CatalogPage> {
                       ),
             ),
           ),
-          _buildBottomButtons(isLargeScreen),
         ],
+      ),
+
+      // ✅ This adds the circular filter button at bottom right
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showFilterDialog,
+        backgroundColor: AppColors.primaryColor,
+        child: Icon(Icons.filter_list, color: Colors.white),
+        tooltip: 'Filter',
+      ),
+
+         bottomNavigationBar: BottomNavigationWidget(
+        currentIndex: 1,
+        onTap: (index) {
+          if (index == 0) Navigator.pushNamed(context, '/home');
+          if (index == 1) return; 
+          if (index == 2) Navigator.pushNamed(context, '/orderbooking');
+    
+        },
       ),
     );
   }
@@ -271,13 +282,12 @@ class _CatalogPageState extends State<CatalogPage> {
       },
     );
   }
-
   double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
     if (constraints.maxWidth > 1000) return 0.75;
     if (constraints.maxWidth > 600) return 0.7;
     return 0.65;
   }
-  Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
+ Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
     final filteredItems = _getFilteredItems();
     return ListView.builder(
       itemCount: filteredItems.length,
@@ -492,6 +502,7 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
+
   Widget _buildItemCard(Catalog item, bool isLargeScreen) {
     bool isSelected = selectedItems.contains(item);
 
@@ -587,6 +598,7 @@ class _CatalogPageState extends State<CatalogPage> {
       ),
     );
   }
+
   Widget _buildBottomButtons(bool isLargeScreen) {
     return SafeArea(
       child: Container(
