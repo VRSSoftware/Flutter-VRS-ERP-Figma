@@ -39,7 +39,7 @@ class _CatalogPageState extends State<CatalogPage> {
   String? fcYrId;
   List<Catalog> selectedItems = [];
   List<Sizes> selectedSize = [];
-  String fromMRP="";
+  String fromMRP = "";
   String toMRP = "";
 
   @override
@@ -74,18 +74,39 @@ class _CatalogPageState extends State<CatalogPage> {
   // Fetch Catalog Items
   Future<void> _fetchCatalogItems() async {
     try {
+      setState(() {
+        catalogItems = [];
+      });
       final items = await ApiService.fetchCatalogItem(
         itemSubGrpKey: itemSubGrpKey!,
         itemKey: itemKey!,
         cobr: coBr!,
-       styleKey: selectedStyles.length==0 ? null : selectedStyles[0].styleKey,
-      shadeKey: selectedShades.length ==0? null : selectedShades.map((s) => s.shadeKey).join(','),
-      sizeKey : selectedSize.length == 0 ? null : selectedSize.map((s) => s.itemSizeKey).join(','),
-      fromMRP : fromMRP == "" ? null : fromMRP,
-      toMRP : toMRP == ""? null : toMRP
+        //  styleKey: selectedStyles.length==0 ? null : selectedStyles[0].styleKey,
+        shadeKey:
+            selectedShades.length == 0
+                ? null
+                : selectedShades.map((s) => s.shadeKey).join(','),
+        sizeKey:
+            selectedSize.length == 0
+                ? null
+                : selectedSize.map((s) => s.itemSizeKey).join(','),
+        fromMRP: fromMRP == "" ? null : fromMRP,
+        toMRP: toMRP == "" ? null : toMRP,
       );
       setState(() {
-        catalogItems = items;
+        if (selectedStyles.isEmpty) {
+          catalogItems = items;
+        } else {
+          final selectedStyleKeys =
+              selectedStyles.map((style) => style.styleKey).toSet();
+        
+          catalogItems =
+              items
+                  .where(
+                    (catalog) => selectedStyleKeys.contains(catalog.styleKey),
+                  )
+                  .toList();
+        }
       });
     } catch (e) {
       print('Failed to load catalog items: $e');
@@ -212,7 +233,6 @@ class _CatalogPageState extends State<CatalogPage> {
       ),
     );
   }
-
 
   Widget _buildGridView(
     BoxConstraints constraints,
@@ -642,20 +662,20 @@ class _CatalogPageState extends State<CatalogPage> {
   List<Catalog> _getFilteredItems() {
     var filteredItems = catalogItems;
 
-    if (selectedStyles.isNotEmpty) {
-      filteredItems =
-          filteredItems
-              .where((item) => selectedStyles.contains(item.styleCode))
-              .toList();
-    }
+    // if (selectedStyles.isNotEmpty) {
+    //   filteredItems =
+    //       filteredItems
+    //           .where((item) => selectedStyles.contains(item.styleCode))
+    //           .toList();
+    // }
 
-    if (selectedShades.isNotEmpty) {
-      filteredItems =
-          filteredItems.where((item) {
-            final shades = item.shadeName?.split(',') ?? [];
-            return shades.any((shade) => selectedShades.contains(shade));
-          }).toList();
-    }
+    // if (selectedShades.isNotEmpty) {
+    //   filteredItems =
+    //       filteredItems.where((item) {
+    //         final shades = item.shadeName?.split(',') ?? [];
+    //         return shades.any((shade) => selectedShades.contains(shade));
+    //       }).toList();
+    // }
 
     return filteredItems;
   }
@@ -684,12 +704,11 @@ class _CatalogPageState extends State<CatalogPage> {
             'styles': styles,
             'shades': shades,
             'sizes': sizes,
-            'selectedShades' : selectedShades,
-            'selectedSizes' : selectedSize,
-            'selectedStyles' : selectedStyles,
-            'fromMRP' : fromMRP,
-            'toMRP' : toMRP,
-
+            'selectedShades': selectedShades,
+            'selectedSizes': selectedSize,
+            'selectedStyles': selectedStyles,
+            'fromMRP': fromMRP,
+            'toMRP': toMRP,
           },
         ),
         transitionDuration: Duration(milliseconds: 500),
@@ -735,13 +754,12 @@ class _CatalogPageState extends State<CatalogPage> {
       // print('Selected Shades (shadeKey): $shadeKeysString');
       // print('Selected Sizes (itemSizeKey): $sizeKeysString');
       setState(() {
-      selectedStyles = selectedFilters['selectedStyles'];
-      selectedStyles = selectedFilters['styles'];
-      selectedSize =   selectedFilters['sizes'];
-      selectedShades = selectedFilters['shades'];
-      fromMRP = selectedFilters['fromMRP'];
-      toMRP = selectedFilters['toMRP'];
-
+        //selectedStyles = selectedFilters['selectedStyles'];
+        selectedStyles = selectedFilters['styles'];
+        selectedSize = selectedFilters['sizes'];
+        selectedShades = selectedFilters['shades'];
+        fromMRP = selectedFilters['fromMRP'];
+        toMRP = selectedFilters['toMRP'];
       });
       print("aaaaaaaa  ${selectedFilters['styles']}");
       print("aaaaaaaa  ${selectedFilters['sizes']}");
@@ -750,7 +768,6 @@ class _CatalogPageState extends State<CatalogPage> {
       print("aaaaaaaa  ${selectedFilters['toMRP']}");
       print("aaaaaaaa  ${selectedFilters['styles']}");
       _fetchCatalogItems();
-    
     }
   }
 
@@ -1219,56 +1236,4 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
-  Widget _buildDownloadOptionWithMenu(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return Row(
-      children: [
-        Expanded(
-          child: InkWell(
-            onTap: onTap,
-            child: Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(icon, color: AppColors.primaryColor),
-                  SizedBox(width: 12),
-                  Text(title),
-                ],
-              ),
-            ),
-          ),
-        ),
-        SizedBox(width: 8),
-        PopupMenuButton<String>(
-          icon: Icon(Icons.more_vert, size: 20),
-          itemBuilder:
-              (BuildContext context) => [
-                PopupMenuItem<String>(
-                  value: 'info',
-                  child: Text('Info about this option'),
-                ),
-              ],
-          onSelected: (value) {
-            if (value == 'info') {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    '$title downloads selected items in this format',
-                  ),
-                ),
-              );
-            }
-          },
-        ),
-      ],
-    );
-  }
 }

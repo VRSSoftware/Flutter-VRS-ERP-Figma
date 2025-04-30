@@ -27,6 +27,8 @@ class _FilterPageState extends State<FilterPage> {
   TextEditingController toMRPController = TextEditingController();
   TextEditingController fromDateController = TextEditingController();
   TextEditingController toDateController = TextEditingController();
+  TextEditingController wspFromController = TextEditingController();
+  TextEditingController wspToController = TextEditingController();
 
   bool isCheckboxModeShade = true;
   bool isShadeExpanded = true;
@@ -53,13 +55,7 @@ class _FilterPageState extends State<FilterPage> {
       fromMRPController.text = args['fromMRP'] is String ? args['fromMRP'] : "";
       toMRPController.text = args['toMRP'] is String ? args['toMRP'] : "";
     }
-    print(styles);
-    print(shades);
-    print(shades);
-    print(shades);
-    print(shades);
-    print(shades);
-    print(shades);
+    
   }
 
   Future<void> _selectDate(
@@ -480,6 +476,41 @@ class _FilterPageState extends State<FilterPage> {
                 ),
 
                 SizedBox(height: 20),
+                ExpansionTile(
+                  title: Text('WSP Range'),
+                  tilePadding: EdgeInsets.all(0),
+                  initiallyExpanded: true,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: wspFromController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'WSP from',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: wspToController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'WSP to',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 20),
 
                 // ✅ Date Range Filter
                 ExpansionTile(
@@ -560,7 +591,7 @@ class _FilterPageState extends State<FilterPage> {
                     'fromDate': fromDateController.text,
                     'toDate': toDateController.text,
                   };
-
+                    print("selectedfiltersss ${selectedFilters}");
                   Navigator.pop(context, selectedFilters);
                 },
                 child: Text(
