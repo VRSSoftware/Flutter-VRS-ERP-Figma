@@ -167,18 +167,16 @@ class _FilterPageState extends State<FilterPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       drawer: DrawerScreen(),
-      appBar: AppBar(
-        title: Text('Filter', style: TextStyle(color: Colors.white)),
-        backgroundColor: AppColors.primaryColor,
-        elevation: 1,
-        leading: Builder(
-          builder:
-              (context) => IconButton(
-                icon: Icon(Icons.menu, color: Colors.white),
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
-        ),
-      ),
+ appBar: AppBar(
+  title: Text('Filter', style: TextStyle(color: Colors.white)),
+  backgroundColor: AppColors.primaryColor,
+  elevation: 1,
+  leading: IconButton(
+    icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+    onPressed: () => Navigator.pop(context),
+  ),
+),
+
       body: Stack(
         children: [
           SingleChildScrollView(
