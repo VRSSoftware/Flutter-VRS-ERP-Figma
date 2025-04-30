@@ -435,33 +435,41 @@ class _CatalogPageState extends State<CatalogPage> {
                               ),
                               const SizedBox(height: 8),
 
-                             Padding(
-  padding: EdgeInsets.symmetric(
-    horizontal: isLargeScreen ? 12 : 10,
-    vertical: 4,
-  ),
-  child: SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildDetailText('Shades', '', isLargeScreen),
-        ...shades.map((shade) {
-          return Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: Text(
-              shade,
-              style: TextStyle(
-                fontSize: isLargeScreen ? 14 : 13,
-                color: Colors.grey[700],
-              ),
-            ),
-          );
-        }).toList(),
-      ],
+Row(
+  children: [
+    // Shades label with no extra padding
+    Text(
+      'Shades:',
+      style: TextStyle(
+        fontWeight: FontWeight.w500,
+        fontSize: isLargeScreen ? 14 : 13,
+        color: Colors.grey[800],
+      ),
     ),
-  ),
+    SizedBox(width: 8),
+    // Make the list of shades scrollable
+    Expanded(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: shades.map((shade) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: Text(
+                shade,
+                style: TextStyle(
+                  fontSize: isLargeScreen ? 13 : 12,
+                  color: Colors.grey[700],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    ),
+  ],
 ),
+
 
                             ],
                           ),
@@ -593,32 +601,39 @@ class _CatalogPageState extends State<CatalogPage> {
                           SizedBox(height: 10),
 
                      
-                     Padding(
-  padding: EdgeInsets.symmetric(
-    horizontal: isLargeScreen ? 12 : 10,
-    vertical: 4,
-  ),
-  child: SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildDetailText('Shades', '', isLargeScreen),
-        ...shades.map((shade) {
-          return Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: Text(
-              shade,
-              style: TextStyle(
-                fontSize: isLargeScreen ? 14 : 13,
-                color: Colors.grey[700],
-              ),
-            ),
-          );
-        }).toList(),
-      ],
+           Row(
+  children: [
+    // Shades label with no extra padding
+    Text(
+      'Shades:',
+      style: TextStyle(
+        fontWeight: FontWeight.w500,
+        fontSize: isLargeScreen ? 14 : 13,
+        color: Colors.grey[800],
+      ),
     ),
-  ),
+    SizedBox(width: 8),
+    // Make the list of shades scrollable
+    Expanded(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: shades.map((shade) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: Text(
+                shade,
+                style: TextStyle(
+                  fontSize: isLargeScreen ? 13 : 12,
+                  color: Colors.grey[700],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    ),
+  ],
 ),
 
                         ],
