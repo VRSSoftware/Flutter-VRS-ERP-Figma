@@ -27,7 +27,7 @@ class _CatalogPageState extends State<CatalogPage> {
   String filterOption = 'New Arrival';
   int viewOption = 0;
   List<String> selectedStyles = [];
-  List<String> selectedShades = [];
+  List<Shade> selectedShades = [];
   List<Catalog> catalogItems = [];
   List<Style> styles = [];
   List<Shade> shades = [];
@@ -795,9 +795,14 @@ class _CatalogPageState extends State<CatalogPage> {
       toMRP = selectedFilters['toMRP'];
 
       });
-
+      print("aaaaaaaa  ${selectedFilters['styles']}");
+      print("aaaaaaaa  ${selectedFilters['sizes']}");
+      print("aaaaaaaa  ${selectedFilters['shades']}");
+      print("aaaaaaaa  ${selectedFilters['fromMRP']}");
+      print("aaaaaaaa  ${selectedFilters['toMRP']}");
+      print("aaaaaaaa  ${selectedFilters['styles']}");
       _fetchCatalogItems();
-      // You can now update the UI or make network calls based on the selected filters.
+    
     }
   }
 
