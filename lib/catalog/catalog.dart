@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:ui';
 import 'dart:ui' as pw;
-
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -436,44 +435,34 @@ class _CatalogPageState extends State<CatalogPage> {
                               ),
                               const SizedBox(height: 8),
 
-                              /// Row 2: Shade in separate rounded circles
-                              Padding(
-                                padding: EdgeInsets.only(
-                                  left: isLargeScreen ? 16 : 8,
-                                  right: isLargeScreen ? 16 : 8,
-                                ),
-                                child: SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: Row(
-                                    children:
-                                        shades.map((shade) {
-                                          return Container(
-                                            margin: EdgeInsets.only(right: 8),
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 6,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.grey.shade200,
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                              border: Border.all(
-                                                color: Colors.grey.shade400,
-                                              ),
-                                            ),
-                                            child: Text(
-                                              shade,
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w500,
-                                                fontSize:
-                                                    isLargeScreen ? 14 : 13,
-                                              ),
-                                            ),
-                                          );
-                                        }).toList(),
-                                  ),
-                                ),
-                              ),
+                             Padding(
+  padding: EdgeInsets.symmetric(
+    horizontal: isLargeScreen ? 12 : 10,
+    vertical: 4,
+  ),
+  child: SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildDetailText('Shades', '', isLargeScreen),
+        ...shades.map((shade) {
+          return Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: Text(
+              shade,
+              style: TextStyle(
+                fontSize: isLargeScreen ? 14 : 13,
+                color: Colors.grey[700],
+              ),
+            ),
+          );
+        }).toList(),
+      ],
+    ),
+  ),
+),
+
                             ],
                           ),
                         ),
@@ -603,47 +592,39 @@ class _CatalogPageState extends State<CatalogPage> {
 
                           SizedBox(height: 10),
 
-                          /// Row 3: Separate Rounded Circle for Each Shade with Scrolling
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: isLargeScreen ? 16 : 8,
-                              right: isLargeScreen ? 16 : 8,
-                            ),
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children:
-                                    shades.map((shade) {
-                                      return Container(
-                                        margin: EdgeInsets.only(right: 8),
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey.shade200,
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                          border: Border.all(
-                                            color: Colors.grey.shade400,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          shade,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: isLargeScreen ? 14 : 13,
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
-                              ),
-                            ),
-                          ),
+                     
+                     Padding(
+  padding: EdgeInsets.symmetric(
+    horizontal: isLargeScreen ? 12 : 10,
+    vertical: 4,
+  ),
+  child: SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildDetailText('Shades', '', isLargeScreen),
+        ...shades.map((shade) {
+          return Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: Text(
+              shade,
+              style: TextStyle(
+                fontSize: isLargeScreen ? 14 : 13,
+                color: Colors.grey[700],
+              ),
+            ),
+          );
+        }).toList(),
+      ],
+    ),
+  ),
+),
+
                         ],
                       ),
                     ),
+                
                   ],
                 ),
                 if (isSelected)
@@ -760,17 +741,18 @@ class _CatalogPageState extends State<CatalogPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text(
+                                item.itemName,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: isLargeScreen ? 18 : 16,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                       _buildDetailText('Style', item.styleCode, isLargeScreen),
                       const SizedBox(height: 4),
-                      Text(
-                        item.itemName,
-                        style: TextStyle(
-                          fontSize: isLargeScreen ? 14 : 13,
-                          color: Colors.grey.shade700,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                    
                       const SizedBox(height: 4),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -791,41 +773,41 @@ class _CatalogPageState extends State<CatalogPage> {
                           ),
                         ],
                       ),
+                      
                     ],
                   ),
                 ),
 
-                /// Shades as rounded chips
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children:
-                          shades.map((shade) {
-                            return Container(
-                              margin: const EdgeInsets.only(right: 8),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.grey.shade400),
-                              ),
-                              child: Text(
-                                shade,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: isLargeScreen ? 14 : 13,
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                    ),
-                  ),
-                ),
+               /// Shades as comma-separated plain text
+/// Shades in horizontal scroll using _buildDetailText
+Padding(
+  padding: EdgeInsets.symmetric(
+    horizontal: isLargeScreen ? 12 : 10,
+    vertical: 4,
+  ),
+  child: SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildDetailText('Shades', '', isLargeScreen),
+        ...shades.map((shade) {
+          return Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: Text(
+              shade,
+              style: TextStyle(
+                fontSize: isLargeScreen ? 14 : 13,
+                color: Colors.grey[700],
+              ),
+            ),
+          );
+        }).toList(),
+      ],
+    ),
+  ),
+),
+
                 const SizedBox(height: 8),
               ],
             ),
