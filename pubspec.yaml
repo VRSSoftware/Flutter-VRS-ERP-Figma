@@ -51,6 +51,7 @@ dependencies:
   multi_select_flutter: ^4.0.0
   persistent_bottom_nav_bar: ^5.0.0
   carousel_slider: ^5.0.0
+  auto_size_text: ^3.0.0
 
 
 

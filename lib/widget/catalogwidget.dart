@@ -22,17 +22,20 @@ class CatalogItemCard extends StatelessWidget {
     required this.onSelect,
     required this.onLike,
     required this.onAddToCart,
-
     this.width,
     this.imageHeight = 200,
     this.bookNowButton = true,
   }) : super(key: key);
 
   String _getImageUrl() {
-    
+    if (catalog.fullImagePath.isEmpty || catalog.fullImagePath.contains(' ')) {
+      return ''; // Will trigger fallback
+    }
+
     if (catalog.fullImagePath.startsWith('http')) {
       return catalog.fullImagePath;
     }
+
     final imageName = catalog.fullImagePath.split('/').last.split('?').first;
     return '${AppConstants.BASE_URL}/images/$imageName';
   }
@@ -88,21 +91,26 @@ class CatalogItemCard extends StatelessWidget {
   }
 
   Widget _buildImageSection(BoxConstraints constraints) {
+    final imageUrl = _getImageUrl();
+
     return Stack(
       children: [
         ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-          child: Image.network(
-            _getImageUrl(),
-            fit: BoxFit.fitWidth,
-            width: double.infinity,
-            height: imageHeight,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return const Center(child: CircularProgressIndicator());
-            },
-            errorBuilder: (context, error, stackTrace) => _buildImageError(),
-          ),
+          child: imageUrl.isEmpty
+              ? _buildImageError()
+              : Image.network(
+                  imageUrl,
+                  fit: BoxFit.fitWidth,
+                  width: double.infinity,
+                  height: imageHeight,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(child: CircularProgressIndicator());
+                  },
+                  errorBuilder: (context, error, stackTrace) =>
+                      _buildImageError(),
+                ),
         ),
         if (isSelected)
           Positioned(top: 8, left: 8, child: _buildSelectedIndicator()),
@@ -110,17 +118,14 @@ class CatalogItemCard extends StatelessWidget {
     );
   }
 
-Widget _buildImageError() {
-  return ClipRRect(
-    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-    child: Image.asset(
+  Widget _buildImageError() {
+    return Image.asset(
       'assets/images/default.png',
       fit: BoxFit.cover,
       width: double.infinity,
       height: imageHeight,
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildSelectedIndicator() {
     return Container(
@@ -150,38 +155,39 @@ Widget _buildImageError() {
     );
   }
 
-Widget _buildDetailsSection(bool isDarkMode, BuildContext context) {
-  final greyColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
+  Widget _buildDetailsSection(bool isDarkMode, BuildContext context) {
+    final greyColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            catalog.styleCode,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          _buildLikeButton(),
-        ],
-      ),
-      const SizedBox(height: 6),
-      if (catalog.shadeName.isNotEmpty)
-        _buildDetailRow('Shade', catalog.shadeName, greyColor),
-      if (catalog.sizeName.isNotEmpty)
-        _buildDetailRow('Size', catalog.sizeName, greyColor),
-      _buildDetailRow('MRP', '₹${catalog.mrp.toStringAsFixed(2)}', greyColor),
-      _buildDetailRow('WSP', '₹${catalog.wsp.toStringAsFixed(2)}', greyColor),
-      _buildStockRow(greyColor),
-      const SizedBox(height: 8),
-      if (bookNowButton) _buildBookNowButton(context),
-    ],
-  );
-}
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              catalog.styleCode,
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            _buildLikeButton(),
+          ],
+        ),
+        const SizedBox(height: 6),
+        if (catalog.shadeName.isNotEmpty)
+          _buildDetailRow('Shade', catalog.shadeName, greyColor),
+        if (catalog.sizeName.isNotEmpty)
+          _buildDetailRow('Size', catalog.sizeName, greyColor),
+        _buildDetailRow('MRP', '₹${catalog.mrp.toStringAsFixed(2)}', greyColor),
+        _buildDetailRow('WSP', '₹${catalog.wsp.toStringAsFixed(2)}', greyColor),
+        _buildStockRow(greyColor),
+        const SizedBox(height: 8),
+        if (bookNowButton) _buildBookNowButton(context),
+      ],
+    );
+  }
 
   Widget _buildDetailRow(String label, String value, Color? color) {
     return Padding(
@@ -218,7 +224,9 @@ Widget _buildDetailsSection(bool isDarkMode, BuildContext context) {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryColor,
           padding: const EdgeInsets.symmetric(vertical: 10),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
         onPressed: () => _showBookingDialog(context),
         child: const Text(
