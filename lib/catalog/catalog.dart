@@ -260,8 +260,6 @@ class _CatalogPageState extends State<CatalogPage> {
           ),
         ],
       ),
-
-      // ✅ This adds the circular filter button at bottom right
       floatingActionButton: FloatingActionButton(
         onPressed: _showFilterDialog,
         backgroundColor: AppColors.primaryColor,
@@ -434,7 +432,6 @@ class _CatalogPageState extends State<CatalogPage> {
                                 ],
                               ),
 
-                              // Add Sizes Row here
                               if (item.sizeName.isNotEmpty)
                                 SingleChildScrollView(
                                   scrollDirection: Axis.horizontal,
@@ -442,67 +439,45 @@ class _CatalogPageState extends State<CatalogPage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      _buildDetailText(
-                                        'Sizes',
-                                        '',
-                                        isLargeScreen,
+                                      Text(
+                                        'Size : ',
+                                        style: TextStyle(
+                                          fontWeight:
+                                              FontWeight
+                                                  .bold, 
+                                                     color: Colors.grey[700],
+                                        ),
                                       ),
-                                      ...item.sizeName.split(',').map((size) {
-                                        return Padding(
-                                          padding: const EdgeInsets.only(
-                                            right: 6,
-                                          ),
-                                          child: Text(
-                                            size.trim(),
-                                            style: TextStyle(
-                                              fontSize: isLargeScreen ? 14 : 13,
-                                              color: Colors.grey[700],
-                                            ),
-                                          ),
-                                        );
-                                      }).toList(),
+                                      Text(
+                                        item.sizeDetails,
+                                      ), // Data remains normal
                                     ],
                                   ),
                                 ),
                               const SizedBox(height: 4),
 
-                              Row(
-                                children: [
-                                  // Shades label with no extra padding
-                                  Text(
-                                    'Shades:',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: isLargeScreen ? 14 : 13,
-                                      color: Colors.grey[800],
+                              const SizedBox(height: 4),
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildDetailText(
+                                      'Shades',
+                                      '',
+                                      isLargeScreen,
                                     ),
-                                  ),
-                                  SizedBox(width: 8),
-                                  // Make the list of shades scrollable
-                                  Expanded(
-                                    child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: Row(
-                                        children:
-                                            shades.map((shade) {
-                                              return Padding(
-                                                padding: const EdgeInsets.only(
-                                                  right: 6,
-                                                ),
-                                                child: Text(
-                                                  shade,
-                                                  style: TextStyle(
-                                                    fontSize:
-                                                        isLargeScreen ? 13 : 12,
-                                                    color: Colors.grey[700],
-                                                  ),
-                                                ),
-                                              );
-                                            }).toList(),
+                                    Text(
+                                      shades.join(
+                                        ', ',
+                                      ), // Join shades with a comma
+                                      style: TextStyle(
+                                        fontSize: isLargeScreen ? 14 : 13,
+                                        color: Colors.grey[700],
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ],
                           ),
@@ -640,63 +615,35 @@ class _CatalogPageState extends State<CatalogPage> {
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Size : ${item.sizeDetails}')
-                                  // _buildDetailText('Sizes', '', isLargeScreen),
-                                  // ...item.sizeName.split(',').map((size) {
-                                  //   return Padding(
-                                  //     padding: const EdgeInsets.only(right: 6),
-                                  //     child: Text(
-                                  //       size.trim(),
-                                  //       style: TextStyle(
-                                  //         fontSize: isLargeScreen ? 14 : 13,
-                                  //         color: Colors.grey[700],
-                                  //       ),
-                                  //     ),
-                                  //   );
-                                  // }).toList(),
+                                  Text(
+                                    'Size : ',
+                                    style: TextStyle(
+                                      fontWeight:
+                                          FontWeight
+                                              .bold,
+                                                 color: Colors.grey[700],
+                                    ),
+                                  ),
+                                  Text(item.sizeDetails), // Data remains normal
                                 ],
                               ),
                             ),
-
-                          SizedBox(height: 10),
-
-                          Row(
-                            children: [
-                              // Shades label with no extra padding
-                              Text(
-                                'Shades:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: isLargeScreen ? 14 : 13,
-                                  color: Colors.grey[800],
-                                ),
-                              ),
-                              SizedBox(width: 8),
-                              // Make the list of shades scrollable
-                              Expanded(
-                                child: SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: Row(
-                                    children:
-                                        shades.map((shade) {
-                                          return Padding(
-                                            padding: const EdgeInsets.only(
-                                              right: 6,
-                                            ),
-                                            child: Text(
-                                              shade,
-                                              style: TextStyle(
-                                                fontSize:
-                                                    isLargeScreen ? 13 : 12,
-                                                color: Colors.grey[700],
-                                              ),
-                                            ),
-                                          );
-                                        }).toList(),
+                          const SizedBox(height: 4),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildDetailText('Shades', '', isLargeScreen),
+                                Text(
+                                  shades.join(', '), // Join shades with a comma
+                                  style: TextStyle(
+                                    fontSize: isLargeScreen ? 14 : 13,
+                                    color: Colors.grey[700],
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -767,7 +714,6 @@ class _CatalogPageState extends State<CatalogPage> {
   Widget _buildItemCard(Catalog item, bool isLargeScreen) {
     bool isSelected = selectedItems.contains(item);
 
-    // Safely split and trim shades (if it's a comma-separated string)
     List<String> shades =
         item.shadeName.split(',').map((s) => s.trim()).toList();
 
@@ -781,133 +727,126 @@ class _CatalogPageState extends State<CatalogPage> {
         color: isSelected ? Colors.blue.shade50 : Colors.white,
         child: Stack(
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    topRight: Radius.circular(12),
-                  ),
-                  child: Image.network(
-                    _getImageUrl(item),
-                    height: 140,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
+            // Wrap the Column inside Expanded and SingleChildScrollView
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
+                      ),
+                      child: Image.network(
+                        _getImageUrl(item),
                         height: 140,
                         width: double.infinity,
-                        color: Colors.grey.shade300,
-                        child: Image.asset(
-                          'assets/images/default.png',
-                          fit: BoxFit.cover,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                /// Style & Item Name
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isLargeScreen ? 12 : 10,
-                    vertical: 6,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.itemName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: isLargeScreen ? 18 : 16,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      _buildDetailText('Style', item.styleCode, isLargeScreen),
-                      const SizedBox(height: 4),
-
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: _buildDetailText(
-                              'MRP',
-                              item.mrp.toStringAsFixed(2),
-                              isLargeScreen,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 140,
+                            width: double.infinity,
+                            color: Colors.grey.shade300,
+                            child: Image.asset(
+                              'assets/images/default.png',
+                              fit: BoxFit.cover,
                             ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    /// Style & Item Name
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isLargeScreen ? 12 : 10,
+                        vertical: 6,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.itemName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: isLargeScreen ? 18 : 16,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          Expanded(
-                            child: _buildDetailText(
-                              'WSP',
-                              item.wsp.toStringAsFixed(2),
-                              isLargeScreen,
+                          _buildDetailText(
+                            'Style',
+                            item.styleCode,
+                            isLargeScreen,
+                          ),
+                          const SizedBox(height: 4),
+
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: _buildDetailText(
+                                  'MRP',
+                                  item.mrp.toStringAsFixed(2),
+                                  isLargeScreen,
+                                ),
+                              ),
+                              Expanded(
+                                child: _buildDetailText(
+                                  'WSP',
+                                  item.wsp.toStringAsFixed(2),
+                                  isLargeScreen,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+
+                          if (item.sizeName.isNotEmpty)
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Size : ',
+                                    style: TextStyle(
+                                      fontWeight:
+                                          FontWeight
+                                              .bold, 
+                                                 color: Colors.grey[700],
+                                    ),
+                                  ),
+                                  Text(item.sizeDetails), // Data remains normal
+                                ],
+                              ),
+                            ),
+
+                          const SizedBox(height: 4),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildDetailText('Shades', '', isLargeScreen),
+                                Text(
+                                  shades.join(', '), // Join shades with a comma
+                                  style: TextStyle(
+                                    fontSize: isLargeScreen ? 14 : 13,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-
-                      // Add Sizes Row here
-                      if (item.sizeName.isNotEmpty)
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildDetailText('Sizes', '', isLargeScreen),
-                              ...item.sizeName.split(',').map((size) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 6),
-                                  child: Text(
-                                    size.trim(),
-                                    style: TextStyle(
-                                      fontSize: isLargeScreen ? 14 : 13,
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isLargeScreen ? 12 : 10,
-                    vertical: 4,
-                  ),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildDetailText('Shades', '', isLargeScreen),
-                        ...shades.map((shade) {
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: Text(
-                              shade,
-                              style: TextStyle(
-                                fontSize: isLargeScreen ? 14 : 13,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ],
                     ),
-                  ),
+                  ],
                 ),
-
-                const SizedBox(height: 8),
-              ],
+              ),
             ),
 
             /// Selection Check Icon
