@@ -443,129 +443,134 @@ class _FilterPageState extends State<FilterPage> {
                 SizedBox(height: 20),
 
                 // ✅ Price Range Filter
-                ExpansionTile(
-                  title: Text('Price Range'),
-                  tilePadding: EdgeInsets.all(0),
-                  initiallyExpanded: true,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: fromMRPController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: 'From MRP',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: toMRPController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: 'To MRP',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+ExpansionTile(
+  title: Text('Price Range'),
+  tilePadding: EdgeInsets.all(0),
+  initiallyExpanded: true,
+  children: [
+    Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: fromMRPController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'From MRP',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+          SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: toMRPController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'To MRP',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  ],
+),
 
-                SizedBox(height: 20),
-                ExpansionTile(
-                  title: Text('WSP Range'),
-                  tilePadding: EdgeInsets.all(0),
-                  initiallyExpanded: true,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: wspFromController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: 'WSP from',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: wspToController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: 'WSP to',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+ SizedBox(height: 20),
 
-                SizedBox(height: 20),
+ExpansionTile(
+  title: Text('WSP Range'),
+  tilePadding: EdgeInsets.all(0),
+  initiallyExpanded: true,
+  children: [
+    Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: wspFromController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'WSP from',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+          SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: wspToController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'WSP to',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  ],
+),
 
-                // ✅ Date Range Filter
-                ExpansionTile(
-                  title: Text('Date'),
-                  tilePadding: EdgeInsets.all(0),
-                  initiallyExpanded: true,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: fromDateController,
-                            readOnly: true,
-                            decoration: InputDecoration(
-                              labelText: 'From Date',
-                              border: OutlineInputBorder(),
-                              suffixIcon: IconButton(
-                                icon: Icon(Icons.calendar_today),
-                                onPressed:
-                                    () => _selectDate(
-                                      context,
-                                      fromDateController,
-                                      fromDate,
-                                    ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: toDateController,
-                            readOnly: true,
-                            decoration: InputDecoration(
-                              labelText: 'To Date',
-                              border: OutlineInputBorder(),
-                              suffixIcon: IconButton(
-                                icon: Icon(Icons.calendar_today),
-                                onPressed:
-                                    () => _selectDate(
-                                      context,
-                                      toDateController,
-                                      toDate,
-                                    ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+SizedBox(height: 20),
+
+ExpansionTile(
+  title: Text('Date'),
+  tilePadding: EdgeInsets.all(0),
+  initiallyExpanded: true,
+  children: [
+    Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: fromDateController,
+              readOnly: true,
+              decoration: InputDecoration(
+                labelText: 'From Date',
+                border: OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.calendar_today),
+                  onPressed: () => _selectDate(
+                    context,
+                    fromDateController,
+                    fromDate,
+                  ),
                 ),
+              ),
+            ),
+          ),
+          SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: toDateController,
+              readOnly: true,
+              decoration: InputDecoration(
+                labelText: 'To Date',
+                border: OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.calendar_today),
+                  onPressed: () => _selectDate(
+                    context,
+                    toDateController,
+                    toDate,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  ],
+),
+
               ],
             ),
           ),
