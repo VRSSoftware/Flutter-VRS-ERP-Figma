@@ -481,7 +481,7 @@ Widget _buildModeSelector({
       !isCheckboxMode
     ],
     onPressed: (int index) {
-      final value = index == 0 ? 'Checkbox' : 'Combo';
+      final value = index == 0 ? 'Checkbox' : 'select';
       onChanged(value);
     },
     children: [
@@ -515,7 +515,7 @@ Widget _buildModeSelector({
             ),
             const SizedBox(width: 6),
             Text(
-              'Select',
+              'Combo',
               style: TextStyle(
                 color: !isCheckboxMode ? Colors.white : AppColors.primaryColor,
               ),
