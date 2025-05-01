@@ -359,7 +359,8 @@ class _CatalogPageState extends State<CatalogPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: _showFilterDialog,
         backgroundColor: AppColors.primaryColor,
-        child: Icon(Icons.filter_list, color: Colors.white),
+     child: Icon(Icons.filter_alt_outlined, color: Colors.white),
+
         tooltip: 'Filter',
       ),
 

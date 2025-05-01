@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 
@@ -22,12 +23,31 @@ class BottomNavigationWidget extends StatelessWidget {
       type: BottomNavigationBarType.fixed,
       iconSize: 24,
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.view_module), label: 'Catalog'),
-        BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Order'),
-        BottomNavigationBarItem(icon: Icon(Icons.analytics), label: 'Report'),
-        BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
-        BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Team'),
+        BottomNavigationBarItem(icon: Icon(CupertinoIcons.home), label: 'Home'),
+        BottomNavigationBarItem(
+          icon: Icon(CupertinoIcons.square_list_fill),
+
+          label: 'Catalog',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(CupertinoIcons.cart_fill_badge_plus),
+          label: 'Order',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(CupertinoIcons.today),
+          label: 'Report',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(
+  CupertinoIcons.tray_full_fill,
+),
+
+          label: 'Dashboard',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(CupertinoIcons.person_3_fill),
+          label: 'Team',
+        ),
       ],
       onTap: onTap,
     );
