@@ -38,6 +38,14 @@ class _FilterPageState extends State<FilterPage> {
   DateTime? fromDate;
   DateTime? toDate;
 
+  bool _isExpanded = true;
+
+  void _toggleExpansion() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+    });
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -49,7 +57,8 @@ class _FilterPageState extends State<FilterPage> {
       selectedShades =
           args['selectedShades'] is List<Shade> ? args['selectedShades'] : [];
       sizes = args['sizes'] is List<Sizes> ? args['sizes'] : [];
-      selectedStyles = args['selectedStyles'] is List<Style> ? args['selectedStyles'] : [];
+      selectedStyles =
+          args['selectedStyles'] is List<Style> ? args['selectedStyles'] : [];
       selectedSizes =
           args['selectedSizes'] is List<Sizes> ? args['selectedSizes'] : [];
       fromMRPController.text = args['fromMRP'] is String ? args['fromMRP'] : "";
@@ -57,7 +66,6 @@ class _FilterPageState extends State<FilterPage> {
       wspFromController.text = args['WSPfrom'] is String ? args['WSPfrom'] : "";
       wspToController.text = args['WSPto'] is String ? args['WSPto'] : "";
     }
-    
   }
 
   Future<void> _selectDate(
@@ -162,413 +170,261 @@ class _FilterPageState extends State<FilterPage> {
     );
   }
 
+  // Common ExpansionTile Widget
+  Widget _buildExpansionTile({
+    required String title,
+    required List<Widget> children,
+    bool initiallyExpanded = true,
+    ValueChanged<bool>? onExpansionChanged,
+  }) {
+    return CustomExpansionTile(
+      title: title,
+      initiallyExpanded: initiallyExpanded,
+      onExpansionChanged: onExpansionChanged,
+      children: children,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       drawer: DrawerScreen(),
- appBar: AppBar(
-  title: Text('Filter', style: TextStyle(color: Colors.white)),
-  backgroundColor: AppColors.primaryColor,
-  elevation: 1,
-  leading: IconButton(
-    icon: Icon(Icons.arrow_back_ios, color: Colors.white),
-    onPressed: () => Navigator.pop(context),
-  ),
-),
-
+      appBar: AppBar(
+        title: Text('Filter', style: TextStyle(color: Colors.white)),
+        backgroundColor: AppColors.primaryColor,
+        elevation: 1,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: Stack(
         children: [
           SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
             child: Column(
               children: [
-              
-                ExpansionTile(
-                  title: Text('Select Styles'),
-                  initiallyExpanded: true,
-                  tilePadding: EdgeInsets.all(0),
+                // Styles Section
+                _buildExpansionTile(
+                  title: 'Select Styles',
                   children: [
-                    // DropdownSearch<String>.multiSelection(
-                    //   items: styles.map((style) => style.styleCode).toList(),
-                    //   selectedItems: selectedStyleCodes,
-                    //   onChanged: (selectedItems) {
-                    //     setState(() {
-                    //       selectedStyleCodes = List.from(selectedItems ?? []);
-                    //     });
-                    //   },
-                    //   popupProps: PopupPropsMultiSelection.menu(
-                    //     showSearchBox: true,
-                    //     searchFieldProps: TextFieldProps(
-                    //       decoration: InputDecoration(
-                    //         hintText: 'Search and select styles',
-                    //         border: OutlineInputBorder(),
-                    //       ),
-                    //     ),
-                    //   ),
-                    //   itemAsString: (String styleCode) => styleCode,
-                    //   dropdownBuilder: (context, selectedItems) {
-                    //     if (selectedItems == null || selectedItems.isEmpty) {
-                    //       return Text('Select Styles');
-                    //     } else {
-                    //       return Text(selectedItems.join(', '));
-                    //     }
-                    //   },
-                    // ),
-                    DropdownSearch<Style>.multiSelection(
-                      items: styles,
-                      selectedItems: selectedStyles,
-                      onChanged: (selectedItems) {
-                        selectedStyles.clear();
-                        selectedStyles.addAll(selectedItems ?? []);
-                      },
-                      popupProps: PopupPropsMultiSelection.menu(
-                        showSearchBox: true,
-                        searchFieldProps: TextFieldProps(
-                          decoration: InputDecoration(
-                            hintText: 'Search and select styles',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
                       ),
-                      itemAsString: (Style s) => s.styleCode,
-                      compareFn: (a, b) => a.styleKey == b.styleKey,
-                      dropdownBuilder:
-                          (context, selectedItems) => Text(
-                            selectedItems.isEmpty
-                                ? 'Select styles'
-                                : selectedItems
-                                    .map((e) => e.styleCode)
-                                    .join(', '),
-                          ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20),
-
-                SizedBox(height: 16),
-                ExpansionTile(
-                  title: Text('Select Shades'),
-                  initiallyExpanded: isShadeExpanded,
-                  tilePadding: EdgeInsets.all(0),
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        PopupMenuButton<String>(
-                          onSelected: (value) {
-                            setState(() {
-                              isCheckboxModeShade = value == 'Checkbox';
-                            });
-                          },
-                          itemBuilder:
-                              (context) => [
-                                PopupMenuItem(
-                                  value: 'Checkbox',
-                                  child: Text('Checkbox'),
-                                ),
-                                PopupMenuItem(
-                                  value: 'Select',
-                                  child: Text('Select'),
-                                ),
-                              ],
-                          child: Row(
-                            children: [
-                              Icon(
-                                isCheckboxModeShade
-                                    ? Icons.check_box
-                                    : Icons.arrow_drop_down,
-                              ),
-                              Text(isCheckboxModeShade ? 'Checkbox' : 'Select'),
-                            ],
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              if (selectedShades.length == shades.length) {
-                                selectedShades.clear();
-                              } else {
-                                selectedShades = List.from(shades);
-                              }
-                            });
-                          },
-                          child: Text(
-                            selectedShades.length == shades.length
-                                ? 'Deselect All'
-                                : 'Select All',
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (isCheckboxModeShade)
-                      _buildCheckboxSection<Shade>(
-                        shades,
-                        selectedShades,
-                        (a, b) => a.shadeKey == b.shadeKey,
-                        (s) => s.shadeName,
-                        syncSelectedShades,
-                      )
-                    else
-                      DropdownSearch<Shade>.multiSelection(
-                        items: shades,
-                        selectedItems: selectedShades,
-                        onChanged:
-                            (selectedItems) =>
-                                syncSelectedShades(selectedItems ?? []),
+                      child: DropdownSearch<Style>.multiSelection(
+                        items: styles,
+                        selectedItems: selectedStyles,
+                        onChanged: (selectedItems) {
+                          selectedStyles.clear();
+                          selectedStyles.addAll(selectedItems ?? []);
+                        },
                         popupProps: PopupPropsMultiSelection.menu(
                           showSearchBox: true,
                           searchFieldProps: TextFieldProps(
                             decoration: InputDecoration(
-                              hintText: 'Search and select shades',
-                              border: OutlineInputBorder(),
+                              hintText: 'Search and select styles',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                  color: AppColors.primaryColor,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                        itemAsString: (Shade s) => s.shadeName,
-                        compareFn: (a, b) => a.shadeKey == b.shadeKey,
+                        itemAsString: (Style s) => s.styleCode,
+                        compareFn: (a, b) => a.styleKey == b.styleKey,
                         dropdownBuilder:
                             (context, selectedItems) => Text(
                               selectedItems.isEmpty
-                                  ? 'Select shades'
+                                  ? 'Select styles'
                                   : selectedItems
-                                      .map((e) => e.shadeName)
+                                      .map((e) => e.styleCode)
                                       .join(', '),
                             ),
                       ),
+                    ),
                   ],
+                ),
+
+                SizedBox(height: 16),
+
+                // Shades Section
+                _buildExpansionTile(
+                  title: 'Select Shades',
+                  initiallyExpanded: isShadeExpanded,
                   onExpansionChanged:
                       (expanded) => setState(() => isShadeExpanded = expanded),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildModeSelector(
+                                isCheckboxMode: isCheckboxModeShade,
+                                onChanged:
+                                    (value) => setState(
+                                      () =>
+                                          isCheckboxModeShade =
+                                              value == 'Checkbox',
+                                    ),
+                              ),
+                              _buildSelectAllButton(
+                                selectedCount: selectedShades.length,
+                                totalCount: shades.length,
+                                onPressed:
+                                    () => setState(() {
+                                      selectedShades =
+                                          selectedShades.length == shades.length
+                                              ? []
+                                              : List.from(shades);
+                                    }),
+                              ),
+                            ],
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child:
+                                isCheckboxModeShade
+                                    ? _buildCheckboxSection<Shade>(
+                                      shades,
+                                      selectedShades,
+                                      (a, b) => a.shadeKey == b.shadeKey,
+                                      (s) => s.shadeName,
+                                      syncSelectedShades,
+                                    )
+                                    : _buildDropdownSection<Shade>(
+                                      items: shades,
+                                      selectedItems: selectedShades,
+                                      hintText: 'Search and select shades',
+                                      itemAsString: (s) => s.shadeName,
+                                      compareFn:
+                                          (a, b) => a.shadeKey == b.shadeKey,
+                                      onChanged: syncSelectedShades,
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
 
                 SizedBox(height: 16),
 
-                // ✅ Sizes Filter
-                ExpansionTile(
-                  title: Text('Select Sizes'),
+                // Sizes Section
+                _buildExpansionTile(
+                  title: 'Select Sizes',
                   initiallyExpanded: isSizeExpanded,
-                  tilePadding: EdgeInsets.all(0),
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        PopupMenuButton<String>(
-                          onSelected: (value) {
-                            setState(() {
-                              isCheckboxModeSize = value == 'Checkbox';
-                            });
-                          },
-                          itemBuilder:
-                              (context) => [
-                                PopupMenuItem(
-                                  value: 'Checkbox',
-                                  child: Text('Checkbox'),
-                                ),
-                                PopupMenuItem(
-                                  value: 'Select',
-                                  child: Text('Select'),
-                                ),
-                              ],
-                          child: Row(
-                            children: [
-                              Icon(
-                                isCheckboxModeSize
-                                    ? Icons.check_box
-                                    : Icons.arrow_drop_down,
-                              ),
-                              Text(isCheckboxModeSize ? 'Checkbox' : 'Select'),
-                            ],
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              if (selectedSizes.length == sizes.length) {
-                                selectedSizes.clear();
-                              } else {
-                                selectedSizes = List.from(sizes);
-                              }
-                            });
-                          },
-                          child: Text(
-                            selectedSizes.length == sizes.length
-                                ? 'Deselect All'
-                                : 'Select All',
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (isCheckboxModeSize)
-                      _buildCheckboxSection<Sizes>(
-                        sizes,
-                        selectedSizes,
-                        (a, b) => a.itemSizeKey == b.itemSizeKey,
-                        (s) => s.sizeName,
-                        syncSelectedSizes,
-                      )
-                    else
-                      DropdownSearch<Sizes>.multiSelection(
-                        items: sizes,
-                        selectedItems: selectedSizes,
-                        onChanged:
-                            (selectedItems) =>
-                                syncSelectedSizes(selectedItems ?? []),
-                        popupProps: PopupPropsMultiSelection.menu(
-                          showSearchBox: true,
-                          searchFieldProps: TextFieldProps(
-                            decoration: InputDecoration(
-                              hintText: 'Search and select sizes',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                        itemAsString: (Sizes s) => s.sizeName,
-                        compareFn: (a, b) => a.itemSizeKey == b.itemSizeKey,
-                        dropdownBuilder:
-                            (context, selectedItems) => Text(
-                              selectedItems.isEmpty
-                                  ? 'Select sizes'
-                                  : selectedItems
-                                      .map((e) => e.sizeName)
-                                      .join(', '),
-                            ),
-                      ),
-                  ],
                   onExpansionChanged:
                       (expanded) => setState(() => isSizeExpanded = expanded),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildModeSelector(
+                                isCheckboxMode: isCheckboxModeSize,
+                                onChanged:
+                                    (value) => setState(
+                                      () =>
+                                          isCheckboxModeSize =
+                                              value == 'Checkbox',
+                                    ),
+                              ),
+                              _buildSelectAllButton(
+                                selectedCount: selectedSizes.length,
+                                totalCount: sizes.length,
+                                onPressed:
+                                    () => setState(() {
+                                      selectedSizes =
+                                          selectedSizes.length == sizes.length
+                                              ? []
+                                              : List.from(sizes);
+                                    }),
+                              ),
+                            ],
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child:
+                                isCheckboxModeSize
+                                    ? _buildCheckboxSection<Sizes>(
+                                      sizes,
+                                      selectedSizes,
+                                      (a, b) => a.itemSizeKey == b.itemSizeKey,
+                                      (s) => s.sizeName,
+                                      syncSelectedSizes,
+                                    )
+                                    : _buildDropdownSection<Sizes>(
+                                      items: sizes,
+                                      selectedItems: selectedSizes,
+                                      hintText: 'Search and select sizes',
+                                      itemAsString: (s) => s.sizeName,
+                                      compareFn:
+                                          (a, b) =>
+                                              a.itemSizeKey == b.itemSizeKey,
+                                      onChanged: syncSelectedSizes,
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                // MRP Range Section
+                _buildExpansionTile(
+                  title: 'MRP Range',
+                  children: [
+                    _buildRangeInputs(
+                      fromMRPController,
+                      toMRPController,
+                      'From MRP',
+                      'To MRP',
+                    ),
+                  ],
                 ),
 
                 SizedBox(height: 20),
 
-                // ✅ Price Range Filter
-ExpansionTile(
-  title: Text('Price Range'),
-  tilePadding: EdgeInsets.all(0),
-  initiallyExpanded: true,
-  children: [
-    Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: fromMRPController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'From MRP',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          SizedBox(width: 10),
-          Expanded(
-            child: TextField(
-              controller: toMRPController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'To MRP',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  ],
-),
-
- SizedBox(height: 20),
-
-ExpansionTile(
-  title: Text('WSP Range'),
-  tilePadding: EdgeInsets.all(0),
-  initiallyExpanded: true,
-  children: [
-    Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: wspFromController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'WSP from',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          SizedBox(width: 10),
-          Expanded(
-            child: TextField(
-              controller: wspToController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'WSP to',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  ],
-),
-
-SizedBox(height: 20),
-
-ExpansionTile(
-  title: Text('Date'),
-  tilePadding: EdgeInsets.all(0),
-  initiallyExpanded: true,
-  children: [
-    Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: fromDateController,
-              readOnly: true,
-              decoration: InputDecoration(
-                labelText: 'From Date',
-                border: OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.calendar_today),
-                  onPressed: () => _selectDate(
-                    context,
-                    fromDateController,
-                    fromDate,
-                  ),
+                // WSP Range Section
+                _buildExpansionTile(
+                  title: 'WSP Range',
+                  children: [
+                    _buildRangeInputs(
+                      wspFromController,
+                      wspToController,
+                      'WSP from',
+                      'WSP to',
+                    ),
+                  ],
                 ),
-              ),
-            ),
-          ),
-          SizedBox(width: 10),
-          Expanded(
-            child: TextField(
-              controller: toDateController,
-              readOnly: true,
-              decoration: InputDecoration(
-                labelText: 'To Date',
-                border: OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.calendar_today),
-                  onPressed: () => _selectDate(
-                    context,
-                    toDateController,
-                    toDate,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  ],
-),
 
+                SizedBox(height: 20),
+
+                // Date Range Section
+                _buildExpansionTile(
+                  title: 'Date',
+                  children: [_buildDateInputs()],
+                ),
               ],
             ),
           ),
@@ -582,11 +438,10 @@ ExpansionTile(
               padding: const EdgeInsets.all(16),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
+                  backgroundColor: AppColors.primaryColor,
                   padding: EdgeInsets.symmetric(vertical: 15),
                 ),
                 onPressed: () {
-                  // Collect all selected values and return to previous screen
                   Map<String, dynamic> selectedFilters = {
                     'styles': selectedStyles,
                     'shades': selectedShades,
@@ -595,10 +450,9 @@ ExpansionTile(
                     'toMRP': toMRPController.text,
                     'fromDate': fromDateController.text,
                     'toDate': toDateController.text,
-                    'WSPfrom':wspFromController.text,
-                    'WSPto':wspToController.text
+                    'WSPfrom': wspFromController.text,
+                    'WSPto': wspToController.text,
                   };
-                    print("selectedfiltersss ${selectedFilters}");
                   Navigator.pop(context, selectedFilters);
                 },
                 child: Text(
@@ -609,6 +463,231 @@ ExpansionTile(
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Common Widgets
+  Widget _buildModeSelector({
+    required bool isCheckboxMode,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return PopupMenuButton<String>(
+      onSelected: onChanged,
+      itemBuilder:
+          (context) => [
+            const PopupMenuItem(value: 'Checkbox', child: Text('Checkbox')),
+            const PopupMenuItem(value: 'Select', child: Text('Select')),
+          ],
+      child: Row(
+        children: [
+          Icon(
+            isCheckboxMode ? Icons.check_box : Icons.arrow_drop_down,
+            color: AppColors.primaryColor,
+          ),
+          const SizedBox(width: 4),
+          Text(isCheckboxMode ? 'Checkbox' : 'Select'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSelectAllButton({
+    required int selectedCount,
+    required int totalCount,
+    required VoidCallback onPressed,
+  }) {
+    return TextButton(
+      onPressed: onPressed,
+      child: Text(
+        selectedCount == totalCount ? 'Deselect All' : 'Select All',
+        style: TextStyle(color: AppColors.primaryColor),
+      ),
+    );
+  }
+
+  Widget _buildDropdownSection<T>({
+    required List<T> items,
+    required List<T> selectedItems,
+    required String hintText,
+    required String Function(T) itemAsString,
+    required bool Function(T, T) compareFn,
+    required Function(List<T>) onChanged,
+  }) {
+    return DropdownSearch<T>.multiSelection(
+      items: items,
+      selectedItems: selectedItems,
+      onChanged: (selectedItems) => onChanged(selectedItems ?? []),
+      popupProps: PopupPropsMultiSelection.menu(
+        showSearchBox: true,
+        searchFieldProps: TextFieldProps(
+          decoration: InputDecoration(
+            hintText: hintText,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AppColors.primaryColor),
+            ),
+          ),
+        ),
+      ),
+      itemAsString: itemAsString,
+      compareFn: compareFn,
+      dropdownBuilder:
+          (context, selectedItems) => Text(
+            selectedItems?.isEmpty ?? true
+                ? 'Select ${hintText.split(' ').last}'
+                : selectedItems!.map(itemAsString).join(', '),
+          ),
+    );
+  }
+
+  Widget _buildRangeInputs(
+    TextEditingController fromController,
+    TextEditingController toController,
+    String fromLabel,
+    String toLabel,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(child: _buildNumberInput(fromController, fromLabel)),
+          SizedBox(width: 10),
+          Expanded(child: _buildNumberInput(toController, toLabel)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNumberInput(TextEditingController controller, String label) {
+    return TextField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: const Color(0xFF87898A)),
+        floatingLabelStyle: TextStyle(color: AppColors.primaryColor),
+        hintStyle: TextStyle(color: const Color(0xFF87898A)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: AppColors.secondaryColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: AppColors.primaryColor),
+        ),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+    );
+  }
+
+  Widget _buildDateInputs() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildDateInput(fromDateController, 'From Date', fromDate),
+          ),
+          SizedBox(width: 10),
+          Expanded(child: _buildDateInput(toDateController, 'To Date', toDate)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateInput(
+    TextEditingController controller,
+    String label,
+    DateTime? date,
+  ) {
+    return TextField(
+      controller: controller,
+      readOnly: true,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: const Color(0xFF87898A)),
+        floatingLabelStyle: TextStyle(color: AppColors.primaryColor),
+        hintStyle: TextStyle(color: const Color(0xFF87898A)),
+        suffixIcon: IconButton(
+          icon: Icon(Icons.calendar_today, color: AppColors.primaryColor),
+          onPressed: () => _selectDate(context, controller, date),
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: AppColors.secondaryColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: AppColors.primaryColor),
+        ),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+    );
+  }
+}
+
+class CustomExpansionTile extends StatefulWidget {
+  final String title;
+  final List<Widget> children;
+  final bool initiallyExpanded;
+  final ValueChanged<bool>? onExpansionChanged;
+
+  const CustomExpansionTile({
+    required this.title,
+    required this.children,
+    this.initiallyExpanded = true,
+    this.onExpansionChanged,
+  });
+
+  @override
+  _CustomExpansionTileState createState() => _CustomExpansionTileState();
+}
+
+class _CustomExpansionTileState extends State<CustomExpansionTile> {
+  late bool _isExpanded;
+
+  @override
+  void initState() {
+    super.initState();
+    _isExpanded = widget.initiallyExpanded;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        title: Text(
+          widget.title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppColors.primaryColor,
+          ),
+        ),
+        initiallyExpanded: widget.initiallyExpanded,
+        onExpansionChanged: (expanded) {
+          setState(() => _isExpanded = expanded);
+          widget.onExpansionChanged?.call(expanded);
+        },
+        tilePadding: EdgeInsets.symmetric(horizontal: 16),
+        backgroundColor: Color.fromARGB(255, 214, 214, 214),
+        collapsedBackgroundColor: Color.fromARGB(255, 214, 214, 214),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        collapsedShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        trailing: RotationTransition(
+          turns: AlwaysStoppedAnimation(_isExpanded ? 0.5 : 0),
+          child: Icon(
+            Icons.keyboard_arrow_down,
+            size: 24,
+            color: AppColors.primaryColor,
+          ),
+        ),
+        children: widget.children,
       ),
     );
   }
