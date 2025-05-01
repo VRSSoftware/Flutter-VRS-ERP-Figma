@@ -15,17 +15,24 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
   bool includeSize = false;
   bool includeProduct = false;
   bool includeRemark = false;
-  bool selectAll = false;
 
-  void _toggleAllOptions(bool value) {
+  bool get allSelected =>
+      includeDesign &&
+      includeShade &&
+      includeRate &&
+      includeSize &&
+      includeProduct &&
+      includeRemark;
+
+  void toggleAll(bool? value) {
+    final newValue = value ?? false;
     setState(() {
-      selectAll = value;
-      includeDesign = value;
-      includeShade = value;
-      includeRate = value;
-      includeSize = value;
-      includeProduct = value;
-      includeRemark = value;
+      includeDesign = newValue;
+      includeShade = newValue;
+      includeRate = newValue;
+      includeSize = newValue;
+      includeProduct = newValue;
+      includeRemark = newValue;
     });
   }
 
@@ -39,31 +46,33 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
         ),
         child: Column(
           children: [
-            // Title row with text, toggle, and close button
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Select Share Options',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                Row(
-                  children: [
-                    Switch(
-                      value: selectAll,
-                      onChanged: _toggleAllOptions,
-                      activeColor: AppColors.primaryColor,
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+            // Header with Select All checkbox and close button
+    Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    Row(
+      children: [
+        const Text(
+          'Select Share Options',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(width: 90), // Add horizontal space here
+        Checkbox(
+          value: allSelected,
+          onChanged: toggleAll,
+          activeColor: AppColors.primaryColor,
+        ),
+      ],
+    ),
+    IconButton(
+      icon: const Icon(Icons.close),
+      onPressed: () => Navigator.pop(context),
+    ),
+  ],
+),
+
             const SizedBox(height: 8),
+
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -71,73 +80,52 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
                     SwitchListTile(
                       title: const Text('Include Design'),
                       value: includeDesign,
-                      onChanged: (value) {
-                        setState(() {
-                          includeDesign = value;
-                          if (!value) selectAll = false;
-                        });
-                      },
+                      onChanged: (value) =>
+                          setState(() => includeDesign = value),
                       activeColor: AppColors.primaryColor,
                     ),
                     SwitchListTile(
                       title: const Text('Include Shade'),
                       value: includeShade,
-                      onChanged: (value) {
-                        setState(() {
-                          includeShade = value;
-                          if (!value) selectAll = false;
-                        });
-                      },
+                      onChanged: (value) =>
+                          setState(() => includeShade = value),
                       activeColor: AppColors.primaryColor,
                     ),
                     SwitchListTile(
                       title: const Text('Include Rate'),
                       value: includeRate,
-                      onChanged: (value) {
-                        setState(() {
-                          includeRate = value;
-                          if (!value) selectAll = false;
-                        });
-                      },
+                      onChanged: (value) =>
+                          setState(() => includeRate = value),
                       activeColor: AppColors.primaryColor,
                     ),
                     SwitchListTile(
                       title: const Text('Include Size'),
                       value: includeSize,
-                      onChanged: (value) {
-                        setState(() {
-                          includeSize = value;
-                          if (!value) selectAll = false;
-                        });
-                      },
+                      onChanged: (value) =>
+                          setState(() => includeSize = value),
                       activeColor: AppColors.primaryColor,
                     ),
                     SwitchListTile(
                       title: const Text('Include Product'),
                       value: includeProduct,
-                      onChanged: (value) {
-                        setState(() {
-                          includeProduct = value;
-                          if (!value) selectAll = false;
-                        });
-                      },
+                      onChanged: (value) =>
+                          setState(() => includeProduct = value),
                       activeColor: AppColors.primaryColor,
                     ),
                     SwitchListTile(
                       title: const Text('Include Remark'),
                       value: includeRemark,
-                      onChanged: (value) {
-                        setState(() {
-                          includeRemark = value;
-                          if (!value) selectAll = false;
-                        });
-                      },
+                      onChanged: (value) =>
+                          setState(() => includeRemark = value),
                       activeColor: AppColors.primaryColor,
                     ),
                   ],
                 ),
+            
               ),
             ),
+
+            // Done button
             Container(
               padding: const EdgeInsets.only(bottom: 16),
               child: ElevatedButton(
@@ -161,9 +149,7 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),
                   backgroundColor: Colors.white,
-                  side: BorderSide(
-                    color: AppColors.primaryColor,
-                  ),
+                  side: BorderSide(color: AppColors.primaryColor),
                 ),
               ),
             ),

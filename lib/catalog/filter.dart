@@ -441,7 +441,7 @@ class _FilterPageState extends State<FilterPage> {
                   backgroundColor: AppColors.primaryColor,
                   padding: EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder( // Add this
-          borderRadius: BorderRadius.circular(0), // No curvature
+          borderRadius: BorderRadius.circular(12), // No curvature
         ),
                 ),
                 onPressed: () {
