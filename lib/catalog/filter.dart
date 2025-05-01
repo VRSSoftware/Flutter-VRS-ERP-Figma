@@ -673,8 +673,8 @@ class _CustomExpansionTileState extends State<CustomExpansionTile> {
           widget.onExpansionChanged?.call(expanded);
         },
         tilePadding: EdgeInsets.symmetric(horizontal: 16),
-        backgroundColor: Color.fromARGB(255, 214, 214, 214),
-        collapsedBackgroundColor: Color.fromARGB(255, 214, 214, 214),
+        backgroundColor: Colors.grey.withOpacity(0.1),
+        collapsedBackgroundColor:Colors.grey.withOpacity(0.2),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         collapsedShape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
