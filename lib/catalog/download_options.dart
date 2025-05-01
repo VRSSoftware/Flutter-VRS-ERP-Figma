@@ -130,33 +130,37 @@ Widget build(BuildContext context) {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.more_vert),
+                    onPressed: () => _showOptionsBottomSheet(context),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
               ),
             ],
           ),
           const SizedBox(height: 16),
           _buildDownloadOption(
-            context,
             icon: Icons.image,
             title: 'Download as Image',
             onTap: () {
               Navigator.pop(context);
               widget.onDownload('image', options);
             },
-            onOptionsTap: () => _showOptionsBottomSheet(context),
           ),
           const SizedBox(height: 8),
           _buildDownloadOption(
-            context,
             icon: Icons.picture_as_pdf,
             title: 'Download as PDF',
             onTap: () {
               Navigator.pop(context);
               widget.onDownload('pdf', options);
             },
-            onOptionsTap: () => _showOptionsBottomSheet(context),
           ),
           const SizedBox(height: 16),
         ],
@@ -166,42 +170,31 @@ Widget build(BuildContext context) {
 }
 
 
-  Widget _buildDownloadOption(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    required VoidCallback onOptionsTap,
-  }) {
-    return Row(
-      children: [
-        Expanded(
-          child: InkWell(
-            onTap: onTap,
-            child: Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(icon, color: AppColors.primaryColor),
-                  SizedBox(width: 12),
-                  Text(title),
-                ],
-              ),
-            ),
-          ),
-        ),
-        SizedBox(width: 8),
-        IconButton(
-          icon: Icon(Icons.more_vert, size: 20),
-          onPressed: onOptionsTap,
-        ),
-      ],
-    );
-  }
+Widget _buildDownloadOption({
+  required IconData icon,
+  required String title,
+  required VoidCallback onTap,
+}) {
+  return InkWell(
+    onTap: onTap,
+    child: Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.primaryColor),
+          SizedBox(width: 12),
+          Text(title),
+        ],
+      ),
+    ),
+  );
+}
+
+
 
   Widget _buildToggleOption(String label, bool value, Function(bool) onChanged) {
     return Padding(
