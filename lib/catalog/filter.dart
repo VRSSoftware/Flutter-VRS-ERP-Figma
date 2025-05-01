@@ -468,30 +468,72 @@ class _FilterPageState extends State<FilterPage> {
   }
 
   // Common Widgets
-  Widget _buildModeSelector({
-    required bool isCheckboxMode,
-    required ValueChanged<String?> onChanged,
-  }) {
-    return PopupMenuButton<String>(
-      onSelected: onChanged,
-      itemBuilder:
-          (context) => [
-            const PopupMenuItem(value: 'Checkbox', child: Text('Checkbox')),
-            const PopupMenuItem(value: 'Select', child: Text('Select')),
+Widget _buildModeSelector({
+  required bool isCheckboxMode,
+  required ValueChanged<String?> onChanged,
+}) {
+  return ToggleButtons(
+    isSelected: [
+      isCheckboxMode, 
+      !isCheckboxMode
+    ],
+    onPressed: (int index) {
+      final value = index == 0 ? 'Checkbox' : 'Combo';
+      onChanged(value);
+    },
+    children: [
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.check_box,
+              color: isCheckboxMode ? Colors.white : AppColors.primaryColor,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Checkbox',
+              style: TextStyle(
+                color: isCheckboxMode ? Colors.white : AppColors.primaryColor,
+              ),
+            ),
           ],
-      child: Row(
-        children: [
-          Icon(
-            isCheckboxMode ? Icons.check_box : Icons.arrow_drop_down,
-            color: AppColors.primaryColor,
-          ),
-          const SizedBox(width: 4),
-          Text(isCheckboxMode ? 'Checkbox' : 'Select'),
-        ],
+        ),
       ),
-    );
-  }
-
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.list,
+              color: !isCheckboxMode ? Colors.white : AppColors.primaryColor,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Select',
+              style: TextStyle(
+                color: !isCheckboxMode ? Colors.white : AppColors.primaryColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+    color: AppColors.primaryColor.withOpacity(0.2),
+    selectedColor: AppColors.primaryColor,
+    fillColor: AppColors.primaryColor,
+    borderRadius: BorderRadius.circular(8),
+    borderColor: AppColors.primaryColor,
+    selectedBorderColor: AppColors.primaryColor,
+    constraints: const BoxConstraints(
+      minHeight: 40,
+      minWidth: 100,
+    ),
+  );
+}
+ 
   Widget _buildSelectAllButton({
     required int selectedCount,
     required int totalCount,
