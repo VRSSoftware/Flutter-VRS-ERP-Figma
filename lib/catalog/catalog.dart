@@ -1101,8 +1101,8 @@ class _CatalogPageState extends State<CatalogPage> {
       // Prepare request body
       final requestBody = {
         "company": "VRS Software",
-        "createdBy": "Ganesh",
-        "mobile": "7620756586",
+        "createdBy": "admin",
+        "mobile": "",
         "catalogItems": catalogItems,
       };
       print("ssssssss");
@@ -1413,7 +1413,7 @@ class _CatalogPageState extends State<CatalogPage> {
               Text('Preparing download...'),
             ],
           ),
-          duration: Duration(seconds: 2),
+          duration: Duration(seconds: 3),
         ),
       );
 
@@ -1432,78 +1432,56 @@ class _CatalogPageState extends State<CatalogPage> {
           '${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}';
 
       if (option == 'pdf') {
-        final pdf = pw.Document();
-        final tempDir = await getTemporaryDirectory();
-        List<File> tempFiles = [];
+        final apiUrl = '${AppConstants.BASE_URL}/pdf/generate';
+        List<Map<String, dynamic>> catalogItems = [];
 
         for (var item in selectedItems) {
-          try {
-            final imageUrl = _getImageUrl(item);
-            if (imageUrl.isNotEmpty && imageUrl.startsWith('http')) {
-              final response = await http.get(Uri.parse(imageUrl));
-              if (response.statusCode == 200) {
-                // Build text based on selected options
-                String overlayText = '';
-                if (includeProduct)
-                  overlayText += 'Product: ${item.itemName}\n';
-                if (includeDesign) overlayText += 'Design: ${item.styleCode}\n';
-                if (includeShade) overlayText += 'Shade: ${item.shadeName}\n';
-                if (includeRate) overlayText += 'MRP: ₹${item.mrp}\n';
-                if (includeRate) overlayText += 'WSP: ₹${item.wsp}\n';
-                if (includeSize) overlayText += 'Size: ${item.sizeName}\n';
-                if (includeRemark && item.remark.isNotEmpty)
-                  overlayText += 'Remark: ${item.remark}\n';
-
-                // Save original image to temp file
-                final imageFile = File(
-                  '${tempDir.path}/temp_${item.itemKey}.jpg',
-                );
-                await imageFile.writeAsBytes(response.bodyBytes);
-
-                // Create overlay image
-                final overlayImageFile = await _overlayTextOnImage(
-                  imageFile,
-                  overlayText,
-                );
-                tempFiles.add(overlayImageFile);
-
-                // Add to PDF
-                pdf.addPage(
-                  pw.Page(
-                    build:
-                        (pw.Context context) => pw.Center(
-                          child: pw.Image(
-                            pw.MemoryImage(overlayImageFile.readAsBytesSync()),
-                            fit: pw.BoxFit.contain,
-                          ),
-                        ),
-                  ),
-                );
-              }
-            }
-          } catch (e) {
-            print('Error processing item ${item.itemName}: $e');
+          Map<String, dynamic> catalogItem = {};
+          catalogItem['fullImagePath'] = item.fullImagePath;
+          if (includeDesign) catalogItem['design'] = item.styleCode;
+          if (includeShade) catalogItem['shade'] = item.shadeName;
+          if (includeRate) {
+            catalogItem['mrp'] = item.mrp.toString();
+            catalogItem['wsp'] = item.wsp.toString();
           }
+          if (includeSize) catalogItem['size'] = item.sizeName;
+          if (includeProduct) catalogItem['product'] = item.itemName;
+          if (includeRemark) catalogItem['remark'] = item.remark;
+
+          catalogItems.add(catalogItem);
         }
 
-        // Save PDF
-        final pdfFile = File('${downloadsDir?.path}/catalog_$timestamp.pdf');
-        await pdfFile.writeAsBytes(await pdf.save());
+        final requestBody = {
+          "company": "VRS Software",
+          "createdBy": "admin",
+          "mobile": "",
+          "catalogItems": catalogItems,
+        };
 
-        // Clean up temp files
-        for (var file in tempFiles) {
-          try {
-            await file.delete();
-          } catch (e) {
-            print('Error deleting temp file: $e');
-          }
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('PDF downloaded to ${pdfFile.path}')),
+        final response = await http.post(
+          Uri.parse(apiUrl),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(requestBody),
         );
+
+        if (response.statusCode == 200) {
+          final pdfFile = File('${downloadsDir?.path}/catalog_$timestamp.pdf');
+          await pdfFile.writeAsBytes(response.bodyBytes);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('PDF downloaded to ${pdfFile.path}')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to generate PDF: ${response.statusCode}'),
+            ),
+          );
+        }
       } else if (option == 'image') {
+        final tempDir = await getTemporaryDirectory();
         int count = 1;
+
         for (var item in selectedItems) {
           try {
             final imageUrl = _getImageUrl(item);
@@ -1516,14 +1494,16 @@ class _CatalogPageState extends State<CatalogPage> {
                   overlayText += 'Product: ${item.itemName}\n';
                 if (includeDesign) overlayText += 'Design: ${item.styleCode}\n';
                 if (includeShade) overlayText += 'Shade: ${item.shadeName}\n';
-                if (includeRate) overlayText += 'MRP: ₹${item.mrp}\n';
-                if (includeRate) overlayText += 'WSP: ₹${item.wsp}\n';
+                if (includeRate) {
+                  overlayText += 'MRP: ₹${item.mrp}\n';
+                  overlayText += 'WSP: ₹${item.wsp}\n';
+                }
                 if (includeSize) overlayText += 'Size: ${item.sizeName}\n';
                 if (includeRemark && item.remark.isNotEmpty)
                   overlayText += 'Remark: ${item.remark}\n';
 
                 // Create overlay image
-                final tempFile = File('${downloadsDir?.path}/temp_image.jpg')
+                final tempFile = File('${tempDir.path}/temp_image.jpg')
                   ..writeAsBytesSync(response.bodyBytes);
                 final overlayImageFile = await _overlayTextOnImage(
                   tempFile,
