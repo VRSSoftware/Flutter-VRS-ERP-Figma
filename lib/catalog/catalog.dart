@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 import 'dart:ui' as pw;
@@ -442,10 +443,8 @@ class _CatalogPageState extends State<CatalogPage> {
                                       Text(
                                         'Size : ',
                                         style: TextStyle(
-                                          fontWeight:
-                                              FontWeight
-                                                  .bold, 
-                                                     color: Colors.grey[700],
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey[700],
                                         ),
                                       ),
                                       Text(
@@ -618,10 +617,8 @@ class _CatalogPageState extends State<CatalogPage> {
                                   Text(
                                     'Size : ',
                                     style: TextStyle(
-                                      fontWeight:
-                                          FontWeight
-                                              .bold,
-                                                 color: Colors.grey[700],
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey[700],
                                     ),
                                   ),
                                   Text(item.sizeDetails), // Data remains normal
@@ -813,10 +810,8 @@ class _CatalogPageState extends State<CatalogPage> {
                                   Text(
                                     'Size : ',
                                     style: TextStyle(
-                                      fontWeight:
-                                          FontWeight
-                                              .bold, 
-                                                 color: Colors.grey[700],
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey[700],
                                     ),
                                   ),
                                   Text(item.sizeDetails), // Data remains normal
@@ -975,42 +970,39 @@ class _CatalogPageState extends State<CatalogPage> {
     return '${AppConstants.BASE_URL}/images/$imageName';
   }
 
-void _showFilterDialog() async {
-  final result = await Navigator.push(
-    context,
-    PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) => FilterPage(),
-      settings: RouteSettings(
-        arguments: {
-          'itemKey': itemKey,
-          'itemSubGrpKey': itemSubGrpKey,
-          'coBr': coBr,
-          'fcYrId': fcYrId,
-          'styles': styles,
-          'shades': shades,
-          'sizes': sizes,
-          'selectedShades': selectedShades,
-          'selectedSizes': selectedSize,
-          'selectedStyles': selectedStyles,
-          'fromMRP': fromMRP,
-          'toMRP': toMRP,
-          'WSPfrom': WSPfrom,
-          'WSPto': WSPto,
+  void _showFilterDialog() async {
+    final result = await Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => FilterPage(),
+        settings: RouteSettings(
+          arguments: {
+            'itemKey': itemKey,
+            'itemSubGrpKey': itemSubGrpKey,
+            'coBr': coBr,
+            'fcYrId': fcYrId,
+            'styles': styles,
+            'shades': shades,
+            'sizes': sizes,
+            'selectedShades': selectedShades,
+            'selectedSizes': selectedSize,
+            'selectedStyles': selectedStyles,
+            'fromMRP': fromMRP,
+            'toMRP': toMRP,
+            'WSPfrom': WSPfrom,
+            'WSPto': WSPto,
+          },
+        ),
+        transitionDuration: Duration(milliseconds: 500),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return ScaleTransition(
+            scale: animation,
+            alignment: Alignment.bottomRight, // Open from bottom right corner
+            child: FadeTransition(opacity: animation, child: child),
+          );
         },
       ),
-      transitionDuration: Duration(milliseconds: 500),
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        return ScaleTransition(
-          scale: animation,
-          alignment: Alignment.bottomRight, // Open from bottom right corner
-          child: FadeTransition(
-            opacity: animation,
-            child: child,
-          ),
-        );
-      },
-    ),
-  );
+    );
 
     // Handle the result after returning from the FilterPage
     if (result != null) {
@@ -1052,6 +1044,96 @@ void _showFilterDialog() async {
       print("aaaaaaaa  ${selectedFilters['WSPto']}");
 
       _fetchCatalogItems();
+    }
+  }
+
+  Future<void> _shareSelectedItemsPDF({
+    required String shareType,
+    bool includeDesign = true,
+    bool includeShade = true,
+    bool includeRate = true,
+    bool includeSize = true,
+    bool includeProduct = true,
+    bool includeRemark = true,
+  }) async {
+    if (selectedItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select items to share')),
+      );
+      return;
+    }
+
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Generating PDF from server...'),
+            ],
+          ),
+          duration: Duration(seconds: 3),
+        ),
+      );
+
+      final tempDir = await getTemporaryDirectory();
+      final apiUrl = '${AppConstants.BASE_URL}/pdf/generate';
+      List<Map<String, dynamic>> catalogItems = [];
+
+      for (var item in selectedItems) {
+        Map<String, dynamic> catalogItem = {};
+        catalogItem['fullImagePath'] = item.fullImagePath;
+        if (includeDesign)
+          catalogItem['design'] = item.itemName; // Or design related to item
+        if (includeShade) catalogItem['shade'] = item.shadeName;
+        if (includeRate) catalogItem['rate'] = item.mrp.toString();
+        if (includeSize)
+          catalogItem['size'] =
+              item.sizeName; // You can modify this to combine size details if needed
+        if (includeProduct)
+          catalogItem['product'] =
+              item.itemName; // Or any other field representing product
+        if (includeRemark) catalogItem['remark'] = item.remark;
+
+        catalogItems.add(catalogItem);
+      }
+      // Prepare request body
+      final requestBody = {
+        "company": "VRS Software",
+        "createdBy": "Ganesh",
+        "mobile": "7620756586",
+        "catalogItems": catalogItems,
+      };
+      print("ssssssss");
+      print(selectedItems.map((item) => item.itemKey).toList());
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        print("ddddddddddddddddd");
+        final file = File(
+          '${tempDir.path}/catalog_${DateTime.now().millisecondsSinceEpoch}.pdf',
+        );
+        await file.writeAsBytes(response.bodyBytes);
+
+        await Share.shareXFiles([
+          XFile(file.path),
+        ], subject: 'Catalog PDF from VRS ERP');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to generate PDF: ${response.statusCode}'),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to share items: ${e.toString()}')),
+      );
     }
   }
 
@@ -1122,30 +1204,10 @@ void _showFilterDialog() async {
       }
 
       if (filePaths.isNotEmpty) {
-        if (shareType == 'pdf') {
-          final pdf = pw.Document();
-          for (var path in filePaths) {
-            final image = pw.MemoryImage(File(path).readAsBytesSync());
-            pdf.addPage(
-              pw.Page(
-                build:
-                    (pw.Context context) => pw.Center(child: pw.Image(image)),
-              ),
-            );
-          }
-          final pdfFile = File(
-            '${tempDir.path}/catalog_${DateTime.now().millisecondsSinceEpoch}.pdf',
-          );
-          await pdfFile.writeAsBytes(await pdf.save());
-          await Share.shareXFiles([
-            XFile(pdfFile.path),
-          ], subject: 'Catalog Items PDF from VRS ERP');
-        } else {
-          await Share.shareFiles(
-            filePaths,
-            subject: 'Catalog Items from VRS ERP',
-          );
-        }
+        await Share.shareFiles(
+          filePaths,
+          subject: 'Catalog Items from VRS ERP',
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No items available to share.')),
@@ -1289,7 +1351,7 @@ void _showFilterDialog() async {
           },
           onPDFShare: () {
             Navigator.pop(context);
-            _shareSelectedItems(
+            _shareSelectedItemsPDF(
               shareType: 'pdf',
               includeDesign: includeDesign,
               includeShade: includeShade,
@@ -1300,16 +1362,16 @@ void _showFilterDialog() async {
             );
           },
           onWeblinkShare: () {
-            Navigator.pop(context);
-            _shareSelectedItems(shareType: 'pdf');
+            //  Navigator.pop(context);
+            //  _shareSelectedItems(shareType: 'image');
           },
           onVideoShare: () {
-            Navigator.pop(context);
-            _shareSelectedItems(shareType: 'pdf');
+            //  Navigator.pop(context);
+            //  _shareSelectedItems(shareType: 'image');
           },
           onQRCodeShare: () {
-            Navigator.pop(context);
-            _shareSelectedItems(shareType: 'pdf');
+            //  Navigator.pop(context);
+            //   _shareSelectedItems(shareType: 'image');
           },
           onToggleOptions: (design, shade, rate, size, product, remark) {
             includeDesign = design;
