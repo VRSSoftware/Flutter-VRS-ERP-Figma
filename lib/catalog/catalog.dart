@@ -45,6 +45,11 @@ class _CatalogPageState extends State<CatalogPage> {
   String toMRP = "";
   String WSPto = "";
   String WSPfrom = "";
+  String? itemNamee;
+  bool showWSP = true;
+  bool showSizes = true;
+  bool showMRP = true;
+  bool showShades = true;
 
   @override
   void initState() {
@@ -59,6 +64,7 @@ class _CatalogPageState extends State<CatalogPage> {
           itemSubGrpKey = args['itemSubGrpKey']?.toString();
           coBr = args['coBr']?.toString();
           fcYrId = args['fcYrId']?.toString();
+          itemNamee = args['itemName']?.toString();
         });
 
         // Only fetch catalog items after setting the arguments
@@ -187,6 +193,16 @@ class _CatalogPageState extends State<CatalogPage> {
     }
   }
 
+  String toTitleCase(String text) {
+    if (text.isEmpty) return text;
+
+    return text
+        .toLowerCase()
+        .split(' ')
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -197,7 +213,10 @@ class _CatalogPageState extends State<CatalogPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('Catalog', style: TextStyle(color: Colors.white)),
+        title: Text(
+          toTitleCase(itemNamee!),
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: AppColors.primaryColor,
         elevation: 1,
         leading: IconButton(
@@ -229,6 +248,82 @@ class _CatalogPageState extends State<CatalogPage> {
                 viewOption = (viewOption + 1) % 3;
               });
             },
+          ),
+          // Three-dot menu
+          Builder(
+            builder:
+                (context) => IconButton(
+                  icon: Icon(Icons.more_vert, color: Colors.white),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return Dialog(
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              10,
+                            ), // Reduced border radius
+                            side: BorderSide(
+                              color: Colors.grey.shade300,
+                              width: 1,
+                            ), // Border color
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: StatefulBuilder(
+                              builder: (context, setStateDialog) {
+                                return Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Options",
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _buildToggleRow("Show MRP", showMRP, (val) {
+                                      setState(() => showMRP = val);
+                                      setStateDialog(() {});
+                                    }),
+                                    _buildToggleRow("Show WSP", showWSP, (val) {
+                                      setState(() => showWSP = val);
+                                      setStateDialog(() {});
+                                    }),
+                                    _buildToggleRow("Show Sizes", showSizes, (
+                                      val,
+                                    ) {
+                                      setState(() => showSizes = val);
+                                      setStateDialog(() {});
+                                    }),
+                                    _buildToggleRow("Show Shades", showShades, (
+                                      val,
+                                    ) {
+                                      setState(() => showShades = val);
+                                      setStateDialog(() {});
+                                    }),
+                                    const SizedBox(height: 12),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: TextButton(
+                                        onPressed:
+                                            () => Navigator.of(context).pop(),
+                                        child: Text("Close"),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
           ),
         ],
       ),
@@ -710,7 +805,6 @@ class _CatalogPageState extends State<CatalogPage> {
 
   Widget _buildItemCard(Catalog item, bool isLargeScreen) {
     bool isSelected = selectedItems.contains(item);
-
     List<String> shades =
         item.shadeName.split(',').map((s) => s.trim()).toList();
 
@@ -718,133 +812,125 @@ class _CatalogPageState extends State<CatalogPage> {
       onTap: () => _toggleItemSelection(item),
       onLongPress: () => _enableMultiSelect(item),
       onDoubleTap: () => _openImageZoom(context, item),
+
       child: Card(
         elevation: isSelected ? 8 : 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         color: isSelected ? Colors.blue.shade50 : Colors.white,
         child: Stack(
           children: [
-            // Wrap the Column inside Expanded and SingleChildScrollView
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
-                      ),
-                      child: Image.network(
-                        _getImageUrl(item),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                  child: Image.network(
+                    _getImageUrl(item),
+                    height: 140,
+                    width: double.infinity,
+                    fit: BoxFit.cover, // Fits width and crops height
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
                         height: 140,
                         width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            height: 140,
-                            width: double.infinity,
-                            color: Colors.grey.shade300,
-                            child: Image.asset(
-                              'assets/images/default.png',
-                              fit: BoxFit.cover,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                        color: Colors.grey.shade300,
+                        child: Image.asset(
+                          'assets/images/default.png',
+                          fit: BoxFit.cover,
+                        ),
+                      );
+                    },
+                  ),
+                ),
 
-                    /// Style & Item Name
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isLargeScreen ? 12 : 10,
-                        vertical: 6,
+                // Info section
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isLargeScreen ? 12 : 10,
+                    vertical: 6,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.styleCode,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: isLargeScreen ? 18 : 16,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            item.itemName,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: isLargeScreen ? 18 : 16,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          _buildDetailText(
-                            'Style',
-                            item.styleCode,
-                            isLargeScreen,
-                          ),
-                          const SizedBox(height: 4),
-
-                          const SizedBox(height: 4),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: _buildDetailText(
-                                  'MRP',
-                                  item.mrp.toStringAsFixed(2),
-                                  isLargeScreen,
-                                ),
-                              ),
-                              Expanded(
-                                child: _buildDetailText(
-                                  'WSP',
-                                  item.wsp.toStringAsFixed(2),
-                                  isLargeScreen,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-
-                          if (item.sizeName.isNotEmpty)
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Size : ',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
-                                  Text(item.sizeDetails), // Data remains normal
-                                ],
+                          if (showMRP)
+                            Expanded(
+                              child: _buildDetailText(
+                                'MRP',
+                                item.mrp.toStringAsFixed(2),
+                                isLargeScreen,
                               ),
                             ),
-
-                          const SizedBox(height: 4),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildDetailText('Shades', '', isLargeScreen),
-                                Text(
-                                  shades.join(', '), // Join shades with a comma
-                                  style: TextStyle(
-                                    fontSize: isLargeScreen ? 14 : 13,
-                                    color: Colors.grey[700],
-                                  ),
-                                ),
-                              ],
+                          if (showWSP)
+                            Expanded(
+                              child: _buildDetailText(
+                                'WSP',
+                                item.wsp.toStringAsFixed(2),
+                                isLargeScreen,
+                              ),
                             ),
-                          ),
                         ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+
+                      if (item.sizeName.isNotEmpty && showSizes)
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Size : ',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                              Text(item.sizeDetails), // Data remains normal
+                            ],
+                          ),
+                        ),
+
+                      const SizedBox(height: 4),
+                      if (showShades)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildDetailText('Shades', '', isLargeScreen),
+                            Flexible(
+                              child: Text(
+                                shades.join(', '),
+                                style: TextStyle(
+                                  fontSize: isLargeScreen ? 14 : 13,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ),
 
-            /// Selection Check Icon
+            // Checkmark if selected
             if (isSelected)
               Positioned(
                 top: 8,
@@ -1559,6 +1645,13 @@ class _CatalogPageState extends State<CatalogPage> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildToggleRow(String title, bool value, Function(bool) onChanged) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [Text(title), Switch(value: value, onChanged: onChanged)],
     );
   }
 }

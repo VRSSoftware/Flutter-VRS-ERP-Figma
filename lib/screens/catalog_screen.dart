@@ -328,6 +328,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                             arguments: {
                               'itemKey': item.itemKey,
                               'itemSubGrpKey': item.itemSubGrpKey,
+                               'itemName' : item.itemName,
                               'coBr': coBr,
                               'fcYrId': fcYrId,
                             },
