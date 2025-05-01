@@ -916,21 +916,37 @@ class _CatalogPageState extends State<CatalogPage> {
 
                       const SizedBox(height: 4),
                       if (showShades)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildDetailText('Shades', '', isLargeScreen),
-                            Flexible(
-                              child: Text(
-                                shades.join(', '),
+                      SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Shade : ',
                                 style: TextStyle(
-                                  fontSize: isLargeScreen ? 14 : 13,
+                                  fontWeight: FontWeight.bold,
                                   color: Colors.grey[700],
                                 ),
                               ),
-                            ),
-                          ],
+                              Text(shades.join(', '),), // Data remains normal
+                            ],
+                          ),
                         ),
+                        // Row(
+                        //   crossAxisAlignment: CrossAxisAlignment.start,
+                        //   children: [
+                        //     _buildDetailText('Shades', '', isLargeScreen),
+                        //     Flexible(
+                        //       child: Text(
+                        //         shades.join(', '),
+                        //         style: TextStyle(
+                        //           fontSize: isLargeScreen ? 14 : 13,
+                        //           color: Colors.grey[700],
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   ],
+                        // ),
                     ],
                   ),
                 ),
