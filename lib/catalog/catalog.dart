@@ -866,6 +866,7 @@ class _CatalogPageState extends State<CatalogPage> {
                         item.styleCode,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
+                          color: Colors.deepPurpleAccent,
                           fontSize: isLargeScreen ? 18 : 16,
                         ),
                         maxLines: 2,

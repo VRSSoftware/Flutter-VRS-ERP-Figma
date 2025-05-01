@@ -214,7 +214,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                     width:
                                         (MediaQuery.of(context).size.width -
                                             60) /
-                                        3, // Ensure 3 buttons per row
+                                        3, // 3 buttons per row
                                     child: OutlinedButton(
                                       onPressed: () {
                                         setState(() {
@@ -251,9 +251,17 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                             width: 2,
                                           ),
                                         ),
+                                        shape: MaterialStateProperty.all(
+                                          RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ), // 👈 Reduced radius here
+                                          ),
+                                        ),
                                       ),
                                       child: Text(
                                         category.itemSubGrpName,
+                                        textAlign: TextAlign.center,
                                         style: TextStyle(
                                           color:
                                               _selectedCategoryKey ==
@@ -266,6 +274,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                   );
                                 }).toList(),
                           ),
+
                       SizedBox(height: 20),
                       if (_selectedCategoryKey != null) _buildCategoryItems(),
                       Spacer(),
@@ -316,7 +325,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                           side: BorderSide(color: Colors.grey.shade300),
                           backgroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                         onPressed: () {
@@ -328,7 +337,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                             arguments: {
                               'itemKey': item.itemKey,
                               'itemSubGrpKey': item.itemSubGrpKey,
-                               'itemName' : item.itemName,
+                              'itemName': item.itemName,
                               'coBr': coBr,
                               'fcYrId': fcYrId,
                             },
