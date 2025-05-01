@@ -20,7 +20,7 @@ class ShareOptionsPage extends StatelessWidget {
     required this.onToggleOptions,
   }) : super(key: key);
 
- @override
+  @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -32,14 +32,19 @@ class ShareOptionsPage extends StatelessWidget {
             children: [
               const Text(
                 'Share Design as',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.more_vert),
+                    onPressed: () => _showToggleOptions(context),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
               ),
             ],
           ),
@@ -78,6 +83,7 @@ class ShareOptionsPage extends StatelessWidget {
       ),
     );
   }
+
   Widget _buildShareOption({
     required IconData icon,
     required String title,
@@ -87,10 +93,6 @@ class ShareOptionsPage extends StatelessWidget {
     return ListTile(
       leading: Icon(icon, color: AppColors.primaryColor),
       title: Text(title),
-      trailing: IconButton(
-        icon: const Icon(Icons.more_vert),
-        onPressed: () => _showToggleOptions(context),
-      ),
       onTap: onTap,
     );
   }
@@ -100,7 +102,7 @@ class ShareOptionsPage extends StatelessWidget {
       context: context,
       builder: (context) => const ToggleOptionsScreen(),
     );
-    
+
     if (options != null) {
       onToggleOptions(
         options['design'] ?? false,
