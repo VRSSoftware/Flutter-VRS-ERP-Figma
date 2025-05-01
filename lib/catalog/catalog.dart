@@ -1135,8 +1135,8 @@ class _CatalogPageState extends State<CatalogPage> {
       print("aaaaaaaa  ${selectedFilters['styles']}");
       print("aaaaaaaa  ${selectedFilters['WSPfrom']}");
       print("aaaaaaaa  ${selectedFilters['WSPto']}");
-
-      _fetchCatalogItems();
+      if(!(selectedStyles.length== 0 && selectedSize.length==0 && selectedShades==0 && fromMRP == "" && toMRP == "" && WSPfrom=="" && WSPto ==""))
+        _fetchCatalogItems();
     }
   }
 
