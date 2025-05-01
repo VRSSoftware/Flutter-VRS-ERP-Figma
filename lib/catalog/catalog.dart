@@ -204,24 +204,6 @@ class _CatalogPageState extends State<CatalogPage> {
         .join(' ');
   }
 
-  Widget _buildPopupToggleRow(String label, bool currentValue, ValueChanged<bool> onChanged) {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Flexible(child: Text(label)),
-      Switch(
-        value: currentValue,
-        onChanged: (val) {
-          onChanged(val);
-          setState(() {}); // To refresh UI after toggle
-        },
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-    ],
-  );
-}
-
-
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -269,70 +251,81 @@ class _CatalogPageState extends State<CatalogPage> {
             },
           ),
           // Three-dot menu
-   Builder(
-  builder: (context) => PopupMenuButton<int>(
-    icon: Icon(Icons.more_vert, color: Colors.white),
-    onSelected: (_) {
-      // Trigger UI update after popup closes
-      setState(() {});
-    },
-    itemBuilder: (context) => [
-      PopupMenuItem(
-        value: 0,
-        child: StatefulBuilder(
-          builder: (context, setStatePopup) => _buildPopupToggleRow(
-            "Show MRP",
-            showMRP,
-            (val) {
-              showMRP = val;
-              setStatePopup(() {});
-            },
+          Builder(
+            builder:
+                (context) => IconButton(
+                  icon: Icon(Icons.more_vert, color: Colors.white),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return Dialog(
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              10,
+                            ), // Reduced border radius
+                            side: BorderSide(
+                              color: Colors.grey.shade300,
+                              width: 1,
+                            ), // Border color
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: StatefulBuilder(
+                              builder: (context, setStateDialog) {
+                                return Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Options",
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _buildToggleRow("Show MRP", showMRP, (val) {
+                                      setState(() => showMRP = val);
+                                      setStateDialog(() {});
+                                    }),
+                                    _buildToggleRow("Show WSP", showWSP, (val) {
+                                      setState(() => showWSP = val);
+                                      setStateDialog(() {});
+                                    }),
+                                    _buildToggleRow("Show Sizes", showSizes, (
+                                      val,
+                                    ) {
+                                      setState(() => showSizes = val);
+                                      setStateDialog(() {});
+                                    }),
+                                    _buildToggleRow("Show Shades", showShades, (
+                                      val,
+                                    ) {
+                                      setState(() => showShades = val);
+                                      setStateDialog(() {});
+                                    }),
+                                    const SizedBox(height: 12),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: TextButton(
+                                        onPressed:
+                                            () => Navigator.of(context).pop(),
+                                        child: Text("Close"),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
           ),
-        ),
-      ),
-      PopupMenuItem(
-        value: 1,
-        child: StatefulBuilder(
-          builder: (context, setStatePopup) => _buildPopupToggleRow(
-            "Show WSP",
-            showWSP,
-            (val) {
-              showWSP = val;
-              setStatePopup(() {});
-            },
-          ),
-        ),
-      ),
-      PopupMenuItem(
-        value: 2,
-        child: StatefulBuilder(
-          builder: (context, setStatePopup) => _buildPopupToggleRow(
-            "Show Sizes",
-            showSizes,
-            (val) {
-              showSizes = val;
-              setStatePopup(() {});
-            },
-          ),
-        ),
-      ),
-      PopupMenuItem(
-        value: 3,
-        child: StatefulBuilder(
-          builder: (context, setStatePopup) => _buildPopupToggleRow(
-            "Show Shades",
-            showShades,
-            (val) {
-              showShades = val;
-              setStatePopup(() {});
-            },
-          ),
-        ),
-      ),
-    ],
-  ),
-)
-
         ],
       ),
       body: Column(
