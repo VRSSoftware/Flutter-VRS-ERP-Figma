@@ -440,6 +440,9 @@ class _FilterPageState extends State<FilterPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
                   padding: EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder( // Add this
+          borderRadius: BorderRadius.circular(0), // No curvature
+        ),
                 ),
                 onPressed: () {
                   Map<String, dynamic> selectedFilters = {
