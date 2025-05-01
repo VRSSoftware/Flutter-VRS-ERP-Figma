@@ -92,7 +92,7 @@ void _showOptionsBottomSheet(BuildContext context) {
                       onPressed: () => Navigator.pop(context),
                       child: const Text('Done'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryColor,
+                       // backgroundColor: AppColors.primaryColor,
                         minimumSize: const Size(double.infinity, 50),
                       ),
                     ),
