@@ -15,6 +15,19 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
   bool includeSize = false;
   bool includeProduct = false;
   bool includeRemark = false;
+  bool selectAll = false;
+
+  void _toggleAllOptions(bool value) {
+    setState(() {
+      selectAll = value;
+      includeDesign = value;
+      includeShade = value;
+      includeRate = value;
+      includeSize = value;
+      includeProduct = value;
+      includeRemark = value;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,13 +35,11 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         constraints: BoxConstraints(
-          maxHeight:
-              MediaQuery.of(context).size.height *
-              0.65, // Adjusted height to fit the screen
+          maxHeight: MediaQuery.of(context).size.height * 0.65,
         ),
         child: Column(
           children: [
-            // Close button at the top right corner
+            // Title row with text, toggle, and close button
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -36,16 +47,23 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
                   'Select Share Options',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
+                Row(
+                  children: [
+                    Switch(
+                      value: selectAll,
+                      onChanged: _toggleAllOptions,
+                      activeColor: AppColors.primaryColor,
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(
-              height: 8,
-            ), // Reduced height between title and switch list
-            // Wrap the SwitchListTile widgets inside an Expanded widget to allow flexible height usage
+            const SizedBox(height: 8),
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -53,48 +71,73 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
                     SwitchListTile(
                       title: const Text('Include Design'),
                       value: includeDesign,
-                      onChanged:
-                          (value) => setState(() => includeDesign = value),
+                      onChanged: (value) {
+                        setState(() {
+                          includeDesign = value;
+                          if (!value) selectAll = false;
+                        });
+                      },
                       activeColor: AppColors.primaryColor,
                     ),
                     SwitchListTile(
                       title: const Text('Include Shade'),
                       value: includeShade,
-                      onChanged:
-                          (value) => setState(() => includeShade = value),
+                      onChanged: (value) {
+                        setState(() {
+                          includeShade = value;
+                          if (!value) selectAll = false;
+                        });
+                      },
                       activeColor: AppColors.primaryColor,
                     ),
                     SwitchListTile(
                       title: const Text('Include Rate'),
                       value: includeRate,
-                      onChanged: (value) => setState(() => includeRate = value),
+                      onChanged: (value) {
+                        setState(() {
+                          includeRate = value;
+                          if (!value) selectAll = false;
+                        });
+                      },
                       activeColor: AppColors.primaryColor,
                     ),
                     SwitchListTile(
                       title: const Text('Include Size'),
                       value: includeSize,
-                      onChanged: (value) => setState(() => includeSize = value),
+                      onChanged: (value) {
+                        setState(() {
+                          includeSize = value;
+                          if (!value) selectAll = false;
+                        });
+                      },
                       activeColor: AppColors.primaryColor,
                     ),
                     SwitchListTile(
                       title: const Text('Include Product'),
                       value: includeProduct,
-                      onChanged:
-                          (value) => setState(() => includeProduct = value),
+                      onChanged: (value) {
+                        setState(() {
+                          includeProduct = value;
+                          if (!value) selectAll = false;
+                        });
+                      },
                       activeColor: AppColors.primaryColor,
                     ),
                     SwitchListTile(
                       title: const Text('Include Remark'),
                       value: includeRemark,
-                      onChanged:
-                          (value) => setState(() => includeRemark = value),
+                      onChanged: (value) {
+                        setState(() {
+                          includeRemark = value;
+                          if (!value) selectAll = false;
+                        });
+                      },
                       activeColor: AppColors.primaryColor,
                     ),
                   ],
                 ),
               ),
             ),
-            // 'Done' button at the bottom, wrapped inside a Container to avoid overflow
             Container(
               padding: const EdgeInsets.only(bottom: 16),
               child: ElevatedButton(
@@ -111,16 +154,16 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
                 child: Text(
                   'Done',
                   style: TextStyle(
-                    color: AppColors.primaryColor, // Use custom primary color
+                    color: AppColors.primaryColor,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),
-                  backgroundColor: Colors.white, // Optional: white background
+                  backgroundColor: Colors.white,
                   side: BorderSide(
                     color: AppColors.primaryColor,
-                  ), // Optional border
+                  ),
                 ),
               ),
             ),
