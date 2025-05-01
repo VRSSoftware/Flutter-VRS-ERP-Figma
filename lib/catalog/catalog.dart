@@ -507,10 +507,12 @@ class _CatalogPageState extends State<CatalogPage> {
                                 ],
                               ),
                               const SizedBox(height: 4),
+                              
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
+                                  if(showMRP)
                                   Expanded(
                                     child: _buildDetailText(
                                       'MRP',
@@ -518,6 +520,7 @@ class _CatalogPageState extends State<CatalogPage> {
                                       isLargeScreen,
                                     ),
                                   ),
+                                  if(showWSP)
                                   Expanded(
                                     child: _buildDetailText(
                                       'WSP',
@@ -528,7 +531,7 @@ class _CatalogPageState extends State<CatalogPage> {
                                 ],
                               ),
 
-                              if (item.sizeName.isNotEmpty)
+                              if (item.sizeName.isNotEmpty && showSizes)
                                 SingleChildScrollView(
                                   scrollDirection: Axis.horizontal,
                                   child: Row(
@@ -548,9 +551,10 @@ class _CatalogPageState extends State<CatalogPage> {
                                     ],
                                   ),
                                 ),
+                              // const SizedBox(height: 4),
+                              
                               const SizedBox(height: 4),
-
-                              const SizedBox(height: 4),
+                              if(showShades)
                               SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: Row(
@@ -681,6 +685,7 @@ class _CatalogPageState extends State<CatalogPage> {
                                   isLargeScreen, // The boolean indicating large screen size
                                 ),
                               ),
+                              if(showMRP)
                               Expanded(
                                 child: _buildDetailText(
                                   'MRP', // The label
@@ -690,6 +695,7 @@ class _CatalogPageState extends State<CatalogPage> {
                                   isLargeScreen, // The boolean indicating large screen size
                                 ),
                               ),
+                              if(showWSP)
                               Expanded(
                                 child: _buildDetailText(
                                   'WSP', // The label
@@ -703,7 +709,7 @@ class _CatalogPageState extends State<CatalogPage> {
                           ),
 
                           // Add Sizes Row here
-                          if (item.sizeName.isNotEmpty)
+                          if (item.sizeName.isNotEmpty && showSizes)
                             SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
                               child: Row(
@@ -721,6 +727,7 @@ class _CatalogPageState extends State<CatalogPage> {
                               ),
                             ),
                           const SizedBox(height: 4),
+                          if(showShades)
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Row(
