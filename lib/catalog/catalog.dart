@@ -359,7 +359,7 @@ class _CatalogPageState extends State<CatalogPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: _showFilterDialog,
         backgroundColor: AppColors.primaryColor,
-     child: Icon(Icons.filter_alt_outlined, color: Colors.white),
+        child: Icon(Icons.filter_alt_outlined, color: Colors.white),
 
         tooltip: 'Filter',
       ),
@@ -509,27 +509,26 @@ class _CatalogPageState extends State<CatalogPage> {
                               //   ],
                               // ),
                               // const SizedBox(height: 4),
-                              
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  if(showMRP)
-                                  Expanded(
-                                    child: _buildDetailText(
-                                      'MRP',
-                                      item.mrp.toStringAsFixed(2),
-                                      isLargeScreen,
+                                  if (showMRP)
+                                    Expanded(
+                                      child: _buildDetailText(
+                                        'MRP',
+                                        item.mrp.toStringAsFixed(2),
+                                        isLargeScreen,
+                                      ),
                                     ),
-                                  ),
-                                  if(showWSP)
-                                  Expanded(
-                                    child: _buildDetailText(
-                                      'WSP',
-                                      item.wsp.toStringAsFixed(2),
-                                      isLargeScreen,
+                                  if (showWSP)
+                                    Expanded(
+                                      child: _buildDetailText(
+                                        'WSP',
+                                        item.wsp.toStringAsFixed(2),
+                                        isLargeScreen,
+                                      ),
                                     ),
-                                  ),
                                 ],
                               ),
 
@@ -553,32 +552,33 @@ class _CatalogPageState extends State<CatalogPage> {
                                     ],
                                   ),
                                 ),
+
                               // const SizedBox(height: 4),
-                              
                               const SizedBox(height: 4),
-                              if(showShades)
-                              SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildDetailText(
-                                      'Shades',
-                                      '',
-                                      isLargeScreen,
-                                    ),
-                                    Text(
-                                      shades.join(
-                                        ', ',
-                                      ), // Join shades with a comma
-                                      style: TextStyle(
-                                        fontSize: isLargeScreen ? 14 : 13,
-                                        color: Colors.grey[700],
+                              if (showShades)
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _buildDetailText(
+                                        'Shades',
+                                        '',
+                                        isLargeScreen,
                                       ),
-                                    ),
-                                  ],
+                                      Text(
+                                        shades.join(
+                                          ', ',
+                                        ), // Join shades with a comma
+                                        style: TextStyle(
+                                          fontSize: isLargeScreen ? 14 : 13,
+                                          color: Colors.grey[700],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
                             ],
                           ),
                         ),
@@ -688,26 +688,26 @@ class _CatalogPageState extends State<CatalogPage> {
                               //     isLargeScreen, // The boolean indicating large screen size
                               //   ),
                               // ),
-                              if(showMRP)
-                              Expanded(
-                                child: _buildDetailText(
-                                  'MRP', // The label
-                                  item.mrp.toStringAsFixed(
-                                    2,
-                                  ), // Convert to string if necessary
-                                  isLargeScreen, // The boolean indicating large screen size
+                              if (showMRP)
+                                Expanded(
+                                  child: _buildDetailText(
+                                    'MRP', // The label
+                                    item.mrp.toStringAsFixed(
+                                      2,
+                                    ), // Convert to string if necessary
+                                    isLargeScreen, // The boolean indicating large screen size
+                                  ),
                                 ),
-                              ),
-                              if(showWSP)
-                              Expanded(
-                                child: _buildDetailText(
-                                  'WSP', // The label
-                                  item.wsp.toStringAsFixed(
-                                    2,
-                                  ), // Convert to string if necessary
-                                  isLargeScreen, // The boolean indicating large screen size
+                              if (showWSP)
+                                Expanded(
+                                  child: _buildDetailText(
+                                    'WSP', // The label
+                                    item.wsp.toStringAsFixed(
+                                      2,
+                                    ), // Convert to string if necessary
+                                    isLargeScreen, // The boolean indicating large screen size
+                                  ),
                                 ),
-                              ),
                             ],
                           ),
 
@@ -730,23 +730,25 @@ class _CatalogPageState extends State<CatalogPage> {
                               ),
                             ),
                           const SizedBox(height: 4),
-                          if(showShades)
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildDetailText('Shades', '', isLargeScreen),
-                                Text(
-                                  shades.join(', '), // Join shades with a comma
-                                  style: TextStyle(
-                                    fontSize: isLargeScreen ? 14 : 13,
-                                    color: Colors.grey[700],
+                          if (showShades)
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildDetailText('Shades', '', isLargeScreen),
+                                  Text(
+                                    shades.join(
+                                      ', ',
+                                    ), // Join shades with a comma
+                                    style: TextStyle(
+                                      fontSize: isLargeScreen ? 14 : 13,
+                                      color: Colors.grey[700],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),
@@ -920,7 +922,7 @@ class _CatalogPageState extends State<CatalogPage> {
 
                       const SizedBox(height: 4),
                       if (showShades)
-                      SingleChildScrollView(
+                        SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -932,25 +934,25 @@ class _CatalogPageState extends State<CatalogPage> {
                                   color: Colors.grey[700],
                                 ),
                               ),
-                              Text(shades.join(', '),), // Data remains normal
+                              Text(shades.join(', ')), // Data remains normal
                             ],
                           ),
                         ),
-                        // Row(
-                        //   crossAxisAlignment: CrossAxisAlignment.start,
-                        //   children: [
-                        //     _buildDetailText('Shades', '', isLargeScreen),
-                        //     Flexible(
-                        //       child: Text(
-                        //         shades.join(', '),
-                        //         style: TextStyle(
-                        //           fontSize: isLargeScreen ? 14 : 13,
-                        //           color: Colors.grey[700],
-                        //         ),
-                        //       ),
-                        //     ),
-                        //   ],
-                        // ),
+                      // Row(
+                      //   crossAxisAlignment: CrossAxisAlignment.start,
+                      //   children: [
+                      //     _buildDetailText('Shades', '', isLargeScreen),
+                      //     Flexible(
+                      //       child: Text(
+                      //         shades.join(', '),
+                      //         style: TextStyle(
+                      //           fontSize: isLargeScreen ? 14 : 13,
+                      //           color: Colors.grey[700],
+                      //         ),
+                      //       ),
+                      //     ),
+                      //   ],
+                      // ),
                     ],
                   ),
                 ),
@@ -1155,7 +1157,13 @@ class _CatalogPageState extends State<CatalogPage> {
       print("aaaaaaaa  ${selectedFilters['styles']}");
       print("aaaaaaaa  ${selectedFilters['WSPfrom']}");
       print("aaaaaaaa  ${selectedFilters['WSPto']}");
-      if(!(selectedStyles.length== 0 && selectedSize.length==0 && selectedShades==0 && fromMRP == "" && toMRP == "" && WSPfrom=="" && WSPto ==""))
+      if (!(selectedStyles.length == 0 &&
+          selectedSize.length == 0 &&
+          selectedShades == 0 &&
+          fromMRP == "" &&
+          toMRP == "" &&
+          WSPfrom == "" &&
+          WSPto == ""))
         _fetchCatalogItems();
     }
   }
