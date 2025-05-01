@@ -1253,56 +1253,78 @@ class _CatalogPageState extends State<CatalogPage> {
         ),
       );
 
-      final tempDir = await getTemporaryDirectory();
-      List<String> filePaths = [];
+      // Prepare request data
+      final List<Map<String, String>> catalogItems =
+          selectedItems.map((item) {
+            return {
+              'fullImagePath': _getImageUrl(item),
+              'design': includeDesign ? item.styleCode : '',
+              'shade': includeShade ? item.shadeName : '',
+              'rate': includeRate ? item.mrp.toString() : '',
+              'size': includeSize ? item.sizeName : '',
+              'product': includeProduct ? item.itemName : '',
+              'remark': includeRemark ? item.remark : '',
+            };
+          }).toList();
 
-      for (var item in selectedItems) {
-        try {
-          final imageUrl = _getImageUrl(item);
-          if (imageUrl.isNotEmpty && imageUrl.startsWith('http')) {
-            final response = await http.get(Uri.parse(imageUrl));
-            if (response.statusCode == 200) {
-              final imageFile = File(
-                '${tempDir.path}/share_${item.itemKey}_${DateTime.now().millisecondsSinceEpoch}.jpg',
-              );
-              await imageFile.writeAsBytes(response.bodyBytes);
+      // Call backend API
+      final response = await http.post(
+        Uri.parse('${AppConstants.BASE_URL}/image/generate-and-share'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'catalogItems': catalogItems,
+          'includeDesign': includeDesign,
+          'includeShade': includeShade,
+          'includeRate': includeRate,
+          'includeSize': includeSize,
+          'includeProduct': includeProduct,
+          'includeRemark': includeRemark,
+        }),
+      );
 
-              // Build text based on selected options in the new format
-              String overlayText = '';
-              if (includeProduct) overlayText += 'Product: ${item.itemName}\n';
-              if (includeDesign) overlayText += 'Design: ${item.styleCode}\n';
-              if (includeShade) overlayText += 'Shade: ${item.shadeName}\n';
-              if (includeRate) overlayText += 'Rate: ₹${item.mrp}\n';
-              if (includeSize) overlayText += 'Size: ${item.sizeName}\n';
-              if (includeRemark && item.remark.isNotEmpty)
-                overlayText += 'Remark: ${item.remark}\n';
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body) as List;
+        final tempDir = await getTemporaryDirectory();
+        List<String> filePaths = [];
 
-              final overlayImageFile = await _overlayTextOnImage(
-                imageFile,
-                overlayText,
-              );
-              filePaths.add(overlayImageFile.path);
-            }
+        for (var imageData in responseData) {
+          try {
+            final imageBytes = base64Decode(imageData['image']);
+            final file = File(
+              '${tempDir.path}/share_${DateTime.now().millisecondsSinceEpoch}.jpg',
+            );
+            await file.writeAsBytes(imageBytes);
+            filePaths.add(file.path);
+          } catch (e) {
+            print('Error saving image: $e');
           }
-        } catch (e) {
-          print('Error downloading image for ${item.itemName}: $e');
         }
-      }
 
-      if (filePaths.isNotEmpty) {
-        await Share.shareFiles(
-          filePaths,
-          subject: 'Catalog Items from VRS ERP',
-        );
+        if (filePaths.isNotEmpty) {
+          await Share.shareFiles(
+            filePaths,
+            //subject: 'Catalog Items from VRS ERP',
+          );
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Items shared successfully')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No valid images to share')),
+          );
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No items available to share.')),
+          SnackBar(
+            content: Text('Failed to generate images: ${response.statusCode}'),
+          ),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to share items: ${e.toString()}')),
       );
+      print('Error in _shareSelectedItems: $e');
     }
   }
 
@@ -1518,6 +1540,7 @@ class _CatalogPageState extends State<CatalogPage> {
           '${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}';
 
       if (option == 'pdf') {
+        // Keep the existing PDF logic unchanged
         final apiUrl = '${AppConstants.BASE_URL}/pdf/generate';
         List<Map<String, dynamic>> catalogItems = [];
 
@@ -1526,10 +1549,11 @@ class _CatalogPageState extends State<CatalogPage> {
           catalogItem['fullImagePath'] = item.fullImagePath;
           if (includeDesign) catalogItem['design'] = item.styleCode;
           if (includeShade) catalogItem['shade'] = item.shadeName;
-          if (includeRate) {
-            catalogItem['mrp'] = item.mrp.toString();
-            catalogItem['wsp'] = item.wsp.toString();
-          }
+          // if (includeRate) {
+          //   catalogItem['mrp'] = item.mrp.toString();
+          //   catalogItem['wsp'] = item.wsp.toString();
+          // }
+          if (includeRate) catalogItem['rate'] = item.mrp;
           if (includeSize) catalogItem['size'] = item.sizeName;
           if (includeProduct) catalogItem['product'] = item.itemName;
           if (includeRemark) catalogItem['remark'] = item.remark;
@@ -1565,59 +1589,71 @@ class _CatalogPageState extends State<CatalogPage> {
           );
         }
       } else if (option == 'image') {
-        final tempDir = await getTemporaryDirectory();
-        int count = 1;
+        // Use the API approach from _shareSelectedItems
+        final List<Map<String, String>> catalogItems =
+            selectedItems.map((item) {
+              return {
+                'fullImagePath': _getImageUrl(item),
+                'design': includeDesign ? item.styleCode : '',
+                'shade': includeShade ? item.shadeName : '',
+                'rate': includeRate ? item.mrp.toString() : '',
+                'size': includeSize ? item.sizeName : '',
+                'product': includeProduct ? item.itemName : '',
+                'remark': includeRemark ? item.remark : '',
+              };
+            }).toList();
 
-        for (var item in selectedItems) {
-          try {
-            final imageUrl = _getImageUrl(item);
-            if (imageUrl.isNotEmpty && imageUrl.startsWith('http')) {
-              final response = await http.get(Uri.parse(imageUrl));
-              if (response.statusCode == 200) {
-                // Build text based on selected options
-                String overlayText = '';
-                if (includeProduct)
-                  overlayText += 'Product: ${item.itemName}\n';
-                if (includeDesign) overlayText += 'Design: ${item.styleCode}\n';
-                if (includeShade) overlayText += 'Shade: ${item.shadeName}\n';
-                if (includeRate) {
-                  overlayText += 'MRP: ₹${item.mrp}\n';
-                  overlayText += 'WSP: ₹${item.wsp}\n';
-                }
-                if (includeSize) overlayText += 'Size: ${item.sizeName}\n';
-                if (includeRemark && item.remark.isNotEmpty)
-                  overlayText += 'Remark: ${item.remark}\n';
-
-                // Create overlay image
-                final tempFile = File('${tempDir.path}/temp_image.jpg')
-                  ..writeAsBytesSync(response.bodyBytes);
-                final overlayImageFile = await _overlayTextOnImage(
-                  tempFile,
-                  overlayText,
-                );
-                await tempFile.delete();
-
-                // Save final image
-                final finalFile = File(
-                  '${downloadsDir?.path}/catalog_${item.styleCode}_${count}_$timestamp.jpg',
-                );
-                await overlayImageFile.copy(finalFile.path);
-                await overlayImageFile.delete();
-                count++;
-              }
-            }
-          } catch (e) {
-            print('Error downloading image for ${item.itemName}: $e');
-          }
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${selectedItems.length} images downloaded to Downloads folder',
-            ),
-          ),
+        // Call the image generation API
+        final response = await http.post(
+          Uri.parse('${AppConstants.BASE_URL}/image/generate-and-share'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'catalogItems': catalogItems,
+            'includeDesign': includeDesign,
+            'includeShade': includeShade,
+            'includeRate': includeRate,
+            'includeSize': includeSize,
+            'includeProduct': includeProduct,
+            'includeRemark': includeRemark,
+          }),
         );
+
+        if (response.statusCode == 200) {
+          final responseData = jsonDecode(response.body) as List;
+          int count = 1;
+          int successCount = 0;
+
+          for (var imageData in responseData) {
+            try {
+              final imageBytes = base64Decode(imageData['image']);
+              final item = selectedItems[count - 1];
+              final finalFile = File(
+                '${downloadsDir?.path}/catalog_${item.styleCode}_${count}_$timestamp.jpg',
+              );
+              await finalFile.writeAsBytes(imageBytes);
+              successCount++;
+              count++;
+            } catch (e) {
+              print('Error saving image: $e');
+            }
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '$successCount images downloaded to Downloads folder',
+              ),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to generate images: ${response.statusCode}',
+              ),
+            ),
+          );
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
