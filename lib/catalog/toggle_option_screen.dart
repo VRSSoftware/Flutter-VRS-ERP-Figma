@@ -40,11 +40,13 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.65,
         ),
         child: Column(
+                    mainAxisSize: MainAxisSize.min,
+
           children: [
             // Header with Select All checkbox and close button
     Row(
@@ -71,91 +73,86 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
   ],
 ),
 
-            const SizedBox(height: 8),
+     
 
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    SwitchListTile(
-                      title: const Text('Include Design'),
-                      value: includeDesign,
-                      onChanged: (value) =>
-                          setState(() => includeDesign = value),
-                      activeColor: AppColors.primaryColor,
-                    ),
-                    SwitchListTile(
-                      title: const Text('Include Shade'),
-                      value: includeShade,
-                      onChanged: (value) =>
-                          setState(() => includeShade = value),
-                      activeColor: AppColors.primaryColor,
-                    ),
-                    SwitchListTile(
-                      title: const Text('Include Rate'),
-                      value: includeRate,
-                      onChanged: (value) =>
-                          setState(() => includeRate = value),
-                      activeColor: AppColors.primaryColor,
-                    ),
-                    SwitchListTile(
-                      title: const Text('Include Size'),
-                      value: includeSize,
-                      onChanged: (value) =>
-                          setState(() => includeSize = value),
-                      activeColor: AppColors.primaryColor,
-                    ),
-                    SwitchListTile(
-                      title: const Text('Include Product'),
-                      value: includeProduct,
-                      onChanged: (value) =>
-                          setState(() => includeProduct = value),
-                      activeColor: AppColors.primaryColor,
-                    ),
-                    SwitchListTile(
-                      title: const Text('Include Remark'),
-                      value: includeRemark,
-                      onChanged: (value) =>
-                          setState(() => includeRemark = value),
-                      activeColor: AppColors.primaryColor,
-                    ),
-                  ],
-                ),
-            
+   Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Flexible(
+                    child: _buildCompactSwitchTile('Include Design', includeDesign, 
+                        (v) => setState(() => includeDesign = v)),
+                  ),
+                  Flexible(
+                    child: _buildCompactSwitchTile('Include Shade', includeShade, 
+                        (v) => setState(() => includeShade = v)),
+                  ),
+                  Flexible(
+                    child: _buildCompactSwitchTile('Include Rate', includeRate, 
+                        (v) => setState(() => includeRate = v)),
+                  ),
+                  Flexible(
+                    child: _buildCompactSwitchTile('Include Size', includeSize, 
+                        (v) => setState(() => includeSize = v)),
+                  ),
+                  Flexible(
+                    child: _buildCompactSwitchTile('Include Product', includeProduct, 
+                        (v) => setState(() => includeProduct = v)),
+                  ),
+                  Flexible(
+                    child: _buildCompactSwitchTile('Include Remark', includeRemark, 
+                        (v) => setState(() => includeRemark = v)),
+                  ),
+                ],
               ),
             ),
 
             // Done button
-            Container(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context, {
-                    'design': includeDesign,
-                    'shade': includeShade,
-                    'rate': includeRate,
-                    'size': includeSize,
-                    'product': includeProduct,
-                    'remark': includeRemark,
-                  });
-                },
-                child: Text(
-                  'Done',
-                  style: TextStyle(
-                    color: AppColors.primaryColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50),
-                  backgroundColor: Colors.white,
-                  side: BorderSide(color: AppColors.primaryColor),
-                ),
-              ),
-            ),
+Container(
+              padding: const EdgeInsets.only(top: 12, bottom: 8),
+  child: ElevatedButton(
+    onPressed: () {
+      Navigator.pop(context, {
+        'design': includeDesign,
+        'shade': includeShade,
+        'rate': includeRate,
+        'size': includeSize,
+        'product': includeProduct,
+        'remark': includeRemark,
+      });
+    },
+    child: Text(
+      'Done',
+      style: TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+    style: ElevatedButton.styleFrom(
+      minimumSize: const Size(double.infinity, 50),
+      backgroundColor:AppColors.primaryColor ,
+      side: BorderSide(color: AppColors.primaryColor),
+      shape: RoundedRectangleBorder( // 👈 Add this for rounded corners
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+  ),
+),
+
           ],
         ),
       ),
     );
   }
 }
+
+  Widget _buildCompactSwitchTile(String title, bool value, Function(bool) onChanged) {
+    return SwitchListTile(
+      title: Text(title),
+      value: value,
+      onChanged: onChanged,
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+      activeColor: AppColors.primaryColor,
+    );
+  }
