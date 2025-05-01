@@ -481,8 +481,9 @@ class _CatalogPageState extends State<CatalogPage> {
                             children: [
                               /// Item Name
                               Text(
-                                item.itemName,
+                                item.styleCode,
                                 style: TextStyle(
+                                  color: AppColors.primaryColor,
                                   fontWeight: FontWeight.bold,
                                   fontSize: isLargeScreen ? 18 : 16,
                                 ),
@@ -493,20 +494,20 @@ class _CatalogPageState extends State<CatalogPage> {
 
                               /// Row 1: Style, MRP, WSP in a single row
                               // Row 1: Style, MRP, WSP in a single row
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: _buildDetailText(
-                                      'Style',
-                                      item.styleCode,
-                                      isLargeScreen,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
+                              // Row(
+                              //   mainAxisAlignment:
+                              //       MainAxisAlignment.spaceBetween,
+                              //   children: [
+                              //     Expanded(
+                              //       child: _buildDetailText(
+                              //         'Style',
+                              //         item.styleCode,
+                              //         isLargeScreen,
+                              //       ),
+                              //     ),
+                              //   ],
+                              // ),
+                              // const SizedBox(height: 4),
                               
                               Row(
                                 mainAxisAlignment:
@@ -664,8 +665,9 @@ class _CatalogPageState extends State<CatalogPage> {
                         children: [
                           /// Item Name
                           Text(
-                            item.itemName,
+                            item.styleCode,
                             style: TextStyle(
+                              color: AppColors.primaryColor,
                               fontWeight: FontWeight.bold,
                               fontSize: isLargeScreen ? 22 : 18,
                             ),
@@ -678,13 +680,13 @@ class _CatalogPageState extends State<CatalogPage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Expanded(
-                                child: _buildDetailText(
-                                  'Style', // The label
-                                  item.styleCode, // The value
-                                  isLargeScreen, // The boolean indicating large screen size
-                                ),
-                              ),
+                              // Expanded(
+                              //   child: _buildDetailText(
+                              //     'Style', // The label
+                              //     item.styleCode, // The value
+                              //     isLargeScreen, // The boolean indicating large screen size
+                              //   ),
+                              // ),
                               if(showMRP)
                               Expanded(
                                 child: _buildDetailText(
@@ -866,7 +868,7 @@ class _CatalogPageState extends State<CatalogPage> {
                         item.styleCode,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Colors.deepPurpleAccent,
+                          color: AppColors.primaryColor,
                           fontSize: isLargeScreen ? 18 : 16,
                         ),
                         maxLines: 2,
