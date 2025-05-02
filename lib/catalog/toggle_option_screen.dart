@@ -58,7 +58,7 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
           'Select Share Options',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(width: 80), // Add horizontal space here
+        const SizedBox(width: 70), // Add horizontal space here
         Checkbox(
           value: allSelected,
           onChanged: toggleAll,
