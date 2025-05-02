@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:vrs_erp_figma/constants/app_constants.dart';
@@ -20,36 +21,75 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   Set<String> removedStyles = {};
 
   // Controllers
-  final TextEditingController orderNoController = TextEditingController(
-    text: 'SO100',
-  );
-  final TextEditingController dateController = TextEditingController(
-    text: '22-04-2025',
-  );
-  final TextEditingController partyController = TextEditingController();
-  final TextEditingController brokerController = TextEditingController();
+   final TextEditingController orderNoController = TextEditingController(text: 'SO100');
+  final TextEditingController dateController = TextEditingController(text: '22-04-2025');
   final TextEditingController commController = TextEditingController();
-  final TextEditingController transporterController = TextEditingController();
   final TextEditingController deliveryDaysController = TextEditingController();
-  final TextEditingController deliveryDateController = TextEditingController(
-    text: '22-04-2025',
-  );
+  final TextEditingController deliveryDateController = TextEditingController(text: '22-04-2025');
   final TextEditingController remarkController = TextEditingController();
-  final TextEditingController totalItemController = TextEditingController(
-    text: '0',
-  );
-  final TextEditingController totalQtyController = TextEditingController(
-    text: '0',
-  );
+  final TextEditingController totalItemController = TextEditingController(text: '0');
+  final TextEditingController totalQtyController = TextEditingController(text: '0');
 
-  List<String> transporterList = ['DHL', 'FedEx', 'Blue Dart', 'Gati'];
+
+  // Dropdown Values
+  String? selectedParty;
+  String? selectedPartyKey;
   String? selectedTransporter;
+  String? selectedTransporterKey;
+  String? selectedBroker;
+  String? selectedBrokerKey;
+  
+  // Lists
+  List<Map<String, String>> partyList = [];
+  List<Map<String, String>> brokerList = [];
+  List<Map<String, String>> transporterList = [];
 
   @override
   void initState() {
     super.initState();
     fetchOrderItems();
+    _fetchInitialData();
   }
+    Future<void> _fetchInitialData() async {
+    brokerList = await fetchLedgers("B");
+    transporterList = await fetchLedgers("T");
+    setState(() {});
+  }
+
+
+  Future<List<Map<String, String>>> fetchLedgers(String ledCat) async {
+    final response = await http.post(
+      Uri.parse('${AppConstants.BASE_URL}/users/getLedger'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({"ledCat": ledCat, "coBrId": "01"}),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map<Map<String, String>>((e) => {
+        'ledKey': e['ledKey'].toString(),
+        'ledName': e['ledName'].toString(),
+      }).toList();
+    } else {
+      throw Exception("Failed to load ledgers");
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchLedgerDetails(String ledKey) async {
+    final response = await http.post(
+      Uri.parse('${AppConstants.BASE_URL}/users/getLedgerDetails'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({"ledKey": ledKey}),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load ledger details');
+    }
+  }
+
+
 
   Future<void> fetchOrderItems() async {
     final url = Uri.parse('${AppConstants.BASE_URL}/orderBooking/GetViewOrder');
@@ -240,7 +280,7 @@ Widget _buildStyleCard(String styleCode, List<dynamic> items) {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue,
+                      color: AppColors.primaryColor,
                     ),
                   ),
                   SizedBox(height: 8),
@@ -658,7 +698,58 @@ Widget _buildActionButtons(
     }
   }
 
-  @override
+  Widget buildDropdownSearch(String label, String ledCat, Function(String?, String?) onChanged) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: FutureBuilder<List<Map<String, String>>>(
+        future: fetchLedgers(ledCat),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return LinearProgressIndicator();
+          } else if (snapshot.hasError) {
+            return Text("Error: ${snapshot.error}");
+          } else {
+            final items = snapshot.data!;
+            if (ledCat == "w") partyList = items;
+
+            String? selected;
+            if (label == "Party Name") selected = selectedParty;
+            else if (label == "Broker") selected = selectedBroker;
+            else if (label == "Transporter") selected = selectedTransporter;
+
+            return DropdownSearch<String>(
+              items: items.map((e) => e['ledName']!).toList(),
+              selectedItem: selected,
+              dropdownDecoratorProps: DropDownDecoratorProps(
+                dropdownSearchDecoration: InputDecoration(
+                  labelText: label,
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              popupProps: PopupProps.menu(
+                showSearchBox: true,
+                searchFieldProps: TextFieldProps(
+                  decoration: InputDecoration(
+                    hintText: 'Search $label...',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              onChanged: (val) {
+                final selectedItem = items.firstWhere(
+                  (e) => e['ledName'] == val,
+                  orElse: () => {"ledKey": ""},
+                );
+                onChanged(val, selectedItem['ledKey']);
+              },
+            );
+          }
+        },
+      ),
+    );
+  }
+
+ @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -668,11 +759,10 @@ Widget _buildActionButtons(
         backgroundColor: AppColors.primaryColor,
         elevation: 1,
         leading: Builder(
-          builder:
-              (context) => IconButton(
-                icon: Icon(Icons.menu, color: Colors.white),
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
         ),
       ),
       body: LayoutBuilder(
@@ -686,15 +776,15 @@ Widget _buildActionButtons(
               key: _formKey,
               child: Column(
                 children: [
-                    if (groupedItems.isNotEmpty)
+               if (groupedItems.isNotEmpty)
                     ...groupedItems.entries
                         .map((entry) => _buildStyleCard(entry.key, entry.value))
                         .toList()
                   else
-                    Center(child: CircularProgressIndicator()),
-                     SizedBox(height: 10),
-                  
-                  isWideScreen
+                    Center(child: CircularProgressIndicator()),  
+
+                         SizedBox(width: 8),    
+                              isWideScreen
                       ? Row(
                         children: [
                           Expanded(
@@ -723,26 +813,80 @@ Widget _buildActionButtons(
                           ),
                         ],
                       ),
-                  buildRowTextFieldWithAdd("Party", partyController),
-                  isWideScreen
-                      ? Row(
-                        children: [
-                          Expanded(
-                            child: buildTextField("Broker", brokerController),
-                          ),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: buildTextField("Comm (%)", commController),
-                          ),
-                        ],
-                      )
-                      : Column(
-                        children: [
-                          buildTextField("Broker", brokerController),
-                          buildTextField("Comm (%)", commController),
-                        ],
+                  // Party Dropdown with Add Button
+                  Row(
+                    children: [
+                     Expanded(
+  child: buildDropdownSearch("Party Name", "w", (val, key) async {
+    selectedParty = val;
+    selectedPartyKey = key;
+    if (key != null) {
+      try {
+        final details = await fetchLedgerDetails(key);
+        print('Party Details: $details'); // Debug log
+
+        // Convert numeric keys to strings for comparison
+        final partyBrokerKey = details['brokerKey']?.toString() ?? '';
+        final partyTrspKey = details['trspKey']?.toString() ?? '';
+
+        // Update broker only if not manually selected
+        if ((selectedBrokerKey == null || selectedBrokerKey!.isEmpty) && 
+            partyBrokerKey.isNotEmpty) {
+          final broker = brokerList.firstWhere(
+            (e) => e['ledKey'] == partyBrokerKey,
+            orElse: () => {'ledName': ''},
+          );
+          if (broker['ledName'] != null) {
+            selectedBroker = broker['ledName'];
+            selectedBrokerKey = partyBrokerKey;
+          }
+        }
+
+        // Update transporter only if not manually selected
+        if ((selectedTransporterKey == null || selectedTransporterKey!.isEmpty) && 
+            partyTrspKey.isNotEmpty) {
+          final transporter = transporterList.firstWhere(
+            (e) => e['ledKey'] == partyTrspKey,
+            orElse: () => {'ledName': ''},
+          );
+          if (transporter['ledName'] != null) {
+            selectedTransporter = transporter['ledName'];
+            selectedTransporterKey = partyTrspKey;
+          }
+        }
+
+        setState(() {});
+      } catch (e) {
+        print('Error fetching party details: $e');
+      }
+    }
+  }),
+),
+                      SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () => _showCustomerMasterDialog(context),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.lightBlue),
+                        child: Text('+ Add'),
                       ),
-                  buildTransporterDropdown(),
+                    ],
+                  ),
+
+                  // Broker Dropdown
+                  buildDropdownSearch("Broker", "B", (val, key) {
+                    selectedBroker = val;
+                    selectedBrokerKey = key;
+                    setState(() {});
+                  }),
+
+                  // Commission Field
+                  buildTextField("Comm (%)", commController),
+
+                  // Transporter Dropdown
+                  buildDropdownSearch("Transporter", "T", (val, key) {
+                    selectedTransporter = val;
+                    selectedTransporterKey = key;
+                    setState(() {});
+                  }),
                   isWideScreen
                       ? Row(
                         children: [
@@ -849,6 +993,17 @@ Widget _buildActionButtons(
     );
   }
 
+
+
+
+
+
+
+
+
+
+
+
   Widget buildRow(
     String label1,
     TextEditingController controller1,
@@ -897,31 +1052,7 @@ Widget _buildActionButtons(
     );
   }
 
-  Widget buildTransporterDropdown() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: DropdownButtonFormField<String>(
-        value: selectedTransporter,
-        decoration: InputDecoration(
-          labelText: 'Transporter',
-          border: OutlineInputBorder(),
-        ),
-        items:
-            transporterList.map((String transporter) {
-              return DropdownMenuItem<String>(
-                value: transporter,
-                child: Text(transporter),
-              );
-            }).toList(),
-        onChanged: (String? newValue) {
-          setState(() {
-            selectedTransporter = newValue;
-            transporterController.text = newValue ?? '';
-          });
-        },
-      ),
-    );
-  }
+
 
   Widget buildTextField(
     String label,
