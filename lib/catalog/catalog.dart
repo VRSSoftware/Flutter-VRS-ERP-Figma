@@ -1622,7 +1622,7 @@ class _CatalogPageState extends State<CatalogPage> {
           //   catalogItem['wsp'] = item.wsp.toString();
           // }
           if (includeRate) catalogItem['rate'] = item.mrp;
-          if (includeSize) catalogItem['size'] = item.sizeName;
+          if (includeSize) catalogItem['sizeDetails'] = item.sizeDetails;
           if (includeProduct) catalogItem['product'] = item.itemName;
           if (includeRemark) catalogItem['remark'] = item.remark;
 
