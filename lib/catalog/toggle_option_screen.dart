@@ -9,12 +9,13 @@ class ToggleOptionsScreen extends StatefulWidget {
 }
 
 class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
-  bool includeDesign = false;
-  bool includeShade = false;
-  bool includeRate = false;
-  bool includeSize = false;
-  bool includeProduct = false;
-  bool includeRemark = false;
+bool includeDesign = true;
+bool includeShade = true;
+bool includeRate = true;
+bool includeSize = true;
+bool includeProduct = true;
+bool includeRemark = true;
+
 
   bool get allSelected =>
       includeDesign &&

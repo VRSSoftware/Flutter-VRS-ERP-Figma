@@ -21,17 +21,25 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
   @override
   void initState() {
     super.initState();
-    // Set all options to false by default
+    // Set all options to true by default
     options =
-        widget.initialOptions ??
-        {
-          'design': false,
-          'shade': false,
-          'rate': false,
-          'size': false,
-          'product': false,
-          'remark': false,
+        widget.initialOptions ?? {
+          'design': true,
+          'shade': true,
+          'rate': true,
+          'size': true,
+          'product': true,
+          'remark': true,
         };
+  }
+
+  bool get allSelected => options.values.every((v) => v);
+
+  void toggleAll(bool? value) {
+    final newValue = value ?? false;
+    setState(() {
+      options.updateAll((key, _) => newValue);
+    });
   }
 
   void _showOptionsBottomSheet(BuildContext context) {
@@ -61,6 +69,11 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
+                        ),
+                        Checkbox(
+                          value: allSelected,
+                          onChanged: toggleAll,
+                          activeColor: AppColors.primaryColor,
                         ),
                         IconButton(
                           icon: const Icon(Icons.close),
@@ -95,19 +108,16 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
                         child: Text(
                           'Done',
                           style: TextStyle(
-                            color:
-                                AppColors
-                                    .primaryColor, // Use your app's primary color
+                            color: AppColors.primaryColor, // Use primary color
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 50),
-                          backgroundColor:
-                              Colors.white, // Optional: make background light
+                          backgroundColor: Colors.white,
                           side: BorderSide(
                             color: AppColors.primaryColor,
-                          ), // Optional: border
+                          ),
                         ),
                       ),
                     ),
