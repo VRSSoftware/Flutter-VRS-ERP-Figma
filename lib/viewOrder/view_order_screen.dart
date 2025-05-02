@@ -209,17 +209,16 @@ Widget _buildStyleCard(String styleCode, List<dynamic> items) {
   final sortedSizes = sizeDetails.keys.toList()..sort();
   final sortedShades = shades.toList()..sort();
 
-  return Card(
+ return Card(
   child: Padding(
     padding: EdgeInsets.all(16),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Row with Image and Product Details
+        // Product Image and Details Row
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image Column
             if (items.isNotEmpty && items.first['fullImagePath'] != null)
               Container(
                 width: 100,
@@ -232,7 +231,6 @@ Widget _buildStyleCard(String styleCode, List<dynamic> items) {
                 ),
               ),
             SizedBox(width: 16),
-            // Product Details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,126 +257,153 @@ Widget _buildStyleCard(String styleCode, List<dynamic> items) {
         ),
         SizedBox(height: 16),
 
-
-          // Table section (scrollable if overflowed)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minWidth: MediaQuery.of(context).size.width - 64, // full width minus padding
+        // Table Section
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: MediaQuery.of(context).size.width - 64,
+            ),
+            child: Table(
+              border: TableBorder.all(
+                color: Colors.grey.shade300,
+                width: 1.0,
               ),
-              child: Table(
-                border: TableBorder.all(
-                  color: Colors.grey.shade300,
-                  width: 1.0,
-                ),
-                columnWidths: {
-                  0: FixedColumnWidth(100),
-                  for (var i = 0; i < sortedSizes.length; i++)
-                    (i + 1): FixedColumnWidth(80),
-                },
-                children: [
-                  // Header Row
-                  TableRow(
-                    decoration: BoxDecoration(color: Colors.grey.shade100),
-                    children: [
-                      Padding(
+              columnWidths: {
+                0: FixedColumnWidth(100),
+                for (var i = 0; i < sortedSizes.length; i++)
+                  (i + 1): FixedColumnWidth(80),
+              },
+              children: [
+                // MRP Row
+                TableRow(
+                  children: [
+                    Padding(padding: EdgeInsets.all(8), child: Text('MRP')),
+                    ...sortedSizes.map(
+                      (size) => Padding(
                         padding: EdgeInsets.all(8),
-                        child: Text(
-                          'Size',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      ...sortedSizes.map(
-                        (size) => Padding(
-                          padding: EdgeInsets.all(8),
-                          child: Center(child: Text(size)),
-                        ),
-                      ),
-                    ],
-                  ),
-                  // MRP Row
-                  TableRow(
-                    children: [
-                      Padding(padding: EdgeInsets.all(8), child: Text('MRP')),
-                      ...sortedSizes.map(
-                        (size) => Padding(
-                          padding: EdgeInsets.all(8),
-                          child: Center(
-                            child: Text(
-                              '${sizeDetails[size]!['mrp']?.toStringAsFixed(0) ?? '0'}',
-                            ),
+                        child: Center(
+                          child: Text(
+                            '${sizeDetails[size]!['mrp']?.toStringAsFixed(0) ?? '0'}',
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                  // WSP Row
-                  TableRow(
-                    children: [
-                      Padding(padding: EdgeInsets.all(8), child: Text('WSP')),
-                      ...sortedSizes.map(
-                        (size) => Padding(
-                          padding: EdgeInsets.all(8),
-                          child: Center(
-                            child: Text(
-                              '${sizeDetails[size]!['wsp']?.toStringAsFixed(0) ?? '0'}',
-                            ),
+                    ),
+                  ],
+                ),
+                // WSP Row
+                TableRow(
+                  children: [
+                    Padding(padding: EdgeInsets.all(8), child: Text('WSP')),
+                    ...sortedSizes.map(
+                      (size) => Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Center(
+                          child: Text(
+                            '${sizeDetails[size]!['wsp']?.toStringAsFixed(0) ?? '0'}',
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                  // Shade Rows with quantity inputs
-                  ...sortedShades.map(
-                    (shade) => TableRow(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.all(8),
-                          child: Row(
+                    ),
+                  ],
+                ),
+                // Header Row with Diagonal
+                TableRow(
+                  decoration: BoxDecoration(color: Colors.grey.shade100),
+                  children: [
+                    TableCell(
+                      verticalAlignment: TableCellVerticalAlignment.middle,
+                      child: Container(
+                        height: 48,
+                        child: CustomPaint(
+                          painter: _DiagonalLinePainter(),
+                          child: Stack(
                             children: [
-                              SizedBox(width: 8),
-                              Text(shade),
+                              Positioned(
+                                left: 12,
+                                top: 20,
+                                child: Text(
+                                  'Shade',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                right: 14,
+                                bottom: 20,
+                                child: Text(
+                                  'Size',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),
-                        ...sortedSizes.map(
-                          (size) => Padding(
-                            padding: EdgeInsets.all(4),
-                            child: TextField(
-                              controller: controllers[styleCode]?[shade]?[size],
-                              keyboardType: TextInputType.number,
-                              textAlign: TextAlign.center,
-                              decoration: InputDecoration(
-                                contentPadding: EdgeInsets.symmetric(vertical: 8),
-                                hintText: '0',
-                                hintStyle: TextStyle(color: Colors.grey),
-                                border: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                isDense: true,
-                              ),
-                              onChanged: (_) => _updateTotals(),
+                      ),
+                    ),
+                    ...sortedSizes.map(
+                      (size) => Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Center(child: Text(size)),
+                      ),
+                    ),
+                  ],
+                ),
+                // Normal Shade Rows
+                ...sortedShades.map(
+                  (shade) => TableRow(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Row(
+                          children: [
+                            
+                            SizedBox(width: 8),
+                            Text(shade),
+                          ],
+                        ),
+                      ),
+                      ...sortedSizes.map(
+                        (size) => Padding(
+                          padding: EdgeInsets.all(4),
+                          child: TextField(
+                            controller: controllers[styleCode]?[shade]?[size],
+                            keyboardType: TextInputType.number,
+                            textAlign: TextAlign.center,
+                            decoration: InputDecoration(
+                              contentPadding: EdgeInsets.symmetric(vertical: 8),
+                              hintText: '0',
+                              hintStyle: TextStyle(color: Colors.grey),
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              isDense: true,
                             ),
+                            onChanged: (_) => _updateTotals(),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
+        ),
 
-          SizedBox(height: 16),
-          _buildNoteSection(items),
-          _buildTotalSection(items),
-          _buildActionButtons(styleCode, sortedShades, sortedSizes),
-        ],
-      ),
+        SizedBox(height: 16),
+        _buildNoteSection(items),
+        _buildTotalSection(items),
+        _buildActionButtons(styleCode, sortedShades, sortedSizes),
+      ],
     ),
-  );
-
+  ),
+);
 }
  
   
@@ -661,6 +686,14 @@ Widget _buildActionButtons(
               key: _formKey,
               child: Column(
                 children: [
+                    if (groupedItems.isNotEmpty)
+                    ...groupedItems.entries
+                        .map((entry) => _buildStyleCard(entry.key, entry.value))
+                        .toList()
+                  else
+                    Center(child: CircularProgressIndicator()),
+                     SizedBox(height: 10),
+                  
                   isWideScreen
                       ? Row(
                         children: [
@@ -800,13 +833,13 @@ Widget _buildActionButtons(
                       ),
                     ],
                   ),
-                  SizedBox(height: 30),
-                  if (groupedItems.isNotEmpty)
-                    ...groupedItems.entries
-                        .map((entry) => _buildStyleCard(entry.key, entry.value))
-                        .toList()
-                  else
-                    Center(child: CircularProgressIndicator()),
+                  // SizedBox(height: 30),
+                  // if (groupedItems.isNotEmpty)
+                  //   ...groupedItems.entries
+                  //       .map((entry) => _buildStyleCard(entry.key, entry.value))
+                  //       .toList()
+                  // else
+                  //   Center(child: CircularProgressIndicator()),
                 ],
               ),
             ),
@@ -922,4 +955,27 @@ Widget _buildActionButtons(
       ),
     );
   }
+}
+
+
+class _DiagonalLinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.grey.shade400
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+
+    // Draw main diagonal line
+    canvas.drawLine(
+      Offset(0, 0),
+      Offset(size.width, size.height),
+      paint,
+    );
+
+  
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
