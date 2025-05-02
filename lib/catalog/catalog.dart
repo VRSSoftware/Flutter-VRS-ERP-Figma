@@ -3,9 +3,12 @@ import 'dart:io';
 import 'dart:ui';
 import 'dart:ui' as pw;
 import 'package:auto_size_text/auto_size_text.dart';
+// import 'package:device_apps/device_apps.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:installed_apps/installed_apps.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
@@ -241,7 +244,7 @@ class _CatalogPageState extends State<CatalogPage> {
                   ? CupertinoIcons.square_grid_2x2_fill
                   : viewOption == 1
                   ? CupertinoIcons.list_bullet_below_rectangle
-                  :  CupertinoIcons.rectangle_expand_vertical,
+                  : CupertinoIcons.rectangle_expand_vertical,
               color: Colors.white,
             ),
             onPressed: () {
@@ -1259,6 +1262,103 @@ class _CatalogPageState extends State<CatalogPage> {
     }
   }
 
+  Future<void> _shareSelectedWhatsApp({
+    required String shareType,
+    bool includeDesign = true,
+    bool includeShade = true,
+    bool includeRate = true,
+    bool includeSize = true,
+    bool includeProduct = true,
+    bool includeRemark = true,
+  }) async {
+    if (selectedItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select items to share')),
+      );
+      return;
+    }
+
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Sending to WhatsApp...'),
+            ],
+          ),
+          duration: Duration(seconds: 3),
+        ),
+      );
+
+      // List<Map<String, dynamic>> catalogItems = [];
+
+      // for (var item in selectedItems) {
+      //   Map<String, dynamic> catalogItem = {};
+      //   catalogItem['fullImagePath'] = item.fullImagePath;
+      //   if (includeDesign)
+      //     catalogItem['design'] = item.itemName; // Or design related to item
+      //   if (includeShade) catalogItem['shade'] = item.shadeName;
+      //   if (includeRate) catalogItem['rate'] = item.mrp.toString();
+      //   if (includeSize)
+      //     catalogItem['size'] =
+      //         item.sizeName; // You can modify this to combine size details if needed
+      //   if (includeProduct)
+      //     catalogItem['product'] =
+      //         item.itemName; // Or any other field representing product
+      //   if (includeRemark) catalogItem['remark'] = item.remark;
+
+      //   catalogItems.add(catalogItem);
+      // }
+      if (Platform.isAndroid) //return false; // Only supported on Android
+      {
+        bool? appIsInstalled = await InstalledApps.isAppInstalled(
+          'com.whatsapp',
+        );
+        bool isInstalled = false;
+
+        //await DeviceApps.isAppInstalled('com.whatsapp');
+
+        // If you want to check for WhatsApp Business as well:
+        // bool isBusinessInstalled = await DeviceApps.isAppInstalled('com.whatsapp.w4b');
+
+        print("appIsInstalledddddddddddddd");
+        print(appIsInstalled);
+        const imageUrl = '${AppConstants.BASE_URL}/images/NoImage.jpg';
+        final response = await http.get(Uri.parse(imageUrl));
+        if (response.statusCode != 200) {
+          throw Exception('Failed to download image');
+        }
+
+        // 2. Get external directory for file access
+        final tempDir = await getExternalStorageDirectory();
+        final file = File('${tempDir!.path}/shared_image.jpg');
+
+        // 3. Write image bytes to file
+        await file.writeAsBytes(response.bodyBytes);
+
+        // 4. Share via platform channel
+        const platform = MethodChannel('com.whatsapp');
+
+        if (selectedItems.length == 1) {
+          await platform.invokeMethod('shareToWhatsApp', {
+            'imagePath': file.path,
+            // 'caption': '*Style*\t\t: ${selectedItems[0].styleCode} \n*Sizes*\t\t: ${selectedItems[0].sizeDetails}',
+            'caption': '*Style*\u00A0: ${selectedItems[0].styleCode}\n*Sizes*\u00A0: ${selectedItems[0].sizeDetails}',
+
+            // 'test' : 'test1'
+          });
+        }
+      }
+    } catch (e) {
+      print(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to share items: ${e.toString()}')),
+      );
+    }
+  }
+
   Future<void> _shareSelectedItems({
     required String shareType,
     bool includeDesign = true,
@@ -1401,6 +1501,18 @@ class _CatalogPageState extends State<CatalogPage> {
       context: context,
       builder: (BuildContext context) {
         return ShareOptionsPage(
+          onWhatsAppShare: () {
+            Navigator.pop(context);
+            _shareSelectedWhatsApp(
+              shareType: 'WhatsApp',
+              includeDesign: includeDesign,
+              includeShade: includeShade,
+              includeRate: includeRate,
+              includeSize: includeSize,
+              includeProduct: includeProduct,
+              includeRemark: includeRemark,
+            );
+          },
           onImageShare: () {
             Navigator.pop(context);
             _shareSelectedItems(

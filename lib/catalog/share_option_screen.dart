@@ -4,6 +4,7 @@ import 'package:vrs_erp_figma/constants/app_constants.dart';
 
 class ShareOptionsPage extends StatelessWidget {
   final Function() onImageShare;
+  final Function() onWhatsAppShare;
   final Function() onPDFShare;
   final Function() onWeblinkShare;
   final Function() onVideoShare;
@@ -13,6 +14,7 @@ class ShareOptionsPage extends StatelessWidget {
   const ShareOptionsPage({
     Key? key,
     required this.onImageShare,
+    required this.onWhatsAppShare,
     required this.onPDFShare,
     required this.onWeblinkShare,
     required this.onVideoShare,
@@ -53,6 +55,12 @@ class ShareOptionsPage extends StatelessWidget {
             icon: Icons.image,
             title: 'Image',
             onTap: onImageShare,
+            context: context,
+          ),
+          _buildShareOption(
+            icon: Icons.ios_share,
+            title: 'WhatsApp',
+            onTap: onWhatsAppShare,
             context: context,
           ),
           _buildShareOption(

@@ -53,6 +53,11 @@ dependencies:
   carousel_slider: ^5.0.0
   auto_size_text: ^3.0.0
   getwidget: ^2.0.4
+  installed_apps: ^1.6.0
+  
+ # android_intent_plus: ^4.0.2
+  #device_apps: ^2.2.0
+
 
 
 
