@@ -113,12 +113,12 @@ class ShareOptionsPage extends StatelessWidget {
 
     if (options != null) {
       onToggleOptions(
-        options['design'] ?? false,
-        options['shade'] ?? false,
-        options['rate'] ?? false,
-        options['size'] ?? false,
-        options['product'] ?? false,
-        options['remark'] ?? false,
+        options['design'] ?? true,
+        options['shade'] ?? true,
+        options['rate'] ?? true,
+        options['size'] ?? true,
+        options['product'] ?? true,
+        options['remark'] ?? true,
       );
     }
   }

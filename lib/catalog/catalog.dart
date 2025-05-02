@@ -1206,19 +1206,14 @@ class _CatalogPageState extends State<CatalogPage> {
       final apiUrl = '${AppConstants.BASE_URL}/pdf/generate';
       List<Map<String, dynamic>> catalogItems = [];
 
- for (var item in selectedItems) {
+      for (var item in selectedItems) {
         Map<String, dynamic> catalogItem = {};
         catalogItem['fullImagePath'] = item.fullImagePath;
-        if (includeDesign)
-          catalogItem['design'] = item.itemName; 
+        if (includeDesign) catalogItem['design'] = item.itemName;
         if (includeShade) catalogItem['shade'] = item.shadeName;
         if (includeRate) catalogItem['rate'] = item.mrp.toString();
-        if (includeSize)
-          catalogItem['sizeDetails'] =
-              item.sizeDetails; 
-        if (includeProduct)
-          catalogItem['product'] =
-              item.itemName;
+        if (includeSize) catalogItem['sizeDetails'] = item.sizeDetails;
+        if (includeProduct) catalogItem['product'] = item.itemName;
         if (includeRemark) catalogItem['remark'] = item.remark;
 
         catalogItems.add(catalogItem);
@@ -1292,63 +1287,62 @@ class _CatalogPageState extends State<CatalogPage> {
         ),
       );
 
-      // List<Map<String, dynamic>> catalogItems = [];
+      // Show the dialog to enter the mobile number
+      String mobileNo = await _showMobileNumberDialog();
 
-      // for (var item in selectedItems) {
-      //   Map<String, dynamic> catalogItem = {};
-      //   catalogItem['fullImagePath'] = item.fullImagePath;
-      //   if (includeDesign)
-      //     catalogItem['design'] = item.itemName; // Or design related to item
-      //   if (includeShade) catalogItem['shade'] = item.shadeName;
-      //   if (includeRate) catalogItem['rate'] = item.mrp.toString();
-      //   if (includeSize)
-      //     catalogItem['size'] =
-      //         item.sizeName; // You can modify this to combine size details if needed
-      //   if (includeProduct)
-      //     catalogItem['product'] =
-      //         item.itemName; // Or any other field representing product
-      //   if (includeRemark) catalogItem['remark'] = item.remark;
+      // Proceed only if a valid mobile number is entered
+      if (mobileNo.isNotEmpty) {
+        // Loop through selected items and send each one
+        for (var item in selectedItems) {
+          final response = await http.get(
+            Uri.parse('${AppConstants.BASE_URL}/images${item.fullImagePath}'),
+          );
 
-      //   catalogItems.add(catalogItem);
-      // }
-      if (Platform.isAndroid) //return false; // Only supported on Android
-      {
-        bool? appIsInstalled = await InstalledApps.isAppInstalled(
-          'com.whatsapp',
-        );
-        bool isInstalled = false;
+          // Check if the request was successful
+          if (response.statusCode == 200) {
+            // Convert the image to bytes
+            final imageBytes = response.bodyBytes;
 
-        //await DeviceApps.isAppInstalled('com.whatsapp');
+            // Format the caption dynamically for each item
+            String caption = '';
 
-        // If you want to check for WhatsApp Business as well:
-        // bool isBusinessInstalled = await DeviceApps.isAppInstalled('com.whatsapp.w4b');
+            if (includeDesign) caption += '*Design*\t\t: ${item.styleCode}\n';
+            if (includeShade) caption += '*Shade*\t\t: ${item.shadeName}\n';
+            if (includeRate) caption += '*MRP*\t\t\t: ${item.mrp.toString()}\n';
+            if (includeSize)
+              caption += '*Sizes*\t\t\t: ${formatSizes(item.sizeDetails)}\n';
+            if (includeProduct) caption += '*Product*\t\t: ${item.itemName}\n';
+            if (includeRemark) caption += '*Remark*\t\t: ${item.remark}\n';
 
-        print("appIsInstalledddddddddddddd");
-        print(appIsInstalled);
-        const imageUrl = '${AppConstants.BASE_URL}/images/NoImage.jpg';
-        final response = await http.get(Uri.parse(imageUrl));
-        if (response.statusCode != 200) {
-          throw Exception('Failed to download image');
-        }
+            // Convert the image to Base64
+            String imageBase64 = base64Encode(imageBytes);
 
-        // 2. Get external directory for file access
-        final tempDir = await getExternalStorageDirectory();
-        final file = File('${tempDir!.path}/shared_image.jpg');
+            // Send the image as a file
+            bool result = await sendWhatsAppFile(
+              fileBytes: imageBytes,
+              mobileNo:
+                  mobileNo, // Use the mobile number obtained from the dialog
+              fileType: 'image',
+              caption: caption,
+            );
 
-        // 3. Write image bytes to file
-        await file.writeAsBytes(response.bodyBytes);
-
-        // 4. Share via platform channel
-        const platform = MethodChannel('com.whatsapp');
-
-        if (selectedItems.length == 1) {
-          await platform.invokeMethod('shareToWhatsApp', {
-            'imagePath': file.path,
-            // 'caption': '*Style*\t\t: ${selectedItems[0].styleCode} \n*Sizes*\t\t: ${selectedItems[0].sizeDetails}',
-            'caption': '*Style*\u00A0: ${selectedItems[0].styleCode}\n*Sizes*\u00A0: ${selectedItems[0].sizeDetails}',
-
-            // 'test' : 'test1'
-          });
+            if (result) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Images sent successfully...')),
+              );
+              setState(() {
+                selectedItems = [];
+              });
+              print("Image for ${item.itemName} sent successfully.");
+            } else {
+              
+              print("Failed to send the image for ${item.itemName}.");
+            }
+          } else {
+            print(
+              "Failed to download the image for ${item.itemName}. Status Code: ${response.statusCode}",
+            );
+          }
         }
       }
     } catch (e) {
@@ -1358,6 +1352,220 @@ class _CatalogPageState extends State<CatalogPage> {
       );
     }
   }
+
+  Future<String> _showMobileNumberDialog() async {
+    TextEditingController controller = TextEditingController();
+
+    // Show the dialog and return the value from Navigator.pop
+    String mobileNo =
+        await showDialog<String>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Enter Mobile Number'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: 'Mobile Number',
+                      hintText: 'Enter a 10-digit mobile number',
+                    ),
+                    autofocus: true, // Open the keyboard automatically
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Please enter a 10-digit mobile number.',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(
+                      context,
+                    ).pop(''); // Return empty string on cancel
+                  },
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    String inputMobileNo = controller.text.trim();
+                    if (inputMobileNo.length == 10 &&
+                        int.tryParse(inputMobileNo) != null) {
+                      Navigator.of(
+                        context,
+                      ).pop(inputMobileNo); // Return valid mobile number
+                    } else {
+                      // Show validation message if not valid
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Please enter a valid 10-digit mobile number',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        ''; // Default to empty string if dialog is dismissed or cancelled
+
+    return mobileNo;
+  }
+
+  String formatSizes(String input) {
+    // Regular expression to match the size (any word before the opening parenthesis)
+    RegExp regExp = RegExp(r'(\w+)(?=\s?\()');
+
+    // Replace each match (size) with *size*
+    return input.replaceAllMapped(regExp, (match) {
+      return '*${match.group(0)}*'; // Add * before and after the size
+    });
+  }
+
+  Future<bool> sendWhatsAppFile({
+    required List<int> fileBytes,
+    required String mobileNo,
+    required String fileType,
+    String? caption,
+  }) async {
+    try {
+      String fileBase64 = base64Encode(fileBytes);
+
+      final response = await http.post(
+        Uri.parse("http://node4.wabapi.com/v4/postfile.php"),
+        body: {
+          'data': fileBase64,
+          'filename': fileType == 'image' ? 'catalog.jpg' : 'catalog.pdf',
+          'key': AppConstants.whatsappKey,
+          'number': '91$mobileNo', // Add country code before mobile number
+          'caption': caption ?? 'Please find the file attached.',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // Successfully sent
+        print('File sent successfully');
+        return true;
+      } else {
+        print('Failed to send file');
+        return false;
+      }
+    } catch (e) {
+      print('Error sending file: $e');
+      return false;
+    }
+  }
+
+  // Future<void> _shareSelectedWhatsApp({
+  //   required String shareType,
+  //   bool includeDesign = true,
+  //   bool includeShade = true,
+  //   bool includeRate = true,
+  //   bool includeSize = true,
+  //   bool includeProduct = true,
+  //   bool includeRemark = true,
+  // }) async {
+  //   if (selectedItems.isEmpty) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Please select items to share')),
+  //     );
+  //     return;
+  //   }
+
+  //   try {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //         content: Row(
+  //           children: [
+  //             CircularProgressIndicator(),
+  //             SizedBox(width: 16),
+  //             Text('Sending to WhatsApp...'),
+  //           ],
+  //         ),
+  //         duration: Duration(seconds: 3),
+  //       ),
+  //     );
+
+  //     // List<Map<String, dynamic>> catalogItems = [];
+
+  //     // for (var item in selectedItems) {
+  //     //   Map<String, dynamic> catalogItem = {};
+  //     //   catalogItem['fullImagePath'] = item.fullImagePath;
+  //     //   if (includeDesign)
+  //     //     catalogItem['design'] = item.itemName; // Or design related to item
+  //     //   if (includeShade) catalogItem['shade'] = item.shadeName;
+  //     //   if (includeRate) catalogItem['rate'] = item.mrp.toString();
+  //     //   if (includeSize)
+  //     //     catalogItem['size'] =
+  //     //         item.sizeName; // You can modify this to combine size details if needed
+  //     //   if (includeProduct)
+  //     //     catalogItem['product'] =
+  //     //         item.itemName; // Or any other field representing product
+  //     //   if (includeRemark) catalogItem['remark'] = item.remark;
+
+  //     //   catalogItems.add(catalogItem);
+  //     // }
+  //     if (Platform.isAndroid) //return false; // Only supported on Android
+  //     {
+  //       bool? appIsInstalled = await InstalledApps.isAppInstalled(
+  //         'com.whatsapp',
+  //       );
+  //       bool isInstalled = false;
+
+  //       //await DeviceApps.isAppInstalled('com.whatsapp');
+
+  //       // If you want to check for WhatsApp Business as well:
+  //       // bool isBusinessInstalled = await DeviceApps.isAppInstalled('com.whatsapp.w4b');
+
+  //       print("appIsInstalledddddddddddddd");
+  //       print(appIsInstalled);
+  //       String imageUrl = '${AppConstants.BASE_URL}/images${selectedItems[0].fullImagePath}';
+  //       final response = await http.get(Uri.parse(imageUrl));
+  //       if (response.statusCode != 200) {
+  //         throw Exception('Failed to download image');
+  //       }
+
+  //       // 2. Get external directory for file access
+  //       final tempDir = await getExternalStorageDirectory();
+  //       final file = File('${tempDir!.path}/shared_image.jpg');
+
+  //       // 3. Write image bytes to file
+  //       await file.writeAsBytes(response.bodyBytes);
+
+  //       // 4. Share via platform channel
+  //       const platform = MethodChannel('com.whatsapp');
+
+  //       if (selectedItems.length == 1) {
+  //         await platform.invokeMethod('shareToWhatsApp', {
+  //           'imagePath': file.path,
+  //           // 'caption': '*Style*\t\t: ${selectedItems[0].styleCode} \n*Sizes*\t\t: ${selectedItems[0].sizeDetails}',
+  //           'caption': '*Design*\t\t\t: ${selectedItems[0].styleCode}'+
+  //                       '\n*Shade*\t\t\t: ${selectedItems[0].shadeName}'+
+  //                       '\n*MRP*\t\t\t\t: ${selectedItems[0].mrp.toString()}'+
+  //                       '\n*Sizes*\t\t\t\t: ${selectedItems[0].sizeDetails}'+
+  //                       '\n*Product*\t\t: ${selectedItems[0].itemName} '+
+  //                       '\n*Remark*\t\t\t: ${selectedItems[0].remark}' ,
+
+  //           // 'test' : 'test1'
+  //         });
+  //       }
+  //     }
+  //   } catch (e) {
+  //     print(e.toString());
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to share items: ${e.toString()}')),
+  //     );
+  //   }
+  // }
 
   Future<void> _shareSelectedItems({
     required String shareType,
