@@ -319,6 +319,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
                                                   () => {
                                                     Navigator.pop(context),
                                                     Navigator.pop(context),
+                                                   Navigator.pushReplacementNamed(context, '/viewOrder'),
                                                   },
                                               child: const Text("OK"),
                                             ),

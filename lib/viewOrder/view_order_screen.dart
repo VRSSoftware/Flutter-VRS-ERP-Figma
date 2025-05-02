@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
+import 'package:vrs_erp_figma/viewOrder/add_more_info.dart';
 import 'package:vrs_erp_figma/viewOrder/customer_master.dart';
-
 
 class ViewOrderScreen extends StatefulWidget {
   @override
@@ -15,22 +15,32 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   final _formKey = GlobalKey<FormState>();
   List<dynamic> orderItems = [];
   Map<String, List<dynamic>> groupedItems = {};
-  Map<String, Map<String, Map<String, int>>> modifiedQuantities = {};
+  Map<String, Map<String, Map<String, TextEditingController>>> controllers = {};
   Map<String, int> styleTotals = {};
   Set<String> removedStyles = {};
 
   // Controllers
-  final TextEditingController orderNoController = TextEditingController(text: 'SO100');
-  final TextEditingController dateController = TextEditingController(text: '22-04-2025');
+  final TextEditingController orderNoController = TextEditingController(
+    text: 'SO100',
+  );
+  final TextEditingController dateController = TextEditingController(
+    text: '22-04-2025',
+  );
   final TextEditingController partyController = TextEditingController();
   final TextEditingController brokerController = TextEditingController();
   final TextEditingController commController = TextEditingController();
   final TextEditingController transporterController = TextEditingController();
   final TextEditingController deliveryDaysController = TextEditingController();
-  final TextEditingController deliveryDateController = TextEditingController(text: '22-04-2025');
+  final TextEditingController deliveryDateController = TextEditingController(
+    text: '22-04-2025',
+  );
   final TextEditingController remarkController = TextEditingController();
-  final TextEditingController totalItemController = TextEditingController(text: '0');
-  final TextEditingController totalQtyController = TextEditingController(text: '0');
+  final TextEditingController totalItemController = TextEditingController(
+    text: '0',
+  );
+  final TextEditingController totalQtyController = TextEditingController(
+    text: '0',
+  );
 
   List<String> transporterList = ['DHL', 'FedEx', 'Blue Dart', 'Gati'];
   String? selectedTransporter;
@@ -58,49 +68,74 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       setState(() {
         orderItems = json.decode(response.body);
         groupItemsByStyle();
-        _initializeTotals();
+        _initializeControllers();
+        _calculateTotals();
       });
     } else {
       print('Failed to load order items');
     }
   }
-void _initializeTotals() {
-  int totalQty = 0;
-  for (var style in groupedItems.keys) {
-    int styleTotal = groupedItems[style]!.fold<int>(0, (sum, item) {
-      // Handle item['clqty'] as a String and convert it to int
-      var clqty = item['clqty'];
-      int clqtyInt = 0;
-
-      if (clqty != null) {
-       
-        if (clqty is String) {
-          clqtyInt = int.tryParse(clqty) ?? 0; 
-        } else if (clqty is num) {
-          clqtyInt = clqty.toInt(); 
-        }
-      }
-
-      return sum + clqtyInt;
-    });
-    styleTotals[style] = styleTotal;
-    totalQty += styleTotal;
-  }
-  totalItemController.text = groupedItems.length.toString();
-  totalQtyController.text = totalQty.toString();
-}
-
 
   void groupItemsByStyle() {
     groupedItems = {};
     for (var item in orderItems) {
-      String styleCode = item['styleCode'];
+      String styleCode = item['styleCode']?.toString() ?? 'No Style Code';
       if (removedStyles.contains(styleCode)) continue;
       if (!groupedItems.containsKey(styleCode)) {
         groupedItems[styleCode] = [];
       }
       groupedItems[styleCode]!.add(item);
     }
+  }
+
+  void _initializeControllers() {
+    controllers = {};
+    for (var styleEntry in groupedItems.entries) {
+      final styleCode = styleEntry.key;
+      final items = styleEntry.value;
+
+      final sizes =
+          items.map((e) => e['sizeName']?.toString() ?? '').toSet().toList()
+            ..sort();
+
+      final shades =
+          items.map((e) => e['shadeName']?.toString() ?? '').toSet().toList();
+
+      controllers[styleCode] = {};
+
+      for (var shade in shades) {
+        controllers[styleCode]![shade] = {};
+        for (var size in sizes) {
+          final item = items.firstWhere(
+            (i) =>
+                (i['shadeName']?.toString() ?? '') == shade &&
+                (i['sizeName']?.toString() ?? '') == size,
+            orElse: () => {'clqty': 0},
+          );
+
+          controllers[styleCode]![shade]![size] = TextEditingController(
+            text: (item['clqty']?.toString() ?? '0'),
+          );
+        }
+      }
+    }
+  }
+
+  void _calculateTotals() {
+    int totalQty = 0;
+    styleTotals = {};
+
+    for (var styleEntry in groupedItems.entries) {
+      int styleTotal = 0;
+      for (var item in styleEntry.value) {
+        styleTotal += int.tryParse(item['clqty']?.toString() ?? '0') ?? 0;
+      }
+      styleTotals[styleEntry.key] = styleTotal;
+      totalQty += styleTotal;
+    }
+
+    totalItemController.text = groupedItems.length.toString();
+    totalQtyController.text = totalQty.toString();
   }
 
   void _showCustomerMasterDialog(BuildContext context) {
@@ -149,332 +184,637 @@ void _initializeTotals() {
     );
   }
 
-  Widget buildStyleCard(String styleCode, List<dynamic> items) {
-    Map<String, dynamic> sizes = {};
-    Set<String> shades = {};
-    Map<String, TextEditingController> qtyControllers = {};
+Widget _buildStyleCard(String styleCode, List<dynamic> items) {
+  final firstItem = items.isNotEmpty ? items.first : {};
+  final sizeDetails = <String, Map<String, num>>{};
+  final shades = <String>{};
 
-    for (var item in items) {
-      String sizeName = item['sizeName'];
-      if (!sizes.containsKey(sizeName)) {
-        sizes[sizeName] = {'mrp': item['mrp'], 'wsp': item['wsp']};
-      }
-      shades.add(item['shadeName']);
+  final itemSubGrpName = firstItem['itemSubGrpName']?.toString() ?? 'N/A';
+  final itemName = firstItem['itemName']?.toString() ?? 'N/A';
+  final brandName = firstItem['brandName']?.toString() ?? 'N/A';
+
+  for (final item in items) {
+    final size = item['sizeName']?.toString() ?? 'N/A';
+    final shade = item['shadeName']?.toString() ?? 'N/A';
+
+    if (!sizeDetails.containsKey(size)) {
+      sizeDetails[size] = {
+        'mrp': (item['mrp'] as num?) ?? 0,
+        'wsp': (item['wsp'] as num?) ?? 0,
+      };
     }
+    shades.add(shade);
+  }
 
-    List<String> sizeList = sizes.keys.toList();
-    List<String> shadeList = shades.toList();
+  final sortedSizes = sizeDetails.keys.toList()..sort();
+  final sortedShades = shades.toList()..sort();
 
-    for (var shade in shadeList) {
-      for (var size in sizeList) {
-        var item = items.firstWhere(
-          (i) => i['shadeName'] == shade && i['sizeName'] == size,
-          orElse: () => null,
-        );
-
-        if (item != null) {
-          int qty = _getModifiedQty(styleCode, shade, size) ?? item['clqty'] ?? 0;
-          qtyControllers['$shade-$size'] = TextEditingController(text: qty.toString());
-        }
-      }
-    }
-
-    var firstItem = items.first;
-    int currentTotal = styleTotals[styleCode] ?? 0;
-
-    return Card(
-      margin: EdgeInsets.symmetric(vertical: 12),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Column(
+  return Card(
+  child: Padding(
+    padding: EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Row with Image and Product Details
+        Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildImageSection(_getImageUrl(firstItem["fullImagePath"] ?? "")),
-            SizedBox(height: 10),
-            Text(
-              styleCode,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Colors.blue,
+            // Image Column
+            if (items.isNotEmpty && items.first['fullImagePath'] != null)
+              Container(
+                width: 100,
+                height: 120,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: _buildImageSection(
+                  _getImageUrl(items.first['fullImagePath']),
+                ),
               ),
-            ),
-            SizedBox(height: 10),
-            Table(
-              border: TableBorder.all(color: Colors.grey),
-              columnWidths: {0: FixedColumnWidth(60)},
-              children: [
-                TableRow(
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Text("Size", style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                    ...sizeList.map((size) => Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Text(size, textAlign: TextAlign.center),
-                    )),
-                  ],
-                ),
-                TableRow(
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Text("MRP", style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                    ...sizeList.map((size) => Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Text(sizes[size]['mrp'].toString(), textAlign: TextAlign.center),
-                    )),
-                  ],
-                ),
-                TableRow(
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Text("WSP", style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                    ...sizeList.map((size) => Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Text(sizes[size]['wsp'].toString(), textAlign: TextAlign.center),
-                    )),
-                  ],
-                ),
-                ...shadeList.map((shade) => TableRow(
-                  children: [
-                    Padding(padding: EdgeInsets.all(8), child: Text(shade)),
-                    ...sizeList.map((size) {
-                      String key = '$shade-$size';
-                      return Padding(
-                        padding: EdgeInsets.all(4),
-                        child: TextField(
-                          controller: qtyControllers[key],
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            isDense: true,
-                            hintText: '0',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ],
-                )),
-              ],
-            ),
-            SizedBox(height: 10),
-            Text("Note: ${firstItem["note"] ?? ''}"),
-            SizedBox(height: 8),
-            Row(
-              children: [
-                Text("TotQty: "),
-                SizedBox(
-                  width: 100,
-                  child: TextFormField(
-                    controller: TextEditingController(text: currentTotal.toString()),
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      isDense: true,
+            SizedBox(width: 16),
+            // Product Details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    styleCode,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
                     ),
                   ),
-                ),
-              ],
-            ),
-            SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _updateStyleQuantities(styleCode, shadeList, sizeList, qtyControllers),
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor),
-                    child: Text("Update", style: TextStyle(color: Colors.white)),
-                  ),
-                ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _removeStyle(styleCode),
-                    style: ElevatedButton.styleFrom(backgroundColor:Colors.blueGrey),
-                    child: Text("Remove", style: TextStyle(color: Colors.white)),
-                  ),
-                ),
-              ],
+                  SizedBox(height: 8),
+                  if (itemSubGrpName.isNotEmpty)
+                    _buildDetailRow('Category:', itemSubGrpName),
+                  if (itemName.isNotEmpty)
+                    _buildDetailRow('Product:', itemName),
+                  if (brandName.isNotEmpty)
+                    _buildDetailRow('Brand:', brandName),
+                ],
+              ),
             ),
           ],
         ),
+        SizedBox(height: 16),
+
+
+          // Table section (scrollable if overflowed)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minWidth: MediaQuery.of(context).size.width - 64, // full width minus padding
+              ),
+              child: Table(
+                border: TableBorder.all(
+                  color: Colors.grey.shade300,
+                  width: 1.0,
+                ),
+                columnWidths: {
+                  0: FixedColumnWidth(100),
+                  for (var i = 0; i < sortedSizes.length; i++)
+                    (i + 1): FixedColumnWidth(80),
+                },
+                children: [
+                  // Header Row
+                  TableRow(
+                    decoration: BoxDecoration(color: Colors.grey.shade100),
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Text(
+                          'Size',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      ...sortedSizes.map(
+                        (size) => Padding(
+                          padding: EdgeInsets.all(8),
+                          child: Center(child: Text(size)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // MRP Row
+                  TableRow(
+                    children: [
+                      Padding(padding: EdgeInsets.all(8), child: Text('MRP')),
+                      ...sortedSizes.map(
+                        (size) => Padding(
+                          padding: EdgeInsets.all(8),
+                          child: Center(
+                            child: Text(
+                              '${sizeDetails[size]!['mrp']?.toStringAsFixed(0) ?? '0'}',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // WSP Row
+                  TableRow(
+                    children: [
+                      Padding(padding: EdgeInsets.all(8), child: Text('WSP')),
+                      ...sortedSizes.map(
+                        (size) => Padding(
+                          padding: EdgeInsets.all(8),
+                          child: Center(
+                            child: Text(
+                              '${sizeDetails[size]!['wsp']?.toStringAsFixed(0) ?? '0'}',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Shade Rows with quantity inputs
+                  ...sortedShades.map(
+                    (shade) => TableRow(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.all(8),
+                          child: Row(
+                            children: [
+                              SizedBox(width: 8),
+                              Text(shade),
+                            ],
+                          ),
+                        ),
+                        ...sortedSizes.map(
+                          (size) => Padding(
+                            padding: EdgeInsets.all(4),
+                            child: TextField(
+                              controller: controllers[styleCode]?[shade]?[size],
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              decoration: InputDecoration(
+                                contentPadding: EdgeInsets.symmetric(vertical: 8),
+                                hintText: '0',
+                                hintStyle: TextStyle(color: Colors.grey),
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                isDense: true,
+                              ),
+                              onChanged: (_) => _updateTotals(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          SizedBox(height: 16),
+          _buildNoteSection(items),
+          _buildTotalSection(items),
+          _buildActionButtons(styleCode, sortedShades, sortedSizes),
+        ],
+      ),
+    ),
+  );
+
+}
+ 
+  
+  Widget _buildDetailRow(String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: RichText(
+      text: TextSpan(
+        style: TextStyle(
+          fontSize: 14,
+          color: Colors.grey[800],
+        ),
+        children: [
+          TextSpan(
+            text: '$label ',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          TextSpan(text: value),
+        ],
+      ),
+    ),
+  );
+}
+
+  Widget _buildPricingRow(
+    String label,
+    List<String> sizes, [
+    Map<String, Map<String, num>>? sizeDetails,
+    String? priceKey,
+  ]) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
+            ),
+          ),
+          ...sizes.map(
+            (size) => Expanded(
+              child: Center(
+                child: Text(
+                  priceKey != null
+                      ? '${sizeDetails?[size]?[priceKey]?.toStringAsFixed(0) ?? '0'}'
+                      : size,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[800],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  int? _getModifiedQty(String styleCode, String shade, String size) {
-    return modifiedQuantities[styleCode]?[shade]?[size];
+  Widget _buildShadeRow(
+    String styleCode,
+    String shade,
+    List<String> sizes,
+    List<dynamic> items,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 80,
+            child: Row(
+              children: [
+                // Icon(Icons.circle, size: 12, color: _getColorCode(shade)),
+                SizedBox(width: 8),
+                Flexible(child: Text(shade)),
+              ],
+            ),
+          ),
+          ...sizes.map(
+            (size) => Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: TextField(
+                  controller: controllers[styleCode]?[shade]?[size],
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  decoration: InputDecoration(
+                    contentPadding: EdgeInsets.all(8),
+                    border: OutlineInputBorder(),
+                    hintText: '0',
+                  ),
+                  onChanged: (_) => _updateTotals(),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  void _updateStyleQuantities(
-    String styleCode,
-    List<String> shadeList,
-    List<String> sizeList,
-    Map<String, TextEditingController> qtyControllers,
-  ) {
-    Map<String, Map<String, int>> shadeMap = {};
-    int newTotal = 0;
+  Widget _buildNoteSection(List<dynamic> items) {
+    final note = items.isNotEmpty ? items.first['note']?.toString() ?? '' : '';
 
-    for (var shade in shadeList) {
-      Map<String, int> sizeMap = {};
-      for (var size in sizeList) {
-        String key = '$shade-$size';
-        TextEditingController? controller = qtyControllers[key];
-        if (controller != null) {
-          int qty = int.tryParse(controller.text) ?? 0;
-          sizeMap[size] = qty;
-          newTotal += qty;
-        }
-      }
-      shadeMap[shade] = sizeMap;
-    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: TextField(
+        decoration: InputDecoration(
+          labelText: 'Note',
+          border: OutlineInputBorder(),
+          contentPadding: EdgeInsets.all(12),
+        ),
+        controller: TextEditingController(text: note),
+      ),
+    );
+  }
 
-    setState(() {
-      modifiedQuantities[styleCode] = shadeMap;
-      styleTotals[styleCode] = newTotal;
-      totalQtyController.text = styleTotals.values.fold(0, (a, b) => a + b).toString();
-    });
+  Widget _buildTotalSection(List<dynamic> items) {
+    final total = items.fold<int>(
+      0,
+      (sum, item) =>
+          sum + (int.tryParse(item['clqty']?.toString() ?? '0') ?? 0),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        children: [
+          Text(
+            'Total Quantity:',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: TextFormField(
+              readOnly: true,
+              controller: TextEditingController(text: total.toString()),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.all(12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+Widget _buildActionButtons(
+  String styleCode,
+  List<String> shades,
+  List<String> sizes,
+) {
+  return Padding(
+    padding: const EdgeInsets.only(top: 14),
+    child: Row(
+      children: [
+        // Update Button
+        Expanded(
+          child: OutlinedButton.icon(
+            icon: Icon(Icons.update, size: 20, color: AppColors.primaryColor),
+            label: Text(
+              'Update',
+              style: TextStyle(color: AppColors.primaryColor),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: AppColors.primaryColor),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: EdgeInsets.symmetric(vertical: 16),
+              backgroundColor: Colors.transparent,
+            ),
+            onPressed: () => _updateStyle(styleCode, shades, sizes),
+          ),
+        ),
+        SizedBox(width: 16),
+
+        // Remove Button
+        Expanded(
+          child: OutlinedButton.icon(
+            icon: Icon(Icons.delete, size: 20, color: Colors.grey),
+            label: Text(
+              'Remove',
+              style: TextStyle(color: Colors.grey),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: Colors.grey),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: EdgeInsets.symmetric(vertical: 16),
+              backgroundColor: Colors.transparent,
+            ),
+            onPressed: () => _removeStyle(styleCode),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+  void _updateStyle(String styleCode, List<String> shades, List<String> sizes) {
+    // Implement update logic
+    print('Updating style: $styleCode');
+    _calculateTotals();
   }
 
   void _removeStyle(String styleCode) {
     setState(() {
       removedStyles.add(styleCode);
-      groupItemsByStyle();
-      styleTotals.remove(styleCode);
-      modifiedQuantities.remove(styleCode);
-      totalItemController.text = groupedItems.length.toString();
-      totalQtyController.text = styleTotals.values.fold(0, (a, b) => a + b).toString();
+      groupedItems.remove(styleCode);
+      controllers.remove(styleCode);
+      _calculateTotals();
     });
   }
 
-@override
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: Colors.white,
-    drawer: DrawerScreen(),
-    appBar: AppBar(
-      title: Text('View Order', style: TextStyle(color: Colors.white)),
-      backgroundColor: Colors.deepPurple,
-      elevation: 1,
-      leading: Builder(
-        builder: (context) => IconButton(
-          icon: Icon(Icons.menu, color: Colors.white),
-          onPressed: () => Scaffold.of(context).openDrawer(),
+  void _updateTotals() {
+    int newTotal = 0;
+    for (var styleEntry in controllers.entries) {
+      for (var shadeEntry in styleEntry.value.entries) {
+        for (var sizeEntry in shadeEntry.value.entries) {
+          newTotal += int.tryParse(sizeEntry.value.text) ?? 0;
+        }
+      }
+    }
+    totalQtyController.text = newTotal.toString();
+  }
+
+  Color _getColorCode(String color) {
+    switch (color.toLowerCase()) {
+      case 'red':
+        return Colors.red;
+      case 'green':
+        return Colors.green;
+      case 'blue':
+        return Colors.blue;
+      case 'yellow':
+        return Colors.yellow[800]!;
+      case 'black':
+        return Colors.black;
+      case 'white':
+        return Colors.grey;
+      default:
+        return Colors.black;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      drawer: DrawerScreen(),
+      appBar: AppBar(
+        title: Text('View Order', style: TextStyle(color: Colors.white)),
+        backgroundColor: AppColors.primaryColor,
+        elevation: 1,
+        leading: Builder(
+          builder:
+              (context) => IconButton(
+                icon: Icon(Icons.menu, color: Colors.white),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
         ),
       ),
-    ),
-    body: LayoutBuilder(
-      builder: (context, constraints) {
-        double width = constraints.maxWidth;
-        bool isWideScreen = width > 600;
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          double width = constraints.maxWidth;
+          bool isWideScreen = width > 600;
 
-        return SingleChildScrollView(
-          padding: EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                isWideScreen
-                    ? Row(
+          return SingleChildScrollView(
+            padding: EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  isWideScreen
+                      ? Row(
                         children: [
-                          Expanded(child: buildTextField("Order No", orderNoController)),
+                          Expanded(
+                            child: buildTextField(
+                              "Order No",
+                              orderNoController,
+                            ),
+                          ),
                           SizedBox(width: 10),
-                          Expanded(child: buildTextField("Select Date", dateController, isDate: true)),
+                          Expanded(
+                            child: buildTextField(
+                              "Select Date",
+                              dateController,
+                              isDate: true,
+                            ),
+                          ),
                         ],
                       )
-                    : Column(
+                      : Column(
                         children: [
                           buildTextField("Order No", orderNoController),
-                          buildTextField("Select Date", dateController, isDate: true),
+                          buildTextField(
+                            "Select Date",
+                            dateController,
+                            isDate: true,
+                          ),
                         ],
                       ),
-                buildRowTextFieldWithAdd("Party", partyController),
-                isWideScreen
-                    ? Row(
+                  buildRowTextFieldWithAdd("Party", partyController),
+                  isWideScreen
+                      ? Row(
                         children: [
-                          Expanded(child: buildTextField("Broker", brokerController)),
+                          Expanded(
+                            child: buildTextField("Broker", brokerController),
+                          ),
                           SizedBox(width: 10),
-                          Expanded(child: buildTextField("Comm (%)", commController)),
+                          Expanded(
+                            child: buildTextField("Comm (%)", commController),
+                          ),
                         ],
                       )
-                    : Column(
+                      : Column(
                         children: [
                           buildTextField("Broker", brokerController),
                           buildTextField("Comm (%)", commController),
                         ],
                       ),
-                buildTransporterDropdown(),
-                isWideScreen
-                    ? Row(
+                  buildTransporterDropdown(),
+                  isWideScreen
+                      ? Row(
                         children: [
-                          Expanded(child: buildTextField("Delivery Days", deliveryDaysController)),
+                          Expanded(
+                            child: buildTextField(
+                              "Delivery Days",
+                              deliveryDaysController,
+                            ),
+                          ),
                           SizedBox(width: 10),
-                          Expanded(child: buildTextField("Delivery Date", deliveryDateController, isDate: true)),
+                          Expanded(
+                            child: buildTextField(
+                              "Delivery Date",
+                              deliveryDateController,
+                              isDate: true,
+                            ),
+                          ),
                         ],
                       )
-                    : Column(
+                      : Column(
                         children: [
-                          buildTextField("Delivery Days", deliveryDaysController),
-                          buildTextField("Delivery Date", deliveryDateController, isDate: true),
+                          buildTextField(
+                            "Delivery Days",
+                            deliveryDaysController,
+                          ),
+                          buildTextField(
+                            "Delivery Date",
+                            deliveryDateController,
+                            isDate: true,
+                          ),
                         ],
                       ),
-                buildFullField("Remark", remarkController),
-                isWideScreen
-                    ? Row(
+                  buildFullField("Remark", remarkController),
+                  isWideScreen
+                      ? Row(
                         children: [
-                          Expanded(child: buildTextField("Total Item", totalItemController)),
+                          Expanded(
+                            child: buildTextField(
+                              "Total Item",
+                              totalItemController,
+                            ),
+                          ),
                           SizedBox(width: 10),
-                          Expanded(child: buildTextField("Total Quantity", totalQtyController)),
+                          Expanded(
+                            child: buildTextField(
+                              "Total Quantity",
+                              totalQtyController,
+                            ),
+                          ),
                         ],
                       )
-                    : Column(
+                      : Column(
                         children: [
                           buildTextField("Total Item", totalItemController),
                           buildTextField("Total Quantity", totalQtyController),
                         ],
                       ),
-                SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple),
-                        child: Text('Add More Info', style: TextStyle(color: Colors.white)),
+                  SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                              showDialog(
+                          context: context,
+                          builder: (context) => AddMoreInfoDialog(),
+                        );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple,
+                          ),
+                          child: Text(
+                            'Add More Info',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            // Save logic
-                          }
-                        },
-                        child: Text('Save'),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (_formKey.currentState!.validate()) {
+                              // Save logic
+                            }
+                          },
+                          child: Text('Save'),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 30),
-                if (groupedItems.isNotEmpty)
-                  ...groupedItems.entries.map((entry) => buildStyleCard(entry.key, entry.value)).toList()
-                else
-                  Center(child: CircularProgressIndicator()),
-              ],
+                    ],
+                  ),
+                  SizedBox(height: 30),
+                  if (groupedItems.isNotEmpty)
+                    ...groupedItems.entries
+                        .map((entry) => _buildStyleCard(entry.key, entry.value))
+                        .toList()
+                  else
+                    Center(child: CircularProgressIndicator()),
+                ],
+              ),
             ),
-          ),
-        );
-      },
-    ),
-  );
-}
+          );
+        },
+      ),
+    );
+  }
 
   Widget buildRow(
     String label1,
@@ -491,31 +831,31 @@ Widget build(BuildContext context) {
     );
   }
 
-Widget buildRowTextFieldWithAdd(
-  String label,
-  TextEditingController controller,
-) {
-  return Row(
-    children: [
-      Expanded(
-        flex: 3,
-        child: TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            labelText: label,
-            border: OutlineInputBorder(),
+  Widget buildRowTextFieldWithAdd(
+    String label,
+    TextEditingController controller,
+  ) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 3,
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: label,
+              border: OutlineInputBorder(),
+            ),
           ),
         ),
-      ),
-      SizedBox(width: 8),
-      ElevatedButton(
-        onPressed: () => _showCustomerMasterDialog(context),
-        style: ElevatedButton.styleFrom(backgroundColor: Colors.lightBlue),
-        child: Text('+ Add'),
-      ),
-    ],
-  );
-}
+        SizedBox(width: 8),
+        ElevatedButton(
+          onPressed: () => _showCustomerMasterDialog(context),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.lightBlue),
+          child: Text('+ Add'),
+        ),
+      ],
+    );
+  }
 
   Widget buildFullField(String label, TextEditingController controller) {
     return Padding(

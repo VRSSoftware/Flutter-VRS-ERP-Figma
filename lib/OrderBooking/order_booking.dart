@@ -16,7 +16,6 @@ class OrderBookingScreen extends StatefulWidget {
 }
 
 class _OrderBookingScreenState extends State<OrderBookingScreen> {
-
   int _currentIndex = 0;
   final CarouselSliderController _carouselController =
       CarouselSliderController();
@@ -32,7 +31,6 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
   bool _isLoadingCategories = true;
   bool _isLoadingItems = false;
   bool hasFiltered = false;
-  
 
   Set<String> _activeFilters = {'mrp', 'wsp', 'shades', 'stylecode'};
 
@@ -81,76 +79,81 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       drawer: DrawerScreen(),
-appBar: AppBar(
-  title: Text(
-    showBarcodeWidget ? 'Barcode' : 'Order Booking',
-    style: const TextStyle(color: Colors.white),
-  ),
-  backgroundColor: AppColors.primaryColor,
-  elevation: 1,
-  leading: showBarcodeWidget
-      ? IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () {
-            setState(() {
-              showBarcodeWidget = false;
-            });
-          },
-        )
-      : Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
+      appBar: AppBar(
+        title: Text(
+          showBarcodeWidget ? 'Barcode' : 'Order Booking',
+          style: const TextStyle(color: Colors.white),
         ),
-  automaticallyImplyLeading: false,
-  actions: [
-    // Show filter icon only in barcode mode
-    if (showBarcodeWidget)
-      IconButton(
-        icon: const Icon(Icons.filter_list, color: Colors.white),
-        onPressed: () {
-          final overlay = Overlay.of(context);
-          final renderBox = context.findRenderObject() as RenderBox;
-          final position = renderBox.localToGlobal(Offset.zero);
-
-          late OverlayEntry entry;
-
-          entry = OverlayEntry(
-            builder: (context) => Positioned(
-              top: position.dy + kToolbarHeight,
-              right: 16,
-              child: Material(
-                color: Colors.transparent,
-                child: FilterMenuWidget(
-                  initialFilters: _activeFilters,
-                  onApply: (newFilters) {
-                    _updateFilters(newFilters);
-                    entry.remove();
+        backgroundColor: AppColors.primaryColor,
+        elevation: 1,
+        leading:
+            showBarcodeWidget
+                ? IconButton(
+                  icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                  onPressed: () {
+                    setState(() {
+                      showBarcodeWidget = false;
+                    });
                   },
-                  onCancel: () => entry.remove(),
+                )
+                : Builder(
+                  builder:
+                      (context) => IconButton(
+                        icon: const Icon(Icons.menu, color: Colors.white),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                      ),
                 ),
-              ),
+        automaticallyImplyLeading: false,
+        actions: [
+          // Show filter icon only in barcode mode
+          if (showBarcodeWidget)
+            IconButton(
+              icon: const Icon(Icons.filter_list, color: Colors.white),
+              onPressed: () {
+                final overlay = Overlay.of(context);
+                final renderBox = context.findRenderObject() as RenderBox;
+                final position = renderBox.localToGlobal(Offset.zero);
+
+                late OverlayEntry entry;
+
+                entry = OverlayEntry(
+                  builder:
+                      (context) => Positioned(
+                        top: position.dy + kToolbarHeight,
+                        right: 16,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: FilterMenuWidget(
+                            initialFilters: _activeFilters,
+                            onApply: (newFilters) {
+                              _updateFilters(newFilters);
+                              entry.remove();
+                            },
+                            onCancel: () => entry.remove(),
+                          ),
+                        ),
+                      ),
+                );
+
+                overlay.insert(entry);
+              },
             ),
-          );
 
-          overlay.insert(entry);
-        },
+          // Always show the three-dot menu
+          Builder(
+            builder:
+                (context) => IconButton(
+                  icon: const Icon(Icons.more_vert, color: Colors.white),
+                  onPressed: () {
+                    final RenderBox button =
+                        context.findRenderObject() as RenderBox;
+                    final Offset position = button.localToGlobal(Offset.zero);
+                    showOrderMenu(context, position);
+                  },
+                ),
+          ),
+        ],
       ),
-
-    // Always show the three-dot menu
-    Builder(
-      builder: (context) => IconButton(
-        icon: const Icon(Icons.more_vert, color: Colors.white),
-        onPressed: () {
-          final RenderBox button = context.findRenderObject() as RenderBox;
-          final Offset position = button.localToGlobal(Offset.zero);
-          showOrderMenu(context, position);
-        },
-      ),
-    ),
-  ],
-),
 
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -303,64 +306,68 @@ appBar: AppBar(
     );
   }
 
-Widget _buildCategoryItems() {
-  double buttonWidth = (MediaQuery.of(context).size.width - 60) / 2;
-  double buttonHeight = 50; 
+  Widget _buildCategoryItems() {
+    double buttonWidth = (MediaQuery.of(context).size.width - 60) / 2;
+    double buttonHeight = 50;
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        "Items in $_selectedCategoryName",
-        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-      ),
-      SizedBox(height: 10),
-      _isLoadingItems
-          ? Center(child: CircularProgressIndicator())
-          : Wrap(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Items in $_selectedCategoryName",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        SizedBox(height: 10),
+        _isLoadingItems
+            ? Center(child: CircularProgressIndicator())
+            : Wrap(
               spacing: 10,
               runSpacing: 10,
               alignment: WrapAlignment.start,
-              children: _items.map((item) {
-                return SizedBox(
-                  width: buttonWidth,
-                  height: buttonHeight,
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.grey.shade300),
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    onPressed: () {
-                      print(item.itemKey);
-                      print(item.itemSubGrpKey);
-                      Navigator.pushNamed(
-                        context,
-                        '/catalogpage',
-                        arguments: {
-                          'itemKey': item.itemKey,
-                          'itemSubGrpKey': item.itemSubGrpKey,
-                          'coBr': coBr,
-                          'fcYrId': fcYrId,
+              children:
+                  _items.map((item) {
+                    return SizedBox(
+                      width: buttonWidth,
+                      height: buttonHeight,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.grey.shade300),
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        onPressed: () {
+                          print(item.itemKey);
+                          print(item.itemSubGrpKey);
+                          Navigator.pushNamed(
+                            context,
+                            '/orderpage',
+                            arguments: {
+                              'itemKey': item.itemKey,
+                              'itemSubGrpKey': item.itemSubGrpKey,
+                              'coBr': coBr,
+                              'fcYrId': fcYrId,
+                            },
+                          );
                         },
-                      );
-                    },
-                    child: SingleChildScrollView( // Enable horizontal scrolling
-                      scrollDirection: Axis.horizontal,
-                      child: Text(
-                        item.itemName,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.black87, fontSize: 14),
+                        child: SingleChildScrollView(
+                          // Enable horizontal scrolling
+                          scrollDirection: Axis.horizontal,
+                          child: Text(
+                            item.itemName,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                    );
+                  }).toList(),
             ),
-    ],
-  );
-}
-
+      ],
+    );
+  }
 }

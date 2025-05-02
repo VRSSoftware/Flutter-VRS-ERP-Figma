@@ -461,6 +461,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
+import 'package:vrs_erp_figma/viewOrder/add_more_info.dart';
 import 'package:vrs_erp_figma/viewOrder/customer_master.dart';
 
 class ViewOrderScreens extends StatefulWidget {
@@ -622,7 +623,12 @@ class _ViewOrderScreenState extends State<ViewOrderScreens> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AddMoreInfoDialog(),
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.deepPurple,
                         foregroundColor: Colors.white,
@@ -655,153 +661,156 @@ class _ViewOrderScreenState extends State<ViewOrderScreens> {
     );
   }
 
-Widget buildItemCard(dynamic item) {
-  // Get dynamic size and color information from the fetched data
-  String size = item["sizeName"] ?? "Free"; // Single size as per your example
-  String color = item["shadeName"] ?? "Unknown"; // Single color as per your example
+  Widget buildItemCard(dynamic item) {
+    // Get dynamic size and color information from the fetched data
+    String size = item["sizeName"] ?? "Free"; // Single size as per your example
+    String color =
+        item["shadeName"] ?? "Unknown"; // Single color as per your example
 
-  // Create a map of controllers for quantities (if needed later)
-  Map<String, TextEditingController> qtyControllers = {
-    '$color-$size': TextEditingController()
-  };
+    // Create a map of controllers for quantities (if needed later)
+    Map<String, TextEditingController> qtyControllers = {
+      '$color-$size': TextEditingController(),
+    };
 
-  // Build the item card
-  return Card(
-    margin: const EdgeInsets.symmetric(vertical: 12),
-    elevation: 3,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    child: Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Display image based on the fullImagePath field
-          if (item["fullImagePath"] != null)
-            _buildImageSection(_getImageUrl(item["fullImagePath"])),
+    // Build the item card
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 12),
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Display image based on the fullImagePath field
+            if (item["fullImagePath"] != null)
+              _buildImageSection(_getImageUrl(item["fullImagePath"])),
 
-          const SizedBox(height: 10),
+            const SizedBox(height: 10),
 
-          // Display style code
-          Text(
-            item["styleCode"] ?? 'Unknown',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: Colors.blue,
+            // Display style code
+            Text(
+              item["styleCode"] ?? 'Unknown',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.blue,
+              ),
             ),
-          ),
 
-          const SizedBox(height: 10),
+            const SizedBox(height: 10),
 
-          // Display item name and brand
-          Text(
-            item["itemName"] ?? 'Item Name',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
+            // Display item name and brand
+            Text(
+              item["itemName"] ?? 'Item Name',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
-          ),
-          Text(
-            item["brandName"] ?? 'Brand Name',
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
+            Text(
+              item["brandName"] ?? 'Brand Name',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
 
-          const SizedBox(height: 10),
+            const SizedBox(height: 10),
 
-          // Display MRP and WSP
-          Row(
-            children: [
-              Text(
-                "MRP: ${item["mrp"] ?? 'N/A'}",
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(width: 20),
-              Text(
-                "WSP: ${item["wsp"] ?? 'N/A'}",
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
+            // Display MRP and WSP
+            Row(
+              children: [
+                Text(
+                  "MRP: ${item["mrp"] ?? 'N/A'}",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(width: 20),
+                Text(
+                  "WSP: ${item["wsp"] ?? 'N/A'}",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
 
-          const SizedBox(height: 10),
+            const SizedBox(height: 10),
 
-          // Display size and color
-          Row(
-            children: [
-              Text(
-                "Size: $size",
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(width: 20),
-              Text(
-                "Color: $color",
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
+            // Display size and color
+            Row(
+              children: [
+                Text(
+                  "Size: $size",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(width: 20),
+                Text(
+                  "Color: $color",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
 
-          const SizedBox(height: 10),
+            const SizedBox(height: 10),
 
-          // Display total quantity (TotQty)
-          Row(
-            children: [
-              const Text("TotQty: "),
-              SizedBox(
-                width: 100,
-                child: TextFormField(
-                  initialValue: "${item['totQty'] ?? 0}",
-                  readOnly: true,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    isDense: true,
+            // Display total quantity (TotQty)
+            Row(
+              children: [
+                const Text("TotQty: "),
+                SizedBox(
+                  width: 100,
+                  child: TextFormField(
+                    initialValue: "${item['totQty'] ?? 0}",
+                    readOnly: true,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
 
-          const SizedBox(height: 10),
+            const SizedBox(height: 10),
 
-          // Display note if available
-          if ((item["note"] ?? '').isNotEmpty)
-            Text("Note: ${item["note"]}"),
+            // Display note if available
+            if ((item["note"] ?? '').isNotEmpty) Text("Note: ${item["note"]}"),
 
-          const SizedBox(height: 10),
+            const SizedBox(height: 10),
 
-          // Buttons for Update and Remove
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Add update logic here
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor,
+            // Buttons for Update and Remove
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Add update logic here
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                    ),
+                    child: const Text(
+                      "Update",
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
-                  child: const Text("Update",style: TextStyle(color: Colors.white)),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Add remove logic here
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueGrey,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Add remove logic here
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueGrey,
+                    ),
+                    child: const Text(
+                      "Remove",
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
-                  child: const Text("Remove",style: TextStyle(color: Colors.white)),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
-  
+    );
+  }
+
   Widget buildRow(
     String label1,
     TextEditingController controller1,
