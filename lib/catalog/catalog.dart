@@ -1206,19 +1206,19 @@ class _CatalogPageState extends State<CatalogPage> {
       final apiUrl = '${AppConstants.BASE_URL}/pdf/generate';
       List<Map<String, dynamic>> catalogItems = [];
 
-      for (var item in selectedItems) {
+ for (var item in selectedItems) {
         Map<String, dynamic> catalogItem = {};
         catalogItem['fullImagePath'] = item.fullImagePath;
         if (includeDesign)
-          catalogItem['design'] = item.itemName; // Or design related to item
+          catalogItem['design'] = item.itemName; 
         if (includeShade) catalogItem['shade'] = item.shadeName;
         if (includeRate) catalogItem['rate'] = item.mrp.toString();
         if (includeSize)
-          catalogItem['size'] =
-              item.sizeName; // You can modify this to combine size details if needed
+          catalogItem['sizeDetails'] =
+              item.sizeDetails; 
         if (includeProduct)
           catalogItem['product'] =
-              item.itemName; // Or any other field representing product
+              item.itemName;
         if (includeRemark) catalogItem['remark'] = item.remark;
 
         catalogItems.add(catalogItem);
