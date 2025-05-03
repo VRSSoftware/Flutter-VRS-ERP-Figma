@@ -95,10 +95,17 @@ class _CatalogPageState extends State<CatalogPage> {
         itemSubGrpKey: itemSubGrpKey!,
         itemKey: itemKey!,
         cobr: coBr!,
-        styleKey: selectedStyles.length==1 ?  selectedStyles[0].styleKey : null,
-        shadeKey: selectedShades.length == 0 ? null : selectedShades.map((s) => s.shadeKey).join(','),
-        sizeKey: selectedSize.length == 0 ? null : selectedSize.map((s) => s.itemSizeKey).join(','),
-        fromMRP : fromMRP == "" ? null : fromMRP,
+        styleKey:
+            selectedStyles.length == 1 ? selectedStyles[0].styleKey : null,
+        shadeKey:
+            selectedShades.length == 0
+                ? null
+                : selectedShades.map((s) => s.shadeKey).join(','),
+        sizeKey:
+            selectedSize.length == 0
+                ? null
+                : selectedSize.map((s) => s.itemSizeKey).join(','),
+        fromMRP: fromMRP == "" ? null : fromMRP,
         toMRP: toMRP == "" ? null : toMRP,
       );
 
@@ -430,9 +437,18 @@ class _CatalogPageState extends State<CatalogPage> {
             item.shadeName.split(',').map((shade) => shade.trim()).toList();
 
         return GestureDetector(
-          onTap: () => _toggleItemSelection(item),
-          onLongPress: () => _enableMultiSelect(item),
-          onDoubleTap: () => _openImageZoom(context, item),
+          onTap: () {
+            if (selectedItems.length == 0)
+              _openImageZoom(context, item);
+            else
+              _toggleItemSelection(item);
+          },
+          onLongPress: () {
+            if (selectedItems.length == 0) _toggleItemSelection(item);
+          },
+          // onTap: () => _toggleItemSelection(item),
+          // onLongPress: () => _enableMultiSelect(item),
+          // onDoubleTap: () => _openImageZoom(context, item),
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 8),
             child: Card(
@@ -622,9 +638,18 @@ class _CatalogPageState extends State<CatalogPage> {
             item.shadeName.split(',').map((shade) => shade.trim()).toList();
 
         return GestureDetector(
-          onTap: () => _toggleItemSelection(item),
-          onLongPress: () => _enableMultiSelect(item),
-          onDoubleTap: () => _openImageZoom(context, item),
+          onTap: () {
+            if (selectedItems.length == 0)
+              _openImageZoom(context, item);
+            else
+              _toggleItemSelection(item);
+          },
+          onLongPress: () {
+            if (selectedItems.length == 0) _toggleItemSelection(item);
+          },
+          // onTap: () => _toggleItemSelection(item),
+          // onLongPress: () => _enableMultiSelect(item),
+          // onDoubleTap: () => _openImageZoom(context, item),
           child: Card(
             elevation: isSelected ? 8 : 4,
             margin: EdgeInsets.symmetric(
@@ -819,9 +844,18 @@ class _CatalogPageState extends State<CatalogPage> {
         item.shadeName.split(',').map((s) => s.trim()).toList();
 
     return GestureDetector(
-      onTap: () => _toggleItemSelection(item),
-      onLongPress: () => _enableMultiSelect(item),
-      onDoubleTap: () => _openImageZoom(context, item),
+      // onTap: () => _toggleItemSelection(item),
+      // onLongPress: () => _enableMultiSelect(item),
+      // onDoubleTap: () => _openImageZoom(context, item),
+      onTap: () {
+        if (selectedItems.length == 0)
+          _openImageZoom(context, item);
+        else
+          _toggleItemSelection(item);
+      },
+      onLongPress: () {
+        if (selectedItems.length == 0) _toggleItemSelection(item);
+      },
 
       child: Card(
         elevation: isSelected ? 8 : 4,
@@ -1303,7 +1337,8 @@ class _CatalogPageState extends State<CatalogPage> {
             if (includeDesign) caption += '*Design*\t\t: ${item.styleCode}\n';
             if (includeShade) caption += '*Shade*\t\t: ${item.shadeName}\n';
             if (includeRate) caption += '*MRP*\t\t\t: ${item.mrp.toString()}\n';
-            if (includeSize) caption += '*Sizes*\t\t\t: ${formatSizes(item.sizeDetails)}\n';
+            if (includeSize)
+              caption += '*Sizes*\t\t\t: ${formatSizes(item.sizeDetails)}\n';
             if (includeProduct) caption += '*Product*\t: ${item.itemName}\n';
             if (includeRemark) caption += '*Remark*\t\t: ${item.remark}\n';
 
