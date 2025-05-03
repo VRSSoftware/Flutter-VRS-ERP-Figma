@@ -99,16 +99,21 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
         _orderControllers.selectedBrokerKey,
         _orderControllers.selectedTransporterKey,
       );
-      
+
+       final commission = await _dropdownData.fetchCommissionPercentage(key);
+
       setState(() {
         _orderControllers.updateFromPartyDetails(
           details,
           _dropdownData.brokerList,
           _dropdownData.transporterList,
         );
+             _orderControllers.comm.text = commission;
       });
     } catch (e) {
       print('Error fetching party details: $e');
+         ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to load commission percentage')));
     }
   }
 }
@@ -130,6 +135,8 @@ class _OrderControllers {
   String? selectedTransporterKey;
   String? selectedBroker;
   String? selectedBrokerKey;
+
+  
 
   void updateFromPartyDetails(
     Map<String, dynamic> details,
@@ -210,6 +217,19 @@ class _DropdownData {
             'ledName': e['ledName'].toString(),
           }).toList()
         : throw Exception("Failed to load ledgers");
+  }
+
+    Future<String> fetchCommissionPercentage(String ledKey) async {
+    final response = await http.post(
+      Uri.parse('${AppConstants.BASE_URL}/users/getCommPerc'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({"ledKey": ledKey}),
+    );
+
+    if (response.statusCode == 200) {
+      return response.body;
+    }
+    throw Exception('Failed to load commission percentage');
   }
 }
 
@@ -683,38 +703,46 @@ class _OrderForm extends StatelessWidget {
     );
   }
 
-  Widget _buildDropdown(
-    String label,
-    String ledCat,
-    String? selectedValue,
-    Function(String?, String?) onChanged,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: DropdownSearch<String>(
-        popupProps: PopupProps.menu(
-          showSearchBox: true,
-          searchFieldProps: TextFieldProps(
-            decoration: InputDecoration(
-              hintText: _getSearchHint(label),
-              prefixIcon: const Icon(Icons.search, color: Colors.grey),
-              border: const OutlineInputBorder(),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-            ),
+Widget _buildDropdown(
+  String label,
+  String ledCat,
+  String? selectedValue,
+  Function(String?, String?) onChanged,
+) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: DropdownSearch<String>(
+      popupProps: PopupProps.menu(
+        showSearchBox: true,
+        searchFieldProps: TextFieldProps(
+          decoration: InputDecoration(
+            hintText: _getSearchHint(label),
+            prefixIcon: const Icon(Icons.search, color: Colors.grey),
+            border: const OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
           ),
         ),
-        items: _getLedgerList(ledCat).map((e) => e['ledName']!).toList(),
-        selectedItem: selectedValue,
-        dropdownDecoratorProps: const DropDownDecoratorProps(
-          dropdownSearchDecoration: InputDecoration(
-            labelText: 'Party Name',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        onChanged: (val) => onChanged(val, _getKeyFromValue(ledCat, val)),
       ),
-    );
-  }
+      items: _getLedgerList(ledCat).map((e) => e['ledName']!).toList(),
+      selectedItem: selectedValue,
+      dropdownDecoratorProps: DropDownDecoratorProps(
+        dropdownSearchDecoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+      ),
+      dropdownBuilder: (context, selectedItem) {
+        return Text(
+          selectedItem ?? '',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 16),
+        );
+      },
+      onChanged: (val) => onChanged(val, _getKeyFromValue(ledCat, val)),
+    ),
+  );
+}
 
   List<Map<String, String>> _getLedgerList(String ledCat) {
     switch (ledCat) {
@@ -849,6 +877,7 @@ Widget buildTextField(
     child: TextFormField(
       controller: controller,
       readOnly: isDate,
+            keyboardType: label.contains('Comm') ? TextInputType.numberWithOptions(decimal: true) : null,
       onTap: isDate ? () async {
         final context = controller.context; // Get context from controller
         if (context != null) {
