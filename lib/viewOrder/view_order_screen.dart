@@ -251,6 +251,7 @@ Widget _buildStyleCard(String styleCode, List<dynamic> items) {
 
  return Card(
   color: Colors.white70.withOpacity(0.9),
+  
   child: Padding(
     padding: EdgeInsets.all(16),
     child: Column(
