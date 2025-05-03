@@ -1335,7 +1335,6 @@ class _CatalogPageState extends State<CatalogPage> {
               });
               print("Image for ${item.itemName} sent successfully.");
             } else {
-              
               print("Failed to send the image for ${item.itemName}.");
             }
           } else {
@@ -1362,6 +1361,10 @@ class _CatalogPageState extends State<CatalogPage> {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               title: const Text('Enter Mobile Number'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
