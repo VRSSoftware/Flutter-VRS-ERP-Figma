@@ -50,31 +50,33 @@ bool includeRemark = true;
 
           children: [
             // Header with Select All checkbox and close button
-    Row(
+Row(
   mainAxisAlignment: MainAxisAlignment.spaceBetween,
   children: [
+    const Text(
+      'Select Share Options',
+      style: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
     Row(
       children: [
-        const Text(
-          'Select Share Options',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(width: 70), // Add horizontal space here
         Checkbox(
           value: allSelected,
           onChanged: toggleAll,
           activeColor: AppColors.primaryColor,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => Navigator.pop(context),
         ),
       ],
-    ),
-    IconButton(
-      icon: const Icon(Icons.close),
-      onPressed: () => Navigator.pop(context),
     ),
   ],
 ),
 
-     
 
    Expanded(
               child: Column(

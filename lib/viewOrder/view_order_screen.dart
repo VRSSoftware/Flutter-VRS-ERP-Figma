@@ -876,7 +876,7 @@ Expanded(
       ),
     ),
     style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.deepPurple,
+      backgroundColor: AppColors.primaryColor,
     ),
     child: const Text(
       'Add More Info',
@@ -889,7 +889,10 @@ Expanded(
         Expanded(
           child: ElevatedButton(
             onPressed: () {/* Save logic */},
-            child: const Text('Save'),
+            child: const Text(
+      'Save',
+      style: TextStyle(color: AppColors.primaryColor),
+    ),
           ),
         ),
       ],

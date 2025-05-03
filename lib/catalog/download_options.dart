@@ -34,6 +34,13 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
         };
   }
 
+  void _toggleAllOptions(bool? value) {
+    setState(() {
+      final newValue = value ?? false;
+      options.updateAll((key, value) => newValue);
+    });
+  }
+
   void _showOptionsBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -52,22 +59,44 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Select Fields to Include',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
+   Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    const Text(
+      'Select Fields to Include',
+      style: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+    Row(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: SizedBox(
+            height: 24,
+            width: 24,
+            child: Checkbox(
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              value: options.values.every((v) => v),
+              onChanged: (value) {
+                setState(() {
+                  final newValue = value ?? false;
+                  options.updateAll((key, value) => newValue);
+                });
+              },
+              activeColor: AppColors.primaryColor,
+            ),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ],
+    ),
+  ],
+),
                     const SizedBox(height: 16),
                     _buildToggleOption('Design', options['design']!, (value) {
                       setState(() => options['design'] = value);
@@ -95,19 +124,18 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
                         child: Text(
                           'Done',
                           style: TextStyle(
-                            color:
-                                AppColors
-                                    .primaryColor, // Use your app's primary color
+                            color: Colors.white, // Text color is white
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 50),
                           backgroundColor:
-                              Colors.white, // Optional: make background light
-                          side: BorderSide(
-                            color: AppColors.primaryColor,
-                          ), // Optional: border
+                              AppColors
+                                  .primaryColor, // Primary background color
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
