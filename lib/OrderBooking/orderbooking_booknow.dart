@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:vrs_erp_figma/catalog/filter.dart';
@@ -161,35 +162,44 @@ class _OrderPageState extends State<OrderPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text('Order Book', style: TextStyle(color: Colors.white)),
-        backgroundColor: AppColors.primaryColor,
-        elevation: 1,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        actions: [
-        
-            IconButton(
-              icon: Icon(
-                viewOption == 0
-                    ? Icons.grid_on
-                    : viewOption == 1
-                    ? Icons.view_list
-                    : Icons.expand,
-                color: Colors.white,
-              ),
-              onPressed: () {
-                setState(() {
-                  viewOption = (viewOption + 1) % 3;
-                });
-              },
-            ),
-        ],
+     appBar: AppBar(
+  title: Text('Order Book', style: TextStyle(color: Colors.white)),
+  backgroundColor: AppColors.primaryColor,
+  elevation: 1,
+  leading: IconButton(
+    icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+    onPressed: () {
+      Navigator.pop(context);
+    },
+  ),
+  actions: [
+    // Cart icon
+    IconButton(
+      icon: const Icon(CupertinoIcons.cart_badge_plus, color: Colors.white),
+      onPressed: () {
+        Navigator.pushNamed(context, '/viewOrder');
+      },
+    ),
+
+    // View option toggle icon
+    IconButton(
+      icon: Icon(
+        viewOption == 0
+            ? Icons.grid_on
+            : viewOption == 1
+                ? Icons.view_list
+                : Icons.expand,
+        color: Colors.white,
       ),
+      onPressed: () {
+        setState(() {
+          viewOption = (viewOption + 1) % 3;
+        });
+      },
+    ),
+  ],
+),
+
       body: Column(
         children: [
           Expanded(

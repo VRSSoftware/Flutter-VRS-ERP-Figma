@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:vrs_erp_figma/OrderBooking/orderbooking_drawer.dart';
@@ -79,81 +80,85 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       drawer: DrawerScreen(),
-      appBar: AppBar(
-        title: Text(
-          showBarcodeWidget ? 'Barcode' : 'Order Booking',
-          style: const TextStyle(color: Colors.white),
-        ),
-        backgroundColor: AppColors.primaryColor,
-        elevation: 1,
-        leading:
-            showBarcodeWidget
-                ? IconButton(
-                  icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                  onPressed: () {
-                    setState(() {
-                      showBarcodeWidget = false;
-                    });
-                  },
-                )
-                : Builder(
-                  builder:
-                      (context) => IconButton(
-                        icon: const Icon(Icons.menu, color: Colors.white),
-                        onPressed: () => Scaffold.of(context).openDrawer(),
-                      ),
-                ),
-        automaticallyImplyLeading: false,
-        actions: [
-          // Show filter icon only in barcode mode
-          if (showBarcodeWidget)
-            IconButton(
-              icon: const Icon(Icons.filter_list, color: Colors.white),
-              onPressed: () {
-                final overlay = Overlay.of(context);
-                final renderBox = context.findRenderObject() as RenderBox;
-                final position = renderBox.localToGlobal(Offset.zero);
-
-                late OverlayEntry entry;
-
-                entry = OverlayEntry(
-                  builder:
-                      (context) => Positioned(
-                        top: position.dy + kToolbarHeight,
-                        right: 16,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: FilterMenuWidget(
-                            initialFilters: _activeFilters,
-                            onApply: (newFilters) {
-                              _updateFilters(newFilters);
-                              entry.remove();
-                            },
-                            onCancel: () => entry.remove(),
-                          ),
-                        ),
-                      ),
-                );
-
-                overlay.insert(entry);
-              },
-            ),
-
-          // Always show the three-dot menu
-          Builder(
-            builder:
-                (context) => IconButton(
-                  icon: const Icon(Icons.more_vert, color: Colors.white),
-                  onPressed: () {
-                    final RenderBox button =
-                        context.findRenderObject() as RenderBox;
-                    final Offset position = button.localToGlobal(Offset.zero);
-                    showOrderMenu(context, position);
-                  },
-                ),
+  appBar: AppBar(
+  title: Text(
+    showBarcodeWidget ? 'Barcode' : 'Order Booking',
+    style: const TextStyle(color: Colors.white),
+  ),
+  backgroundColor: AppColors.primaryColor,
+  elevation: 1,
+  leading: showBarcodeWidget
+      ? IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () {
+            setState(() {
+              showBarcodeWidget = false;
+            });
+          },
+        )
+      : Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
           ),
-        ],
+        ),
+  automaticallyImplyLeading: false,
+  actions: [
+    // Show filter icon only in barcode mode
+    if (showBarcodeWidget)
+      IconButton(
+        icon: const Icon(Icons.filter_list, color: Colors.white),
+        onPressed: () {
+          final overlay = Overlay.of(context);
+          final renderBox = context.findRenderObject() as RenderBox;
+          final position = renderBox.localToGlobal(Offset.zero);
+
+          late OverlayEntry entry;
+
+          entry = OverlayEntry(
+            builder: (context) => Positioned(
+              top: position.dy + kToolbarHeight,
+              right: 16,
+              child: Material(
+                color: Colors.transparent,
+                child: FilterMenuWidget(
+                  initialFilters: _activeFilters,
+                  onApply: (newFilters) {
+                    _updateFilters(newFilters);
+                    entry.remove();
+                  },
+                  onCancel: () => entry.remove(),
+                ),
+              ),
+            ),
+          );
+
+          overlay.insert(entry);
+        },
       ),
+
+    // Cart Icon for both modes
+    IconButton(
+      icon: const Icon(CupertinoIcons.cart_badge_plus, color: Colors.white),
+      onPressed: () {
+        Navigator.pushNamed(context, '/viewOrder');
+      },
+    ),
+
+    // Always show the three-dot menu
+    Builder(
+      builder: (context) => IconButton(
+        icon: const Icon(Icons.more_vert, color: Colors.white),
+        onPressed: () {
+          final RenderBox button =
+              context.findRenderObject() as RenderBox;
+          final Offset position = button.localToGlobal(Offset.zero);
+          showOrderMenu(context, position);
+        },
+      ),
+    ),
+  ],
+),
 
       body: Padding(
         padding: const EdgeInsets.all(16.0),
