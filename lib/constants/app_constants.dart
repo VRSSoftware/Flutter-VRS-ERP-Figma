@@ -3,7 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class AppConstants {
-  static const String BASE_URL = "http://192.168.0.11:8080/api/v1";
+  //static const String BASE_URL = "http://192.168.0.4:8080/api/v1";
+   static const String BASE_URL = "https://vrserp.com/vrs_erp/api/v1";
   static const String whatsappKey= "cbDjhhibDuKvsGbVqM";
 
 }
