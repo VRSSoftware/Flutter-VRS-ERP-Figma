@@ -95,16 +95,10 @@ class _CatalogPageState extends State<CatalogPage> {
         itemSubGrpKey: itemSubGrpKey!,
         itemKey: itemKey!,
         cobr: coBr!,
-        //  styleKey: selectedStyles.length==0 ? null : selectedStyles[0].styleKey,
-        shadeKey:
-            selectedShades.length == 0
-                ? null
-                : selectedShades.map((s) => s.shadeKey).join(','),
-        sizeKey:
-            selectedSize.length == 0
-                ? null
-                : selectedSize.map((s) => s.itemSizeKey).join(','),
-        fromMRP: fromMRP == "" ? null : fromMRP,
+        styleKey: selectedStyles.length==1 ?  selectedStyles[0].styleKey : null,
+        shadeKey: selectedShades.length == 0 ? null : selectedShades.map((s) => s.shadeKey).join(','),
+        sizeKey: selectedSize.length == 0 ? null : selectedSize.map((s) => s.itemSizeKey).join(','),
+        fromMRP : fromMRP == "" ? null : fromMRP,
         toMRP: toMRP == "" ? null : toMRP,
       );
 
@@ -1274,18 +1268,18 @@ class _CatalogPageState extends State<CatalogPage> {
     }
 
     try {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 16),
-              Text('Sending to WhatsApp...'),
-            ],
-          ),
-          duration: Duration(seconds: 3),
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   const SnackBar(
+      //     content: Row(
+      //       children: [
+      //         CircularProgressIndicator(),
+      //         SizedBox(width: 16),
+      //         Text('Sending to WhatsApp...'),
+      //       ],
+      //     ),
+      //     duration: Duration(seconds: 3),
+      //   ),
+      // );
 
       // Show the dialog to enter the mobile number
       String mobileNo = await _showMobileNumberDialog();
@@ -1309,9 +1303,8 @@ class _CatalogPageState extends State<CatalogPage> {
             if (includeDesign) caption += '*Design*\t\t: ${item.styleCode}\n';
             if (includeShade) caption += '*Shade*\t\t: ${item.shadeName}\n';
             if (includeRate) caption += '*MRP*\t\t\t: ${item.mrp.toString()}\n';
-            if (includeSize)
-              caption += '*Sizes*\t\t\t: ${formatSizes(item.sizeDetails)}\n';
-            if (includeProduct) caption += '*Product*\t\t: ${item.itemName}\n';
+            if (includeSize) caption += '*Sizes*\t\t\t: ${formatSizes(item.sizeDetails)}\n';
+            if (includeProduct) caption += '*Product*\t: ${item.itemName}\n';
             if (includeRemark) caption += '*Remark*\t\t: ${item.remark}\n';
 
             // Convert the image to Base64

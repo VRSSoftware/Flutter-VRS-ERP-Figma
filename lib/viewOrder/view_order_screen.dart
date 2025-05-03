@@ -21,7 +21,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   Set<String> removedStyles = {};
 
   // Controllers
-   final TextEditingController orderNoController = TextEditingController(text: 'SO100');
+  final TextEditingController orderNoController = TextEditingController(text: 'SO100');
   final TextEditingController dateController = TextEditingController(text: '22-04-2025');
   final TextEditingController commController = TextEditingController();
   final TextEditingController deliveryDaysController = TextEditingController();
@@ -250,6 +250,7 @@ Widget _buildStyleCard(String styleCode, List<dynamic> items) {
   final sortedShades = shades.toList()..sort();
 
  return Card(
+  color: Colors.white70.withOpacity(0.9),
   child: Padding(
     padding: EdgeInsets.all(16),
     child: Column(
