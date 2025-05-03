@@ -54,6 +54,7 @@ class _CatalogPageState extends State<CatalogPage> {
   bool showSizes = true;
   bool showMRP = true;
   bool showShades = true;
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -90,8 +91,10 @@ class _CatalogPageState extends State<CatalogPage> {
     try {
       setState(() {
         catalogItems = [];
+        isLoading = true;
       });
-      final items = await ApiService.fetchCatalogItem(
+      // final items = await ApiService.fetchCatalogItem(
+      final result = await ApiService.fetchCatalogItem(
         itemSubGrpKey: itemSubGrpKey!,
         itemKey: itemKey!,
         cobr: coBr!,
@@ -108,6 +111,14 @@ class _CatalogPageState extends State<CatalogPage> {
         fromMRP: fromMRP == "" ? null : fromMRP,
         toMRP: toMRP == "" ? null : toMRP,
       );
+
+      int status = result["statusCode"];
+      if(status == 200)
+        setState(() {
+          isLoading = false;
+        });
+      
+      final items = result["catalogs"];
 
       if (selectedStyles.isEmpty && WSPfrom == "" && WSPto == "") {
         setState(() {
@@ -341,8 +352,9 @@ class _CatalogPageState extends State<CatalogPage> {
                 vertical: 8.0,
               ),
               child:
-                  catalogItems.isEmpty
-                      ? Center(child: CircularProgressIndicator())
+                  isLoading
+                      ? Center(child: CircularProgressIndicator()) : 
+                      catalogItems.isEmpty ? Center(child: Text("No Item Available"),) 
                       : LayoutBuilder(
                         builder: (context, constraints) {
                           if (viewOption == 0) {

@@ -36,7 +36,7 @@ class _OrderPageState extends State<OrderPage> {
   String fromMRP = "";
   String toMRP = "";
 
-   List<String> addedItems = [];
+  List<String> addedItems = [];
 
   @override
   void initState() {
@@ -52,11 +52,10 @@ class _OrderPageState extends State<OrderPage> {
           coBr = args['coBr']?.toString();
           fcYrId = args['fcYrId']?.toString();
         });
-        
-                if (coBr != null && fcYrId != null) {
+
+        if (coBr != null && fcYrId != null) {
           _fetchAddedItems(coBr!, fcYrId!);
         }
-
 
         // Only fetch catalog items after setting the arguments
         if (itemSubGrpKey != null && itemKey != null && coBr != null) {
@@ -72,7 +71,7 @@ class _OrderPageState extends State<OrderPage> {
     });
   }
 
-    Future<void> _fetchAddedItems(String coBrId, String userId) async {
+  Future<void> _fetchAddedItems(String coBrId, String userId) async {
     try {
       final barcode = ''; // Replace with the actual barcode value if available
       final addedItemsList = await ApiService.fetchAddedItems(
@@ -90,10 +89,11 @@ class _OrderPageState extends State<OrderPage> {
       print('Failed to fetch added items: $e');
     }
   }
+
   // Fetch Catalog Items
   Future<void> _fetchCatalogItems() async {
     try {
-      final items = await ApiService.fetchCatalogItem(
+      final result = await ApiService.fetchCatalogItem(
         itemSubGrpKey: itemSubGrpKey!,
         itemKey: itemKey!,
         cobr: coBr!,
@@ -111,7 +111,7 @@ class _OrderPageState extends State<OrderPage> {
         toMRP: toMRP == "" ? null : toMRP,
       );
       setState(() {
-        catalogItems = items;
+        catalogItems = result["catalogs"];
       });
     } catch (e) {
       print('Failed to load catalog items: $e');
@@ -162,43 +162,46 @@ class _OrderPageState extends State<OrderPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-     appBar: AppBar(
-  title: Text('Order Book', style: TextStyle(color: Colors.white)),
-  backgroundColor: AppColors.primaryColor,
-  elevation: 1,
-  leading: IconButton(
-    icon: Icon(Icons.arrow_back_ios, color: Colors.white),
-    onPressed: () {
-      Navigator.pop(context);
-    },
-  ),
-  actions: [
-    // Cart icon
-    IconButton(
-      icon: const Icon(CupertinoIcons.cart_badge_plus, color: Colors.white),
-      onPressed: () {
-        Navigator.pushNamed(context, '/viewOrder');
-      },
-    ),
+      appBar: AppBar(
+        title: Text('Order Book', style: TextStyle(color: Colors.white)),
+        backgroundColor: AppColors.primaryColor,
+        elevation: 1,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        actions: [
+          // Cart icon
+          IconButton(
+            icon: const Icon(
+              CupertinoIcons.cart_badge_plus,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pushNamed(context, '/viewOrder');
+            },
+          ),
 
-    // View option toggle icon
-    IconButton(
-      icon: Icon(
-        viewOption == 0
-            ? Icons.grid_on
-            : viewOption == 1
-                ? Icons.view_list
-                : Icons.expand,
-        color: Colors.white,
+          // View option toggle icon
+          IconButton(
+            icon: Icon(
+              viewOption == 0
+                  ? Icons.grid_on
+                  : viewOption == 1
+                  ? Icons.view_list
+                  : Icons.expand,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              setState(() {
+                viewOption = (viewOption + 1) % 3;
+              });
+            },
+          ),
+        ],
       ),
-      onPressed: () {
-        setState(() {
-          viewOption = (viewOption + 1) % 3;
-        });
-      },
-    ),
-  ],
-),
 
       body: Column(
         children: [
@@ -260,7 +263,7 @@ class _OrderPageState extends State<OrderPage> {
 
         return GestureDetector(
           onDoubleTap: () => _openImageZoom(context, item),
-          child: _buildItemCard(item, isLargeScreen ,addedItems),
+          child: _buildItemCard(item, isLargeScreen, addedItems),
         );
       },
     );
@@ -292,69 +295,75 @@ class _OrderPageState extends State<OrderPage> {
                 borderRadius: BorderRadius.circular(12),
               ),
               color: isSelected ? Colors.blue.shade50 : Colors.white,
-            child: Padding(
-  padding: EdgeInsets.all(isLargeScreen ? 12.0 : 8.0),
-  child: Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Flexible(
-        flex: 2,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            _getImageUrl(item),
-            fit: BoxFit.cover,
-            height: isLargeScreen ? 120 : 100,
-            width: isLargeScreen ? 120 : 100,
-          ),
-        ),
-      ),
-      SizedBox(width: isLargeScreen ? 16 : 8),
-      Flexible(
-        flex: 3,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              item.itemName,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: isLargeScreen ? 18 : 16,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(height: 4),
-            _buildDetailText('Style: ${item.styleCode}', isLargeScreen),
-            _buildDetailText('MRP: ${item.mrp}', isLargeScreen),
-            _buildDetailText('WSP: ${item.wsp}', isLargeScreen),
-            _buildDetailText('Shade: ${item.shadeName}', isLargeScreen),
-            SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  padding: EdgeInsets.symmetric(vertical: 8),
+              child: Padding(
+                padding: EdgeInsets.all(isLargeScreen ? 12.0 : 8.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Flexible(
+                      flex: 2,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          _getImageUrl(item),
+                          fit: BoxFit.cover,
+                          height: isLargeScreen ? 120 : 100,
+                          width: isLargeScreen ? 120 : 100,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: isLargeScreen ? 16 : 8),
+                    Flexible(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            item.itemName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: isLargeScreen ? 18 : 16,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 4),
+                          _buildDetailText(
+                            'Style: ${item.styleCode}',
+                            isLargeScreen,
+                          ),
+                          _buildDetailText('MRP: ${item.mrp}', isLargeScreen),
+                          _buildDetailText('WSP: ${item.wsp}', isLargeScreen),
+                          _buildDetailText(
+                            'Shade: ${item.shadeName}',
+                            isLargeScreen,
+                          ),
+                          SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryColor,
+                                padding: EdgeInsets.symmetric(vertical: 8),
+                              ),
+                              onPressed:
+                                  () => _showBookingDialog(context, item),
+                              child: Text(
+                                'BOOK NOW',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: isLargeScreen ? 14 : 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                onPressed: () => _showBookingDialog(context, item),
-                child: Text(
-                  'BOOK NOW',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: isLargeScreen ? 14 : 12,
-                  ),
-                ),
               ),
-            ),
-          ],
-        ),
-      ),
-    ],
-  ),
-),
-
             ),
           ),
         );
@@ -362,115 +371,116 @@ class _OrderPageState extends State<OrderPage> {
     );
   }
 
-Widget _buildExpandedView(bool isLargeScreen) {
-  final filteredItems = _getFilteredItems();
-  return ListView.builder(
-    itemCount: filteredItems.length,
-    itemBuilder: (context, index) {
-      final item = filteredItems[index];
-      bool isSelected = selectedItems.contains(item);
+  Widget _buildExpandedView(bool isLargeScreen) {
+    final filteredItems = _getFilteredItems();
+    return ListView.builder(
+      itemCount: filteredItems.length,
+      itemBuilder: (context, index) {
+        final item = filteredItems[index];
+        bool isSelected = selectedItems.contains(item);
 
-      return GestureDetector(
-        onTap: () => _toggleItemSelection(item),
-        onLongPress: () => _enableMultiSelect(item),
-        onDoubleTap: () => _openImageZoom(context, item),
-        child: Card(
-          elevation: isSelected ? 8 : 4,
-          margin: EdgeInsets.symmetric(
-            vertical: 8,
-            horizontal: isLargeScreen ? 16 : 8,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          color: isSelected ? Colors.blue.shade50 : Colors.white,
-          child: Stack(
-            children: [
-              Column(
-                children: [
-                  AspectRatio(
-                    aspectRatio: 5 / 9,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        _getImageUrl(item),
-                        fit: BoxFit.cover,
-                        width: double.infinity,
+        return GestureDetector(
+          onTap: () => _toggleItemSelection(item),
+          onLongPress: () => _enableMultiSelect(item),
+          onDoubleTap: () => _openImageZoom(context, item),
+          child: Card(
+            elevation: isSelected ? 8 : 4,
+            margin: EdgeInsets.symmetric(
+              vertical: 8,
+              horizontal: isLargeScreen ? 16 : 8,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            color: isSelected ? Colors.blue.shade50 : Colors.white,
+            child: Stack(
+              children: [
+                Column(
+                  children: [
+                    AspectRatio(
+                      aspectRatio: 5 / 9,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          _getImageUrl(item),
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                        ),
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.itemName,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: isLargeScreen ? 24 : 20,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        _buildDetailText(
-                          'Style: ${item.styleCode}',
-                          isLargeScreen,
-                        ),
-                        _buildDetailText('MRP: ${item.mrp}', isLargeScreen),
-                        _buildDetailText('WSP: ${item.wsp}', isLargeScreen),
-                        _buildDetailText(
-                          'Shade: ${item.shadeName}',
-                          isLargeScreen,
-                        ),
-                        SizedBox(height: 12),
-
-                        // 👇 BOOK NOW Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryColor,
-                              padding: EdgeInsets.symmetric(vertical: 8),
+                    Padding(
+                      padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.itemName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: isLargeScreen ? 24 : 20,
                             ),
-                            onPressed: () => _showBookingDialog(context, item),
-                            child: Text(
-                              'BOOK NOW',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: isLargeScreen ? 14 : 12,
+                          ),
+                          SizedBox(height: 8),
+                          _buildDetailText(
+                            'Style: ${item.styleCode}',
+                            isLargeScreen,
+                          ),
+                          _buildDetailText('MRP: ${item.mrp}', isLargeScreen),
+                          _buildDetailText('WSP: ${item.wsp}', isLargeScreen),
+                          _buildDetailText(
+                            'Shade: ${item.shadeName}',
+                            isLargeScreen,
+                          ),
+                          SizedBox(height: 12),
+
+                          // 👇 BOOK NOW Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryColor,
+                                padding: EdgeInsets.symmetric(vertical: 8),
+                              ),
+                              onPressed:
+                                  () => _showBookingDialog(context, item),
+                              child: Text(
+                                'BOOK NOW',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: isLargeScreen ? 14 : 12,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              if (isSelected)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.check_circle,
-                      color: AppColors.primaryColor,
-                      size: 24,
-                    ),
-                  ),
+                  ],
                 ),
-            ],
+                if (isSelected)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.check_circle,
+                        color: AppColors.primaryColor,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
   Widget _buildDetailText(String text, bool isLargeScreen) {
     return Padding(
@@ -494,7 +504,11 @@ Widget _buildExpandedView(bool isLargeScreen) {
     );
   }
 
-  Widget _buildItemCard(Catalog item, bool isLargeScreen,List<String> addedItems) {
+  Widget _buildItemCard(
+    Catalog item,
+    bool isLargeScreen,
+    List<String> addedItems,
+  ) {
     bool isSelected = selectedItems.contains(item);
 
     return GestureDetector(
@@ -602,39 +616,39 @@ Widget _buildExpandedView(bool isLargeScreen) {
                       ),
                     ),
                   ),
-Positioned(
-  bottom: 3,
-  left: 8,
-  right: 8,
-  child: ElevatedButton(
-    style: ButtonStyle(
-      backgroundColor: MaterialStateProperty.all(
-        addedItems.contains(item.styleCode)
-            ? Colors.green
-            : AppColors.primaryColor,
-      ),
-      padding: MaterialStateProperty.all(EdgeInsets.zero),
-      shape: MaterialStateProperty.all(
-        RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    ),
-    onPressed: addedItems.contains(item.styleCode)
-        ? null
-        : () => _showBookingDialog(context, item),
-    child: Text(
-      addedItems.contains(item.styleCode) ? 'Added' : 'BOOK NOW',
-      style: TextStyle(
-        color: Colors.white,
-        fontSize: isLargeScreen ? 10 : 12,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-  ),
-
-
-
+                Positioned(
+                  bottom: 3,
+                  left: 8,
+                  right: 8,
+                  child: ElevatedButton(
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all(
+                        addedItems.contains(item.styleCode)
+                            ? Colors.green
+                            : AppColors.primaryColor,
+                      ),
+                      padding: MaterialStateProperty.all(EdgeInsets.zero),
+                      shape: MaterialStateProperty.all(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                    onPressed:
+                        addedItems.contains(item.styleCode)
+                            ? null
+                            : () => _showBookingDialog(context, item),
+                    child: Text(
+                      addedItems.contains(item.styleCode)
+                          ? 'Added'
+                          : 'BOOK NOW',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: isLargeScreen ? 10 : 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             );

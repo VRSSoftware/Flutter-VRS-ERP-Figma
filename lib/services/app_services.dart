@@ -219,7 +219,7 @@ class ApiService {
     }
   }
 
-  static Future<List<Catalog>> fetchCatalogItem({
+  static Future<Map<String, dynamic>> fetchCatalogItem({
     required String itemSubGrpKey,
     required String itemKey,
     required String cobr,
@@ -252,40 +252,45 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
-      return data.map((json) => Catalog.fromJson(json)).toList();
+      final catalogs = data.map((json) => Catalog.fromJson(json)).toList();
+      return {"statusCode": response.statusCode, "catalogs": catalogs};
     } else {
-      throw Exception('Failed to load catalog');
+      return {
+        "statusCode": response.statusCode,
+        "catalogs": [],
+        "error": response.body,
+      };
     }
   }
 
-
   static Future<List<String>> fetchAddedItems({
-  required String coBrId,
-  required String userId,
-  required String fcYrId,
-  required String barcode,
-}) async {
-  final url = Uri.parse('${AppConstants.BASE_URL}/orderBooking/GetAddedItems');
+    required String coBrId,
+    required String userId,
+    required String fcYrId,
+    required String barcode,
+  }) async {
+    final url = Uri.parse(
+      '${AppConstants.BASE_URL}/orderBooking/GetAddedItems',
+    );
 
-  final body = {
-    "coBrId": coBrId,
-    "userId": "Admin",
-    "fcYrId": fcYrId,
-   // "barcode": barcode,
-  };
-  print("aaaaaaaaaaa ${body}");
-  final response = await http.post(
-    url,
-    headers: {"Content-Type": "application/json"},
-    body: jsonEncode(body),
-  );
-print("DDDDDDDDDDDDDDDresponse body:${response.body}");
-  if (response.statusCode == 200) {
-    final List<dynamic> data = jsonDecode(response.body);
-    return data.cast<String>(); // Ensures it's List<String>
-  } else {
-    throw Exception('Failed to fetch added items');
+    final body = {
+      "coBrId": coBrId,
+      "userId": "Admin",
+      "fcYrId": fcYrId,
+      // "barcode": barcode,
+    };
+    print("aaaaaaaaaaa ${body}");
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(body),
+    );
+    print("DDDDDDDDDDDDDDDresponse body:${response.body}");
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.cast<String>(); // Ensures it's List<String>
+    } else {
+      throw Exception('Failed to fetch added items');
+    }
   }
-}
-
 }
