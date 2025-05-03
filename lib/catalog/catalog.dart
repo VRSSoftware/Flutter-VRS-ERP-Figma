@@ -1698,12 +1698,12 @@ class _CatalogPageState extends State<CatalogPage> {
       return;
     }
 
-    bool includeDesign = false;
-    bool includeShade = false;
-    bool includeRate = false;
-    bool includeSize = false;
-    bool includeProduct = false;
-    bool includeRemark = false;
+    bool includeDesign = true;
+    bool includeShade = true;
+    bool includeRate = true;
+    bool includeSize = true;
+    bool includeProduct = true;
+    bool includeRemark = true;
 
     showModalBottomSheet(
       context: context,
@@ -1873,7 +1873,7 @@ class _CatalogPageState extends State<CatalogPage> {
                 'design': includeDesign ? item.styleCode : '',
                 'shade': includeShade ? item.shadeName : '',
                 'rate': includeRate ? item.mrp.toString() : '',
-                'size': includeSize ? item.sizeName : '',
+                'size': includeSize ? item.sizeDetails : '',
                 'product': includeProduct ? item.itemName : '',
                 'remark': includeRemark ? item.remark : '',
               };
