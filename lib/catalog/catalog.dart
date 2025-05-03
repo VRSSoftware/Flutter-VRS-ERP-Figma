@@ -1605,7 +1605,7 @@ class _CatalogPageState extends State<CatalogPage> {
               'design': includeDesign ? item.styleCode : '',
               'shade': includeShade ? item.shadeName : '',
               'rate': includeRate ? item.mrp.toString() : '',
-              'size': includeSize ? item.sizeName : '',
+              'size': includeSize ? item.sizeDetails : '',
               'product': includeProduct ? item.itemName : '',
               'remark': includeRemark ? item.remark : '',
             };
