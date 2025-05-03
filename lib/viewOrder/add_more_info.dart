@@ -1,161 +1,363 @@
+import 'dart:convert';
+
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 
-
 class AddMoreInfoDialog extends StatefulWidget {
+  final String? pytTermDiscKey;
+  final String? salesPersonKey;
+  final int? creditPeriod;
+  final String? salesLedKey;
+  final String? ledgerName;
+
+  const AddMoreInfoDialog({
+    super.key,
+    this.pytTermDiscKey,
+    this.salesPersonKey,
+    this.creditPeriod,
+    this.salesLedKey,
+    this.ledgerName,
+  });
+
   @override
   _AddMoreInfoDialogState createState() => _AddMoreInfoDialogState();
 }
 
 class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
+  late DateTime _baseDate;
   String? selectedConsignee;
-  String? selectedPaymentTerms = '5% DISCOUNT';
+  String? selectedPaymentTerms;
   String? selectedSalesman;
   String? selectedBookingType;
 
-  final TextEditingController paymentDaysController = TextEditingController(text: "46");
-  final TextEditingController dueDateController = TextEditingController(text: "17-06-2025");
+  final TextEditingController paymentDaysController = TextEditingController();
+  final TextEditingController dueDateController = TextEditingController();
   final TextEditingController referenceNoController = TextEditingController();
-  final TextEditingController dateController = TextEditingController(text: "dd-mm-yyyy");
-  
-@override
-Widget build(BuildContext context) {
-  return Dialog(
-    insetPadding: EdgeInsets.all(20),
-    shape: RoundedRectangleBorder( // Remove curve by setting borderRadius to 0
-      borderRadius: BorderRadius.zero,
-    ),
-    child: ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: 600),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Expanded(child: Text("Add More Info", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-                IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-              ],
-            ),
-            SizedBox(height: 8),
-            _buildDropdown("Consignee", selectedConsignee, ['A', 'B', 'C'], (val) {
-              setState(() => selectedConsignee = val);
-            }),
-            SizedBox(height: 12),
-            _buildDropdown("Payment Terms", selectedPaymentTerms, ['5% DISCOUNT', '10% ADVANCE'], (val) {
-              setState(() => selectedPaymentTerms = val);
-            }),
-            SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: _buildTextField("Payment Days", paymentDaysController)),
-                SizedBox(width: 12),
-                Expanded(child: _buildDateField("Due Date", dueDateController)),
-              ],
-            ),
-            SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: _buildTextField("Reference No", referenceNoController)),
-                SizedBox(width: 12),
-                Expanded(child: _buildDateField("Date", dateController)),
-              ],
-            ),
-            SizedBox(height: 12),
-        Row(
-  children: [
-    Expanded(
-      child: _buildDropdown("Salesman Name", selectedSalesman, ['John', 'Jane'], (val) {
-        setState(() => selectedSalesman = val);
-      }),
-    ),
-    SizedBox(width: 12),
-    Expanded(
-      child: _buildDropdown("Booking Type", selectedBookingType, ['Normal', 'Urgent'], (val) {
-        setState(() => selectedBookingType = val);
-      }),
-    ),
-  ],
-),
+  final TextEditingController dateController = TextEditingController();
 
-            SizedBox(height: 20),
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                ),
-                child: Text("Close", style: TextStyle(color: Colors.white)),
-              ),
-            )
-          ],
+  List<PytTermDisc> _paymentTerms = [];
+  bool _isLoadingPaymentTerms = false;
+  String? _selectedPytTermDiscKey;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPaymentTerms();
+    _baseDate = DateTime.now();
+
+    // Initialize from API data
+    paymentDaysController.text = widget.creditPeriod?.toString() ?? '0';
+    dateController.text = _formatDate(_baseDate);
+
+    // Set initial due date
+    _updateDueDate();
+
+    paymentDaysController.addListener(_updateDueDate);
+    dueDateController.addListener(_updatePaymentDays);
+  }
+
+Future<void> _loadPaymentTerms() async {
+  setState(() => _isLoadingPaymentTerms = true);
+  try {
+    final response = await http.post(
+      Uri.parse('${AppConstants.BASE_URL}/users/getPytTermDisc'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({"coBrId": "01"}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as List;
+      _paymentTerms = data.map((e) => PytTermDisc(
+        key: e['pytTermDiscKey']?.toString() ?? '',
+        name: e['pytTermDiscName']?.toString() ?? '',
+      )).toList();
+
+      // Set initial selection based on widget.pytTermDiscKey
+      if (widget.pytTermDiscKey != null && _paymentTerms.isNotEmpty) {
+        final initialTerm = _paymentTerms.firstWhere(
+          (term) => term.key == widget.pytTermDiscKey,
+          orElse: () => PytTermDisc(key: '', name: ''),
+        );
+        if (initialTerm.key.isNotEmpty) {
+          _selectedPytTermDiscKey = initialTerm.key;
+          selectedPaymentTerms = initialTerm.name;
+        }
+      }
+    }
+  } catch (e) {
+    print('Error loading payment terms: $e');
+  } finally {
+    setState(() => _isLoadingPaymentTerms = false);
+  }
+}
+  void _updateDueDate() {
+    final days = int.tryParse(paymentDaysController.text) ?? 0;
+    final newDueDate = _baseDate.add(Duration(days: days));
+    dueDateController.text = _formatDate(newDueDate);
+  }
+
+  void _updatePaymentDays() {
+    final dueDate = _parseDate(dueDateController.text);
+    if (dueDate != null) {
+      final difference = dueDate.difference(_baseDate).inDays;
+      paymentDaysController.text = difference.toString();
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return "${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}";
+  }
+
+  DateTime? _parseDate(String dateStr) {
+    try {
+      final parts = dateStr.split('-');
+      return DateTime(
+        int.parse(parts[2]),
+        int.parse(parts[1]),
+        int.parse(parts[0]),
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+Widget _buildPaymentTermsDropdown() {
+  return DropdownSearch<PytTermDisc>(
+    popupProps: PopupProps.menu(
+      showSearchBox: true,
+      searchFieldProps: TextFieldProps(
+        decoration: InputDecoration(
+          hintText: 'Search payment terms...',
+          prefixIcon: Icon(Icons.search),
         ),
       ),
+      menuProps: MenuProps(
+        elevation: 3,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+      itemBuilder: (context, item, isSelected) => ListTile(
+        title: Text(item.name),
+      ),
     ),
-  );
-}
-
-Widget _buildDropdown(String label, String? value, List<String> items, Function(String?) onChanged) {
-  return DropdownButtonFormField<String>(
-    value: value,
-    items: items.map((e) => DropdownMenuItem(child: Text(e), value: e)).toList(),
-    onChanged: onChanged,
-    decoration: InputDecoration(
-      labelText: label,
-      labelStyle: TextStyle(color: AppColors.primaryColor, fontWeight: FontWeight.w500),
-      hintText: label,
-      hintStyle: TextStyle(color: Colors.grey),
-      border: OutlineInputBorder(),
-      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-    ),
-  );
-}
-
-Widget _buildTextField(String label, TextEditingController controller) {
-  return TextField(
-    controller: controller,
-    decoration: InputDecoration(
-      labelText: label,
-      labelStyle: TextStyle(color: AppColors.primaryColor, fontWeight: FontWeight.w500),
-      hintText: label,
-      hintStyle: TextStyle(color: Colors.grey),
-      border: OutlineInputBorder(),
-      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-    ),
-  );
-}
-
-Widget _buildDateField(String label, TextEditingController controller) {
-  return TextField(
-    controller: controller,
-    readOnly: true,
-    decoration: InputDecoration(
-      labelText: label,
-      labelStyle: TextStyle(color: AppColors.primaryColor, fontWeight: FontWeight.w500),
-      hintText: label,
-      hintStyle: TextStyle(color: Colors.grey),
-      border: OutlineInputBorder(),
-      suffixIcon: Icon(Icons.calendar_today),
-      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-    ),
-    onTap: () async {
-      DateTime? picked = await showDatePicker(
-        context: context,
-        initialDate: DateTime.now(),
-        firstDate: DateTime(2000),
-        lastDate: DateTime(2100),
-      );
-      if (picked != null) {
-        controller.text = "${picked.day.toString().padLeft(2, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.year}";
-      }
+    items: _paymentTerms,
+    itemAsString: (item) => item.name,
+    selectedItem: _paymentTerms.isNotEmpty && _selectedPytTermDiscKey != null
+        ? _paymentTerms.firstWhere(
+            (element) => element.key == _selectedPytTermDiscKey,
+            orElse: () => PytTermDisc(key: '', name: ''),
+          )
+        : null,
+    onChanged: (value) {
+      setState(() {
+        _selectedPytTermDiscKey = value?.key;
+        selectedPaymentTerms = value?.name;
+      });
     },
+    dropdownDecoratorProps: DropDownDecoratorProps(
+      dropdownSearchDecoration: InputDecoration(
+        labelText: 'Payment Terms',
+        border: OutlineInputBorder(),
+        hintText: 'Select Payment Terms',
+      ),
+    ),
+    clearButtonProps: ClearButtonProps(isVisible: false),
+    dropdownBuilder: (context, selectedItem) => Text(
+      selectedItem?.name ?? 'Select Payment Terms',
+      overflow: TextOverflow.ellipsis,
+    ),
   );
 }
+  @override
+  void dispose() {
+    paymentDaysController.removeListener(_updateDueDate);
+    dueDateController.removeListener(_updatePaymentDays);
+    super.dispose();
+  }
 
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      insetPadding: const EdgeInsets.all(20),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      "Add More Info",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              _buildDropdown("Consignee", selectedConsignee, [], (val) {
+                setState(() => selectedConsignee = val);
+              }),
+              const SizedBox(height: 12),
+              _isLoadingPaymentTerms
+                  ? CircularProgressIndicator()
+                  : _buildPaymentTermsDropdown(),
+              const SizedBox(height: 12),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      "Payment Days",
+                      paymentDaysController,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildDateField("Due Date", dueDateController),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      "Reference No",
+                      referenceNoController,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(child: _buildDateField("Date", dateController)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDropdown(
+                      "Salesman Name",
+                      selectedSalesman,
+                      [], // Add dynamic options from API
+                      (val) => setState(() => selectedSalesman = val),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildDropdown(
+                      "Booking Type",
+                      selectedBookingType,
+                      [], // Add dynamic options from API
+                      (val) => setState(() => selectedBookingType = val),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Align(
+                alignment: Alignment.centerRight,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 12,
+                    ),
+                  ),
+                  child: const Text(
+                    "Close",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdown(
+    String label,
+    String? value,
+    List<String> items,
+    Function(String?) onChanged,
+  ) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      items:
+          items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 14,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 14,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateField(String label, TextEditingController controller) {
+    return TextField(
+      controller: controller,
+      readOnly: true,
+      decoration: InputDecoration(
+        labelText: label,
+        suffixIcon: const Icon(Icons.calendar_today),
+      ),
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: _parseDate(controller.text) ?? _baseDate,
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2100),
+        );
+        if (picked != null) {
+          controller.text = _formatDate(picked);
+          _baseDate = picked.subtract(
+            Duration(days: int.tryParse(paymentDaysController.text) ?? 0),
+          );
+        }
+      },
+    );
+  }
+}
+
+class PytTermDisc {
+  final String key;
+  final String name;
+
+  PytTermDisc({required this.key, required this.name});
 }
