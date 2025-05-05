@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +14,7 @@ class ViewOrderScreen extends StatefulWidget {
 
 class _ViewOrderScreenState extends State<ViewOrderScreen> {
   final _formKey = GlobalKey<FormState>();
-
+  Map<String, dynamic> _additionalInfo = {};
   bool _showForm = false;
   final _orderControllers = _OrderControllers();
   final _dropdownData = _DropdownData();
@@ -45,6 +44,148 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     setState(() {});
   }
 
+  // Future<void> _saveOrder() async {
+  //   if (!_formKey.currentState!.validate()) return;
+
+  //   // Prepare order items
+  //   List<Map<String, dynamic>> orderItems = [];
+  //   _styleManager.controllers.forEach((styleCode, shades) {
+  //     shades.forEach((shadeName, sizes) {
+  //       sizes.forEach((sizeName, controller) {
+  //         final qty = int.tryParse(controller.text) ?? 0;
+  //         if (qty > 0) {
+  //           orderItems.add({
+  //             "styleCode": styleCode,
+  //             "shadeName": shadeName,
+  //             "sizeName": sizeName,
+  //             "qty": qty,
+  //           });
+  //         }
+  //       });
+  //     });
+  //   });
+
+  //   // Prepare main order data
+  //   Map<String, dynamic> orderData = {
+  //     "coBrId": "01",
+  //     "userId": "Admin",
+  //     "fcYrId": "24",
+  //     "orderNo": _orderControllers.orderNo.text,
+  //     "orderDt": _orderControllers.date.text,
+  //     "ledKey": _orderControllers.selectedPartyKey,
+  //     "brokerKey": _orderControllers.selectedBrokerKey,
+  //     "trspKey": _orderControllers.selectedTransporterKey,
+  //     "commPerc": _orderControllers.comm.text,
+  //     "delvDays": _orderControllers.deliveryDays.text,
+  //     "delvDt": _orderControllers.deliveryDate.text,
+  //     "totItem": _orderControllers.totalItem.text,
+  //     "totQty": _orderControllers.totalQty.text,
+  //     "remark": _orderControllers.remark.text,
+  //     // Additional info from dialog
+  //     "pytTermDiscKey": _additionalInfo['pytTermDiscKey'],
+  //     "salesPersonKey": _additionalInfo['salesPersonKey'],
+  //     "dueDt": _additionalInfo['dueDate'],
+  //     "refNo": _additionalInfo['referenceNo'],
+  //     "bookingType": _additionalInfo['bookingType'],
+  //     "items": orderItems,
+  //   };
+  //   print(orderData);
+
+  //   try {
+  //     final response = await http.post(
+  //       Uri.parse('${AppConstants.BASE_URL}/orderBooking/SaveOrder'),
+  //       headers: {'Content-Type': 'application/json'},
+  //       body: jsonEncode(orderData),
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       ScaffoldMessenger.of(
+  //         context,
+  //       ).showSnackBar(SnackBar(content: Text('Order saved successfully')));
+  //       // Reset form after successful save
+  //       _formKey.currentState!.reset();
+  //       _styleManager._initializeControllers();
+  //       setState(() {});
+  //     } else {
+  //       ScaffoldMessenger.of(
+  //         context,
+  //       ).showSnackBar(SnackBar(content: Text('Failed to save order')));
+  //     }
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(
+  //       context,
+  //     ).showSnackBar(SnackBar(content: Text('Error saving order: $e')));
+  //   }
+  // }
+
+
+Future<void> _saveOrderLocally() async {
+  if (!_formKey.currentState!.validate()) return;
+
+  // Prepare order items
+  List<Map<String, dynamic>> orderItems = [];
+  _styleManager.controllers.forEach((styleCode, shades) {
+    shades.forEach((shadeName, sizes) {
+      sizes.forEach((sizeName, controller) {
+        final qty = int.tryParse(controller.text) ?? 0;
+        if (qty > 0) {
+          orderItems.add({
+            "styleCode": styleCode,
+            "shadeName": shadeName,
+            "sizeName": sizeName,
+            "qty": qty,
+          });
+        }
+      });
+    });
+  });
+
+  // Prepare main order data
+  Map<String, dynamic> orderData = {
+    "coBrId": "01",
+    "userId": "Admin",
+    "fcYrId": "24",
+    "orderNo": _orderControllers.orderNo.text,
+    "orderDt": _orderControllers.date.text,
+    "ledKey": _orderControllers.selectedPartyKey,
+    "brokerKey": _orderControllers.selectedBrokerKey,
+    "trspKey": _orderControllers.selectedTransporterKey,
+    "commPerc": _orderControllers.comm.text,
+    "delvDays": _orderControllers.deliveryDays.text,
+    "delvDt": _orderControllers.deliveryDate.text,
+    "totItem": _orderControllers.totalItem.text,
+    "totQty": _orderControllers.totalQty.text,
+    "remark": _orderControllers.remark.text,
+    "pytTermDiscKey": _additionalInfo['pytTermDiscKey'],
+    "salesPersonKey": _additionalInfo['salesPersonKey'],
+    "dueDt": _additionalInfo['dueDate'],
+    "refNo": _additionalInfo['referenceNo'],
+    "bookingType": _additionalInfo['bookingType'],
+    "items": orderItems,
+  };
+
+  // Print to console
+  print("Saved Order Data:");
+  print(jsonEncode(orderData));
+
+  // Show in dialog
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Saved Order Data'),
+      content: SingleChildScrollView(
+        child: Text(jsonEncode(orderData)),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('OK'),
+        ),
+      ],
+    ),
+  );
+}
+
   void _updateTotals() {
     int totalQty = 0;
     _styleManager.controllers.forEach((style, shades) {
@@ -61,7 +202,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     setState(() {});
   }
 
-    Color _getColorCode(String color) {
+  Color _getColorCode(String color) {
     switch (color.toLowerCase()) {
       case 'red':
         return Colors.red;
@@ -129,11 +270,14 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
                       constraints: constraints,
                       onPartySelected: _handlePartySelection,
                       updateTotals: _updateTotals,
+                      // saveOrder: _saveOrder, // Add this
+                       saveOrder: _saveOrderLocally, // Add this
+                      additionalInfo: _additionalInfo,
                     )
                     : _StyleCardsView(
                       styleManager: _styleManager,
                       updateTotals: _updateTotals,
-                        getColor: _getColorCode,
+                      getColor: _getColorCode,
                     ),
           ),
         );
@@ -419,6 +563,7 @@ class _NavigationControls extends StatelessWidget {
     );
   }
 }
+
 class _StyleCardsView extends StatelessWidget {
   final _StyleManager styleManager;
   final VoidCallback updateTotals;
@@ -435,18 +580,23 @@ class _StyleCardsView extends StatelessWidget {
     return styleManager.groupedItems.isEmpty
         ? const Center(child: CircularProgressIndicator())
         : Column(
-            children: styleManager.groupedItems.entries.map((entry) => _StyleCard(
-                  styleCode: entry.key,
-                  items: entry.value,
-                  controllers: styleManager.controllers[entry.key]!,
-                  onRemove: () {
-                    styleManager.removedStyles.add(entry.key);
-                    updateTotals();
-                  },
-                  updateTotals: updateTotals,
-                  getColor: getColor,
-                )).toList(),
-          );
+          children:
+              styleManager.groupedItems.entries
+                  .map(
+                    (entry) => _StyleCard(
+                      styleCode: entry.key,
+                      items: entry.value,
+                      controllers: styleManager.controllers[entry.key]!,
+                      onRemove: () {
+                        styleManager.removedStyles.add(entry.key);
+                        updateTotals();
+                      },
+                      updateTotals: updateTotals,
+                      getColor: getColor,
+                    ),
+                  )
+                  .toList(),
+        );
   }
 }
 
@@ -526,18 +676,20 @@ class _StyleCard extends StatelessWidget {
       child: Image.network(
         _getImageUrl(imagePath),
         fit: BoxFit.fitWidth,
-        loadingBuilder: (context, child, loadingProgress) =>
-            loadingProgress == null
-                ? child
-                : const Center(child: CircularProgressIndicator()),
+        loadingBuilder:
+            (context, child, loadingProgress) =>
+                loadingProgress == null
+                    ? child
+                    : const Center(child: CircularProgressIndicator()),
         errorBuilder: (context, error, stackTrace) => const _ImageErrorWidget(),
       ),
     );
   }
 
-  String _getImageUrl(String fullImagePath) => fullImagePath.startsWith('http')
-      ? fullImagePath
-      : '${AppConstants.BASE_URL}/images/${fullImagePath.split('/').last.split('?').first}';
+  String _getImageUrl(String fullImagePath) =>
+      fullImagePath.startsWith('http')
+          ? fullImagePath
+          : '${AppConstants.BASE_URL}/images/${fullImagePath.split('/').last.split('?').first}';
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
@@ -727,6 +879,8 @@ class _OrderForm extends StatelessWidget {
   final BoxConstraints constraints;
   final Function(String?, String?) onPartySelected;
   final VoidCallback updateTotals;
+  final Future<void> Function() saveOrder; // Add this
+  final Map<String, dynamic> additionalInfo; // Add this
 
   const _OrderForm({
     required this.controllers,
@@ -734,6 +888,8 @@ class _OrderForm extends StatelessWidget {
     required this.constraints,
     required this.onPartySelected,
     required this.updateTotals,
+    required this.saveOrder, // Add this
+    required this.additionalInfo, // Add this
   });
 
   @override
@@ -929,50 +1085,49 @@ class _OrderForm extends StatelessWidget {
         : Column(children: [first, second]);
   }
 
-  Widget _buildActionButtons(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: ElevatedButton(
-            onPressed:
-                () => showDialog(
-                  context: context,
-                  builder:
-                      (context) => AddMoreInfoDialog(
-                        pytTermDiscKey:
-                            controllers
-                                .pytTermDiscKey, 
-                        salesPersonKey: controllers.salesPersonKey,
-                        creditPeriod: controllers.creditPeriod,
-                        salesLedKey: controllers.salesLedKey,
-                        ledgerName: controllers.ledgerName,
-                      ),
-                ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryColor,
-            ),
-            child: const Text(
-              'Add More Info',
-              style: TextStyle(color: Colors.white),
-            ),
+Widget _buildActionButtons(BuildContext context) {
+  return Row(
+    children: [
+      Expanded(
+        child: ElevatedButton(
+          onPressed: () async {
+            final result = await showDialog(
+              context: context,
+              builder: (context) => AddMoreInfoDialog(
+                pytTermDiscKey: controllers.pytTermDiscKey,
+                salesPersonKey: controllers.salesPersonKey,
+                creditPeriod: controllers.creditPeriod,
+                salesLedKey: controllers.salesLedKey,
+                ledgerName: controllers.ledgerName,
+              ),
+            );
+            if (result != null) {
+              additionalInfo.addAll(result);
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryColor,
+          ),
+          child: const Text(
+            'Add More Info',
+            style: TextStyle(color: Colors.white),
           ),
         ),
-
-        const SizedBox(width: 10),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: () {
-              /* Save logic */
-            },
-            child: const Text(
-              'Save',
-              style: TextStyle(color: AppColors.primaryColor),
-            ),
+      ),
+      Expanded(
+        child: ElevatedButton(
+          onPressed: () async {
+            await saveOrder();
+          },
+          child: const Text(
+            'Save',
+            style: TextStyle(color: AppColors.primaryColor),
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 }
 
 Widget buildTextField(

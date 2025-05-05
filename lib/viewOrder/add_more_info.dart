@@ -11,7 +11,7 @@ class AddMoreInfoDialog extends StatefulWidget {
   final int? creditPeriod;
   final String? salesLedKey;
   final String? ledgerName;
-
+  
   const AddMoreInfoDialog({
     super.key,
     this.pytTermDiscKey,
@@ -29,7 +29,6 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
   late DateTime _baseDate;
   String? selectedConsignee;
   String? selectedPaymentTerms;
-  String? selectedSalesman;
   String? selectedBookingType;
 
   final TextEditingController paymentDaysController = TextEditingController();
@@ -38,60 +37,100 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
   final TextEditingController dateController = TextEditingController();
 
   List<PytTermDisc> _paymentTerms = [];
+  List<Salesman> _salesmen = [];
+
   bool _isLoadingPaymentTerms = false;
+  bool _isLoadingSalesmen = false;
+
   String? _selectedPytTermDiscKey;
+  String? _selectedSalesmanKey;
+  String? selectedSalesmanName;
 
   @override
   void initState() {
     super.initState();
-    _loadPaymentTerms();
     _baseDate = DateTime.now();
 
-    // Initialize from API data
     paymentDaysController.text = widget.creditPeriod?.toString() ?? '0';
     dateController.text = _formatDate(_baseDate);
 
-    // Set initial due date
+    _loadPaymentTerms();
+    _loadSalesmen();
+
     _updateDueDate();
 
     paymentDaysController.addListener(_updateDueDate);
     dueDateController.addListener(_updatePaymentDays);
   }
 
-Future<void> _loadPaymentTerms() async {
-  setState(() => _isLoadingPaymentTerms = true);
-  try {
-    final response = await http.post(
-      Uri.parse('${AppConstants.BASE_URL}/users/getPytTermDisc'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({"coBrId": "01"}),
-    );
+  Future<void> _loadPaymentTerms() async {
+    setState(() => _isLoadingPaymentTerms = true);
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.BASE_URL}/users/getPytTermDisc'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({"coBrId": "01"}),
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body) as List;
-      _paymentTerms = data.map((e) => PytTermDisc(
-        key: e['pytTermDiscKey']?.toString() ?? '',
-        name: e['pytTermDiscName']?.toString() ?? '',
-      )).toList();
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as List;
+        _paymentTerms = data.map((e) => PytTermDisc(
+          key: e['pytTermDiscKey']?.toString() ?? '',
+          name: e['pytTermDiscName']?.toString() ?? '',
+        )).toList();
 
-      // Set initial selection based on widget.pytTermDiscKey
-      if (widget.pytTermDiscKey != null && _paymentTerms.isNotEmpty) {
-        final initialTerm = _paymentTerms.firstWhere(
-          (term) => term.key == widget.pytTermDiscKey,
-          orElse: () => PytTermDisc(key: '', name: ''),
-        );
-        if (initialTerm.key.isNotEmpty) {
-          _selectedPytTermDiscKey = initialTerm.key;
-          selectedPaymentTerms = initialTerm.name;
+        if (widget.pytTermDiscKey != null && _paymentTerms.isNotEmpty) {
+          final initialTerm = _paymentTerms.firstWhere(
+            (term) => term.key == widget.pytTermDiscKey,
+            orElse: () => PytTermDisc(key: '', name: ''),
+          );
+          if (initialTerm.key.isNotEmpty) {
+            _selectedPytTermDiscKey = initialTerm.key;
+            selectedPaymentTerms = initialTerm.name;
+          }
         }
       }
+    } catch (e) {
+      print('Error loading payment terms: $e');
+    } finally {
+      setState(() => _isLoadingPaymentTerms = false);
     }
-  } catch (e) {
-    print('Error loading payment terms: $e');
-  } finally {
-    setState(() => _isLoadingPaymentTerms = false);
   }
-}
+
+  Future<void> _loadSalesmen() async {
+    setState(() => _isLoadingSalesmen = true);
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.BASE_URL}/users/getSalesmanLedger'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({"ledCat": "S", "coBrId": "01"}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as List;
+        _salesmen = data.map((e) => Salesman(
+          key: e['ledKey']?.toString() ?? '',
+          name: e['ledgerName']?.toString() ?? '',
+        )).toList();
+
+        if (widget.salesPersonKey != null && _salesmen.isNotEmpty) {
+          final initialSalesman = _salesmen.firstWhere(
+            (s) => s.key == widget.salesPersonKey,
+            orElse: () => Salesman(key: '', name: ''),
+          );
+          if (initialSalesman.key.isNotEmpty) {
+            _selectedSalesmanKey = initialSalesman.key;
+            selectedSalesmanName = initialSalesman.name;
+          }
+        }
+      }
+    } catch (e) {
+      print('Error loading salesmen: $e');
+    } finally {
+      setState(() => _isLoadingSalesmen = false);
+    }
+  }
+
   void _updateDueDate() {
     final days = int.tryParse(paymentDaysController.text) ?? 0;
     final newDueDate = _baseDate.add(Duration(days: days));
@@ -123,176 +162,6 @@ Future<void> _loadPaymentTerms() async {
     }
   }
 
-Widget _buildPaymentTermsDropdown() {
-  return DropdownSearch<PytTermDisc>(
-    popupProps: PopupProps.menu(
-      showSearchBox: true,
-      searchFieldProps: TextFieldProps(
-        decoration: InputDecoration(
-          hintText: 'Search payment terms...',
-          prefixIcon: Icon(Icons.search),
-        ),
-      ),
-      menuProps: MenuProps(
-        elevation: 3,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-        ),
-      ),
-      itemBuilder: (context, item, isSelected) => ListTile(
-        title: Text(item.name),
-      ),
-    ),
-    items: _paymentTerms,
-    itemAsString: (item) => item.name,
-    selectedItem: _paymentTerms.isNotEmpty && _selectedPytTermDiscKey != null
-        ? _paymentTerms.firstWhere(
-            (element) => element.key == _selectedPytTermDiscKey,
-            orElse: () => PytTermDisc(key: '', name: ''),
-          )
-        : null,
-    onChanged: (value) {
-      setState(() {
-        _selectedPytTermDiscKey = value?.key;
-        selectedPaymentTerms = value?.name;
-      });
-    },
-    dropdownDecoratorProps: DropDownDecoratorProps(
-      dropdownSearchDecoration: InputDecoration(
-        labelText: 'Payment Terms',
-        border: OutlineInputBorder(),
-        hintText: 'Select Payment Terms',
-      ),
-    ),
-    clearButtonProps: ClearButtonProps(isVisible: false),
-    dropdownBuilder: (context, selectedItem) => Text(
-      selectedItem?.name ?? 'Select Payment Terms',
-      overflow: TextOverflow.ellipsis,
-    ),
-  );
-}
-  @override
-  void dispose() {
-    paymentDaysController.removeListener(_updateDueDate);
-    dueDateController.removeListener(_updatePaymentDays);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      insetPadding: const EdgeInsets.all(20),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 600),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      "Add More Info",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              _buildDropdown("Consignee", selectedConsignee, [], (val) {
-                setState(() => selectedConsignee = val);
-              }),
-              const SizedBox(height: 12),
-              _isLoadingPaymentTerms
-                  ? CircularProgressIndicator()
-                  : _buildPaymentTermsDropdown(),
-              const SizedBox(height: 12),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTextField(
-                      "Payment Days",
-                      paymentDaysController,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildDateField("Due Date", dueDateController),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTextField(
-                      "Reference No",
-                      referenceNoController,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildDateField("Date", dateController)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildDropdown(
-                      "Salesman Name",
-                      selectedSalesman,
-                      [], // Add dynamic options from API
-                      (val) => setState(() => selectedSalesman = val),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildDropdown(
-                      "Booking Type",
-                      selectedBookingType,
-                      [], // Add dynamic options from API
-                      (val) => setState(() => selectedBookingType = val),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Align(
-                alignment: Alignment.centerRight,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 12,
-                    ),
-                  ),
-                  child: const Text(
-                    "Close",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildDropdown(
     String label,
     String? value,
@@ -301,16 +170,12 @@ Widget _buildPaymentTermsDropdown() {
   ) {
     return DropdownButtonFormField<String>(
       value: value,
-      items:
-          items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+      items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 14,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       ),
     );
   }
@@ -321,10 +186,7 @@ Widget _buildPaymentTermsDropdown() {
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 14,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       ),
     );
   }
@@ -346,11 +208,190 @@ Widget _buildPaymentTermsDropdown() {
         );
         if (picked != null) {
           controller.text = _formatDate(picked);
-          _baseDate = picked.subtract(
-            Duration(days: int.tryParse(paymentDaysController.text) ?? 0),
-          );
+          _baseDate = picked.subtract(Duration(days: int.tryParse(paymentDaysController.text) ?? 0));
         }
       },
+    );
+  }
+
+  Widget _buildPaymentTermsDropdown() {
+    return DropdownSearch<PytTermDisc>(
+      popupProps: PopupProps.menu(
+        showSearchBox: true,
+        itemBuilder: (context, item, isSelected) => ListTile(title: Text(item.name)),
+      ),
+      items: _paymentTerms,
+      itemAsString: (item) => item.name,
+      selectedItem: _paymentTerms.firstWhere(
+        (e) => e.key == _selectedPytTermDiscKey,
+        orElse: () => PytTermDisc(key: '', name: ''),
+      ),
+      onChanged: (value) {
+        setState(() {
+          _selectedPytTermDiscKey = value?.key;
+          selectedPaymentTerms = value?.name;
+        });
+      },
+      dropdownDecoratorProps: DropDownDecoratorProps(
+        dropdownSearchDecoration: InputDecoration(
+          labelText: 'Payment Terms',
+          border: OutlineInputBorder(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSalesmanDropdown() {
+    return DropdownSearch<Salesman>(
+      popupProps: PopupProps.menu(
+        showSearchBox: true,
+        itemBuilder: (context, item, isSelected) => ListTile(title: Text(item.name)),
+      ),
+      items: _salesmen,
+      itemAsString: (item) => item.name,
+      selectedItem: _salesmen.firstWhere(
+        (e) => e.key == _selectedSalesmanKey,
+        orElse: () => Salesman(key: '', name: ''),
+      ),
+      onChanged: (value) {
+        setState(() {
+          _selectedSalesmanKey = value?.key;
+          selectedSalesmanName = value?.name;
+        });
+      },
+      dropdownDecoratorProps: DropDownDecoratorProps(
+        dropdownSearchDecoration: InputDecoration(
+          labelText: 'Salesman Name',
+          border: OutlineInputBorder(),
+        ),
+      ),
+    );
+  }
+
+  void _saveFormData() {
+    // Save the selected data here, this is just an example
+    final formData = {
+      'consignee': selectedConsignee,
+      'paymentTerms': selectedPaymentTerms,
+      'bookingType': selectedBookingType,
+      'paymentDays': paymentDaysController.text,
+      'dueDate': dueDateController.text,
+      'referenceNo': referenceNoController.text,
+      'date': dateController.text,
+      'salesman': selectedSalesmanName,
+    };
+
+    print('Form Data: $formData');
+    // Handle the form submission logic here (e.g., send data to an API)
+  }
+
+  @override
+  void dispose() {
+    paymentDaysController.removeListener(_updateDueDate);
+    dueDateController.removeListener(_updatePaymentDays);
+    super.dispose();
+  }
+
+Map<String, dynamic> _getDialogData() {
+  return {
+    'pytTermDiscKey': _selectedPytTermDiscKey,
+    'salesPersonKey': _selectedSalesmanKey,
+    'dueDate': dueDateController.text,
+    'referenceNo': referenceNoController.text,
+    'bookingType': selectedBookingType,
+  };
+}
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      insetPadding: const EdgeInsets.all(20),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      "Add More Info",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+               IconButton(
+  icon: const Icon(Icons.close),
+  onPressed: () => Navigator.pop(context, _getDialogData()),
+)
+                  ,
+                ],
+              ),
+              const SizedBox(height: 8),
+              _buildDropdown("Consignee", selectedConsignee, [], (val) {
+                setState(() => selectedConsignee = val);
+              }),
+              const SizedBox(height: 12),
+              _isLoadingPaymentTerms ? CircularProgressIndicator() : _buildPaymentTermsDropdown(),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: _buildTextField("Payment Days", paymentDaysController)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _buildDateField("Due Date", dueDateController)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: _buildTextField("Reference No", referenceNoController)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _buildDateField("Date", dateController)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: _isLoadingSalesmen ? CircularProgressIndicator() : _buildSalesmanDropdown()),
+                  const SizedBox(width: 12),
+                  Expanded(child: _buildDropdown("Booking Type", selectedBookingType, [], (val) {
+                    setState(() => selectedBookingType = val);
+                  })),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      _saveFormData();
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    ),
+                    child: const Text("OK", style: TextStyle(color: Colors.white)),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    ),
+                    child: const Text("Close", style: TextStyle(color: Colors.white)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -360,4 +401,11 @@ class PytTermDisc {
   final String name;
 
   PytTermDisc({required this.key, required this.name});
+}
+
+class Salesman {
+  final String key;
+  final String name;
+
+  Salesman({required this.key, required this.name});
 }
