@@ -214,7 +214,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                     width:
                                         (MediaQuery.of(context).size.width -
                                             60) /
-                                        3, // 3 buttons per row
+                                        2, // 3 buttons per row
                                     child: OutlinedButton(
                                       onPressed: () {
                                         setState(() {

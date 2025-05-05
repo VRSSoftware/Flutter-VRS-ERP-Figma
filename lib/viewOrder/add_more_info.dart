@@ -38,9 +38,11 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
 
   List<PytTermDisc> _paymentTerms = [];
   List<Salesman> _salesmen = [];
+    List<Consignee> _consignees = [];
 
   bool _isLoadingPaymentTerms = false;
   bool _isLoadingSalesmen = false;
+    bool _isLoadingConsignees = false;
 
   String? _selectedPytTermDiscKey;
   String? _selectedSalesmanKey;
@@ -62,6 +64,7 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
     paymentDaysController.addListener(_updateDueDate);
     dueDateController.addListener(_updatePaymentDays);
   }
+
 
   Future<void> _loadPaymentTerms() async {
     setState(() => _isLoadingPaymentTerms = true);
@@ -409,3 +412,13 @@ class Salesman {
 
   Salesman({required this.key, required this.name});
 }
+
+ class Consignee {
+    final String ledKey;
+    final String ledName;
+
+    Consignee({
+      required this.ledKey,
+      required this.ledName,
+    });
+  }
