@@ -1,3 +1,4 @@
+
 import 'dart:convert';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
@@ -53,10 +54,30 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
         });
       });
     });
-    
+
     _orderControllers.totalQty.text = totalQty.toString();
-    _orderControllers.totalItem.text = _styleManager.groupedItems.length.toString();
+    _orderControllers.totalItem.text =
+        _styleManager.groupedItems.length.toString();
     setState(() {});
+  }
+
+    Color _getColorCode(String color) {
+    switch (color.toLowerCase()) {
+      case 'red':
+        return Colors.red;
+      case 'green':
+        return Colors.green;
+      case 'blue':
+        return Colors.blue;
+      case 'yellow':
+        return Colors.yellow[800]!;
+      case 'black':
+        return Colors.black;
+      case 'white':
+        return Colors.grey;
+      default:
+        return Colors.black;
+    }
   }
 
   @override
@@ -84,10 +105,11 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       backgroundColor: AppColors.primaryColor,
       elevation: 1,
       leading: Builder(
-        builder: (context) => IconButton(
-          icon: const Icon(Icons.menu, color: Colors.white),
-          onPressed: () => Scaffold.of(context).openDrawer(),
-        ),
+        builder:
+            (context) => IconButton(
+              icon: const Icon(Icons.menu, color: Colors.white),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
       ),
     );
   }
@@ -99,18 +121,20 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
           padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
-            child: _showForm 
-                ? _OrderForm(
-                    controllers: _orderControllers,
-                    dropdownData: _dropdownData,
-                    constraints: constraints,
-                    onPartySelected: _handlePartySelection,
-                    updateTotals: _updateTotals,
-                  )
-                : _StyleCardsView(
-                    styleManager: _styleManager,
-                    updateTotals: _updateTotals,
-                  ),
+            child:
+                _showForm
+                    ? _OrderForm(
+                      controllers: _orderControllers,
+                      dropdownData: _dropdownData,
+                      constraints: constraints,
+                      onPartySelected: _handlePartySelection,
+                      updateTotals: _updateTotals,
+                    )
+                    : _StyleCardsView(
+                      styleManager: _styleManager,
+                      updateTotals: _updateTotals,
+                        getColor: _getColorCode,
+                    ),
           ),
         );
       },
@@ -119,7 +143,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
 
   void _handlePartySelection(String? val, String? key) async {
     if (key == null) return;
-    
+
     try {
       final details = await _dropdownData.fetchLedgerDetails(key);
       _dropdownData.updateDependentFields(
@@ -139,15 +163,15 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       });
     } catch (e) {
       print('Error fetching party details: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load party details')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to load party details')));
     }
   }
 }
 
 class _OrderControllers {
-
-    String? pytTermDiscKey;
+  String? pytTermDiscKey;
   String? salesPersonKey;
   int? creditPeriod;
   String? salesLedKey;
@@ -173,7 +197,6 @@ class _OrderControllers {
     return "${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}";
   }
 
-
   void updateFromPartyDetails(
     Map<String, dynamic> details,
     List<Map<String, String>> brokers,
@@ -185,7 +208,6 @@ class _OrderControllers {
     creditPeriod = details['creditPeriod'] as int?;
     salesLedKey = details['salesLedKey']?.toString();
     ledgerName = details['ledgerName']?.toString();
-
 
     // Update broker information
     final partyBrokerKey = details['brokerKey']?.toString() ?? '';
@@ -210,7 +232,6 @@ class _OrderControllers {
     }
   }
 }
-
 
 class _DropdownData {
   List<Map<String, String>> partyList = [];
@@ -239,7 +260,7 @@ class _DropdownData {
       body: jsonEncode({"ledKey": ledKey}),
     );
     print("ssssssssssssssssssresponse data:${response.body}");
-    return response.statusCode == 200 
+    return response.statusCode == 200
         ? jsonDecode(response.body)
         : throw Exception('Failed to load details');
   }
@@ -256,12 +277,16 @@ class _DropdownData {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({"ledCat": ledCat, "coBrId": "01"}),
     );
-     print("lllllllllllllllllresponse data:${response.body}");
+    print("lllllllllllllllllresponse data:${response.body}");
     return response.statusCode == 200
-        ? (jsonDecode(response.body) as List).map((e) => {
-            'ledKey': e['ledKey'].toString(),
-            'ledName': e['ledName'].toString(),
-          }).toList()
+        ? (jsonDecode(response.body) as List)
+            .map(
+              (e) => {
+                'ledKey': e['ledKey'].toString(),
+                'ledName': e['ledName'].toString(),
+              },
+            )
+            .toList()
         : throw Exception("Failed to load ledgers");
   }
 
@@ -276,9 +301,10 @@ class _DropdownData {
 }
 
 class _StyleManager {
-   List<dynamic> _orderItems = []; 
+  List<dynamic> _orderItems = [];
   final Set<String> removedStyles = {};
-  final Map<String, Map<String, Map<String, TextEditingController>>> controllers = {};
+  final Map<String, Map<String, Map<String, TextEditingController>>>
+  controllers = {};
   VoidCallback? updateTotalsCallback;
 
   Map<String, List<dynamic>> get groupedItems {
@@ -291,7 +317,7 @@ class _StyleManager {
     return map;
   }
 
-   Future<void> fetchOrderItems() async {
+  Future<void> fetchOrderItems() async {
     final response = await http.post(
       Uri.parse('${AppConstants.BASE_URL}/orderBooking/GetViewOrder'),
       headers: {'Content-Type': 'application/json'},
@@ -321,19 +347,21 @@ class _StyleManager {
         controllers[entry.key]![shade] = {};
         for (final size in sizes) {
           final item = items.firstWhere(
-            (i) => (i['shadeName']?.toString() ?? '') == shade 
-                 && (i['sizeName']?.toString() ?? '') == size,
+            (i) =>
+                (i['shadeName']?.toString() ?? '') == shade &&
+                (i['sizeName']?.toString() ?? '') == size,
             orElse: () => {'clqty': 0},
           );
-          final controller = TextEditingController(text: item['clqty']?.toString() ?? '0')
-            ..addListener(() => updateTotalsCallback?.call());
+          final controller = TextEditingController(
+            text: item['clqty']?.toString() ?? '0',
+          )..addListener(() => updateTotalsCallback?.call());
           controllers[entry.key]![shade]![size] = controller;
         }
       }
     }
   }
 
-  List<String> _getSortedUniqueValues(List<dynamic> items, String field) => 
+  List<String> _getSortedUniqueValues(List<dynamic> items, String field) =>
       items.map((e) => e[field]?.toString() ?? '').toSet().toList()..sort();
 }
 
@@ -386,21 +414,20 @@ class _NavigationControls extends StatelessWidget {
         backgroundColor: AppColors.paleYellow,
         foregroundColor: AppColors.primaryColor,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
 }
-
 class _StyleCardsView extends StatelessWidget {
   final _StyleManager styleManager;
   final VoidCallback updateTotals;
+  final Color Function(String) getColor;
 
   const _StyleCardsView({
     required this.styleManager,
     required this.updateTotals,
+    required this.getColor,
   });
 
   @override
@@ -408,18 +435,17 @@ class _StyleCardsView extends StatelessWidget {
     return styleManager.groupedItems.isEmpty
         ? const Center(child: CircularProgressIndicator())
         : Column(
-            children: styleManager.groupedItems.entries
-                .map((entry) => _StyleCard(
-                      styleCode: entry.key,
-                      items: entry.value,
-                      controllers: styleManager.controllers[entry.key]!,
-                      onRemove: () {
-                        styleManager.removedStyles.add(entry.key);
-                        updateTotals();
-                      },
-                      updateTotals: updateTotals,
-                    ))
-                .toList(),
+            children: styleManager.groupedItems.entries.map((entry) => _StyleCard(
+                  styleCode: entry.key,
+                  items: entry.value,
+                  controllers: styleManager.controllers[entry.key]!,
+                  onRemove: () {
+                    styleManager.removedStyles.add(entry.key);
+                    updateTotals();
+                  },
+                  updateTotals: updateTotals,
+                  getColor: getColor,
+                )).toList(),
           );
   }
 }
@@ -430,6 +456,7 @@ class _StyleCard extends StatelessWidget {
   final Map<String, Map<String, TextEditingController>> controllers;
   final VoidCallback onRemove;
   final VoidCallback updateTotals;
+  final Color Function(String) getColor;
 
   const _StyleCard({
     required this.styleCode,
@@ -437,6 +464,7 @@ class _StyleCard extends StatelessWidget {
     required this.controllers,
     required this.onRemove,
     required this.updateTotals,
+    required this.getColor,
   });
 
   @override
@@ -494,23 +522,22 @@ class _StyleCard extends StatelessWidget {
     return Container(
       width: 100,
       height: 120,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
       child: Image.network(
         _getImageUrl(imagePath),
         fit: BoxFit.fitWidth,
         loadingBuilder: (context, child, loadingProgress) =>
-            loadingProgress == null ? child : const Center(child: CircularProgressIndicator()),
+            loadingProgress == null
+                ? child
+                : const Center(child: CircularProgressIndicator()),
         errorBuilder: (context, error, stackTrace) => const _ImageErrorWidget(),
       ),
     );
   }
 
-  String _getImageUrl(String fullImagePath) => 
-      fullImagePath.startsWith('http') 
-          ? fullImagePath 
-          : '${AppConstants.BASE_URL}/images/${fullImagePath.split('/').last.split('?').first}';
+  String _getImageUrl(String fullImagePath) => fullImagePath.startsWith('http')
+      ? fullImagePath
+      : '${AppConstants.BASE_URL}/images/${fullImagePath.split('/').last.split('?').first}';
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
@@ -567,13 +594,14 @@ class _StyleCard extends StatelessWidget {
     return details;
   }
 
-  List<String> _getSortedShades(List<dynamic> items) => 
-      items.map((e) => e['shadeName']?.toString() ?? '').toSet().toList()..sort();
+  List<String> _getSortedShades(List<dynamic> items) =>
+      items.map((e) => e['shadeName']?.toString() ?? '').toSet().toList()
+        ..sort();
 
   Map<int, TableColumnWidth> _buildColumnWidths(List<String> sizes) => {
-        0: const FixedColumnWidth(100),
-        for (var i = 0; i < sizes.length; i++) i + 1: const FixedColumnWidth(80),
-      };
+    0: const FixedColumnWidth(100),
+    for (var i = 0; i < sizes.length; i++) i + 1: const FixedColumnWidth(80),
+  };
 
   TableRow _buildTableRow(
     String label,
@@ -583,15 +611,12 @@ class _StyleCard extends StatelessWidget {
   ) {
     return TableRow(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(8),
-          child: Text(label),
+        Padding(padding: const EdgeInsets.all(8), child: Text(label)),
+        ...sizes.map(
+          (size) => Center(
+            child: Text('${details[size]![key]?.toStringAsFixed(0) ?? '0'}'),
+          ),
         ),
-        ...sizes.map((size) => Center(
-              child: Text(
-                '${details[size]![key]?.toStringAsFixed(0) ?? '0'}',
-              ),
-            )),
       ],
     );
   }
@@ -612,30 +637,40 @@ class _StyleCard extends StatelessWidget {
   TableRow _buildShadeRow(String shade, List<String> sizes) {
     return TableRow(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(8),
-          child: Row(
-            children: [
-              const SizedBox(width: 8),
-              Text(shade),
-            ],
+        TableCell(
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(
+              children: [
+                const SizedBox(width: 8),
+                Text(
+                  shade,
+                  style: TextStyle(
+                    color: getColor(shade), // Apply color to text only
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        ...sizes.map((size) => Padding(
-              padding: const EdgeInsets.all(4),
-              child: TextField(
-                controller: controllers[shade]?[size],
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
-                onChanged: (_) => updateTotals(),
-                decoration: const InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(vertical: 8),
-                  hintText: '0',
-                  hintStyle: TextStyle(color: Colors.grey),
-                  border: InputBorder.none,
-                ),
+        ...sizes.map(
+          (size) => Padding(
+            padding: const EdgeInsets.all(4),
+            child: TextField(
+              controller: controllers[shade]?[size],
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              onChanged: (_) => updateTotals(),
+              decoration: const InputDecoration(
+                contentPadding: EdgeInsets.symmetric(vertical: 8),
+                hintText: '0',
+                hintStyle: TextStyle(color: Colors.grey),
+                border: InputBorder.none,
               ),
-            )),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -701,69 +736,88 @@ class _OrderForm extends StatelessWidget {
     required this.updateTotals,
   });
 
-@override
-Widget build(BuildContext context) {
-  final isWideScreen = constraints.maxWidth > 600;
-  return Column(
-    children: [
-      _buildResponsiveRow(
-        isWideScreen,
-        buildTextField(context, "Order No", controllers.orderNo),
-        buildTextField(
-          context,
-          "Select Date",
-          controllers.date,
-          isDate: true,
-          onTap: () => _selectDate(context, controllers.date),
+  @override
+  Widget build(BuildContext context) {
+    final isWideScreen = constraints.maxWidth > 600;
+    return Column(
+      children: [
+        _buildResponsiveRow(
+          isWideScreen,
+          buildTextField(context, "Order No", controllers.orderNo),
+          buildTextField(
+            context,
+            "Select Date",
+            controllers.date,
+            isDate: true,
+            onTap: () => _selectDate(context, controllers.date),
+          ),
         ),
-      ),
-      _buildPartyDropdownRow(context),
-      _buildDropdown("Broker", "B", controllers.selectedBroker, 
-          (val, key) => controllers.selectedBrokerKey = key),
-      buildTextField(context, "Comm (%)", controllers.comm),
-      _buildDropdown("Transporter", "T", controllers.selectedTransporter,
-          (val, key) => controllers.selectedTransporterKey = key),
-      _buildResponsiveRow(
-        isWideScreen,
-        buildTextField(
-          context,
-          "Delivery Days",
-          controllers.deliveryDays,
-          readOnly: true,
+        _buildPartyDropdownRow(context),
+        _buildDropdown(
+          "Broker",
+          "B",
+          controllers.selectedBroker,
+          (val, key) => controllers.selectedBrokerKey = key,
         ),
-        buildTextField(
-          context,
-          "Delivery Date",
-          controllers.deliveryDate,
-          isDate: true,
-          onTap: () async {
-            final today = DateTime.now();
-            final picked = await showDatePicker(
-              context: context,
-              initialDate: today,
-              firstDate: today,
-              lastDate: DateTime(2100),
-            );
-            if (picked != null) {
-              final difference = picked.difference(today).inDays;
-              controllers.deliveryDate.text = _OrderControllers.formatDate(picked);
-              controllers.deliveryDays.text = difference.toString();
-            }
-          },
+        buildTextField(context, "Comm (%)", controllers.comm),
+        _buildDropdown(
+          "Transporter",
+          "T",
+          controllers.selectedTransporter,
+          (val, key) => controllers.selectedTransporterKey = key,
         ),
-      ),
-      buildFullField(context, "Remark", controllers.remark),
-      _buildResponsiveRow(
-        isWideScreen,
-        buildTextField(context, "Total Item", controllers.totalItem, readOnly: true),
-        buildTextField(context, "Total Quantity", controllers.totalQty, readOnly: true),
-      ),
-      const SizedBox(height: 20),
-      _buildActionButtons(context),
-    ],
-  );
-}
-
+        _buildResponsiveRow(
+          isWideScreen,
+          buildTextField(
+            context,
+            "Delivery Days",
+            controllers.deliveryDays,
+            readOnly: true,
+          ),
+          buildTextField(
+            context,
+            "Delivery Date",
+            controllers.deliveryDate,
+            isDate: true,
+            onTap: () async {
+              final today = DateTime.now();
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: today,
+                firstDate: today,
+                lastDate: DateTime(2100),
+              );
+              if (picked != null) {
+                final difference = picked.difference(today).inDays;
+                controllers.deliveryDate.text = _OrderControllers.formatDate(
+                  picked,
+                );
+                controllers.deliveryDays.text = difference.toString();
+              }
+            },
+          ),
+        ),
+        buildFullField(context, "Remark", controllers.remark),
+        _buildResponsiveRow(
+          isWideScreen,
+          buildTextField(
+            context,
+            "Total Item",
+            controllers.totalItem,
+            readOnly: true,
+          ),
+          buildTextField(
+            context,
+            "Total Quantity",
+            controllers.totalQty,
+            readOnly: true,
+          ),
+        ),
+        const SizedBox(height: 20),
+        _buildActionButtons(context),
+      ],
+    );
+  }
 
   Widget _buildPartyDropdownRow(BuildContext context) {
     return Row(
@@ -778,10 +832,11 @@ Widget build(BuildContext context) {
         ),
         const SizedBox(width: 8),
         ElevatedButton(
-          onPressed: () => showDialog(
-            context: context,
-            builder: (_) => CustomerMasterDialog(),
-          ),
+          onPressed:
+              () => showDialog(
+                context: context,
+                builder: (_) => CustomerMasterDialog(),
+              ),
           style: ElevatedButton.styleFrom(backgroundColor: Colors.lightBlue),
           child: const Text('+ Add'),
         ),
@@ -832,10 +887,14 @@ Widget build(BuildContext context) {
 
   List<Map<String, String>> _getLedgerList(String ledCat) {
     switch (ledCat) {
-      case 'w': return dropdownData.partyList;
-      case 'B': return dropdownData.brokerList;
-      case 'T': return dropdownData.transporterList;
-      default: return [];
+      case 'w':
+        return dropdownData.partyList;
+      case 'B':
+        return dropdownData.brokerList;
+      case 'T':
+        return dropdownData.transporterList;
+      default:
+        return [];
     }
   }
 
@@ -847,52 +906,68 @@ Widget build(BuildContext context) {
 
   String _getSearchHint(String label) {
     switch (label.toLowerCase()) {
-      case 'party name': return 'Search party...';
-      case 'broker': return 'Search broker...';
-      case 'transporter': return 'Search transporter...';
-      default: return 'Search...';
+      case 'party name':
+        return 'Search party...';
+      case 'broker':
+        return 'Search broker...';
+      case 'transporter':
+        return 'Search transporter...';
+      default:
+        return 'Search...';
     }
   }
 
   Widget _buildResponsiveRow(bool isWideScreen, Widget first, Widget second) {
     return isWideScreen
-        ? Row(children: [Expanded(child: first), const SizedBox(width: 10), Expanded(child: second)])
+        ? Row(
+          children: [
+            Expanded(child: first),
+            const SizedBox(width: 10),
+            Expanded(child: second),
+          ],
+        )
         : Column(children: [first, second]);
   }
 
   Widget _buildActionButtons(BuildContext context) {
     return Row(
       children: [
-Expanded(
-  child: ElevatedButton(
-    onPressed: () => showDialog(
-      context: context,
-      builder: (context) => AddMoreInfoDialog(
-        pytTermDiscKey: controllers.pytTermDiscKey, // Changed to use local controllers
-        salesPersonKey: controllers.salesPersonKey,
-        creditPeriod: controllers.creditPeriod,
-        salesLedKey: controllers.salesLedKey,
-        ledgerName: controllers.ledgerName,
-      ),
-    ),
-    style: ElevatedButton.styleFrom(
-      backgroundColor: AppColors.primaryColor,
-    ),
-    child: const Text(
-      'Add More Info',
-      style: TextStyle(color: Colors.white),
-    ),
-  ),
-),
+        Expanded(
+          child: ElevatedButton(
+            onPressed:
+                () => showDialog(
+                  context: context,
+                  builder:
+                      (context) => AddMoreInfoDialog(
+                        pytTermDiscKey:
+                            controllers
+                                .pytTermDiscKey, 
+                        salesPersonKey: controllers.salesPersonKey,
+                        creditPeriod: controllers.creditPeriod,
+                        salesLedKey: controllers.salesLedKey,
+                        ledgerName: controllers.ledgerName,
+                      ),
+                ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryColor,
+            ),
+            child: const Text(
+              'Add More Info',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ),
 
         const SizedBox(width: 10),
         Expanded(
           child: ElevatedButton(
-            onPressed: () {/* Save logic */},
+            onPressed: () {
+              /* Save logic */
+            },
             child: const Text(
-      'Save',
-      style: TextStyle(color: AppColors.primaryColor),
-    ),
+              'Save',
+              style: TextStyle(color: AppColors.primaryColor),
+            ),
           ),
         ),
       ],
@@ -901,7 +976,7 @@ Expanded(
 }
 
 Widget buildTextField(
-  BuildContext context,  // Add context parameter
+  BuildContext context, // Add context parameter
   String label,
   TextEditingController controller, {
   bool isDate = false,
@@ -925,7 +1000,11 @@ Widget buildTextField(
     ),
   );
 }
-Future<void> _selectDate(BuildContext context, TextEditingController controller) async {
+
+Future<void> _selectDate(
+  BuildContext context,
+  TextEditingController controller,
+) async {
   final picked = await showDatePicker(
     context: context,
     initialDate: DateTime.now(),
@@ -937,7 +1016,11 @@ Future<void> _selectDate(BuildContext context, TextEditingController controller)
   }
 }
 
-Widget buildFullField(BuildContext context, String label, TextEditingController controller) {
+Widget buildFullField(
+  BuildContext context,
+  String label,
+  TextEditingController controller,
+) {
   return Padding(
     padding: const EdgeInsets.only(top: 12),
     child: buildTextField(context, label, controller),
@@ -955,7 +1038,10 @@ class _ImageErrorWidget extends StatelessWidget {
         children: [
           Icon(Icons.image_not_supported, size: 40),
           SizedBox(height: 8),
-          Text('Image not available', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          Text(
+            'Image not available',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
         ],
       ),
     );
@@ -976,18 +1062,24 @@ class _TableHeaderCell extends StatelessWidget {
             Positioned(
               left: 12,
               top: 20,
-              child: Text('Shade', style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.blue,
-              )),
+              child: Text(
+                'Shade',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+              ),
             ),
             Positioned(
               right: 14,
               bottom: 20,
-              child: Text('Size', style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.red,
-              )),
+              child: Text(
+                'Size',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
             ),
           ],
         ),
@@ -999,10 +1091,12 @@ class _TableHeaderCell extends StatelessWidget {
 class _DiagonalLinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.grey.shade400
-      ..strokeWidth = 1
-      ..style; PaintingStyle.stroke;
+    final paint =
+        Paint()
+          ..color = Colors.grey.shade400
+          ..strokeWidth = 1
+          ..style;
+    PaintingStyle.stroke;
     canvas.drawLine(Offset.zero, Offset(size.width, size.height), paint);
   }
 
