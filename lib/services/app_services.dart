@@ -8,6 +8,7 @@ import 'package:vrs_erp_figma/models/shade.dart';
 import 'package:vrs_erp_figma/models/size.dart';
 import 'package:vrs_erp_figma/models/style.dart';
 import '../constants/app_constants.dart';
+import '../models/consignee.dart';
 
 class ApiService {
   static Future<List<Category>> fetchCategories() async {
@@ -291,6 +292,41 @@ class ApiService {
       return data.cast<String>(); // Ensures it's List<String>
     } else {
       throw Exception('Failed to fetch added items');
+    }
+  }
+static Future<Map<String, dynamic>> fetchConsinees({
+    required String key,
+    required String CoBrId,
+  }) async {
+    final url = Uri.parse('${AppConstants.BASE_URL}/users/getConsinee');
+
+    final Map<String, dynamic> body = {
+      "key": key,
+      "coBrId": CoBrId,
+    };
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      
+      // Convert the raw JSON data to a list of Consignee objects
+      final List<Consignee> consignees = data.map((json) => Consignee.fromJson(json)).toList();
+
+      return {
+        "statusCode": response.statusCode,
+        "result": consignees,  // Return a list of Consignee objects
+      };
+    } else {
+      return {
+        "statusCode": response.statusCode,
+        "consignees": [],  // Return an empty list if the request fails
+        "error": response.body,
+      };
     }
   }
 }

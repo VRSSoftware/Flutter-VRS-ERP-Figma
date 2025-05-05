@@ -11,7 +11,8 @@ class AddMoreInfoDialog extends StatefulWidget {
   final int? creditPeriod;
   final String? salesLedKey;
   final String? ledgerName;
-  
+  final Function(Map<String, dynamic>) onValueChanged;
+
   const AddMoreInfoDialog({
     super.key,
     this.pytTermDiscKey,
@@ -19,6 +20,7 @@ class AddMoreInfoDialog extends StatefulWidget {
     this.creditPeriod,
     this.salesLedKey,
     this.ledgerName,
+    required this.onValueChanged,
   });
 
   @override
@@ -38,15 +40,20 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
 
   List<PytTermDisc> _paymentTerms = [];
   List<Salesman> _salesmen = [];
-    List<Consignee> _consignees = [];
+  List<Consignee> _consignees = [];
 
   bool _isLoadingPaymentTerms = false;
   bool _isLoadingSalesmen = false;
-    bool _isLoadingConsignees = false;
+  bool _isLoadingConsignees = false;
 
   String? _selectedPytTermDiscKey;
   String? _selectedSalesmanKey;
   String? selectedSalesmanName;
+
+  void _sendValueToParent(Map<String, dynamic> formData) {
+    // widget.onValueChanged(formData['referenceNo'] , formData['dueDate']); 
+    widget.onValueChanged(formData); 
+  }
 
   @override
   void initState() {
@@ -65,7 +72,6 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
     dueDateController.addListener(_updatePaymentDays);
   }
 
-
   Future<void> _loadPaymentTerms() async {
     setState(() => _isLoadingPaymentTerms = true);
     try {
@@ -77,10 +83,15 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as List;
-        _paymentTerms = data.map((e) => PytTermDisc(
-          key: e['pytTermDiscKey']?.toString() ?? '',
-          name: e['pytTermDiscName']?.toString() ?? '',
-        )).toList();
+        _paymentTerms =
+            data
+                .map(
+                  (e) => PytTermDisc(
+                    key: e['pytTermDiscKey']?.toString() ?? '',
+                    name: e['pytTermDiscName']?.toString() ?? '',
+                  ),
+                )
+                .toList();
 
         if (widget.pytTermDiscKey != null && _paymentTerms.isNotEmpty) {
           final initialTerm = _paymentTerms.firstWhere(
@@ -111,10 +122,15 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as List;
-        _salesmen = data.map((e) => Salesman(
-          key: e['ledKey']?.toString() ?? '',
-          name: e['ledgerName']?.toString() ?? '',
-        )).toList();
+        _salesmen =
+            data
+                .map(
+                  (e) => Salesman(
+                    key: e['ledKey']?.toString() ?? '',
+                    name: e['ledgerName']?.toString() ?? '',
+                  ),
+                )
+                .toList();
 
         if (widget.salesPersonKey != null && _salesmen.isNotEmpty) {
           final initialSalesman = _salesmen.firstWhere(
@@ -173,12 +189,16 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
   ) {
     return DropdownButtonFormField<String>(
       value: value,
-      items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+      items:
+          items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 14,
+        ),
       ),
     );
   }
@@ -189,7 +209,10 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 14,
+        ),
       ),
     );
   }
@@ -211,7 +234,9 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
         );
         if (picked != null) {
           controller.text = _formatDate(picked);
-          _baseDate = picked.subtract(Duration(days: int.tryParse(paymentDaysController.text) ?? 0));
+          _baseDate = picked.subtract(
+            Duration(days: int.tryParse(paymentDaysController.text) ?? 0),
+          );
         }
       },
     );
@@ -221,7 +246,8 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
     return DropdownSearch<PytTermDisc>(
       popupProps: PopupProps.menu(
         showSearchBox: true,
-        itemBuilder: (context, item, isSelected) => ListTile(title: Text(item.name)),
+        itemBuilder:
+            (context, item, isSelected) => ListTile(title: Text(item.name)),
       ),
       items: _paymentTerms,
       itemAsString: (item) => item.name,
@@ -248,7 +274,8 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
     return DropdownSearch<Salesman>(
       popupProps: PopupProps.menu(
         showSearchBox: true,
-        itemBuilder: (context, item, isSelected) => ListTile(title: Text(item.name)),
+        itemBuilder:
+            (context, item, isSelected) => ListTile(title: Text(item.name)),
       ),
       items: _salesmen,
       itemAsString: (item) => item.name,
@@ -273,16 +300,19 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
 
   void _saveFormData() {
     // Save the selected data here, this is just an example
-    final formData = {
+    Map<String, dynamic> formData = {
       'consignee': selectedConsignee,
-      'paymentTerms': selectedPaymentTerms,
-      'bookingType': selectedBookingType,
-      'paymentDays': paymentDaysController.text,
-      'dueDate': dueDateController.text,
-      'referenceNo': referenceNoController.text,
+      'paymentterms': _selectedPytTermDiscKey,
+      'bookingtype': selectedBookingType,
+      'paymentdays': paymentDaysController.text,
+      'duedate': dueDateController.text,
+      'refno': referenceNoController.text,
       'date': dateController.text,
       'salesman': selectedSalesmanName,
+      'station' :'',
     };
+
+    _sendValueToParent(formData);
 
     print('Form Data: $formData');
     // Handle the form submission logic here (e.g., send data to an API)
@@ -295,15 +325,15 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
     super.dispose();
   }
 
-Map<String, dynamic> _getDialogData() {
-  return {
-    'pytTermDiscKey': _selectedPytTermDiscKey,
-    'salesPersonKey': _selectedSalesmanKey,
-    'dueDate': dueDateController.text,
-    'referenceNo': referenceNoController.text,
-    'bookingType': selectedBookingType,
-  };
-}
+  Map<String, dynamic> _getDialogData() {
+    return {
+      'pytTermDiscKey': _selectedPytTermDiscKey,
+      'salesPersonKey': _selectedSalesmanKey,
+      'dueDate': dueDateController.text,
+      'referenceNo': referenceNoController.text,
+      'bookingType': selectedBookingType,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -321,14 +351,16 @@ Map<String, dynamic> _getDialogData() {
                   const Expanded(
                     child: Text(
                       "Add More Info",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-               IconButton(
-  icon: const Icon(Icons.close),
-  onPressed: () => Navigator.pop(context, _getDialogData()),
-)
-                  ,
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context, _getDialogData()),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -336,19 +368,33 @@ Map<String, dynamic> _getDialogData() {
                 setState(() => selectedConsignee = val);
               }),
               const SizedBox(height: 12),
-              _isLoadingPaymentTerms ? CircularProgressIndicator() : _buildPaymentTermsDropdown(),
+              _isLoadingPaymentTerms
+                  ? CircularProgressIndicator()
+                  : _buildPaymentTermsDropdown(),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: _buildTextField("Payment Days", paymentDaysController)),
+                  Expanded(
+                    child: _buildTextField(
+                      "Payment Days",
+                      paymentDaysController,
+                    ),
+                  ),
                   const SizedBox(width: 12),
-                  Expanded(child: _buildDateField("Due Date", dueDateController)),
+                  Expanded(
+                    child: _buildDateField("Due Date", dueDateController),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: _buildTextField("Reference No", referenceNoController)),
+                  Expanded(
+                    child: _buildTextField(
+                      "Reference No",
+                      referenceNoController,
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(child: _buildDateField("Date", dateController)),
                 ],
@@ -356,11 +402,23 @@ Map<String, dynamic> _getDialogData() {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: _isLoadingSalesmen ? CircularProgressIndicator() : _buildSalesmanDropdown()),
+                  Expanded(
+                    child:
+                        _isLoadingSalesmen
+                            ? CircularProgressIndicator()
+                            : _buildSalesmanDropdown(),
+                  ),
                   const SizedBox(width: 12),
-                  Expanded(child: _buildDropdown("Booking Type", selectedBookingType, [], (val) {
-                    setState(() => selectedBookingType = val);
-                  })),
+                  Expanded(
+                    child: _buildDropdown(
+                      "Booking Type",
+                      selectedBookingType,
+                      [],
+                      (val) {
+                        setState(() => selectedBookingType = val);
+                      },
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 20),
@@ -369,25 +427,42 @@ Map<String, dynamic> _getDialogData() {
                 children: [
                   ElevatedButton(
                     onPressed: () {
+                      // _sendValueToParent();
                       _saveFormData();
-                      Navigator.pop(context);
+                      //Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 12,
+                      ),
                     ),
-                    child: const Text("OK", style: TextStyle(color: Colors.white)),
+                    child: const Text(
+                      "OK",
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 12,
+                      ),
                     ),
-                    child: const Text("Close", style: TextStyle(color: Colors.white)),
+                    child: const Text(
+                      "Close",
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               ),
@@ -413,12 +488,9 @@ class Salesman {
   Salesman({required this.key, required this.name});
 }
 
- class Consignee {
-    final String ledKey;
-    final String ledName;
+class Consignee {
+  final String ledKey;
+  final String ledName;
 
-    Consignee({
-      required this.ledKey,
-      required this.ledName,
-    });
-  }
+  Consignee({required this.ledKey, required this.ledName});
+}

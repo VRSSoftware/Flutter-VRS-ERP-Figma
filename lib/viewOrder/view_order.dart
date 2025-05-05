@@ -624,10 +624,10 @@ class _ViewOrderScreenState extends State<ViewOrderScreens> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AddMoreInfoDialog(),
-                        );
+                        // showDialog(
+                        //   context: context,
+                        //   builder: (context) => AddMoreInfoDialog(),
+                        // );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.deepPurple,

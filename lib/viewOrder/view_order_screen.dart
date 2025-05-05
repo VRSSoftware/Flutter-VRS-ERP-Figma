@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
+import 'package:vrs_erp_figma/services/app_services.dart';
 import 'package:vrs_erp_figma/viewOrder/add_more_info.dart';
 import 'package:vrs_erp_figma/viewOrder/customer_master.dart';
 
@@ -19,14 +20,43 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   final _orderControllers = _OrderControllers();
   final _dropdownData = _DropdownData();
   final _styleManager = _StyleManager();
-
+  List<dynamic> consignees = []; 
   @override
   void initState() {
     super.initState();
     _initializeData();
     _setInitialDates();
+    fetchAndMapConsignees(key: '0190', CoBrId: '01');
     _styleManager.updateTotalsCallback = _updateTotals;
   }
+  void fetchAndMapConsignees({
+  required String key,
+  required String CoBrId,
+}) async {
+  try {
+    // Call the fetchConsinees API method
+    Map<String, dynamic> responseMap = await ApiService.fetchConsinees(
+      key: key,
+      CoBrId: CoBrId,
+    );
+
+    
+    if (responseMap['statusCode'] == 200) {
+      setState(() {
+        
+      consignees = responseMap['result'];
+      });
+      print("ssssssssssssssssssss");
+      print(consignees);
+    }
+    else{
+      print(responseMap['statusCode']);
+    }
+  } catch (e) {
+    // Handle any errors that occur during the API call
+   print(e.toString());
+  }
+}
 
   void _setInitialDates() {
     final today = DateTime.now();
@@ -118,73 +148,77 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   //   }
   // }
 
+  Future<void> _saveOrderLocally() async {
+    if (!_formKey.currentState!.validate()) return;
 
-Future<void> _saveOrderLocally() async {
-  if (!_formKey.currentState!.validate()) return;
+    // Prepare order items
+   
 
-  // Prepare order items
-  List<Map<String, dynamic>> orderItems = [];
-  _styleManager.controllers.forEach((styleCode, shades) {
-    shades.forEach((shadeName, sizes) {
-      sizes.forEach((sizeName, controller) {
-        final qty = int.tryParse(controller.text) ?? 0;
-        if (qty > 0) {
-          orderItems.add({
-            "styleCode": styleCode,
-            "shadeName": shadeName,
-            "sizeName": sizeName,
-            "qty": qty,
-          });
-        }
-      });
-    });
-  });
+    // Prepare main order data
+    // Map<String, dynamic> orderData = {
+    //   "coBrId": "01",
+    //   "userId": "Admin",
+    //   "fcYrId": "24",
+    //   "orderNo": _orderControllers.orderNo.text,
+    //   "orderDt": _orderControllers.date.text,
+    //   "ledKey": _orderControllers.selectedPartyKey,
+    //   "brokerKey": _orderControllers.selectedBrokerKey,
+    //   "trspKey": _orderControllers.selectedTransporterKey,
+    //   "commPerc": _orderControllers.comm.text,
+    //   "delvDays": _orderControllers.deliveryDays.text,
+    //   "delvDt": _orderControllers.deliveryDate.text,
+    //   "totItem": _orderControllers.totalItem.text,
+    //   "totQty": _orderControllers.totalQty.text,
+    //   "remark": _orderControllers.remark.text,
+    //   "pytTermDiscKey": _additionalInfo['pytTermDiscKey'],
+    //   "salesPersonKey": _additionalInfo['salesPersonKey'],
+    //   "dueDt": _additionalInfo['dueDate'],
+    //   "refNo": _additionalInfo['referenceNo'],
+    //   "bookingType": _additionalInfo['bookingType'],
+    // };
+    final orderData = {
+      "saleorderno": _orderControllers.orderNo.text,
+      "orderdate": _orderControllers.date.text,
+      "customer": _orderControllers.selectedPartyKey,
+      "broker":  _orderControllers.selectedBrokerKey,
+      "comission": _orderControllers.comm.text,
+      // "transporter": "0196",
+      "delivaryday": _orderControllers.deliveryDays.text,
+      "delivarydate": _orderControllers.deliveryDate.text,
+      "totitem": _orderControllers.totalItem.text,
+      "totqty": _orderControllers.totalQty.text,
+      "remark": _orderControllers.remark.text,
+      // "consignee": "",
+      // "station": "",
+      "paymentterms":_additionalInfo['pytTermDiscKey'],
+      // "paymentdays": "60",
+      // "duedate": "2025-05-03",
+      "refno": _additionalInfo['referenceNo'],
+      // "date": "",
+      // "bookingtype": "",
+      // "salesman": "0198",
+    };
 
-  // Prepare main order data
-  Map<String, dynamic> orderData = {
-    "coBrId": "01",
-    "userId": "Admin",
-    "fcYrId": "24",
-    "orderNo": _orderControllers.orderNo.text,
-    "orderDt": _orderControllers.date.text,
-    "ledKey": _orderControllers.selectedPartyKey,
-    "brokerKey": _orderControllers.selectedBrokerKey,
-    "trspKey": _orderControllers.selectedTransporterKey,
-    "commPerc": _orderControllers.comm.text,
-    "delvDays": _orderControllers.deliveryDays.text,
-    "delvDt": _orderControllers.deliveryDate.text,
-    "totItem": _orderControllers.totalItem.text,
-    "totQty": _orderControllers.totalQty.text,
-    "remark": _orderControllers.remark.text,
-    "pytTermDiscKey": _additionalInfo['pytTermDiscKey'],
-    "salesPersonKey": _additionalInfo['salesPersonKey'],
-    "dueDt": _additionalInfo['dueDate'],
-    "refNo": _additionalInfo['referenceNo'],
-    "bookingType": _additionalInfo['bookingType'],
-    "items": orderItems,
-  };
+    // Print to console
+    print("Saved Order Data:");
+    print(jsonEncode(orderData));
 
-  // Print to console
-  print("Saved Order Data:");
-  print(jsonEncode(orderData));
-
-  // Show in dialog
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text('Saved Order Data'),
-      content: SingleChildScrollView(
-        child: Text(jsonEncode(orderData)),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text('OK'),
-        ),
-      ],
-    ),
-  );
-}
+    // Show in dialog
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text('Saved Order Data'),
+            content: SingleChildScrollView(child: Text(jsonEncode(orderData))),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('OK'),
+              ),
+            ],
+          ),
+    );
+  }
 
   void _updateTotals() {
     int totalQty = 0;
@@ -271,7 +305,7 @@ Future<void> _saveOrderLocally() async {
                       onPartySelected: _handlePartySelection,
                       updateTotals: _updateTotals,
                       // saveOrder: _saveOrder, // Add this
-                       saveOrder: _saveOrderLocally, // Add this
+                      saveOrder: _saveOrderLocally, // Add this
                       additionalInfo: _additionalInfo,
                     )
                     : _StyleCardsView(
@@ -994,7 +1028,7 @@ class _OrderForm extends StatelessWidget {
                 builder: (_) => CustomerMasterDialog(),
               ),
           style: ElevatedButton.styleFrom(backgroundColor: Colors.lightBlue),
-          child: const Text('+ Add'),
+          child: const Text('+'),
         ),
       ],
     );
@@ -1085,49 +1119,58 @@ class _OrderForm extends StatelessWidget {
         : Column(children: [first, second]);
   }
 
-Widget _buildActionButtons(BuildContext context) {
-  return Row(
-    children: [
-      Expanded(
-        child: ElevatedButton(
-          onPressed: () async {
-            final result = await showDialog(
-              context: context,
-              builder: (context) => AddMoreInfoDialog(
-                pytTermDiscKey: controllers.pytTermDiscKey,
-                salesPersonKey: controllers.salesPersonKey,
-                creditPeriod: controllers.creditPeriod,
-                salesLedKey: controllers.salesLedKey,
-                ledgerName: controllers.ledgerName,
-              ),
-            );
-            if (result != null) {
-              additionalInfo.addAll(result);
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryColor,
-          ),
-          child: const Text(
-            'Add More Info',
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      ),
-      Expanded(
-        child: ElevatedButton(
-          onPressed: () async {
-            await saveOrder();
-          },
-          child: const Text(
-            'Save',
-            style: TextStyle(color: AppColors.primaryColor),
+  Widget _buildActionButtons(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () async {
+              final result = await showDialog(
+                context: context,
+                builder:
+                    (context) => AddMoreInfoDialog(
+                      pytTermDiscKey: controllers.pytTermDiscKey,
+                      salesPersonKey: controllers.salesPersonKey,
+                      creditPeriod: controllers.creditPeriod,
+                      salesLedKey: controllers.salesLedKey,
+                      ledgerName: controllers.ledgerName,
+                      onValueChanged: updateValue
+                    ),
+              );
+              if (result != null) {
+                additionalInfo.addAll(result);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryColor,
+            ),
+            child: const Text(
+              'Add More Info',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ),
-      ),
-    ],
-  );
-}
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () async {
+              await saveOrder();
+            },
+            child: const Text(
+              'Save',
+              style: TextStyle(color: AppColors.primaryColor),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+ void updateValue(Map<String, dynamic> formData) {
+
+      print('Reference No: ${formData['referenceNo']}');
+      print('Due Date: ${formData['dueDate']}');
+
+  }
 }
 
 Widget buildTextField(
