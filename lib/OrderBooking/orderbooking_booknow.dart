@@ -35,7 +35,9 @@ class _OrderPageState extends State<OrderPage> {
   List<Catalog> selectedItems = [];
   String fromMRP = "";
   String toMRP = "";
-
+  String WSPfrom = "";
+  String WSPto = "";
+  bool isLoading = true;
   List<String> addedItems = [];
 
   @override
@@ -93,12 +95,17 @@ class _OrderPageState extends State<OrderPage> {
   // Fetch Catalog Items
   Future<void> _fetchCatalogItems() async {
     try {
+      setState(() {
+        catalogItems = [];
+        isLoading = true;
+      });
+      // final items = await ApiService.fetchCatalogItem(
       final result = await ApiService.fetchCatalogItem(
         itemSubGrpKey: itemSubGrpKey!,
         itemKey: itemKey!,
         cobr: coBr!,
         styleKey:
-            selectedStyles.length == 0 ? null : selectedStyles[0].styleKey,
+            selectedStyles.length == 1 ? selectedStyles[0].styleKey : null,
         shadeKey:
             selectedShades.length == 0
                 ? null
@@ -110,9 +117,64 @@ class _OrderPageState extends State<OrderPage> {
         fromMRP: fromMRP == "" ? null : fromMRP,
         toMRP: toMRP == "" ? null : toMRP,
       );
-      setState(() {
-        catalogItems = result["catalogs"];
-      });
+
+      int status = result["statusCode"];
+      if(status == 200)
+        setState(() {
+          isLoading = false;
+        });
+      
+      final items = result["catalogs"];
+
+      if (selectedStyles.isEmpty && WSPfrom == "" && WSPto == "") {
+        setState(() {
+          catalogItems = items;
+        });
+      } else {
+        final selectedStyleKeys =
+            selectedStyles.map((style) => style.styleKey).toSet();
+
+        List<Catalog> filtredCatlogs =
+            items
+                .where(
+                  (catalog) => selectedStyleKeys.contains(catalog.styleKey),
+                )
+                .toList();
+        if (WSPfrom == "" && WSPto == "") {
+          setState(() {
+            catalogItems = filtredCatlogs;
+          });
+        } else {
+          double? wspFrom = double.tryParse(WSPfrom);
+          double? wspTo = double.tryParse(WSPto);
+
+          List<Catalog> wspFilteredCatalogs = filtredCatlogs;
+
+          if (wspFrom != null && wspTo != null) {
+            wspFilteredCatalogs =
+                wspFilteredCatalogs
+                    .where(
+                      (catalog) =>
+                          catalog.wsp >= wspFrom && catalog.wsp <= wspTo,
+                    )
+                    .toList();
+          } else if (wspFrom != null) {
+            wspFilteredCatalogs =
+                wspFilteredCatalogs
+                    .where((catalog) => catalog.wsp >= wspFrom)
+                    .toList();
+          } else if (wspTo != null) {
+            wspFilteredCatalogs =
+                wspFilteredCatalogs
+                    .where((catalog) => catalog.wsp <= wspTo)
+                    .toList();
+          }
+
+          setState(() {
+            catalogItems = wspFilteredCatalogs;
+          });
+        }
+      }
     } catch (e) {
       print('Failed to load catalog items: $e');
     }
@@ -211,9 +273,9 @@ class _OrderPageState extends State<OrderPage> {
                 horizontal: isLargeScreen ? 16.0 : 8.0,
                 vertical: 8.0,
               ),
-              child:
-                  catalogItems.isEmpty
-                      ? Center(child: CircularProgressIndicator())
+              child:isLoading
+                      ? Center(child: CircularProgressIndicator()) : 
+                      catalogItems.isEmpty ? Center(child: Text("No Item Available"),) 
                       : LayoutBuilder(
                         builder: (context, constraints) {
                           if (viewOption == 0) {
