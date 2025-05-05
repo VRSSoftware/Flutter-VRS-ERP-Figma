@@ -87,92 +87,78 @@ class _CatalogPageState extends State<CatalogPage> {
   }
 
   // Fetch Catalog Items
-  Future<void> _fetchCatalogItems() async {
-    try {
+Future<void> _fetchCatalogItems() async {
+  try {
+    setState(() {
+      catalogItems = [];
+      isLoading = true;
+    });
+
+    // Fetch the catalog data
+    final result = await ApiService.fetchCatalogItem(
+      itemSubGrpKey: itemSubGrpKey!,
+      itemKey: itemKey!,
+      cobr: coBr!,
+      styleKey: selectedStyles.length == 1 ? selectedStyles[0].styleKey : null,
+      shadeKey: selectedShades.isEmpty
+          ? null
+          : selectedShades.map((s) => s.shadeKey).join(','),
+      sizeKey: selectedSize.isEmpty
+          ? null
+          : selectedSize.map((s) => s.itemSizeKey).join(','),
+      fromMRP: fromMRP == "" ? null : fromMRP,
+      toMRP: toMRP == "" ? null : toMRP,
+    );
+
+    int status = result["statusCode"];
+    if (status == 200) {
       setState(() {
-        catalogItems = [];
-        isLoading = true;
+        isLoading = false;
       });
-      // final items = await ApiService.fetchCatalogItem(
-      final result = await ApiService.fetchCatalogItem(
-        itemSubGrpKey: itemSubGrpKey!,
-        itemKey: itemKey!,
-        cobr: coBr!,
-        styleKey:
-            selectedStyles.length == 1 ? selectedStyles[0].styleKey : null,
-        shadeKey:
-            selectedShades.length == 0
-                ? null
-                : selectedShades.map((s) => s.shadeKey).join(','),
-        sizeKey:
-            selectedSize.length == 0
-                ? null
-                : selectedSize.map((s) => s.itemSizeKey).join(','),
-        fromMRP: fromMRP == "" ? null : fromMRP,
-        toMRP: toMRP == "" ? null : toMRP,
-      );
-
-      int status = result["statusCode"];
-      if(status == 200)
-        setState(() {
-          isLoading = false;
-        });
-      
-      final items = result["catalogs"];
-
-      if (selectedStyles.isEmpty && WSPfrom == "" && WSPto == "") {
-        setState(() {
-          catalogItems = items;
-        });
-      } else {
-        final selectedStyleKeys =
-            selectedStyles.map((style) => style.styleKey).toSet();
-
-        List<Catalog> filtredCatlogs =
-            items
-                .where(
-                  (catalog) => selectedStyleKeys.contains(catalog.styleKey),
-                )
-                .toList();
-        if (WSPfrom == "" && WSPto == "") {
-          setState(() {
-            catalogItems = filtredCatlogs;
-          });
-        } else {
-          double? wspFrom = double.tryParse(WSPfrom);
-          double? wspTo = double.tryParse(WSPto);
-
-          List<Catalog> wspFilteredCatalogs = filtredCatlogs;
-
-          if (wspFrom != null && wspTo != null) {
-            wspFilteredCatalogs =
-                wspFilteredCatalogs
-                    .where(
-                      (catalog) =>
-                          catalog.wsp >= wspFrom && catalog.wsp <= wspTo,
-                    )
-                    .toList();
-          } else if (wspFrom != null) {
-            wspFilteredCatalogs =
-                wspFilteredCatalogs
-                    .where((catalog) => catalog.wsp >= wspFrom)
-                    .toList();
-          } else if (wspTo != null) {
-            wspFilteredCatalogs =
-                wspFilteredCatalogs
-                    .where((catalog) => catalog.wsp <= wspTo)
-                    .toList();
-          }
-
-          setState(() {
-            catalogItems = wspFilteredCatalogs;
-          });
-        }
-      }
-    } catch (e) {
-      print('Failed to load catalog items: $e');
     }
+
+    final items = result["catalogs"];
+
+    // Filter by WSP first
+    double? wspFrom = double.tryParse(WSPfrom);
+    double? wspTo = double.tryParse(WSPto);
+
+    List<Catalog> wspFilteredCatalogs = items;
+
+    if (wspFrom != null && wspTo != null) {
+      wspFilteredCatalogs = wspFilteredCatalogs
+          .where((catalog) => catalog.wsp >= wspFrom && catalog.wsp <= wspTo)
+          .toList();
+    } else if (wspFrom != null) {
+      wspFilteredCatalogs = wspFilteredCatalogs
+          .where((catalog) => catalog.wsp >= wspFrom)
+          .toList();
+    } else if (wspTo != null) {
+      wspFilteredCatalogs = wspFilteredCatalogs
+          .where((catalog) => catalog.wsp <= wspTo)
+          .toList();
+    }
+
+    // Now, filter by style if styles are selected
+    if (selectedStyles.isNotEmpty) {
+      final selectedStyleKeys = selectedStyles.map((style) => style.styleKey).toSet();
+
+      wspFilteredCatalogs = wspFilteredCatalogs
+          .where((catalog) => selectedStyleKeys.contains(catalog.styleKey))
+          .toList();
+    }
+
+    // Set the final filtered catalog items
+    setState(() {
+      catalogItems = wspFilteredCatalogs;
+    });
+
+  } catch (e) {
+    print('Failed to load catalog items: $e');
   }
+}
+
+
 
   // Fetch Styles by Item Key
   Future<void> _fetchStylesByItemKey(String itemKey) async {
@@ -1334,17 +1320,9 @@ class _CatalogPageState extends State<CatalogPage> {
       if (mobileNo.isNotEmpty) {
         // Loop through selected items and send each one
         for (var item in selectedItems) {
-          dynamic response ;
-          if(item.fullImagePath.contains('http://') || item.fullImagePath.contains('https://'))
-          {
-          response = await http.get(
-            Uri.parse(item.fullImagePath),
-          );
-          }
-          else{
-           response = await http.get(
+          final response = await http.get(
             Uri.parse('${AppConstants.BASE_URL}/images${item.fullImagePath}'),
-          );}
+          );
 
           // Check if the request was successful
           if (response.statusCode == 200) {
