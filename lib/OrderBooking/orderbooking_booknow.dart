@@ -318,10 +318,11 @@ class _OrderPageState extends State<OrderPage> {
   }
 
   double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
-    if (constraints.maxWidth > 1000) return 0.75;
-    if (constraints.maxWidth > 600) return 0.7;
-    return 0.65;
+    if (constraints.maxWidth > 1000) return isLargeScreen ? 0.65 : 0.6;
+    if (constraints.maxWidth > 600) return isLargeScreen ? 0.6 : 0.55;
+    return 0.5; // More height for small screens to fit full image
   }
+  
 
   Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
     return ListView.builder(
@@ -346,12 +347,23 @@ class _OrderPageState extends State<OrderPage> {
                     Flexible(
                       flex: 2,
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          _getImageUrl(item),
-                          fit: BoxFit.cover,
-                          height: isLargeScreen ? 120 : 100,
-                          width: isLargeScreen ? 120 : 100,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(12),
+                          topRight: Radius.circular(12),
+                        ),
+                        child: AspectRatio(
+                          aspectRatio: 1, // Maintain square ratio
+                          child: Image.network(
+                            _getImageUrl(item),
+                            width: double.infinity,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey.shade300,
+                                child: const Center(child: Icon(Icons.error)),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -362,40 +374,73 @@ class _OrderPageState extends State<OrderPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            item.itemName,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: isLargeScreen ? 18 : 16,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: 4),
-                          _buildDetailText(
-                            'Style: ${item.styleCode}',
-                            isLargeScreen,
-                          ),
-                          _buildDetailText('MRP: ${item.mrp}', isLargeScreen),
-                          _buildDetailText('WSP: ${item.wsp}', isLargeScreen),
-                          _buildDetailText(
-                            'Shade: ${item.shadeName}',
-                            isLargeScreen,
-                          ),
-                          SizedBox(height: 8),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryColor,
-                                padding: EdgeInsets.symmetric(vertical: 8),
-                              ),
-                              onPressed: () => _showBookingDialog(context, item),
-                              child: Text(
-                                'BOOK NOW',
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.styleCode ,                               
                                 style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isLargeScreen ? 14 : 12,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: isLargeScreen ? 24 : 20,
+                                ),
+                              ),
+                            
+                              _buildDetailTextRow(
+                                'MRP',
+                                '${item.mrp.toStringAsFixed(2)}',
+                                'WSP',
+                                '${item.wsp.toStringAsFixed(2)}',
+                                isLargeScreen,
+                              ),
+                                _buildDetailText(
+                                'Sizes',
+                                item.sizeDetails,
+                                isLargeScreen,
+                              ),
+                              _buildDetailText(
+                                'Shade',
+                                item.shadeName,
+                                isLargeScreen,
+                              ),
+                            
+                            ],
+                          ),
+
+                          SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8.0,
+                              vertical: 6.0,
+                            ),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                style: ButtonStyle(
+                                  backgroundColor: MaterialStateProperty.all(
+                                    addedItems.contains(item.styleCode)
+                                        ? Colors.green
+                                        : AppColors.primaryColor,
+                                  ),
+                                  shape: MaterialStateProperty.all(
+                                    RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                                onPressed:
+                                    addedItems.contains(item.styleCode)
+                                        ? null
+                                        : () =>
+                                            _showBookingDialog(context, item),
+                                child: Text(
+                                  addedItems.contains(item.styleCode)
+                                      ? 'Added'
+                                      : 'BOOK NOW',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: isLargeScreen ? 10 : 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
@@ -435,11 +480,23 @@ class _OrderPageState extends State<OrderPage> {
                 AspectRatio(
                   aspectRatio: 5 / 9,
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      _getImageUrl(item),
-                      fit: BoxFit.cover,
-                      width: double.infinity,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      topRight: Radius.circular(12),
+                    ),
+                    child: AspectRatio(
+                      aspectRatio: 1, // Maintain square ratio
+                      child: Image.network(
+                        _getImageUrl(item),
+                        width: double.infinity,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey.shade300,
+                            child: const Center(child: Icon(Icons.error)),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
@@ -448,38 +505,71 @@ class _OrderPageState extends State<OrderPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        item.itemName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: isLargeScreen ? 24 : 20,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      _buildDetailText(
-                        'Style: ${item.styleCode}',
-                        isLargeScreen,
-                      ),
-                      _buildDetailText('MRP: ${item.mrp}', isLargeScreen),
-                      _buildDetailText('WSP: ${item.wsp}', isLargeScreen),
-                      _buildDetailText(
-                        'Shade: ${item.shadeName}',
-                        isLargeScreen,
-                      ),
-                      SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryColor,
-                            padding: EdgeInsets.symmetric(vertical: 8),
-                          ),
-                          onPressed: () => _showBookingDialog(context, item),
-                          child: Text(
-                            'BOOK NOW',
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.styleCode,
                             style: TextStyle(
-                              color: Colors.white,
-                              fontSize: isLargeScreen ? 14 : 12,
+                              fontWeight: FontWeight.bold,
+                              fontSize: isLargeScreen ? 24 : 20,
+                            ),
+                          ),
+                          _buildDetailTextRow(
+                            'MRP',
+                            '${item.mrp.toStringAsFixed(2)}',
+                            'WSP',
+                            '${item.wsp.toStringAsFixed(2)}',
+                            isLargeScreen,
+                          ),
+                            _buildDetailText(
+                            'Sizes',
+                            item.sizeDetails,
+                            isLargeScreen,
+                          ),
+                          _buildDetailText(
+                            'Shade',
+                            item.shadeName,
+                            isLargeScreen,
+                          ),
+                        
+                        ],
+                      ),
+
+                      SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8.0,
+                          vertical: 6.0,
+                        ),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ButtonStyle(
+                              backgroundColor: MaterialStateProperty.all(
+                                addedItems.contains(item.styleCode)
+                                    ? Colors.green
+                                    : AppColors.primaryColor,
+                              ),
+                              shape: MaterialStateProperty.all(
+                                RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                            onPressed:
+                                addedItems.contains(item.styleCode)
+                                    ? null
+                                    : () => _showBookingDialog(context, item),
+                            child: Text(
+                              addedItems.contains(item.styleCode)
+                                  ? 'Added'
+                                  : 'BOOK NOW',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: isLargeScreen ? 10 : 12,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -495,18 +585,99 @@ class _OrderPageState extends State<OrderPage> {
     );
   }
 
-  Widget _buildDetailText(String text, bool isLargeScreen) {
+
+ Widget _buildDetailTextRow(
+    String label1,
+    String value1,
+    String label2,
+    String value2,
+    bool isLargeScreen,
+  ) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: isLargeScreen ? 16 : 14,
-          color: Colors.grey[700],
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: '$label1: ',
+                style: TextStyle(
+                  fontSize: isLargeScreen ? 16 : 14,
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextSpan(
+                text: '$value1   ',
+                style: TextStyle(
+                  fontSize: isLargeScreen ? 16 : 14,
+                  color: AppColors.primaryColor,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
+              TextSpan(
+                text: '$label2: ',
+                style: TextStyle(
+                  fontSize: isLargeScreen ? 16 : 14,
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextSpan(
+                text: value2,
+                style: TextStyle(
+                  fontSize: isLargeScreen ? 16 : 14,
+                  color: AppColors.primaryColor,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  Widget _buildDetailText(
+    String label,
+    String value,
+    bool isLargeScreen, {
+    bool isValuePrimaryColor = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: '$label: ',
+                style: TextStyle(
+                  fontSize: isLargeScreen ? 16 : 14,
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextSpan(
+                text: value,
+                style: TextStyle(
+                  fontSize: isLargeScreen ? 16 : 14,
+                  color:
+                      isValuePrimaryColor
+                          ? AppColors.primaryColor
+                          : Colors.black,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
 
   void _openImageZoom(BuildContext context, Catalog item) {
     Navigator.push(
@@ -517,6 +688,7 @@ class _OrderPageState extends State<OrderPage> {
     );
   }
 
+  
   Widget _buildItemCard(
     Catalog item,
     bool isLargeScreen,
@@ -528,117 +700,202 @@ class _OrderPageState extends State<OrderPage> {
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         color: Colors.white,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Stack(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 68),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: constraints.maxHeight - 18,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image section
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+              child: AspectRatio(
+                aspectRatio: 1, // Maintain square ratio
+                child: Image.network(
+                  _getImageUrl(item),
+                  width: double.infinity,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.grey.shade300,
+                      child: const Center(child: Icon(Icons.error)),
+                    );
+                  },
+                ),
+              ),
+            ),
+
+            // Content section
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isLargeScreen ? 10 : 8,
+                  vertical: 6,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.styleCode,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: isLargeScreen ? 16 : 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ClipRRect(
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(12),
-                              topRight: Radius.circular(12),
-                            ),
-                            child: Image.network(
-                              _getImageUrl(item),
-                              height: 140,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  height: 140,
-                                  width: double.infinity,
-                                  color: Colors.grey.shade300,
-                                  child: const Center(child: Icon(Icons.error)),
-                                );
-                              },
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.all(isLargeScreen ? 10 : 8),
-                            child: Text(
-                              item.styleCode,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: isLargeScreen ? 16 : 14,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                            child: Text(
-                              item.itemName,
-                              style: TextStyle(
-                                fontSize: isLargeScreen ? 14 : 13,
-                                color: Colors.grey.shade700,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              'MRP ₹${item.mrp}  WSP ₹${item.wsp}',
+                    SizedBox(height: 6),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'MRP: ',
                               style: TextStyle(
                                 fontSize: isLargeScreen ? 13 : 12,
-                                color: AppColors.primaryColor,
-                                fontWeight: FontWeight.w500,
+                                color:
+                                    Colors.grey.shade700, // Label color (gray)
+                                fontWeight:
+                                    FontWeight.bold, // Bold for the label
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 3,
-                  left: 8,
-                  right: 8,
-                  child: ElevatedButton(
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(
-                        addedItems.contains(item.styleCode)
-                            ? Colors.green
-                            : AppColors.primaryColor,
-                      ),
-                      padding: MaterialStateProperty.all(EdgeInsets.zero),
-                      shape: MaterialStateProperty.all(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                            TextSpan(
+                              text: '${item.mrp.toStringAsFixed(2)}  ',
+                              style: TextStyle(
+                                fontSize: isLargeScreen ? 13 : 12,
+                                color: AppColors.primaryColor, // Value color
+                                fontWeight:
+                                    FontWeight
+                                        .normal, // Normal weight for values
+                              ),
+                            ),
+                            TextSpan(
+                              text: 'WSP: ',
+                              style: TextStyle(
+                                fontSize: isLargeScreen ? 13 : 12,
+                                color:
+                                    Colors.grey.shade700, // Label color (gray)
+                                fontWeight:
+                                    FontWeight.bold, // Bold for the label
+                              ),
+                            ),
+                            TextSpan(
+                              text: '${item.wsp.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: isLargeScreen ? 13 : 12,
+                                color: AppColors.primaryColor, // Value color
+                                fontWeight:
+                                    FontWeight
+                                        .normal, // Normal weight for values
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    onPressed: addedItems.contains(item.styleCode)
-                        ? null
-                        : () => _showBookingDialog(context, item),
-                    child: Text(
+
+                    SizedBox(height: 4),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'Sizes: ',
+                              style: TextStyle(
+                                fontSize: isLargeScreen ? 14 : 13,
+                                color:
+                                    Colors.grey.shade700, // Label color (gray)
+                                fontWeight:
+                                    FontWeight.bold, // Bold for the label
+                              ),
+                            ),
+                            TextSpan(
+                              text: item.sizeDetails,
+                              style: TextStyle(
+                                fontSize: isLargeScreen ? 14 : 13,
+                                color: Colors.black, // Value color (normal)
+                                fontWeight:
+                                    FontWeight
+                                        .normal, // Normal weight for values
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'Shade: ',
+                              style: TextStyle(
+                                fontSize: isLargeScreen ? 14 : 13,
+                                color:
+                                    Colors.grey.shade700, // Label color (gray)
+                                fontWeight:
+                                    FontWeight.bold, // Bold for the label
+                              ),
+                            ),
+                            TextSpan(
+                              text: item.shadeName,
+                              style: TextStyle(
+                                fontSize: isLargeScreen ? 14 : 13,
+                                color: Colors.black, // Value color (normal)
+                                fontWeight:
+                                    FontWeight
+                                        .normal, // Normal weight for values
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Button
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8.0,
+                vertical: 6.0,
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(
                       addedItems.contains(item.styleCode)
-                          ? 'Added'
-                          : 'BOOK NOW',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: isLargeScreen ? 10 : 12,
-                        fontWeight: FontWeight.bold,
+                          ? Colors.green
+                          : AppColors.primaryColor,
+                    ),
+                    shape: MaterialStateProperty.all(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
+                  onPressed:
+                      addedItems.contains(item.styleCode)
+                          ? null
+                          : () => _showBookingDialog(context, item),
+                  child: Text(
+                    addedItems.contains(item.styleCode) ? 'Added' : 'BOOK NOW',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: isLargeScreen ? 10 : 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-              ],
-            );
-          },
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -1,11 +1,14 @@
 import 'dart:convert';
-
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/models/salesman.dart';
+import 'package:vrs_erp_figma/services/app_services.dart';
+import 'package:vrs_erp_figma/models/consignee.dart';  // Ensure it's the correct file
 
 class AddMoreInfoDialog extends StatefulWidget {
+   final String? ledKey; 
   final String? pytTermDiscKey;
   final String? salesPersonKey;
   final int? creditPeriod;
@@ -15,6 +18,7 @@ class AddMoreInfoDialog extends StatefulWidget {
 
   const AddMoreInfoDialog({
     super.key,
+    this.ledKey, 
     this.pytTermDiscKey,
     this.salesPersonKey,
     this.creditPeriod,
@@ -29,7 +33,7 @@ class AddMoreInfoDialog extends StatefulWidget {
 
 class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
   late DateTime _baseDate;
-  String? selectedConsignee;
+Consignee? selectedConsignee;
   String? selectedPaymentTerms;
   String? selectedBookingType;
 
@@ -40,12 +44,10 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
 
   List<PytTermDisc> _paymentTerms = [];
   List<Salesman> _salesmen = [];
-  List<Consignee> _consignees = [];
-
+  
+   List<Consignee> consignees = []; 
   bool _isLoadingPaymentTerms = false;
   bool _isLoadingSalesmen = false;
-  bool _isLoadingConsignees = false;
-
   String? _selectedPytTermDiscKey;
   String? _selectedSalesmanKey;
   String? selectedSalesmanName;
@@ -58,19 +60,40 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
   @override
   void initState() {
     super.initState();
+     fetchAndMapConsignees(key: '0190', CoBrId: '01');
     _baseDate = DateTime.now();
-
     paymentDaysController.text = widget.creditPeriod?.toString() ?? '0';
     dateController.text = _formatDate(_baseDate);
-
     _loadPaymentTerms();
     _loadSalesmen();
-
     _updateDueDate();
-
     paymentDaysController.addListener(_updateDueDate);
     dueDateController.addListener(_updatePaymentDays);
+
   }
+
+void fetchAndMapConsignees({
+  required String key,
+  required String CoBrId,
+}) async {
+  try {
+    Map<String, dynamic> responseMap = await ApiService.fetchConsinees(
+      key: key,
+      CoBrId: CoBrId,
+    );
+
+    if (responseMap['statusCode'] == 200) {
+      setState(() {
+        consignees = (responseMap['result'] as List).cast<Consignee>();
+      });
+      print('Loaded ${consignees.length} consignees');
+    } else {
+      print('API Error: ${responseMap['statusCode']}');
+    }
+  } catch (e) {
+    print('Error fetching consignees: $e');
+  }
+}
 
   Future<void> _loadPaymentTerms() async {
     setState(() => _isLoadingPaymentTerms = true);
@@ -299,9 +322,14 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
   }
 
   void _saveFormData() {
+
     // Save the selected data here, this is just an example
     Map<String, dynamic> formData = {
-      'consignee': selectedConsignee,
+      'consignee': {
+      'key': selectedConsignee?.ledKey,
+      'name': selectedConsignee?.ledName,
+    
+    },
       'paymentterms': _selectedPytTermDiscKey,
       'bookingtype': selectedBookingType,
       'paymentdays': paymentDaysController.text,
@@ -311,7 +339,8 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
       'salesman': selectedSalesmanName,
       'station' :'',
     };
-
+ widget.onValueChanged(formData);
+  Navigator.pop(context, formData);
     _sendValueToParent(formData);
 
     print('Form Data: $formData');
@@ -331,9 +360,36 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
       'salesPersonKey': _selectedSalesmanKey,
       'dueDate': dueDateController.text,
       'referenceNo': referenceNoController.text,
+        'consignee': {
+      'key': selectedConsignee?.ledKey,
+      'name': selectedConsignee?.ledName,
+    },
       'bookingType': selectedBookingType,
     };
   }
+Widget _buildConsigneeDropdown() {
+  return DropdownSearch<Consignee>(
+    popupProps: PopupProps.menu(
+      showSearchBox: true,
+      itemBuilder: (context, item, isSelected) =>
+          ListTile(title: Text(item.ledName ?? '')),
+    ),
+    items: consignees,
+    itemAsString: (item) => item.ledName ?? '',
+    selectedItem: selectedConsignee,
+    onChanged: (value) {
+      setState(() {
+        selectedConsignee = value;
+      });
+    },
+    dropdownDecoratorProps: DropDownDecoratorProps(
+      dropdownSearchDecoration: InputDecoration(
+        labelText: 'Consignee',
+        border: OutlineInputBorder(),
+      ),
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -364,9 +420,7 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
                 ],
               ),
               const SizedBox(height: 8),
-              _buildDropdown("Consignee", selectedConsignee, [], (val) {
-                setState(() => selectedConsignee = val);
-              }),
+             _buildConsigneeDropdown(),
               const SizedBox(height: 12),
               _isLoadingPaymentTerms
                   ? CircularProgressIndicator()
@@ -481,16 +535,3 @@ class PytTermDisc {
   PytTermDisc({required this.key, required this.name});
 }
 
-class Salesman {
-  final String key;
-  final String name;
-
-  Salesman({required this.key, required this.name});
-}
-
-class Consignee {
-  final String ledKey;
-  final String ledName;
-
-  Consignee({required this.ledKey, required this.ledName});
-}
