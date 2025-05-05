@@ -26,7 +26,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     super.initState();
     _initializeData();
     _setInitialDates();
-    fetchAndMapConsignees(key: '0190', CoBrId: '01');
+    
     _styleManager.updateTotalsCallback = _updateTotals;
   }
   void fetchAndMapConsignees({
@@ -63,6 +63,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     _orderControllers.date.text = _OrderControllers.formatDate(today);
     _orderControllers.deliveryDate.text = _OrderControllers.formatDate(today);
     _orderControllers.deliveryDays.text = '0';
+  
   }
 
   Future<void> _initializeData() async {
@@ -150,39 +151,13 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
 
   Future<void> _saveOrderLocally() async {
     if (!_formKey.currentState!.validate()) return;
-
-    // Prepare order items
-   
-
-    // Prepare main order data
-    // Map<String, dynamic> orderData = {
-    //   "coBrId": "01",
-    //   "userId": "Admin",
-    //   "fcYrId": "24",
-    //   "orderNo": _orderControllers.orderNo.text,
-    //   "orderDt": _orderControllers.date.text,
-    //   "ledKey": _orderControllers.selectedPartyKey,
-    //   "brokerKey": _orderControllers.selectedBrokerKey,
-    //   "trspKey": _orderControllers.selectedTransporterKey,
-    //   "commPerc": _orderControllers.comm.text,
-    //   "delvDays": _orderControllers.deliveryDays.text,
-    //   "delvDt": _orderControllers.deliveryDate.text,
-    //   "totItem": _orderControllers.totalItem.text,
-    //   "totQty": _orderControllers.totalQty.text,
-    //   "remark": _orderControllers.remark.text,
-    //   "pytTermDiscKey": _additionalInfo['pytTermDiscKey'],
-    //   "salesPersonKey": _additionalInfo['salesPersonKey'],
-    //   "dueDt": _additionalInfo['dueDate'],
-    //   "refNo": _additionalInfo['referenceNo'],
-    //   "bookingType": _additionalInfo['bookingType'],
-    // };
     final orderData = {
       "saleorderno": _orderControllers.orderNo.text,
       "orderdate": _orderControllers.date.text,
       "customer": _orderControllers.selectedPartyKey,
       "broker":  _orderControllers.selectedBrokerKey,
       "comission": _orderControllers.comm.text,
-      // "transporter": "0196",
+      "transporter": _orderControllers.selectedTransporterKey,
       "delivaryday": _orderControllers.deliveryDays.text,
       "delivarydate": _orderControllers.deliveryDate.text,
       "totitem": _orderControllers.totalItem.text,
@@ -190,13 +165,14 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       "remark": _orderControllers.remark.text,
       // "consignee": "",
       // "station": "",
-      "paymentterms":_additionalInfo['pytTermDiscKey'],
-      // "paymentdays": "60",
+      // "paymentterms":_additionalInfo['pytTermDiscKey'],
+      "paymentterms":_orderControllers.pytTermDiscKey,
+      "paymentdays": _orderControllers.creditPeriod,
       // "duedate": "2025-05-03",
       "refno": _additionalInfo['referenceNo'],
       // "date": "",
       // "bookingtype": "",
-      // "salesman": "0198",
+      "salesman": _orderControllers.salesLedKey,
     };
 
     // Print to console
@@ -320,15 +296,23 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   }
 
   void _handlePartySelection(String? val, String? key) async {
-    if (key == null) return;
 
+    if (key == null) return;
+ _orderControllers.selectedPartyKey = key;
     try {
       final details = await _dropdownData.fetchLedgerDetails(key);
       _dropdownData.updateDependentFields(
         details,
         _orderControllers.selectedBrokerKey,
         _orderControllers.selectedTransporterKey,
+       
       );
+      _orderControllers.pytTermDiscKey = details['pytTermDiscKey'];
+      _orderControllers.salesPersonKey = details['salesPersonKey'];
+      _orderControllers.creditPeriod = details['creditPeriod'];
+      _orderControllers.selectedTransporterKey = details['trspKey'];
+
+      print(details);
 
       final commission = await _dropdownData.fetchCommissionPercentage(key);
       setState(() {
@@ -1166,7 +1150,7 @@ class _OrderForm extends StatelessWidget {
   }
 
  void updateValue(Map<String, dynamic> formData) {
-
+    
       print('Reference No: ${formData['referenceNo']}');
       print('Due Date: ${formData['dueDate']}');
 
