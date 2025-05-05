@@ -1334,9 +1334,17 @@ class _CatalogPageState extends State<CatalogPage> {
       if (mobileNo.isNotEmpty) {
         // Loop through selected items and send each one
         for (var item in selectedItems) {
-          final response = await http.get(
-            Uri.parse('${AppConstants.BASE_URL}/images${item.fullImagePath}'),
+          dynamic response ;
+          if(item.fullImagePath.contains('http://') || item.fullImagePath.contains('https://'))
+          {
+          response = await http.get(
+            Uri.parse(item.fullImagePath),
           );
+          }
+          else{
+           response = await http.get(
+            Uri.parse('${AppConstants.BASE_URL}/images${item.fullImagePath}'),
+          );}
 
           // Check if the request was successful
           if (response.statusCode == 200) {
