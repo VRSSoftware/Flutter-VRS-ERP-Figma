@@ -10,7 +10,6 @@ import 'package:vrs_erp_figma/models/catalog.dart';
 import 'package:vrs_erp_figma/models/shade.dart';
 import 'package:vrs_erp_figma/models/size.dart';
 import 'package:vrs_erp_figma/models/style.dart';
-
 import 'package:vrs_erp_figma/services/app_services.dart';
 import 'package:vrs_erp_figma/widget/booknowwidget.dart';
 
@@ -32,7 +31,6 @@ class _OrderPageState extends State<OrderPage> {
   String? itemSubGrpKey;
   String? coBr;
   String? fcYrId;
-  List<Catalog> selectedItems = [];
   String fromMRP = "";
   String toMRP = "";
   String WSPfrom = "";
@@ -59,7 +57,6 @@ class _OrderPageState extends State<OrderPage> {
           _fetchAddedItems(coBr!, fcYrId!);
         }
 
-        // Only fetch catalog items after setting the arguments
         if (itemSubGrpKey != null && itemKey != null && coBr != null) {
           _fetchCatalogItems();
         }
@@ -75,7 +72,7 @@ class _OrderPageState extends State<OrderPage> {
 
   Future<void> _fetchAddedItems(String coBrId, String userId) async {
     try {
-      final barcode = ''; // Replace with the actual barcode value if available
+      final barcode = '';
       final addedItemsList = await ApiService.fetchAddedItems(
         coBrId: coBrId,
         userId: userId,
@@ -83,23 +80,19 @@ class _OrderPageState extends State<OrderPage> {
         barcode: barcode,
       );
       setState(() {
-        addedItems = addedItemsList; // Store the fetched added items
+        addedItems = addedItemsList;
       });
-      print("abcddddddddddddddddddddd");
-      print(addedItems);
     } catch (e) {
       print('Failed to fetch added items: $e');
     }
   }
 
-  // Fetch Catalog Items
   Future<void> _fetchCatalogItems() async {
     try {
       setState(() {
         catalogItems = [];
         isLoading = true;
       });
-      // final items = await ApiService.fetchCatalogItem(
       final result = await ApiService.fetchCatalogItem(
         itemSubGrpKey: itemSubGrpKey!,
         itemKey: itemKey!,
@@ -180,7 +173,6 @@ class _OrderPageState extends State<OrderPage> {
     }
   }
 
-  // Fetch Styles by Item Key
   Future<void> _fetchStylesByItemKey(String itemKey) async {
     try {
       final fetchedStyles = await ApiService.fetchStylesByItemKey(itemKey);
@@ -203,7 +195,6 @@ class _OrderPageState extends State<OrderPage> {
     }
   }
 
-  // Fetch Style Sizes by Item Key
   Future<void> _fetchStylesSizeByItemKey(String itemKey) async {
     try {
       final fetchedSizes = await ApiService.fetchStylesSizeByItemKey(itemKey);
@@ -235,7 +226,6 @@ class _OrderPageState extends State<OrderPage> {
           },
         ),
         actions: [
-          // Cart icon
           IconButton(
             icon: const Icon(
               CupertinoIcons.cart_badge_plus,
@@ -245,8 +235,6 @@ class _OrderPageState extends State<OrderPage> {
               Navigator.pushNamed(context, '/viewOrder');
             },
           ),
-
-          // View option toggle icon
           IconButton(
             icon: Icon(
               viewOption == 0
@@ -264,7 +252,6 @@ class _OrderPageState extends State<OrderPage> {
           ),
         ],
       ),
-
       body: Column(
         children: [
           Expanded(
@@ -273,23 +260,24 @@ class _OrderPageState extends State<OrderPage> {
                 horizontal: isLargeScreen ? 16.0 : 8.0,
                 vertical: 8.0,
               ),
-              child:isLoading
-                      ? Center(child: CircularProgressIndicator()) : 
-                      catalogItems.isEmpty ? Center(child: Text("No Item Available"),) 
-                      : LayoutBuilder(
-                        builder: (context, constraints) {
-                          if (viewOption == 0) {
-                            return _buildGridView(
-                              constraints,
-                              isLargeScreen,
-                              isPortrait,
-                            );
-                          } else if (viewOption == 1) {
-                            return _buildListView(constraints, isLargeScreen);
-                          }
-                          return _buildExpandedView(isLargeScreen);
-                        },
-                      ),
+              child: isLoading
+                  ? Center(child: CircularProgressIndicator()) 
+                  : catalogItems.isEmpty 
+                  ? Center(child: Text("No Item Available")) 
+                  : LayoutBuilder(
+                    builder: (context, constraints) {
+                      if (viewOption == 0) {
+                        return _buildGridView(
+                          constraints,
+                          isLargeScreen,
+                          isPortrait,
+                        );
+                      } else if (viewOption == 1) {
+                        return _buildListView(constraints, isLargeScreen);
+                      }
+                      return _buildExpandedView(isLargeScreen);
+                    },
+                  ),
             ),
           ),
           _buildBottomButtons(isLargeScreen),
@@ -303,7 +291,6 @@ class _OrderPageState extends State<OrderPage> {
     bool isLargeScreen,
     bool isPortrait,
   ) {
-    final filteredItems = _getFilteredItems();
     final crossAxisCount =
         isPortrait
             ? (isLargeScreen ? 3 : 2)
@@ -313,7 +300,7 @@ class _OrderPageState extends State<OrderPage> {
       padding: const EdgeInsets.all(8.0),
       shrinkWrap: true,
       physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: filteredItems.length,
+      itemCount: catalogItems.length,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
         crossAxisSpacing: isLargeScreen ? 14.0 : 8.0,
@@ -321,10 +308,9 @@ class _OrderPageState extends State<OrderPage> {
         childAspectRatio: _getChildAspectRatio(constraints, isLargeScreen),
       ),
       itemBuilder: (context, index) {
-        final item = filteredItems[index];
-
+        final item = catalogItems[index];
         return GestureDetector(
-          onDoubleTap: () => _openImageZoom(context, item),
+          onTap: () => _openImageZoom(context, item),
           child: _buildItemCard(item, isLargeScreen, addedItems),
         );
       },
@@ -338,25 +324,20 @@ class _OrderPageState extends State<OrderPage> {
   }
 
   Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
-    final filteredItems = _getFilteredItems();
     return ListView.builder(
-      itemCount: filteredItems.length,
+      itemCount: catalogItems.length,
       itemBuilder: (context, index) {
-        final item = filteredItems[index];
-        bool isSelected = selectedItems.contains(item);
-
+        final item = catalogItems[index];
         return GestureDetector(
-          onTap: () => _toggleItemSelection(item),
-          onLongPress: () => _enableMultiSelect(item),
-          onDoubleTap: () => _openImageZoom(context, item),
+          onTap: () => _openImageZoom(context, item),
           child: Container(
             margin: EdgeInsets.symmetric(vertical: 8),
             child: Card(
-              elevation: isSelected ? 8 : 4,
+              elevation: 4,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              color: isSelected ? Colors.blue.shade50 : Colors.white,
+              color: Colors.white,
               child: Padding(
                 padding: EdgeInsets.all(isLargeScreen ? 12.0 : 8.0),
                 child: Row(
@@ -409,8 +390,7 @@ class _OrderPageState extends State<OrderPage> {
                                 backgroundColor: AppColors.primaryColor,
                                 padding: EdgeInsets.symmetric(vertical: 8),
                               ),
-                              onPressed:
-                                  () => _showBookingDialog(context, item),
+                              onPressed: () => _showBookingDialog(context, item),
                               child: Text(
                                 'BOOK NOW',
                                 style: TextStyle(
@@ -434,19 +414,14 @@ class _OrderPageState extends State<OrderPage> {
   }
 
   Widget _buildExpandedView(bool isLargeScreen) {
-    final filteredItems = _getFilteredItems();
     return ListView.builder(
-      itemCount: filteredItems.length,
+      itemCount: catalogItems.length,
       itemBuilder: (context, index) {
-        final item = filteredItems[index];
-        bool isSelected = selectedItems.contains(item);
-
+        final item = catalogItems[index];
         return GestureDetector(
-          onTap: () => _toggleItemSelection(item),
-          onLongPress: () => _enableMultiSelect(item),
-          onDoubleTap: () => _openImageZoom(context, item),
+          onTap: () => _openImageZoom(context, item),
           child: Card(
-            elevation: isSelected ? 8 : 4,
+            elevation: 4,
             margin: EdgeInsets.symmetric(
               vertical: 8,
               horizontal: isLargeScreen ? 16 : 8,
@@ -454,88 +429,64 @@ class _OrderPageState extends State<OrderPage> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            color: isSelected ? Colors.blue.shade50 : Colors.white,
-            child: Stack(
+            color: Colors.white,
+            child: Column(
               children: [
-                Column(
-                  children: [
-                    AspectRatio(
-                      aspectRatio: 5 / 9,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          _getImageUrl(item),
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.itemName,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: isLargeScreen ? 24 : 20,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          _buildDetailText(
-                            'Style: ${item.styleCode}',
-                            isLargeScreen,
-                          ),
-                          _buildDetailText('MRP: ${item.mrp}', isLargeScreen),
-                          _buildDetailText('WSP: ${item.wsp}', isLargeScreen),
-                          _buildDetailText(
-                            'Shade: ${item.shadeName}',
-                            isLargeScreen,
-                          ),
-                          SizedBox(height: 12),
-
-                          // 👇 BOOK NOW Button
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryColor,
-                                padding: EdgeInsets.symmetric(vertical: 8),
-                              ),
-                              onPressed:
-                                  () => _showBookingDialog(context, item),
-                              child: Text(
-                                'BOOK NOW',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isLargeScreen ? 14 : 12,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                if (isSelected)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.check_circle,
-                        color: AppColors.primaryColor,
-                        size: 24,
-                      ),
+                AspectRatio(
+                  aspectRatio: 5 / 9,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      _getImageUrl(item),
+                      fit: BoxFit.cover,
+                      width: double.infinity,
                     ),
                   ),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.itemName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: isLargeScreen ? 24 : 20,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      _buildDetailText(
+                        'Style: ${item.styleCode}',
+                        isLargeScreen,
+                      ),
+                      _buildDetailText('MRP: ${item.mrp}', isLargeScreen),
+                      _buildDetailText('WSP: ${item.wsp}', isLargeScreen),
+                      _buildDetailText(
+                        'Shade: ${item.shadeName}',
+                        isLargeScreen,
+                      ),
+                      SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryColor,
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                          ),
+                          onPressed: () => _showBookingDialog(context, item),
+                          child: Text(
+                            'BOOK NOW',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: isLargeScreen ? 14 : 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -571,30 +522,23 @@ class _OrderPageState extends State<OrderPage> {
     bool isLargeScreen,
     List<String> addedItems,
   ) {
-    bool isSelected = selectedItems.contains(item);
-
     return GestureDetector(
-      onTap: () => _toggleItemSelection(item),
-      onLongPress: () => _enableMultiSelect(item),
       onDoubleTap: () => _openImageZoom(context, item),
       child: Card(
-        elevation: isSelected ? 8 : 4,
+        elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        color: isSelected ? Colors.blue.shade50 : Colors.white,
+        color: Colors.white,
         child: LayoutBuilder(
           builder: (context, constraints) {
             return Stack(
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(
-                    bottom: 68,
-                  ), // Added space for the button
+                  padding: const EdgeInsets.only(bottom: 68),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
-                      maxHeight: constraints.maxHeight - 18, // Avoid overflow
+                      maxHeight: constraints.maxHeight - 18,
                     ),
                     child: SingleChildScrollView(
-                      // Wrap Column in SingleChildScrollView for scrolling
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
@@ -632,9 +576,7 @@ class _OrderPageState extends State<OrderPage> {
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8.0,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
                             child: Text(
                               item.itemName,
                               style: TextStyle(
@@ -661,23 +603,6 @@ class _OrderPageState extends State<OrderPage> {
                     ),
                   ),
                 ),
-                if (isSelected)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.check_circle,
-                        color: AppColors.primaryColor,
-                        size: 24,
-                      ),
-                    ),
-                  ),
                 Positioned(
                   bottom: 3,
                   left: 8,
@@ -696,10 +621,9 @@ class _OrderPageState extends State<OrderPage> {
                         ),
                       ),
                     ),
-                    onPressed:
-                        addedItems.contains(item.styleCode)
-                            ? null
-                            : () => _showBookingDialog(context, item),
+                    onPressed: addedItems.contains(item.styleCode)
+                        ? null
+                        : () => _showBookingDialog(context, item),
                     child: Text(
                       addedItems.contains(item.styleCode)
                           ? 'Added'
@@ -728,15 +652,14 @@ class _OrderPageState extends State<OrderPage> {
           vertical: 12,
         ),
         color: Colors.white,
-        child:
-            isLargeScreen
-                ? Row(children: _buildButtonChildren(isLargeScreen))
-                : Wrap(
-                  alignment: WrapAlignment.spaceEvenly,
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _buildButtonChildren(isLargeScreen),
-                ),
+        child: isLargeScreen
+            ? Row(children: _buildButtonChildren(isLargeScreen))
+            : Wrap(
+                alignment: WrapAlignment.spaceEvenly,
+                spacing: 8,
+                runSpacing: 8,
+                children: _buildButtonChildren(isLargeScreen),
+              ),
       ),
     );
   }
@@ -773,19 +696,6 @@ class _OrderPageState extends State<OrderPage> {
     ];
   }
 
-  List<Catalog> _getFilteredItems() {
-    var filteredItems = catalogItems;
-
-    if (selectedStyles.isNotEmpty) {
-      filteredItems =
-          filteredItems
-              .where((item) => selectedStyles.contains(item.styleCode))
-              .toList();
-    }
-
-    return filteredItems;
-  }
-
   String _getImageUrl(Catalog catalog) {
     if (catalog.fullImagePath.startsWith('http')) {
       return catalog.fullImagePath;
@@ -820,10 +730,7 @@ class _OrderPageState extends State<OrderPage> {
           final end = Offset.zero;
           final curve = Curves.easeInOut;
 
-          var tween = Tween(
-            begin: begin,
-            end: end,
-          ).chain(CurveTween(curve: curve));
+          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
           var offsetAnimation = animation.drive(tween);
 
           return SlideTransition(position: offsetAnimation, child: child);
@@ -846,108 +753,89 @@ class _OrderPageState extends State<OrderPage> {
     }
   }
 
-  Future<File> _overlayTextOnImage(File imageFile, String fullText) async {
-    final image = await decodeImageFromList(imageFile.readAsBytesSync());
+  // Future<File> _overlayTextOnImage(File imageFile, String fullText) async {
+  //   final image = await decodeImageFromList(imageFile.readAsBytesSync());
 
-    List<String> selectedTexts = [];
-    selectedTexts.add("Product Details:");
-    selectedTexts.add("${fullText}");
+  //   List<String> selectedTexts = [];
+  //   selectedTexts.add("Product Details:");
+  //   selectedTexts.add("${fullText}");
 
-    double textAreaHeight = 0.0;
-    const padding = 10.0;
-    const lineHeight = 30.0;
+  //   double textAreaHeight = 0.0;
+  //   const padding = 10.0;
+  //   const lineHeight = 30.0;
 
-    List<TextPainter> textPainters = [];
-    const textStyle = TextStyle(
-      color: Colors.white,
-      fontSize: 16,
-      fontWeight: FontWeight.bold,
-    );
+  //   List<TextPainter> textPainters = [];
+  //   const textStyle = TextStyle(
+  //     color: Colors.white,
+  //     fontSize: 16,
+  //     fontWeight: FontWeight.bold,
+  //   );
 
-    for (String text in selectedTexts) {
-      final textPainter = TextPainter(
-        text: TextSpan(text: text, style: textStyle),
-        textDirection: TextDirection.ltr,
-        maxLines: null,
-      );
-      textPainter.layout(minWidth: 0, maxWidth: image.width - 2 * padding);
-      textPainters.add(textPainter);
-      textAreaHeight += textPainter.height + lineHeight;
-    }
+  //   for (String text in selectedTexts) {
+  //     final textPainter = TextPainter(
+  //       text: TextSpan(text: text, style: textStyle),
+  //       textDirection: TextDirection.ltr,
+  //       maxLines: null,
+  //     );
+  //     textPainter.layout(minWidth: 0, maxWidth: image.width - 2 * padding);
+  //     textPainters.add(textPainter);
+  //     textAreaHeight += textPainter.height + lineHeight;
+  //   }
 
-    double totalHeight = image.height.toDouble() + textAreaHeight;
+  //   double totalHeight = image.height.toDouble() + textAreaHeight;
 
-    final pictureRecorder = PictureRecorder();
-    final canvas = Canvas(
-      pictureRecorder,
-      Rect.fromPoints(
-        Offset(0, 0),
-        Offset(image.width.toDouble(), totalHeight),
-      ),
-    );
+  //   final pictureRecorder = PictureRecorder();
+  //   final canvas = Canvas(
+  //     pictureRecorder,
+  //     Rect.fromPoints(
+  //       Offset(0, 0),
+  //       Offset(image.width.toDouble(), totalHeight),
+  //     ),
+  //   );
 
-    canvas.drawImage(image, Offset(0, 0), Paint());
+  //   canvas.drawImage(image, Offset(0, 0), Paint());
 
-    final textBackgroundPaint = Paint()..color = Colors.black.withValues();
+  //   final textBackgroundPaint = Paint()..color = Colors.black.withValues();
 
-    double yPos = image.height + padding;
-    for (int i = 0; i < textPainters.length; i++) {
-      final textPainter = textPainters[i];
+  //   double yPos = image.height + padding;
+  //   for (int i = 0; i < textPainters.length; i++) {
+  //     final textPainter = textPainters[i];
 
-      final rect = Rect.fromLTWH(
-        padding,
-        yPos,
-        textPainter.width + padding,
-        textPainter.height + padding,
-      );
-      canvas.drawRect(rect, textBackgroundPaint);
+  //     final rect = Rect.fromLTWH(
+  //       padding,
+  //       yPos,
+  //       textPainter.width + padding,
+  //       textPainter.height + padding,
+  //     );
+  //     canvas.drawRect(rect, textBackgroundPaint);
 
-      textPainter.paint(canvas, Offset(padding + 5, yPos + 5));
-      yPos += textPainter.height + lineHeight;
-    }
+  //     textPainter.paint(canvas, Offset(padding + 5, yPos + 5));
+  //     yPos += textPainter.height + lineHeight;
+  //   }
 
-    final picture = pictureRecorder.endRecording();
-    final img = await picture.toImage(image.width, totalHeight.toInt());
-    final byteData = await img.toByteData(format: ImageByteFormat.png);
-    final buffer = byteData!.buffer.asUint8List();
-    final outputFile = File(
-      '${(await getTemporaryDirectory()).path}/image_with_text_below.png',
-    );
-    await outputFile.writeAsBytes(buffer);
+  //   final picture = pictureRecorder.endRecording();
+  //   final img = await picture.toImage(image.width, totalHeight.toInt());
+  //   final byteData = await img.toByteData(format: ImageByteFormat.png);
+  //   final buffer = byteData!.buffer.asUint8List();
+  //   final outputFile = File(
+  //     '${(await getTemporaryDirectory()).path}/image_with_text_below.png',
+  //   );
+  //   await outputFile.writeAsBytes(buffer);
 
-    return outputFile;
-  }
-
-  void _toggleItemSelection(Catalog item) {
-    setState(() {
-      if (selectedItems.contains(item)) {
-        selectedItems.remove(item);
-      } else {
-        selectedItems.add(item);
-      }
-    });
-  }
-
-  void _enableMultiSelect(Catalog item) {
-    setState(() {
-      if (!selectedItems.contains(item)) {
-        selectedItems.add(item);
-      }
-    });
-  }
+  //   return outputFile;
+  // }
 
   void _showBookingDialog(BuildContext context, Catalog item) {
     showDialog(
       context: context,
-      builder:
-          (context) => Dialog(
-            insetPadding: EdgeInsets.all(16),
-            child: CatalogBookingTable(
-              itemSubGrpKey: item.itemSubGrpKey.toString() ?? '',
-              itemKey: item.itemKey.toString() ?? '',
-              styleKey: item.styleKey.toString() ?? '',
-            ),
-          ),
+      builder: (context) => Dialog(
+        insetPadding: EdgeInsets.all(16),
+        child: CatalogBookingTable(
+          itemSubGrpKey: item.itemSubGrpKey.toString() ?? '',
+          itemKey: item.itemKey.toString() ?? '',
+          styleKey: item.styleKey.toString() ?? '',
+        ),
+      ),
     );
   }
 }
