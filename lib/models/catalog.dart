@@ -18,7 +18,10 @@ class Catalog {
   final String fullImagePath;
   final String remark;
   final String imageId;
-  final String sizeDetails; // ✅ New field added
+  final String sizeDetails; 
+  final String sizeDetailsWithoutWSp;
+  final String sizeWithMrp;
+
 
   Catalog({
     required this.itemSubGrpKey,
@@ -41,6 +44,8 @@ class Catalog {
     required this.remark,
     required this.imageId,
     this.sizeDetails = '', // ✅ Optional default value
+    this.sizeDetailsWithoutWSp = '',
+    this.sizeWithMrp = '',
   });
 
   factory Catalog.fromJson(Map<String, dynamic> json) {
@@ -65,6 +70,8 @@ class Catalog {
       remark: json['remark'] ?? '',
       imageId: json['imageId'] ?? '',
       sizeDetails: json['sizeDetails'] ?? '', // ✅ Include in deserialization
+      sizeDetailsWithoutWSp: json['sizeDetailsWithoutWSp'] ?? '',
+      sizeWithMrp: json['sizeWithMrp'] ?? '',
     );
   }
 
@@ -90,6 +97,8 @@ class Catalog {
       'remark': remark,
       'imageId': imageId,
       'sizeDetails': sizeDetails, // ✅ Include in serialization
+      'sizeDetailsWithoutWSp' : sizeDetailsWithoutWSp,
+      'sizeWithMrp' : sizeWithMrp,
     };
   }
 }
