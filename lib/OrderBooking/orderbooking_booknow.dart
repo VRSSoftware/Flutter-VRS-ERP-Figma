@@ -322,7 +322,7 @@ class _OrderPageState extends State<OrderPage> {
   double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
     if (constraints.maxWidth > 1000) return isLargeScreen ? 0.65 : 0.6;
     if (constraints.maxWidth > 600) return isLargeScreen ? 0.6 : 0.55;
-    return 0.5; // More height for small screens to fit full image
+    return 0.6; // More height for small screens to fit full image
   }
   
 
@@ -519,23 +519,23 @@ class _OrderPageState extends State<OrderPage> {
                               fontSize: isLargeScreen ? 24 : 20,
                             ),
                           ),
-                          _buildDetailTextRow(
-                            'MRP',
-                            '${item.mrp.toStringAsFixed(2)}',
-                            'WSP',
-                            '${item.wsp.toStringAsFixed(2)}',
-                            isLargeScreen,
-                          ),
-                            _buildDetailText(
-                            'Sizes',
-                            item.sizeDetails,
-                            isLargeScreen,
-                          ),
-                          _buildDetailText(
-                            'Shade',
-                            item.shadeName,
-                            isLargeScreen,
-                          ),
+                          // _buildDetailTextRow(
+                          //   'MRP',
+                          //   '${item.mrp.toStringAsFixed(2)}',
+                          //   'WSP',
+                          //   '${item.wsp.toStringAsFixed(2)}',
+                          //   isLargeScreen,
+                          // ),
+                          //   _buildDetailText(
+                          //   'Sizes',
+                          //   item.sizeDetails,
+                          //   isLargeScreen,
+                          // ),
+                          // _buildDetailText(
+                          //   'Shade',
+                          //   item.shadeName,
+                          //   isLargeScreen,
+                          // ),
                         
                         ],
                       ),
@@ -707,27 +707,30 @@ class _OrderPageState extends State<OrderPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image section
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-              child: AspectRatio(
-                aspectRatio: 1, // Maintain square ratio
-                child: Image.network(
-                  _getImageUrl(item),
-                  width: double.infinity,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey.shade300,
-                      child: const Center(child: Icon(Icons.error)),
-                    );
-                  },
-                ),
-              ),
-            ),
+       ClipRRect(
+  borderRadius: const BorderRadius.only(
+    topLeft: Radius.circular(12),
+    topRight: Radius.circular(12),
+  ),
+  child: Container(
+    height: 200,  // Set the desired height for the image
+    child: AspectRatio(
+      aspectRatio: 1, // Maintain square ratio
+      child: Image.network(
+        _getImageUrl(item),
+        width: double.infinity,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            color: Colors.grey.shade300,
+            child: const Center(child: Icon(Icons.error)),
+          );
+        },
+      ),
+    ),
+  ),
+),
+
 
             // Content section
             Expanded(
@@ -739,127 +742,127 @@ class _OrderPageState extends State<OrderPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      item.styleCode,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryColor,
-                        fontSize: isLargeScreen ? 20 : 18,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 10),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'MRP: ',
-                              style: TextStyle(
-                                fontSize: isLargeScreen ? 13 : 12,
-                                color:
-                                    Colors.grey.shade700, // Label color (gray)
-                                fontWeight:
-                                    FontWeight.bold, // Bold for the label
-                              ),
-                            ),
-                            TextSpan(
-                              text: '${item.mrp.toStringAsFixed(2)}  ',
-                              style: TextStyle(
-                                fontSize: isLargeScreen ? 13 : 12,
-                                color: Colors.grey.shade700, // Value color
-                                fontWeight:
-                                    FontWeight
-                                        .normal, // Normal weight for values
-                              ),
-                            ),
-                            TextSpan(
-                              text: 'WSP: ',
-                              style: TextStyle(
-                                fontSize: isLargeScreen ? 13 : 12,
-                                color:
-                                    Colors.grey.shade700, // Label color (gray)
-                                fontWeight:
-                                    FontWeight.bold, // Bold for the label
-                              ),
-                            ),
-                            TextSpan(
-                              text: '${item.wsp.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontSize: isLargeScreen ? 13 : 12,
-                                color: Colors.grey.shade700, // Value color
-                                fontWeight:
-                                    FontWeight
-                                        .normal, // Normal weight for values
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    // Text(
+                    //   item.styleCode,
+                    //   style: TextStyle(
+                    //     fontWeight: FontWeight.bold,
+                    //     color: AppColors.primaryColor,
+                    //     fontSize: isLargeScreen ? 20 : 18,
+                    //   ),
+                    //   maxLines: 1,
+                    //   overflow: TextOverflow.ellipsis,
+                    // ),
+                    // SizedBox(height: 10),
+                    // SingleChildScrollView(
+                    //   scrollDirection: Axis.horizontal,
+                    //   child: Text.rich(
+                    //     TextSpan(
+                    //       children: [
+                    //         TextSpan(
+                    //           text: 'MRP: ',
+                    //           style: TextStyle(
+                    //             fontSize: isLargeScreen ? 13 : 12,
+                    //             color:
+                    //                 Colors.grey.shade700, // Label color (gray)
+                    //             fontWeight:
+                    //                 FontWeight.bold, // Bold for the label
+                    //           ),
+                    //         ),
+                    //         TextSpan(
+                    //           text: '${item.mrp.toStringAsFixed(2)}  ',
+                    //           style: TextStyle(
+                    //             fontSize: isLargeScreen ? 13 : 12,
+                    //             color: Colors.grey.shade700, // Value color
+                    //             fontWeight:
+                    //                 FontWeight
+                    //                     .normal, // Normal weight for values
+                    //           ),
+                    //         ),
+                    //         TextSpan(
+                    //           text: 'WSP: ',
+                    //           style: TextStyle(
+                    //             fontSize: isLargeScreen ? 13 : 12,
+                    //             color:
+                    //                 Colors.grey.shade700, // Label color (gray)
+                    //             fontWeight:
+                    //                 FontWeight.bold, // Bold for the label
+                    //           ),
+                    //         ),
+                    //         TextSpan(
+                    //           text: '${item.wsp.toStringAsFixed(2)}',
+                    //           style: TextStyle(
+                    //             fontSize: isLargeScreen ? 13 : 12,
+                    //             color: Colors.grey.shade700, // Value color
+                    //             fontWeight:
+                    //                 FontWeight
+                    //                     .normal, // Normal weight for values
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
+                    // ),
 
-                    SizedBox(height: 4),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Sizes: ',
-                              style: TextStyle(
-                                fontSize: isLargeScreen ? 14 : 13,
-                                color:
-                                    Colors.grey.shade700, // Label color (gray)
-                                fontWeight:
-                                    FontWeight.bold, // Bold for the label
-                              ),
-                            ),
-                            TextSpan(
-                              text: item.sizeDetails,
-                              style: TextStyle(
-                                fontSize: isLargeScreen ? 14 : 13,
-                                color: Colors.black, // Value color (normal)
-                                fontWeight:
-                                    FontWeight
-                                        .normal, // Normal weight for values
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Shade: ',
-                              style: TextStyle(
-                                fontSize: isLargeScreen ? 14 : 13,
-                                color:
-                                    Colors.grey.shade700, // Label color (gray)
-                                fontWeight:
-                                    FontWeight.bold, // Bold for the label
-                              ),
-                            ),
-                            TextSpan(
-                              text: item.shadeName,
-                              style: TextStyle(
-                                fontSize: isLargeScreen ? 14 : 13,
-                                color: Colors.black, // Value color (normal)
-                                fontWeight:
-                                    FontWeight
-                                        .normal, // Normal weight for values
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    // SizedBox(height: 4),
+                    // SingleChildScrollView(
+                    //   scrollDirection: Axis.horizontal,
+                    //   child: Text.rich(
+                    //     TextSpan(
+                    //       children: [
+                    //         TextSpan(
+                    //           text: 'Sizes: ',
+                    //           style: TextStyle(
+                    //             fontSize: isLargeScreen ? 14 : 13,
+                    //             color:
+                    //                 Colors.grey.shade700, // Label color (gray)
+                    //             fontWeight:
+                    //                 FontWeight.bold, // Bold for the label
+                    //           ),
+                    //         ),
+                    //         TextSpan(
+                    //           text: item.sizeDetails,
+                    //           style: TextStyle(
+                    //             fontSize: isLargeScreen ? 14 : 13,
+                    //             color: Colors.black, // Value color (normal)
+                    //             fontWeight:
+                    //                 FontWeight
+                    //                     .normal, // Normal weight for values
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
+                    // ),
+                    // SizedBox(height: 4),
+                    // SingleChildScrollView(
+                    //   scrollDirection: Axis.horizontal,
+                    //   child: Text.rich(
+                    //     TextSpan(
+                    //       children: [
+                    //         TextSpan(
+                    //           text: 'Shade: ',
+                    //           style: TextStyle(
+                    //             fontSize: isLargeScreen ? 14 : 13,
+                    //             color:
+                    //                 Colors.grey.shade700, // Label color (gray)
+                    //             fontWeight:
+                    //                 FontWeight.bold, // Bold for the label
+                    //           ),
+                    //         ),
+                    //         TextSpan(
+                    //           text: item.shadeName,
+                    //           style: TextStyle(
+                    //             fontSize: isLargeScreen ? 14 : 13,
+                    //             color: Colors.black, // Value color (normal)
+                    //             fontWeight:
+                    //                 FontWeight
+                    //                     .normal, // Normal weight for values
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
