@@ -5,10 +5,10 @@ import 'package:http/http.dart' as http;
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/salesman.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
-import 'package:vrs_erp_figma/models/consignee.dart';  // Ensure it's the correct file
+import 'package:vrs_erp_figma/models/consignee.dart'; // Ensure it's the correct file
 
 class AddMoreInfoDialog extends StatefulWidget {
-   final String? ledKey; 
+  final String? ledKey;
   final String? pytTermDiscKey;
   final String? salesPersonKey;
   final int? creditPeriod;
@@ -18,7 +18,7 @@ class AddMoreInfoDialog extends StatefulWidget {
 
   const AddMoreInfoDialog({
     super.key,
-    this.ledKey, 
+    this.ledKey,
     this.pytTermDiscKey,
     this.salesPersonKey,
     this.creditPeriod,
@@ -33,7 +33,7 @@ class AddMoreInfoDialog extends StatefulWidget {
 
 class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
   late DateTime _baseDate;
-Consignee? selectedConsignee;
+  Consignee? selectedConsignee;
   String? selectedPaymentTerms;
   String? selectedBookingType;
 
@@ -44,23 +44,24 @@ Consignee? selectedConsignee;
 
   List<PytTermDisc> _paymentTerms = [];
   List<Salesman> _salesmen = [];
-  
-   List<Consignee> consignees = []; 
+  List<Consignee> consignees = [];
   bool _isLoadingPaymentTerms = false;
   bool _isLoadingSalesmen = false;
   String? _selectedPytTermDiscKey;
   String? _selectedSalesmanKey;
   String? selectedSalesmanName;
+  List<Map<String, dynamic>> _bookingTypes = [];
+  bool _isLoadingBookingTypes = false;
 
   void _sendValueToParent(Map<String, dynamic> formData) {
-    // widget.onValueChanged(formData['referenceNo'] , formData['dueDate']); 
-    widget.onValueChanged(formData); 
+    // widget.onValueChanged(formData['referenceNo'] , formData['dueDate']);
+    widget.onValueChanged(formData);
   }
 
   @override
   void initState() {
     super.initState();
-     fetchAndMapConsignees(key: '0190', CoBrId: '01');
+    fetchAndMapConsignees(key: '0190', CoBrId: '01');
     _baseDate = DateTime.now();
     paymentDaysController.text = widget.creditPeriod?.toString() ?? '0';
     dateController.text = _formatDate(_baseDate);
@@ -69,31 +70,45 @@ Consignee? selectedConsignee;
     _updateDueDate();
     paymentDaysController.addListener(_updateDueDate);
     dueDateController.addListener(_updatePaymentDays);
-
+    _loadBookingTypes();
   }
 
-void fetchAndMapConsignees({
-  required String key,
-  required String CoBrId,
-}) async {
-  try {
-    Map<String, dynamic> responseMap = await ApiService.fetchConsinees(
-      key: key,
-      CoBrId: CoBrId,
-    );
+  void fetchAndMapConsignees({
+    required String key,
+    required String CoBrId,
+  }) async {
+    try {
+      Map<String, dynamic> responseMap = await ApiService.fetchConsinees(
+        key: key,
+        CoBrId: CoBrId,
+      );
 
-    if (responseMap['statusCode'] == 200) {
-      setState(() {
-        consignees = (responseMap['result'] as List).cast<Consignee>();
-      });
-      print('Loaded ${consignees.length} consignees');
-    } else {
-      print('API Error: ${responseMap['statusCode']}');
+      if (responseMap['statusCode'] == 200) {
+        setState(() {
+          consignees = (responseMap['result'] as List).cast<Consignee>();
+        });
+        print('Loaded ${consignees.length} consignees');
+      } else {
+        print('API Error: ${responseMap['statusCode']}');
+      }
+    } catch (e) {
+      print('Error fetching consignees: $e');
     }
-  } catch (e) {
-    print('Error fetching consignees: $e');
   }
-}
+
+  Future<void> _loadBookingTypes() async {
+    setState(() => _isLoadingBookingTypes = true);
+    try {
+      final data = await ApiService.fetchBookingTypes(coBrId: '01');
+      setState(() {
+        _bookingTypes = data;
+      });
+    } catch (e) {
+      print('Failed to load booking types: $e');
+    } finally {
+      setState(() => _isLoadingBookingTypes = false);
+    }
+  }
 
   Future<void> _loadPaymentTerms() async {
     setState(() => _isLoadingPaymentTerms = true);
@@ -322,14 +337,12 @@ void fetchAndMapConsignees({
   }
 
   void _saveFormData() {
-
     // Save the selected data here, this is just an example
     Map<String, dynamic> formData = {
       'consignee': {
-      'key': selectedConsignee?.ledKey,
-      'name': selectedConsignee?.ledName,
-    
-    },
+        'key': selectedConsignee?.ledKey,
+        'name': selectedConsignee?.ledName,
+      },
       'paymentterms': _selectedPytTermDiscKey,
       'bookingtype': selectedBookingType,
       'paymentdays': paymentDaysController.text,
@@ -337,10 +350,10 @@ void fetchAndMapConsignees({
       'refno': referenceNoController.text,
       'date': dateController.text,
       'salesman': selectedSalesmanName,
-      'station' :'',
+      'station': '',
     };
- widget.onValueChanged(formData);
-  Navigator.pop(context, formData);
+    widget.onValueChanged(formData);
+    Navigator.pop(context, formData);
     _sendValueToParent(formData);
 
     print('Form Data: $formData');
@@ -360,31 +373,61 @@ void fetchAndMapConsignees({
       'salesPersonKey': _selectedSalesmanKey,
       'dueDate': dueDateController.text,
       'referenceNo': referenceNoController.text,
-        'consignee': {
-      'key': selectedConsignee?.ledKey,
-      'name': selectedConsignee?.ledName,
-    },
+      'consignee': {
+        'key': selectedConsignee?.ledKey,
+        'name': selectedConsignee?.ledName,
+      },
       'bookingType': selectedBookingType,
     };
   }
-Widget _buildConsigneeDropdown() {
-  return DropdownSearch<Consignee>(
+
+  Widget _buildConsigneeDropdown() {
+    return DropdownSearch<Consignee>(
+      popupProps: PopupProps.menu(
+        showSearchBox: true,
+        itemBuilder:
+            (context, item, isSelected) =>
+                ListTile(title: Text(item.ledName ?? '')),
+      ),
+      items: consignees,
+      itemAsString: (item) => item.ledName ?? '',
+      selectedItem: selectedConsignee,
+      onChanged: (value) {
+        setState(() {
+          selectedConsignee = value;
+        });
+      },
+      dropdownDecoratorProps: DropDownDecoratorProps(
+        dropdownSearchDecoration: InputDecoration(
+          labelText: 'Consignee',
+          border: OutlineInputBorder(),
+        ),
+      ),
+    );
+  }
+
+Widget _buildBookingTypeDropdown() {
+  return DropdownSearch<String>(
     popupProps: PopupProps.menu(
       showSearchBox: true,
-      itemBuilder: (context, item, isSelected) =>
-          ListTile(title: Text(item.ledName ?? '')),
+      searchFieldProps: TextFieldProps(
+        decoration: InputDecoration(
+          labelText: "Search Booking Type",
+          border: OutlineInputBorder(),
+        ),
+      ),
+      itemBuilder: (context, item, isSelected) => ListTile(title: Text(item)),
     ),
-    items: consignees,
-    itemAsString: (item) => item.ledName ?? '',
-    selectedItem: selectedConsignee,
-    onChanged: (value) {
+    items: _bookingTypes.map((e) => e['name'] as String).toList(),
+    selectedItem: selectedBookingType,
+    onChanged: (val) {
       setState(() {
-        selectedConsignee = value;
+        selectedBookingType = val;
       });
     },
     dropdownDecoratorProps: DropDownDecoratorProps(
       dropdownSearchDecoration: InputDecoration(
-        labelText: 'Consignee',
+        labelText: 'Booking Type',
         border: OutlineInputBorder(),
       ),
     ),
@@ -420,7 +463,7 @@ Widget _buildConsigneeDropdown() {
                 ],
               ),
               const SizedBox(height: 8),
-             _buildConsigneeDropdown(),
+              _buildConsigneeDropdown(),
               const SizedBox(height: 12),
               _isLoadingPaymentTerms
                   ? CircularProgressIndicator()
@@ -464,14 +507,10 @@ Widget _buildConsigneeDropdown() {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildDropdown(
-                      "Booking Type",
-                      selectedBookingType,
-                      [],
-                      (val) {
-                        setState(() => selectedBookingType = val);
-                      },
-                    ),
+                    child:
+                        _isLoadingBookingTypes
+                            ? CircularProgressIndicator()
+                            : _buildBookingTypeDropdown(),
                   ),
                 ],
               ),
@@ -534,4 +573,3 @@ class PytTermDisc {
 
   PytTermDisc({required this.key, required this.name});
 }
-

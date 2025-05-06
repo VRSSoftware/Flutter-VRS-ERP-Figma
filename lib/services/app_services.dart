@@ -294,6 +294,8 @@ class ApiService {
       throw Exception('Failed to fetch added items');
     }
   }
+
+
 static Future<Map<String, dynamic>> fetchConsinees({
     required String key,
     required String CoBrId,
@@ -329,4 +331,25 @@ static Future<Map<String, dynamic>> fetchConsinees({
       };
     }
   }
+
+static Future<List<Map<String, dynamic>>> fetchBookingTypes({required String coBrId}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.BASE_URL}/users/getBookingType'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'coBrId': coBrId}),
+      );
+
+      if (response.statusCode == 200) {
+        return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+      } else {
+        print('Error fetching booking types: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('Exception in fetchBookingTypes: $e');
+      return [];
+    }
+  }
 }
+
