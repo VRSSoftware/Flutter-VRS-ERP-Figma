@@ -8,6 +8,8 @@ import 'package:vrs_erp_figma/services/app_services.dart';
 import 'package:vrs_erp_figma/viewOrder/add_more_info.dart';
 import 'package:vrs_erp_figma/viewOrder/customer_master.dart';
 import 'package:vrs_erp_figma/viewOrder/style_card.dart';
+import 'package:vrs_erp_figma/models/consignee.dart';
+import 'package:vrs_erp_figma/models/PytTermDisc.dart';
 
 class ViewOrderScreen extends StatefulWidget {
   @override
@@ -21,25 +23,45 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   final _orderControllers = _OrderControllers();
   final _dropdownData = _DropdownData();
   final _styleManager = _StyleManager();
-  List<dynamic> consignees = [];
-  String selectedConsigneeKey = ""; 
-  String selectedPymtTermsKey = ""; 
-  String selectedPymtDays = ""; 
-  String selectedDueDate = ""; 
-  String selectedRefenceNo = ""; 
-  String selectedDate = ""; 
-  String selectedSalesmanKey = ""; 
-  String selectedBookingTypeKey = ""; 
+  List<Consignee> consignees = [];
+  List<PytTermDisc> paymentTerms = [];
 
   @override
   void initState() {
     super.initState();
     _initializeData();
     _setInitialDates();
+    fetchAndPrintSalesOrderNumber();
     _styleManager.updateTotalsCallback = _updateTotals;
   }
 
-  void fetchAndMapConsignees({
+  Future<void> fetchPaymentTerms() async {
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.BASE_URL}/users/getPytTermDisc'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({"coBrId": "01"}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as List;
+        setState(() {
+          paymentTerms = data
+              .map((e) => PytTermDisc(
+                    key: e['pytTermDiscKey']?.toString() ?? '',
+                    name: e['pytTermDiscName']?.toString() ?? '',
+                  ))
+              .toList();
+        });
+      } else {
+        print('API Error: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching payment terms: $e');
+    }
+  }
+
+  Future<void> fetchAndMapConsignees({
     required String key,
     required String CoBrId,
   }) async {
@@ -51,14 +73,77 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
 
       if (responseMap['statusCode'] == 200) {
         setState(() {
-          consignees = responseMap['result'];
+          consignees = (responseMap['result'] as List)
+              .map((e) => Consignee.fromJson(e))
+              .toList();
         });
       } else {
-        print(responseMap['statusCode']);
+        print('API Error: ${responseMap['statusCode']}');
       }
     } catch (e) {
-      print(e.toString());
+      print('Error fetching consignees: $e');
     }
+  }
+  Future<void> fetchAndPrintSalesOrderNumber() async {
+  // Call the method with the required parameters
+  Map<String, dynamic> salesOrderData = await ApiService.fetchSalesOrderNo(
+    coBrId: "01",     // Example company code
+    userId: "Admin",  // Example user ID
+    fcYrId: 24,       // Example financial year ID
+    barcode: "false",   // Example barcode flag
+  );
+
+  // Check if the response contains the sales order number
+  if (salesOrderData.isNotEmpty && salesOrderData.containsKey('salesOrderNo')) {
+    String salesOrderNo = salesOrderData['salesOrderNo'];
+    _orderControllers.orderNo.text = salesOrderNo;
+    print('Sales Order Number: $salesOrderNo'); // Print the sales order number
+  } else {
+    print('Sales Order Number not found');
+  }
+}
+
+  Future<String> insertFinalSalesOrder(String orderDataJson) async {
+    final String baseUrl = AppConstants.BASE_URL;
+
+    final Map<String, dynamic> body = {
+      'userId': 'Admin',
+      'coBrId': '01',
+      'fcYrId': 24,
+      'data2': orderDataJson.toString()
+     // 'barcodewise': false,
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.BASE_URL}/orderBooking/InsertFinalsalesorder'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        print('Success: ${response.body}');
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Order saved successfully')),
+        );
+        return response.statusCode.toString();
+      } else {
+        print('Error: ${response.statusCode}');
+        print('Response Body: ${response.body}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save order: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      print('Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving order: $e')),
+      );
+    }
+    return "fail";
   }
 
   void _setInitialDates() {
@@ -72,84 +157,74 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     await Future.wait([
       _styleManager.fetchOrderItems(),
       _dropdownData.loadAllDropdownData(),
+      fetchPaymentTerms(),
     ]);
     _updateTotals();
     setState(() {});
   }
 
+  // Saves the order data locally and sends it to the InsertFinalSalesOrder API
   Future<void> _saveOrderLocally() async {
     if (!_formKey.currentState!.validate()) return;
 
     final orderData = {
       "saleorderno": _orderControllers.orderNo.text,
-      "orderdate": _orderControllers.date.text,
-      "customer": _orderControllers.selectedPartyKey,
-      "broker": _orderControllers.selectedBrokerKey,
+      // "orderdate": "${_orderControllers.date.text} 12:20:26",
+      "orderdate": "2025-05-06 17:23:26",
+      "customer": _orderControllers.selectedPartyKey ?? '',
+      "broker": _orderControllers.selectedBrokerKey ?? '',
       "comission": _orderControllers.comm.text,
-      "transporter": _orderControllers.selectedTransporterKey,
+      "transporter": _orderControllers.selectedTransporterKey ?? '',
       "delivaryday": _orderControllers.deliveryDays.text,
-      "delivarydate": _orderControllers.deliveryDate.text,
+      // "delivarydate": _orderControllers.deliveryDate.text,
+      "delivarydate": "2025-05-06",
       "totitem": _orderControllers.totalItem.text,
       "totqty": _orderControllers.totalQty.text,
       "remark": _orderControllers.remark.text,
-      "paymentterms": _orderControllers.pytTermDiscKey,
-      "paymentdays": _orderControllers.creditPeriod,
-      "refno": _additionalInfo['referenceNo'],
-      "salesman": _orderControllers.salesLedKey,
-      "additional_info": _additionalInfo,
+      "consignee": _additionalInfo['consignee'] ?? '',
+      "station": _additionalInfo['station'] ?? '',
+      "paymentterms": _additionalInfo['paymentterms'] ?? _orderControllers.pytTermDiscKey ?? '',
+      "paymentdays": _additionalInfo['paymentdays'] ?? _orderControllers.creditPeriod?.toString() ?? '0',
+      // "duedate": _additionalInfo['duedate'] ?? '',
+      "duedate": '2025-07-05',
+      "refno": _additionalInfo['refno'] ?? '',
+      // "date": _additionalInfo['date'] ?? '',
+      "date": '',
+      "bookingtype": _additionalInfo['bookingtype'] ?? '',
+      "salesman": _additionalInfo['salesman'] ?? _orderControllers.salesLedKey ?? '',
     };
 
+    final orderDataJson = jsonEncode(orderData);
     print("Saved Order Data:");
-    print(jsonEncode(orderData));
+    print(orderDataJson);
+
+    // Call the API to insert the final sales order
+    String StatusCode =  await insertFinalSalesOrder(orderDataJson);
 
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Saved Order Data'),
-            content: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Main Order Data:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    jsonEncode({
-                      "saleorderno": orderData["saleorderno"],
-                      "orderdate": orderData["orderdate"],
-                      "customer": orderData["customer"],
-                      "broker": orderData["broker"],
-                      "comission": orderData["comission"],
-                      "transporter": orderData["transporter"],
-                      "delivaryday": orderData["delivaryday"],
-                      "delivarydate": orderData["delivarydate"],
-                      "totitem": orderData["totitem"],
-                      "totqty": orderData["totqty"],
-                      "remark": orderData["remark"],
-                      "paymentterms": orderData["paymentterms"],
-                      "paymentdays": orderData["paymentdays"],
-                      "refno": orderData["refno"],
-                      "salesman": orderData["salesman"],
-                    }),
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    'Additional Information:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text(jsonEncode(orderData["additional_info"])),
-                ],
+      builder: (context) => AlertDialog(
+        title: Text('Saved Order Data'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Order Data:',
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('OK'),
-              ),
+              Text(orderDataJson),
+            //  Text("Success" + StatusCode),
             ],
           ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -194,11 +269,10 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       backgroundColor: AppColors.primaryColor,
       elevation: 1,
       leading: Builder(
-        builder:
-            (context) => IconButton(
-              icon: const Icon(Icons.menu, color: Colors.white),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-            ),
+        builder: (context) => IconButton(
+          icon: const Icon(Icons.menu, color: Colors.white),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ),
       ),
     );
   }
@@ -210,27 +284,28 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
           padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
-            child:
-                _showForm
-                    ? _OrderForm(
-                      controllers: _orderControllers,
-                      dropdownData: _dropdownData,
-                      constraints: constraints,
-                      onPartySelected: _handlePartySelection,
-                      updateTotals: _updateTotals,
-                      saveOrder: _saveOrderLocally,
-                      additionalInfo: _additionalInfo,
-                      onAdditionalInfoUpdated: (newInfo) {
-                        setState(() {
-                          _additionalInfo = newInfo;
-                        });
-                      },
-                    )
-                    : _StyleCardsView(
-                      styleManager: _styleManager,
-                      updateTotals: _updateTotals,
-                      getColor: _getColorCode,
-                    ),
+            child: _showForm
+                ? _OrderForm(
+                    controllers: _orderControllers,
+                    dropdownData: _dropdownData,
+                    constraints: constraints,
+                    onPartySelected: _handlePartySelection,
+                    updateTotals: _updateTotals,
+                    saveOrder: _saveOrderLocally,
+                    additionalInfo: _additionalInfo,
+                    consignees: consignees,
+                    paymentTerms: paymentTerms,
+                    onAdditionalInfoUpdated: (newInfo) {
+                      setState(() {
+                        _additionalInfo = newInfo;
+                      });
+                    },
+                  )
+                : _StyleCardsView(
+                    styleManager: _styleManager,
+                    updateTotals: _updateTotals,
+                    getColor: _getColorCode,
+                  ),
           ),
         );
       },
@@ -241,6 +316,9 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     if (key == null) return;
     _orderControllers.selectedPartyKey = key;
     try {
+      // Fetch consignees for the selected party
+      await fetchAndMapConsignees(key: key, CoBrId: '01');
+
       final details = await _dropdownData.fetchLedgerDetails(key);
       _dropdownData.updateDependentFields(
         details,
@@ -263,9 +341,27 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       });
     } catch (e) {
       print('Error fetching party details: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to load party details')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load party details')));
+    }
+  }
+
+  Color _getColorCode(String color) {
+    switch (color.toLowerCase()) {
+      case 'red':
+        return Colors.red;
+      case 'green':
+        return Colors.green;
+      case 'blue':
+        return Colors.blue;
+      case 'yellow':
+        return Colors.yellow[800]!;
+      case 'black':
+        return Colors.black;
+      case 'white':
+        return Colors.grey;
+      default:
+        return Colors.black;
     }
   }
 }
@@ -334,7 +430,7 @@ class _DropdownData {
   List<Map<String, String>> partyList = [];
   List<Map<String, String>> brokerList = [];
   List<Map<String, String>> transporterList = [];
-    List<Map<String, String>> salesPersonList = [];
+  List<Map<String, String>> salesPersonList = [];
 
   Future<void> loadAllDropdownData() async {
     try {
@@ -342,13 +438,12 @@ class _DropdownData {
         _fetchLedgers("w"),
         _fetchLedgers("B"),
         _fetchLedgers("T"),
-         _fetchLedgers("S"),
-
+        _fetchLedgers("S"),
       ]);
       partyList = results[0];
       brokerList = results[1];
       transporterList = results[2];
-       salesPersonList = results[3];
+      salesPersonList = results[3];
     } catch (e) {
       print('Error loading dropdown data: $e');
     }
@@ -360,7 +455,6 @@ class _DropdownData {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({"ledKey": ledKey}),
     );
-    print("ssssssssssssssssssresponse data:${response.body}");
     return response.statusCode == 200
         ? jsonDecode(response.body)
         : throw Exception('Failed to load details');
@@ -378,7 +472,6 @@ class _DropdownData {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({"ledCat": ledCat, "coBrId": "01"}),
     );
-    print("lllllllllllllllllresponse data:${response.body}");
     return response.statusCode == 200
         ? (jsonDecode(response.body) as List)
             .map(
@@ -404,8 +497,8 @@ class _DropdownData {
 class _StyleManager {
   List<dynamic> _orderItems = [];
   final Set<String> removedStyles = {};
-  final Map<String, Map<String, Map<String, TextEditingController>>>
-  controllers = {};
+  final Map<String, Map<String, Map<String, TextEditingController>>> controllers =
+      {};
   VoidCallback? updateTotalsCallback;
 
   Map<String, List<dynamic>> get groupedItems {
@@ -537,23 +630,22 @@ class _StyleCardsView extends StatelessWidget {
     return styleManager.groupedItems.isEmpty
         ? const Center(child: CircularProgressIndicator())
         : Column(
-          children:
-              styleManager.groupedItems.entries
-                  .map(
-                    (entry) => StyleCard(
-                      styleCode: entry.key,
-                      items: entry.value,
-                      controllers: styleManager.controllers[entry.key]!,
-                      onRemove: () {
-                        styleManager.removedStyles.add(entry.key);
-                        updateTotals();
-                      },
-                      updateTotals: updateTotals,
-                      getColor: getColor,
-                    ),
-                  )
-                  .toList(),
-        );
+            children: styleManager.groupedItems.entries
+                .map(
+                  (entry) => StyleCard(
+                    styleCode: entry.key,
+                    items: entry.value,
+                    controllers: styleManager.controllers[entry.key]!,
+                    onRemove: () {
+                      styleManager.removedStyles.add(entry.key);
+                      updateTotals();
+                    },
+                    updateTotals: updateTotals,
+                    getColor: getColor,
+                  ),
+                )
+                .toList(),
+          );
   }
 }
 
@@ -565,6 +657,8 @@ class _OrderForm extends StatelessWidget {
   final VoidCallback updateTotals;
   final Future<void> Function() saveOrder;
   final Map<String, dynamic> additionalInfo;
+  final List<Consignee> consignees;
+  final List<PytTermDisc> paymentTerms;
   final Function(Map<String, dynamic>) onAdditionalInfoUpdated;
 
   const _OrderForm({
@@ -575,6 +669,8 @@ class _OrderForm extends StatelessWidget {
     required this.updateTotals,
     required this.saveOrder,
     required this.additionalInfo,
+    required this.consignees,
+    required this.paymentTerms,
     required this.onAdditionalInfoUpdated,
   });
 
@@ -585,7 +681,7 @@ class _OrderForm extends StatelessWidget {
       children: [
         _buildResponsiveRow(
           isWideScreen,
-          buildTextField(context, "Order No", controllers.orderNo),
+          buildTextField(context, "Order No", controllers.orderNo ,  isText: true,),
           buildTextField(
             context,
             "Select Date",
@@ -631,9 +727,8 @@ class _OrderForm extends StatelessWidget {
               );
               if (picked != null) {
                 final difference = picked.difference(today).inDays;
-                controllers.deliveryDate.text = _OrderControllers.formatDate(
-                  picked,
-                );
+                controllers.deliveryDate.text =
+                    _OrderControllers.formatDate(picked);
                 controllers.deliveryDays.text = difference.toString();
               }
             },
@@ -655,7 +750,6 @@ class _OrderForm extends StatelessWidget {
             readOnly: true,
           ),
         ),
-
         if (additionalInfo.isNotEmpty) ...[
           const SizedBox(height: 20),
           const Text(
@@ -674,39 +768,26 @@ class _OrderForm extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (additionalInfo['referenceNo'] != null)
+                  if (additionalInfo['refno'] != null)
+                    _buildInfoRow('Reference No:', additionalInfo['refno']),
+                  if (additionalInfo['duedate'] != null)
+                    _buildInfoRow('Due Date:', additionalInfo['duedate']),
+                  if (additionalInfo['paymentterms'] != null)
                     _buildInfoRow(
-                      'Reference No:',
-                      additionalInfo['referenceNo'],
-                    ),
-                  if (additionalInfo['dueDate'] != null)
-                    _buildInfoRow('Due Date:', additionalInfo['dueDate']),
-                  if (additionalInfo['paymentTerms'] != null)
+                        'Payment Terms:', additionalInfo['paymentterms']),
+                  if (additionalInfo['salesman'] != null)
+                    _buildInfoRow('Sales Person:', additionalInfo['salesman']),
+                  if (additionalInfo['paymentdays'] != null)
                     _buildInfoRow(
-                      'Payment Terms:',
-                      additionalInfo['paymentTerms'],
-                    ),
-                  if (additionalInfo['salesPerson'] != null)
+                        'Credit Period:', '${additionalInfo['paymentdays']} days'),
+                  if (additionalInfo['bookingtype'] != null)
                     _buildInfoRow(
-                      'Sales Person:',
-                      additionalInfo['salesPerson'],
-                    ),
-                  if (additionalInfo['creditPeriod'] != null)
-                    _buildInfoRow(
-                      'Credit Period:',
-                      '${additionalInfo['creditPeriod']} days',
-                    ),
-                  if (additionalInfo['bookingType'] != null)
-                    _buildInfoRow(
-                      'Booking Type:',
-                      additionalInfo['bookingType'],
-                    ),
+                        'Booking Type:', additionalInfo['bookingtype']),
                 ],
               ),
             ),
           ),
         ],
-
         const SizedBox(height: 20),
         _buildActionButtons(context),
       ],
@@ -746,11 +827,10 @@ class _OrderForm extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         ElevatedButton(
-          onPressed:
-              () => showDialog(
-                context: context,
-                builder: (_) => CustomerMasterDialog(),
-              ),
+          onPressed: () => showDialog(
+            context: context,
+            builder: (_) => CustomerMasterDialog(),
+          ),
           style: ElevatedButton.styleFrom(backgroundColor: Colors.lightBlue),
           child: const Text('+'),
         ),
@@ -834,12 +914,12 @@ class _OrderForm extends StatelessWidget {
   Widget _buildResponsiveRow(bool isWideScreen, Widget first, Widget second) {
     return isWideScreen
         ? Row(
-          children: [
-            Expanded(child: first),
-            const SizedBox(width: 10),
-            Expanded(child: second),
-          ],
-        )
+            children: [
+              Expanded(child: first),
+              const SizedBox(width: 10),
+              Expanded(child: second),
+            ],
+          )
         : Column(children: [first, second]);
   }
 
@@ -853,19 +933,21 @@ class _OrderForm extends StatelessWidget {
               final partyLedKey = controllers.selectedPartyKey;
               final result = await showDialog(
                 context: context,
-                builder:
-                    (context) => AddMoreInfoDialog(
-                        salesPersonList: salesPersonList,
-                      partyLedKey: partyLedKey,
-                      pytTermDiscKey: controllers.pytTermDiscKey,
-                      salesPersonKey: controllers.salesPersonKey,
-                      creditPeriod: controllers.creditPeriod,
-                      salesLedKey: controllers.salesLedKey,
-                      ledgerName: controllers.ledgerName,
-                      onValueChanged: (newInfo) {
-                        onAdditionalInfoUpdated(newInfo);
-                      },
-                    ),
+                builder: (context) => AddMoreInfoDialog(
+                  salesPersonList: salesPersonList,
+                  partyLedKey: partyLedKey,
+                  pytTermDiscKey: controllers.pytTermDiscKey,
+                  salesPersonKey: controllers.salesPersonKey,
+                  creditPeriod: controllers.creditPeriod,
+                  salesLedKey: controllers.salesLedKey,
+                  ledgerName: controllers.ledgerName,
+                  additionalInfo: additionalInfo,
+                  consignees: consignees,
+                  paymentTerms: paymentTerms,
+                  onValueChanged: (newInfo) {
+                    onAdditionalInfoUpdated(newInfo);
+                  },
+                ),
               );
               if (result != null) {
                 onAdditionalInfoUpdated(result);
@@ -883,7 +965,7 @@ class _OrderForm extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(
           child: ElevatedButton(
-            onPressed: saveOrder,
+            onPressed: saveOrder, // Use saveOrder instead of _saveOrderLocally
             child: const Text(
               'Save',
               style: TextStyle(color: AppColors.primaryColor),
@@ -902,13 +984,14 @@ Widget buildTextField(
   bool isDate = false,
   bool readOnly = false,
   VoidCallback? onTap,
+  bool? isText=false
 }) {
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 8),
     child: TextFormField(
       controller: controller,
       readOnly: readOnly || isDate,
-      keyboardType: TextInputType.numberWithOptions(
+      keyboardType: isText == true ? TextInputType.text : TextInputType.numberWithOptions(
         signed: false,
         decimal: true,
       ),
@@ -917,7 +1000,7 @@ Widget buildTextField(
         labelText: label,
         border: const OutlineInputBorder(),
       ),
-    ),
+    )
   );
 }
 
@@ -946,14 +1029,3 @@ Widget buildFullField(
     child: buildTextField(context, label, controller),
   );
 }
-  Color _getColorCode(String color) {
-    switch (color.toLowerCase()) {
-      case 'red': return Colors.red;
-      case 'green': return Colors.green;
-      case 'blue': return Colors.blue;
-      case 'yellow': return Colors.yellow[800]!;
-      case 'black': return Colors.black;
-      case 'white': return Colors.grey;
-      default: return Colors.black;
-    }
-  }

@@ -295,17 +295,13 @@ class ApiService {
     }
   }
 
-
-static Future<Map<String, dynamic>> fetchConsinees({
+  static Future<Map<String, dynamic>> fetchConsinees({
     required String key,
     required String CoBrId,
   }) async {
     final url = Uri.parse('${AppConstants.BASE_URL}/users/getConsinee');
 
-    final Map<String, dynamic> body = {
-      "key": key,
-      "coBrId": CoBrId,
-    };
+    final Map<String, dynamic> body = {"key": key, "coBrId": CoBrId};
 
     final response = await http.post(
       url,
@@ -315,24 +311,27 @@ static Future<Map<String, dynamic>> fetchConsinees({
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
-      
+
       // Convert the raw JSON data to a list of Consignee objects
-      final List<Consignee> consignees = data.map((json) => Consignee.fromJson(json)).toList();
+      final List<Consignee> consignees =
+          data.map((json) => Consignee.fromJson(json)).toList();
 
       return {
         "statusCode": response.statusCode,
-        "result": consignees,  // Return a list of Consignee objects
+        "result": consignees, // Return a list of Consignee objects
       };
     } else {
       return {
         "statusCode": response.statusCode,
-        "consignees": [],  // Return an empty list if the request fails
+        "consignees": [], // Return an empty list if the request fails
         "error": response.body,
       };
     }
   }
 
-static Future<List<Map<String, dynamic>>> fetchBookingTypes({required String coBrId}) async {
+  static Future<List<Map<String, dynamic>>> fetchBookingTypes({
+    required String coBrId,
+  }) async {
     try {
       final response = await http.post(
         Uri.parse('${AppConstants.BASE_URL}/users/getBookingType'),
@@ -351,5 +350,37 @@ static Future<List<Map<String, dynamic>>> fetchBookingTypes({required String coB
       return [];
     }
   }
-}
 
+  static Future<Map<String, dynamic>> fetchSalesOrderNo({
+    required String coBrId,
+    required String userId,
+    required int fcYrId,
+    required String barcode,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(
+          '${AppConstants.BASE_URL}/orderBooking/get-sales-order-no',
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'coBrId': coBrId,
+          'userId': userId,
+          'fcYrId': fcYrId,
+          'barcode': barcode,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        // Parse the JSON response into a Map and return it
+        return Map<String, dynamic>.from(jsonDecode(response.body));
+      } else {
+        print('Error fetching sales order number: ${response.statusCode}');
+        return {}; // Return an empty map on error
+      }
+    } catch (e) {
+      print('Exception in fetchSalesOrderNo: $e');
+      return {}; // Return an empty map on exception
+    }
+  }
+}
