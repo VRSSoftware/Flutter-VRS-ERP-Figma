@@ -37,6 +37,7 @@ class _OrderPageState extends State<OrderPage> {
   String WSPto = "";
   bool isLoading = true;
   List<String> addedItems = [];
+    String? itemNamee;
 
   @override
   void initState() {
@@ -51,6 +52,7 @@ class _OrderPageState extends State<OrderPage> {
           itemSubGrpKey = args['itemSubGrpKey']?.toString();
           coBr = args['coBr']?.toString();
           fcYrId = args['fcYrId']?.toString();
+                 itemNamee = args['itemName']?.toString();
         });
 
         if (coBr != null && fcYrId != null) {
@@ -87,12 +89,15 @@ class _OrderPageState extends State<OrderPage> {
     }
   }
 
+  // Fetch Catalog Items
   Future<void> _fetchCatalogItems() async {
     try {
       setState(() {
         catalogItems = [];
         isLoading = true;
       });
+
+      // Fetch the catalog data
       final result = await ApiService.fetchCatalogItem(
         itemSubGrpKey: itemSubGrpKey!,
         itemKey: itemKey!,
@@ -100,11 +105,11 @@ class _OrderPageState extends State<OrderPage> {
         styleKey:
             selectedStyles.length == 1 ? selectedStyles[0].styleKey : null,
         shadeKey:
-            selectedShades.length == 0
+            selectedShades.isEmpty
                 ? null
                 : selectedShades.map((s) => s.shadeKey).join(','),
         sizeKey:
-            selectedSize.length == 0
+            selectedSize.isEmpty
                 ? null
                 : selectedSize.map((s) => s.itemSizeKey).join(','),
         fromMRP: fromMRP == "" ? null : fromMRP,
@@ -112,67 +117,62 @@ class _OrderPageState extends State<OrderPage> {
       );
 
       int status = result["statusCode"];
-      if(status == 200)
+      if (status == 200) {
         setState(() {
           isLoading = false;
         });
-      
+      }
+
       final items = result["catalogs"];
 
-      if (selectedStyles.isEmpty && WSPfrom == "" && WSPto == "") {
-        setState(() {
-          catalogItems = items;
-        });
-      } else {
+      // Filter by WSP first
+      double? wspFrom = double.tryParse(WSPfrom);
+      double? wspTo = double.tryParse(WSPto);
+
+      List<Catalog> wspFilteredCatalogs = items;
+
+      if (wspFrom != null && wspTo != null) {
+        wspFilteredCatalogs =
+            wspFilteredCatalogs
+                .where(
+                  (catalog) => catalog.wsp >= wspFrom && catalog.wsp <= wspTo,
+                )
+                .toList();
+      } else if (wspFrom != null) {
+        wspFilteredCatalogs =
+            wspFilteredCatalogs
+                .where((catalog) => catalog.wsp >= wspFrom)
+                .toList();
+      } else if (wspTo != null) {
+        wspFilteredCatalogs =
+            wspFilteredCatalogs
+                .where((catalog) => catalog.wsp <= wspTo)
+                .toList();
+      }
+
+      // Now, filter by style if styles are selected
+      if (selectedStyles.isNotEmpty) {
         final selectedStyleKeys =
             selectedStyles.map((style) => style.styleKey).toSet();
 
-        List<Catalog> filtredCatlogs =
-            items
+        wspFilteredCatalogs =
+            wspFilteredCatalogs
                 .where(
                   (catalog) => selectedStyleKeys.contains(catalog.styleKey),
                 )
                 .toList();
-        if (WSPfrom == "" && WSPto == "") {
-          setState(() {
-            catalogItems = filtredCatlogs;
-          });
-        } else {
-          double? wspFrom = double.tryParse(WSPfrom);
-          double? wspTo = double.tryParse(WSPto);
-
-          List<Catalog> wspFilteredCatalogs = filtredCatlogs;
-
-          if (wspFrom != null && wspTo != null) {
-            wspFilteredCatalogs =
-                wspFilteredCatalogs
-                    .where(
-                      (catalog) =>
-                          catalog.wsp >= wspFrom && catalog.wsp <= wspTo,
-                    )
-                    .toList();
-          } else if (wspFrom != null) {
-            wspFilteredCatalogs =
-                wspFilteredCatalogs
-                    .where((catalog) => catalog.wsp >= wspFrom)
-                    .toList();
-          } else if (wspTo != null) {
-            wspFilteredCatalogs =
-                wspFilteredCatalogs
-                    .where((catalog) => catalog.wsp <= wspTo)
-                    .toList();
-          }
-
-          setState(() {
-            catalogItems = wspFilteredCatalogs;
-          });
-        }
       }
+
+      // Set the final filtered catalog items
+      setState(() {
+        catalogItems = wspFilteredCatalogs;
+      });
     } catch (e) {
       print('Failed to load catalog items: $e');
     }
   }
 
+  // Fetch Styles by Item Key
   Future<void> _fetchStylesByItemKey(String itemKey) async {
     try {
       final fetchedStyles = await ApiService.fetchStylesByItemKey(itemKey);
@@ -184,6 +184,7 @@ class _OrderPageState extends State<OrderPage> {
     }
   }
 
+  
   Future<void> _fetchShadesByItemKey(String itemKey) async {
     try {
       final fetchedShades = await ApiService.fetchShadesByItemKey(itemKey);
@@ -983,38 +984,49 @@ class _OrderPageState extends State<OrderPage> {
             'sizes': sizes,
             'selectedShades': selectedShades,
             'selectedSizes': selectedSize,
+            'selectedStyles': selectedStyles,
             'fromMRP': fromMRP,
             'toMRP': toMRP,
+            'WSPfrom': WSPfrom,
+            'WSPto': WSPto,
           },
         ),
         transitionDuration: Duration(milliseconds: 500),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          final begin = Offset(0.0, 1.0);
-          final end = Offset.zero;
-          final curve = Curves.easeInOut;
-
-          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          var offsetAnimation = animation.drive(tween);
-
-          return SlideTransition(position: offsetAnimation, child: child);
+          return ScaleTransition(
+            scale: animation,
+            alignment: Alignment.bottomRight, // Open from bottom right corner
+            child: FadeTransition(opacity: animation, child: child),
+          );
         },
       ),
     );
 
     if (result != null) {
       Map<String, dynamic> selectedFilters = result;
-
       setState(() {
         selectedStyles = selectedFilters['styles'];
         selectedSize = selectedFilters['sizes'];
         selectedShades = selectedFilters['shades'];
         fromMRP = selectedFilters['fromMRP'];
         toMRP = selectedFilters['toMRP'];
+        WSPfrom = selectedFilters['WSPfrom'];
+        WSPto = selectedFilters['WSPto'];
       });
-
-      _fetchCatalogItems();
+      print("aaaaaaaa  ${selectedFilters['styles']}");
+      print("aaaaaaaa  ${selectedFilters['WSPfrom']}");
+      print("aaaaaaaa  ${selectedFilters['WSPto']}");
+      if (!(selectedStyles.length == 0 &&
+          selectedSize.length == 0 &&
+          selectedShades == 0 &&
+          fromMRP == "" &&
+          toMRP == "" &&
+          WSPfrom == "" &&
+          WSPto == ""))
+        _fetchCatalogItems();
     }
   }
+
 
   void _showBookingDialog(BuildContext context, Catalog item) {
     showDialog(

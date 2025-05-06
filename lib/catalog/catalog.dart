@@ -987,7 +987,6 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
-
   void _openImageZoom(BuildContext context, Catalog item) {
     Navigator.push(
       context,
