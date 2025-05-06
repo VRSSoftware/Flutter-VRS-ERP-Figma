@@ -1396,11 +1396,7 @@ class _CatalogPageState extends State<CatalogPage> {
         if (includeDesign) catalogItem['design'] = item.itemName;
         if (includeShade) catalogItem['shade'] = item.shadeName;
         if (includeRate) catalogItem['rate'] = item.mrp.toString();
-        if (includeSize) {
-          catalogItem['sizeWithMrp'] = item.sizeWithMrp;
-        }else{
-          catalogItem['sizeDetails'] = item.sizeDetails;
-        }
+        if (includeSize)   catalogItem['sizeWithMrp'] = item.sizeWithMrp;
         if (includeProduct) catalogItem['product'] = item.itemName;
         if (includeRemark) catalogItem['remark'] = item.remark;
 
@@ -1498,7 +1494,7 @@ class _CatalogPageState extends State<CatalogPage> {
             if (includeShade) caption += '*Shade*\t\t: ${item.shadeName}\n';
             if (includeRate) caption += '*MRP*\t\t\t: ${item.mrp.toString()}\n';
             if (includeSize)
-              caption += '*Sizes*\t\t\t: ${formatSizes(item.sizeDetails)}\n';
+              caption += '*Sizes*\t\t\t: ${formatSizes(item.sizeWithMrp)}\n';
             if (includeProduct) caption += '*Product*\t: ${item.itemName}\n';
             if (includeRemark) caption += '*Remark*\t\t: ${item.remark}\n';
 
@@ -1694,7 +1690,7 @@ class _CatalogPageState extends State<CatalogPage> {
               'design': includeDesign ? item.styleCode : '',
               'shade': includeShade ? item.shadeName : '',
               'rate': includeRate ? item.mrp.toString() : '',
-              'size': includeSize ? item.sizeWithMrp : item.sizeDetails,
+              'size': includeSize ? item.sizeWithMrp : '',
               'product': includeProduct ? item.itemName : '',
               'remark': includeRemark ? item.remark : '',
             };
@@ -1919,7 +1915,7 @@ class _CatalogPageState extends State<CatalogPage> {
           //   catalogItem['wsp'] = item.wsp.toString();
           // }
           if (includeRate) catalogItem['rate'] = item.mrp;
-          if (includeSize) catalogItem['sizeDetails'] = item.sizeDetails;
+          if (includeSize) catalogItem['sizeWithMrp'] = item.sizeWithMrp;
           if (includeProduct) catalogItem['product'] = item.itemName;
           if (includeRemark) catalogItem['remark'] = item.remark;
 
@@ -1962,7 +1958,7 @@ class _CatalogPageState extends State<CatalogPage> {
                 'design': includeDesign ? item.styleCode : '',
                 'shade': includeShade ? item.shadeName : '',
                 'rate': includeRate ? item.mrp.toString() : '',
-                'size': includeSize ? item.sizeDetails : '',
+                'size': includeSize ? item.sizeWithMrp : '',
                 'product': includeProduct ? item.itemName : '',
                 'remark': includeRemark ? item.remark : '',
               };
