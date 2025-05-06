@@ -334,6 +334,7 @@ class _DropdownData {
   List<Map<String, String>> partyList = [];
   List<Map<String, String>> brokerList = [];
   List<Map<String, String>> transporterList = [];
+    List<Map<String, String>> salesPersonList = [];
 
   Future<void> loadAllDropdownData() async {
     try {
@@ -341,10 +342,13 @@ class _DropdownData {
         _fetchLedgers("w"),
         _fetchLedgers("B"),
         _fetchLedgers("T"),
+         _fetchLedgers("S"),
+
       ]);
       partyList = results[0];
       brokerList = results[1];
       transporterList = results[2];
+       salesPersonList = results[3];
     } catch (e) {
       print('Error loading dropdown data: $e');
     }
@@ -845,10 +849,14 @@ class _OrderForm extends StatelessWidget {
         Expanded(
           child: ElevatedButton(
             onPressed: () async {
+              final salesPersonList = dropdownData.salesPersonList;
+              final partyLedKey = controllers.selectedPartyKey;
               final result = await showDialog(
                 context: context,
                 builder:
                     (context) => AddMoreInfoDialog(
+                        salesPersonList: salesPersonList,
+                      partyLedKey: partyLedKey,
                       pytTermDiscKey: controllers.pytTermDiscKey,
                       salesPersonKey: controllers.salesPersonKey,
                       creditPeriod: controllers.creditPeriod,

@@ -1,14 +1,20 @@
+
+
+
+
 import 'dart:convert';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/models/PytTermDisc.dart';
 import 'package:vrs_erp_figma/models/salesman.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
 import 'package:vrs_erp_figma/models/consignee.dart'; // Ensure it's the correct file
 
 class AddMoreInfoDialog extends StatefulWidget {
-  final String? ledKey;
+  final List<Map<String, String>> salesPersonList;
+  final String? partyLedKey;
   final String? pytTermDiscKey;
   final String? salesPersonKey;
   final int? creditPeriod;
@@ -18,7 +24,8 @@ class AddMoreInfoDialog extends StatefulWidget {
 
   const AddMoreInfoDialog({
     super.key,
-    this.ledKey,
+    required this.salesPersonList,
+    required this.partyLedKey,
     this.pytTermDiscKey,
     this.salesPersonKey,
     this.creditPeriod,
@@ -43,7 +50,6 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
   final TextEditingController dateController = TextEditingController();
 
   List<PytTermDisc> _paymentTerms = [];
-  List<Salesman> _salesmen = [];
   List<Consignee> consignees = [];
   bool _isLoadingPaymentTerms = false;
   bool _isLoadingSalesmen = false;
@@ -66,7 +72,6 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
     paymentDaysController.text = widget.creditPeriod?.toString() ?? '0';
     dateController.text = _formatDate(_baseDate);
     _loadPaymentTerms();
-    _loadSalesmen();
     _updateDueDate();
     paymentDaysController.addListener(_updateDueDate);
     dueDateController.addListener(_updatePaymentDays);
@@ -146,45 +151,6 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
       print('Error loading payment terms: $e');
     } finally {
       setState(() => _isLoadingPaymentTerms = false);
-    }
-  }
-
-  Future<void> _loadSalesmen() async {
-    setState(() => _isLoadingSalesmen = true);
-    try {
-      final response = await http.post(
-        Uri.parse('${AppConstants.BASE_URL}/users/getSalesmanLedger'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({"ledCat": "S", "coBrId": "01"}),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as List;
-        _salesmen =
-            data
-                .map(
-                  (e) => Salesman(
-                    key: e['ledKey']?.toString() ?? '',
-                    name: e['ledgerName']?.toString() ?? '',
-                  ),
-                )
-                .toList();
-
-        if (widget.salesPersonKey != null && _salesmen.isNotEmpty) {
-          final initialSalesman = _salesmen.firstWhere(
-            (s) => s.key == widget.salesPersonKey,
-            orElse: () => Salesman(key: '', name: ''),
-          );
-          if (initialSalesman.key.isNotEmpty) {
-            _selectedSalesmanKey = initialSalesman.key;
-            selectedSalesmanName = initialSalesman.name;
-          }
-        }
-      }
-    } catch (e) {
-      print('Error loading salesmen: $e');
-    } finally {
-      setState(() => _isLoadingSalesmen = false);
     }
   }
 
@@ -308,33 +274,6 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
     );
   }
 
-  Widget _buildSalesmanDropdown() {
-    return DropdownSearch<Salesman>(
-      popupProps: PopupProps.menu(
-        showSearchBox: true,
-        itemBuilder:
-            (context, item, isSelected) => ListTile(title: Text(item.name)),
-      ),
-      items: _salesmen,
-      itemAsString: (item) => item.name,
-      selectedItem: _salesmen.firstWhere(
-        (e) => e.key == _selectedSalesmanKey,
-        orElse: () => Salesman(key: '', name: ''),
-      ),
-      onChanged: (value) {
-        setState(() {
-          _selectedSalesmanKey = value?.key;
-          selectedSalesmanName = value?.name;
-        });
-      },
-      dropdownDecoratorProps: DropDownDecoratorProps(
-        dropdownSearchDecoration: InputDecoration(
-          labelText: 'Salesman Name',
-          border: OutlineInputBorder(),
-        ),
-      ),
-    );
-  }
 
   void _saveFormData() {
     // Save the selected data here, this is just an example
@@ -434,6 +373,41 @@ Widget _buildBookingTypeDropdown() {
   );
 }
 
+Widget _buildSalesmanDropdown() {
+final salesmenFromConstructor = widget.salesPersonList
+    .map((e) => Salesman(
+          key: e['ledKey'] ?? '',
+          name: e['ledName'] ?? '',
+        ))
+    .toList();
+
+  return DropdownSearch<Salesman>(
+    popupProps: PopupProps.menu(
+      showSearchBox: true,
+      itemBuilder: (context, item, isSelected) => ListTile(title: Text(item.name)),
+    ),
+    items: salesmenFromConstructor,
+    itemAsString: (item) => item.name,
+    selectedItem: salesmenFromConstructor.firstWhere(
+      (e) => e.key == _selectedSalesmanKey,
+      orElse: () => Salesman(key: '', name: ''),
+    ),
+    onChanged: (value) {
+      setState(() {
+        _selectedSalesmanKey = value?.key;
+        selectedSalesmanName = value?.name;
+      });
+    },
+    dropdownDecoratorProps: DropDownDecoratorProps(
+      dropdownSearchDecoration: InputDecoration(
+        labelText: 'Salesman Name',
+        border: OutlineInputBorder(),
+      ),
+    ),
+  );
+}
+
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -465,9 +439,8 @@ Widget _buildBookingTypeDropdown() {
               const SizedBox(height: 8),
               _buildConsigneeDropdown(),
               const SizedBox(height: 12),
-              _isLoadingPaymentTerms
-                  ? CircularProgressIndicator()
-                  : _buildPaymentTermsDropdown(),
+          
+                   _buildPaymentTermsDropdown(),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -501,16 +474,13 @@ Widget _buildBookingTypeDropdown() {
                 children: [
                   Expanded(
                     child:
-                        _isLoadingSalesmen
-                            ? CircularProgressIndicator()
-                            : _buildSalesmanDropdown(),
+                    _buildSalesmanDropdown(),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child:
-                        _isLoadingBookingTypes
-                            ? CircularProgressIndicator()
-                            : _buildBookingTypeDropdown(),
+                  
+                           _buildBookingTypeDropdown(),
                   ),
                 ],
               ),
@@ -567,9 +537,3 @@ Widget _buildBookingTypeDropdown() {
   }
 }
 
-class PytTermDisc {
-  final String key;
-  final String name;
-
-  PytTermDisc({required this.key, required this.name});
-}
