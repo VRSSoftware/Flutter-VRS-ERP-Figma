@@ -7,6 +7,7 @@ import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
 import 'package:vrs_erp_figma/viewOrder/add_more_info.dart';
 import 'package:vrs_erp_figma/viewOrder/customer_master.dart';
+import 'package:vrs_erp_figma/viewOrder/style_card.dart';
 
 class ViewOrderScreen extends StatefulWidget {
   @override
@@ -20,50 +21,51 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   final _orderControllers = _OrderControllers();
   final _dropdownData = _DropdownData();
   final _styleManager = _StyleManager();
-  List<dynamic> consignees = []; 
+  List<dynamic> consignees = [];
+  String selectedConsigneeKey = ""; 
+  String selectedPymtTermsKey = ""; 
+  String selectedPymtDays = ""; 
+  String selectedDueDate = ""; 
+  String selectedRefenceNo = ""; 
+  String selectedDate = ""; 
+  String selectedSalesmanKey = ""; 
+  String selectedBookingTypeKey = ""; 
+
   @override
   void initState() {
     super.initState();
     _initializeData();
     _setInitialDates();
-    
     _styleManager.updateTotalsCallback = _updateTotals;
   }
-  void fetchAndMapConsignees({
-  required String key,
-  required String CoBrId,
-}) async {
-  try {
-    // Call the fetchConsinees API method
-    Map<String, dynamic> responseMap = await ApiService.fetchConsinees(
-      key: key,
-      CoBrId: CoBrId,
-    );
 
-    
-    if (responseMap['statusCode'] == 200) {
-      setState(() {
-        
-      consignees = responseMap['result'];
-      });
-      print("ssssssssssssssssssss");
-      print(consignees);
+  void fetchAndMapConsignees({
+    required String key,
+    required String CoBrId,
+  }) async {
+    try {
+      Map<String, dynamic> responseMap = await ApiService.fetchConsinees(
+        key: key,
+        CoBrId: CoBrId,
+      );
+
+      if (responseMap['statusCode'] == 200) {
+        setState(() {
+          consignees = responseMap['result'];
+        });
+      } else {
+        print(responseMap['statusCode']);
+      }
+    } catch (e) {
+      print(e.toString());
     }
-    else{
-      print(responseMap['statusCode']);
-    }
-  } catch (e) {
-    // Handle any errors that occur during the API call
-   print(e.toString());
   }
-}
 
   void _setInitialDates() {
     final today = DateTime.now();
     _orderControllers.date.text = _OrderControllers.formatDate(today);
     _orderControllers.deliveryDate.text = _OrderControllers.formatDate(today);
     _orderControllers.deliveryDays.text = '0';
-  
   }
 
   Future<void> _initializeData() async {
@@ -75,87 +77,14 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     setState(() {});
   }
 
-  // Future<void> _saveOrder() async {
-  //   if (!_formKey.currentState!.validate()) return;
-
-  //   // Prepare order items
-  //   List<Map<String, dynamic>> orderItems = [];
-  //   _styleManager.controllers.forEach((styleCode, shades) {
-  //     shades.forEach((shadeName, sizes) {
-  //       sizes.forEach((sizeName, controller) {
-  //         final qty = int.tryParse(controller.text) ?? 0;
-  //         if (qty > 0) {
-  //           orderItems.add({
-  //             "styleCode": styleCode,
-  //             "shadeName": shadeName,
-  //             "sizeName": sizeName,
-  //             "qty": qty,
-  //           });
-  //         }
-  //       });
-  //     });
-  //   });
-
-  //   // Prepare main order data
-  //   Map<String, dynamic> orderData = {
-  //     "coBrId": "01",
-  //     "userId": "Admin",
-  //     "fcYrId": "24",
-  //     "orderNo": _orderControllers.orderNo.text,
-  //     "orderDt": _orderControllers.date.text,
-  //     "ledKey": _orderControllers.selectedPartyKey,
-  //     "brokerKey": _orderControllers.selectedBrokerKey,
-  //     "trspKey": _orderControllers.selectedTransporterKey,
-  //     "commPerc": _orderControllers.comm.text,
-  //     "delvDays": _orderControllers.deliveryDays.text,
-  //     "delvDt": _orderControllers.deliveryDate.text,
-  //     "totItem": _orderControllers.totalItem.text,
-  //     "totQty": _orderControllers.totalQty.text,
-  //     "remark": _orderControllers.remark.text,
-  //     // Additional info from dialog
-  //     "pytTermDiscKey": _additionalInfo['pytTermDiscKey'],
-  //     "salesPersonKey": _additionalInfo['salesPersonKey'],
-  //     "dueDt": _additionalInfo['dueDate'],
-  //     "refNo": _additionalInfo['referenceNo'],
-  //     "bookingType": _additionalInfo['bookingType'],
-  //     "items": orderItems,
-  //   };
-  //   print(orderData);
-
-  //   try {
-  //     final response = await http.post(
-  //       Uri.parse('${AppConstants.BASE_URL}/orderBooking/SaveOrder'),
-  //       headers: {'Content-Type': 'application/json'},
-  //       body: jsonEncode(orderData),
-  //     );
-
-  //     if (response.statusCode == 200) {
-  //       ScaffoldMessenger.of(
-  //         context,
-  //       ).showSnackBar(SnackBar(content: Text('Order saved successfully')));
-  //       // Reset form after successful save
-  //       _formKey.currentState!.reset();
-  //       _styleManager._initializeControllers();
-  //       setState(() {});
-  //     } else {
-  //       ScaffoldMessenger.of(
-  //         context,
-  //       ).showSnackBar(SnackBar(content: Text('Failed to save order')));
-  //     }
-  //   } catch (e) {
-  //     ScaffoldMessenger.of(
-  //       context,
-  //     ).showSnackBar(SnackBar(content: Text('Error saving order: $e')));
-  //   }
-  // }
-
   Future<void> _saveOrderLocally() async {
     if (!_formKey.currentState!.validate()) return;
+
     final orderData = {
       "saleorderno": _orderControllers.orderNo.text,
       "orderdate": _orderControllers.date.text,
       "customer": _orderControllers.selectedPartyKey,
-      "broker":  _orderControllers.selectedBrokerKey,
+      "broker": _orderControllers.selectedBrokerKey,
       "comission": _orderControllers.comm.text,
       "transporter": _orderControllers.selectedTransporterKey,
       "delivaryday": _orderControllers.deliveryDays.text,
@@ -163,29 +92,57 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       "totitem": _orderControllers.totalItem.text,
       "totqty": _orderControllers.totalQty.text,
       "remark": _orderControllers.remark.text,
-      // "consignee": "",
-      // "station": "",
-      // "paymentterms":_additionalInfo['pytTermDiscKey'],
-      "paymentterms":_orderControllers.pytTermDiscKey,
+      "paymentterms": _orderControllers.pytTermDiscKey,
       "paymentdays": _orderControllers.creditPeriod,
-      // "duedate": "2025-05-03",
       "refno": _additionalInfo['referenceNo'],
-      // "date": "",
-      // "bookingtype": "",
       "salesman": _orderControllers.salesLedKey,
+      "additional_info": _additionalInfo,
     };
 
-    // Print to console
     print("Saved Order Data:");
     print(jsonEncode(orderData));
 
-    // Show in dialog
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
             title: Text('Saved Order Data'),
-            content: SingleChildScrollView(child: Text(jsonEncode(orderData))),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Main Order Data:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    jsonEncode({
+                      "saleorderno": orderData["saleorderno"],
+                      "orderdate": orderData["orderdate"],
+                      "customer": orderData["customer"],
+                      "broker": orderData["broker"],
+                      "comission": orderData["comission"],
+                      "transporter": orderData["transporter"],
+                      "delivaryday": orderData["delivaryday"],
+                      "delivarydate": orderData["delivarydate"],
+                      "totitem": orderData["totitem"],
+                      "totqty": orderData["totqty"],
+                      "remark": orderData["remark"],
+                      "paymentterms": orderData["paymentterms"],
+                      "paymentdays": orderData["paymentdays"],
+                      "refno": orderData["refno"],
+                      "salesman": orderData["salesman"],
+                    }),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'Additional Information:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(jsonEncode(orderData["additional_info"])),
+                ],
+              ),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -210,25 +167,6 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     _orderControllers.totalItem.text =
         _styleManager.groupedItems.length.toString();
     setState(() {});
-  }
-
-  Color _getColorCode(String color) {
-    switch (color.toLowerCase()) {
-      case 'red':
-        return Colors.red;
-      case 'green':
-        return Colors.green;
-      case 'blue':
-        return Colors.blue;
-      case 'yellow':
-        return Colors.yellow[800]!;
-      case 'black':
-        return Colors.black;
-      case 'white':
-        return Colors.grey;
-      default:
-        return Colors.black;
-    }
   }
 
   @override
@@ -280,9 +218,13 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
                       constraints: constraints,
                       onPartySelected: _handlePartySelection,
                       updateTotals: _updateTotals,
-                      // saveOrder: _saveOrder, // Add this
-                      saveOrder: _saveOrderLocally, // Add this
+                      saveOrder: _saveOrderLocally,
                       additionalInfo: _additionalInfo,
+                      onAdditionalInfoUpdated: (newInfo) {
+                        setState(() {
+                          _additionalInfo = newInfo;
+                        });
+                      },
                     )
                     : _StyleCardsView(
                       styleManager: _styleManager,
@@ -296,23 +238,19 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   }
 
   void _handlePartySelection(String? val, String? key) async {
-
     if (key == null) return;
- _orderControllers.selectedPartyKey = key;
+    _orderControllers.selectedPartyKey = key;
     try {
       final details = await _dropdownData.fetchLedgerDetails(key);
       _dropdownData.updateDependentFields(
         details,
         _orderControllers.selectedBrokerKey,
         _orderControllers.selectedTransporterKey,
-       
       );
       _orderControllers.pytTermDiscKey = details['pytTermDiscKey'];
       _orderControllers.salesPersonKey = details['salesPersonKey'];
       _orderControllers.creditPeriod = details['creditPeriod'];
       _orderControllers.selectedTransporterKey = details['trspKey'];
-
-      print(details);
 
       final commission = await _dropdownData.fetchCommissionPercentage(key);
       setState(() {
@@ -364,14 +302,12 @@ class _OrderControllers {
     List<Map<String, String>> brokers,
     List<Map<String, String>> transporters,
   ) {
-    // Update basic fields
     pytTermDiscKey = details['pytTermDiscKey']?.toString();
     salesPersonKey = details['salesPersonKey']?.toString();
     creditPeriod = details['creditPeriod'] as int?;
     salesLedKey = details['salesLedKey']?.toString();
     ledgerName = details['ledgerName']?.toString();
 
-    // Update broker information
     final partyBrokerKey = details['brokerKey']?.toString() ?? '';
     if (partyBrokerKey.isNotEmpty) {
       final broker = brokers.firstWhere(
@@ -382,7 +318,6 @@ class _OrderControllers {
       selectedBrokerKey = partyBrokerKey;
     }
 
-    // Update transporter information
     final partyTrspKey = details['trspKey']?.toString() ?? '';
     if (partyTrspKey.isNotEmpty) {
       final transporter = transporters.firstWhere(
@@ -492,7 +427,7 @@ class _StyleManager {
     );
 
     if (response.statusCode == 200) {
-      _orderItems = json.decode(response.body); // Direct assignment to List
+      _orderItems = json.decode(response.body);
       _initializeControllers();
     }
   }
@@ -601,7 +536,7 @@ class _StyleCardsView extends StatelessWidget {
           children:
               styleManager.groupedItems.entries
                   .map(
-                    (entry) => _StyleCard(
+                    (entry) => StyleCard(
                       styleCode: entry.key,
                       items: entry.value,
                       controllers: styleManager.controllers[entry.key]!,
@@ -618,287 +553,15 @@ class _StyleCardsView extends StatelessWidget {
   }
 }
 
-class _StyleCard extends StatelessWidget {
-  final String styleCode;
-  final List<dynamic> items;
-  final Map<String, Map<String, TextEditingController>> controllers;
-  final VoidCallback onRemove;
-  final VoidCallback updateTotals;
-  final Color Function(String) getColor;
-
-  const _StyleCard({
-    required this.styleCode,
-    required this.items,
-    required this.controllers,
-    required this.onRemove,
-    required this.updateTotals,
-    required this.getColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final firstItem = items.first;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildHeaderSection(firstItem),
-            const SizedBox(height: 16),
-            _buildPriceTable(context),
-            _buildActionButtons(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeaderSection(Map<String, dynamic> firstItem) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (firstItem['fullImagePath'] != null)
-          _buildItemImage(firstItem['fullImagePath']),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                styleCode,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryColor,
-                ),
-              ),
-              const SizedBox(height: 8),
-              if (firstItem['itemSubGrpName'] != null)
-                _buildDetailRow('Category:', firstItem['itemSubGrpName']),
-              if (firstItem['itemName'] != null)
-                _buildDetailRow('Product:', firstItem['itemName']),
-              if (firstItem['brandName'] != null)
-                _buildDetailRow('Brand:', firstItem['brandName']),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildItemImage(String imagePath) {
-    return Container(
-      width: 100,
-      height: 120,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
-      child: Image.network(
-        _getImageUrl(imagePath),
-        fit: BoxFit.fitWidth,
-        loadingBuilder:
-            (context, child, loadingProgress) =>
-                loadingProgress == null
-                    ? child
-                    : const Center(child: CircularProgressIndicator()),
-        errorBuilder: (context, error, stackTrace) => const _ImageErrorWidget(),
-      ),
-    );
-  }
-
-  String _getImageUrl(String fullImagePath) =>
-      fullImagePath.startsWith('http')
-          ? fullImagePath
-          : '${AppConstants.BASE_URL}/images/${fullImagePath.split('/').last.split('?').first}';
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: RichText(
-        text: TextSpan(
-          style: TextStyle(fontSize: 14, color: Colors.grey[800]),
-          children: [
-            TextSpan(
-              text: '$label ',
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            TextSpan(text: value),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPriceTable(BuildContext context) {
-    final sizeDetails = _getSizeDetails(items);
-    final sortedSizes = sizeDetails.keys.toList()..sort();
-    final sortedShades = _getSortedShades(items);
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minWidth: MediaQuery.of(context).size.width - 64,
-        ),
-        child: Table(
-          border: TableBorder.all(color: Colors.grey.shade300, width: 1),
-          columnWidths: _buildColumnWidths(sortedSizes),
-          children: [
-            _buildTableRow('MRP', sortedSizes, sizeDetails, 'mrp'),
-            _buildTableRow('WSP', sortedSizes, sizeDetails, 'wsp'),
-            _buildHeaderRow(sortedSizes),
-            ...sortedShades.map((shade) => _buildShadeRow(shade, sortedSizes)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Map<String, Map<String, num>> _getSizeDetails(List<dynamic> items) {
-    final details = <String, Map<String, num>>{};
-    for (final item in items) {
-      final size = item['sizeName']?.toString() ?? 'N/A';
-      details[size] = {
-        'mrp': (item['mrp'] as num?) ?? 0,
-        'wsp': (item['wsp'] as num?) ?? 0,
-      };
-    }
-    return details;
-  }
-
-  List<String> _getSortedShades(List<dynamic> items) =>
-      items.map((e) => e['shadeName']?.toString() ?? '').toSet().toList()
-        ..sort();
-
-  Map<int, TableColumnWidth> _buildColumnWidths(List<String> sizes) => {
-    0: const FixedColumnWidth(100),
-    for (var i = 0; i < sizes.length; i++) i + 1: const FixedColumnWidth(80),
-  };
-
-  TableRow _buildTableRow(
-    String label,
-    List<String> sizes,
-    Map<String, Map<String, num>> details,
-    String key,
-  ) {
-    return TableRow(
-      children: [
-        Padding(padding: const EdgeInsets.all(8), child: Text(label)),
-        ...sizes.map(
-          (size) => Center(
-            child: Text('${details[size]![key]?.toStringAsFixed(0) ?? '0'}'),
-          ),
-        ),
-      ],
-    );
-  }
-
-  TableRow _buildHeaderRow(List<String> sizes) {
-    return TableRow(
-      decoration: BoxDecoration(color: Colors.grey.shade100),
-      children: [
-        const TableCell(
-          verticalAlignment: TableCellVerticalAlignment.middle,
-          child: _TableHeaderCell(),
-        ),
-        ...sizes.map((size) => Center(child: Text(size))),
-      ],
-    );
-  }
-
-  TableRow _buildShadeRow(String shade, List<String> sizes) {
-    return TableRow(
-      children: [
-        TableCell(
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              children: [
-                const SizedBox(width: 8),
-                Text(
-                  shade,
-                  style: TextStyle(
-                    color: getColor(shade), // Apply color to text only
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        ...sizes.map(
-          (size) => Padding(
-            padding: const EdgeInsets.all(4),
-            child: TextField(
-              controller: controllers[shade]?[size],
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              onChanged: (_) => updateTotals(),
-              decoration: const InputDecoration(
-                contentPadding: EdgeInsets.symmetric(vertical: 8),
-                hintText: '0',
-                hintStyle: TextStyle(color: Colors.grey),
-                border: InputBorder.none,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButtons() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 14),
-      child: Row(
-        children: [
-          _buildActionButton(
-            label: 'Update',
-            icon: Icons.update,
-            color: AppColors.primaryColor,
-            onPressed: () {},
-          ),
-          const SizedBox(width: 16),
-          _buildActionButton(
-            label: 'Remove',
-            icon: Icons.delete,
-            color: Colors.grey,
-            onPressed: onRemove,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required String label,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onPressed,
-  }) {
-    return Expanded(
-      child: OutlinedButton.icon(
-        icon: Icon(icon, size: 20, color: color),
-        label: Text(label, style: TextStyle(color: color)),
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(color: color),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-        onPressed: onPressed,
-      ),
-    );
-  }
-}
-
 class _OrderForm extends StatelessWidget {
   final _OrderControllers controllers;
   final _DropdownData dropdownData;
   final BoxConstraints constraints;
   final Function(String?, String?) onPartySelected;
   final VoidCallback updateTotals;
-  final Future<void> Function() saveOrder; // Add this
-  final Map<String, dynamic> additionalInfo; // Add this
+  final Future<void> Function() saveOrder;
+  final Map<String, dynamic> additionalInfo;
+  final Function(Map<String, dynamic>) onAdditionalInfoUpdated;
 
   const _OrderForm({
     required this.controllers,
@@ -906,8 +569,9 @@ class _OrderForm extends StatelessWidget {
     required this.constraints,
     required this.onPartySelected,
     required this.updateTotals,
-    required this.saveOrder, // Add this
-    required this.additionalInfo, // Add this
+    required this.saveOrder,
+    required this.additionalInfo,
+    required this.onAdditionalInfoUpdated,
   });
 
   @override
@@ -987,9 +651,81 @@ class _OrderForm extends StatelessWidget {
             readOnly: true,
           ),
         ),
+
+        if (additionalInfo.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          const Text(
+            'Additional Information',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryColor,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Card(
+            elevation: 3,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (additionalInfo['referenceNo'] != null)
+                    _buildInfoRow(
+                      'Reference No:',
+                      additionalInfo['referenceNo'],
+                    ),
+                  if (additionalInfo['dueDate'] != null)
+                    _buildInfoRow('Due Date:', additionalInfo['dueDate']),
+                  if (additionalInfo['paymentTerms'] != null)
+                    _buildInfoRow(
+                      'Payment Terms:',
+                      additionalInfo['paymentTerms'],
+                    ),
+                  if (additionalInfo['salesPerson'] != null)
+                    _buildInfoRow(
+                      'Sales Person:',
+                      additionalInfo['salesPerson'],
+                    ),
+                  if (additionalInfo['creditPeriod'] != null)
+                    _buildInfoRow(
+                      'Credit Period:',
+                      '${additionalInfo['creditPeriod']} days',
+                    ),
+                  if (additionalInfo['bookingType'] != null)
+                    _buildInfoRow(
+                      'Booking Type:',
+                      additionalInfo['bookingType'],
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+
         const SizedBox(height: 20),
         _buildActionButtons(context),
       ],
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Text(value)),
+        ],
+      ),
     );
   }
 
@@ -1118,11 +854,13 @@ class _OrderForm extends StatelessWidget {
                       creditPeriod: controllers.creditPeriod,
                       salesLedKey: controllers.salesLedKey,
                       ledgerName: controllers.ledgerName,
-                      onValueChanged: updateValue
+                      onValueChanged: (newInfo) {
+                        onAdditionalInfoUpdated(newInfo);
+                      },
                     ),
               );
               if (result != null) {
-                additionalInfo.addAll(result);
+                onAdditionalInfoUpdated(result);
               }
             },
             style: ElevatedButton.styleFrom(
@@ -1134,11 +872,10 @@ class _OrderForm extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(width: 10),
         Expanded(
           child: ElevatedButton(
-            onPressed: () async {
-              await saveOrder();
-            },
+            onPressed: saveOrder,
             child: const Text(
               'Save',
               style: TextStyle(color: AppColors.primaryColor),
@@ -1148,17 +885,10 @@ class _OrderForm extends StatelessWidget {
       ],
     );
   }
-
- void updateValue(Map<String, dynamic> formData) {
-    
-      print('Reference No: ${formData['referenceNo']}');
-      print('Due Date: ${formData['dueDate']}');
-
-  }
 }
 
 Widget buildTextField(
-  BuildContext context, // Add context parameter
+  BuildContext context,
   String label,
   TextEditingController controller, {
   bool isDate = false,
@@ -1208,80 +938,14 @@ Widget buildFullField(
     child: buildTextField(context, label, controller),
   );
 }
-
-class _ImageErrorWidget extends StatelessWidget {
-  const _ImageErrorWidget();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.image_not_supported, size: 40),
-          SizedBox(height: 8),
-          Text(
-            'Image not available',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-        ],
-      ),
-    );
+  Color _getColorCode(String color) {
+    switch (color.toLowerCase()) {
+      case 'red': return Colors.red;
+      case 'green': return Colors.green;
+      case 'blue': return Colors.blue;
+      case 'yellow': return Colors.yellow[800]!;
+      case 'black': return Colors.black;
+      case 'white': return Colors.grey;
+      default: return Colors.black;
+    }
   }
-}
-
-class _TableHeaderCell extends StatelessWidget {
-  const _TableHeaderCell();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 48,
-      child: CustomPaint(
-        painter: _DiagonalLinePainter(),
-        child: const Stack(
-          children: [
-            Positioned(
-              left: 12,
-              top: 20,
-              child: Text(
-                'Shade',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
-                ),
-              ),
-            ),
-            Positioned(
-              right: 14,
-              bottom: 20,
-              child: Text(
-                'Size',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DiagonalLinePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = Colors.grey.shade400
-          ..strokeWidth = 1
-          ..style;
-    PaintingStyle.stroke;
-    canvas.drawLine(Offset.zero, Offset(size.width, size.height), paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
