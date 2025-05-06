@@ -156,36 +156,60 @@ class StyleCard extends StatelessWidget {
         for (var i = 0; i < sizes.length; i++) i + 1: const FixedColumnWidth(80),
       };
 
-  TableRow _buildTableRow(
-    String label,
-    List<String> sizes,
-    Map<String, Map<String, num>> details,
-    String key,
-  ) {
-    return TableRow(
-      children: [
-        Padding(padding: const EdgeInsets.all(8), child: Text(label)),
-        ...sizes.map(
-          (size) => Center(
-            child: Text('${details[size]![key]?.toStringAsFixed(0) ?? '0'}'),
+TableRow _buildTableRow(
+  String label,
+  List<String> sizes,
+  Map<String, Map<String, num>> details,
+  String key,
+) {
+  return TableRow(
+    children: [
+      TableCell(
+        verticalAlignment: TableCellVerticalAlignment.middle,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Text(label),
+        ),
+      ),
+      ...sizes.map(
+        (size) => TableCell(
+          verticalAlignment: TableCellVerticalAlignment.middle,
+          child: Center(
+            child: Text(
+              '${details[size]?[key]?.toStringAsFixed(0) ?? '0'}',
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
-  TableRow _buildHeaderRow(List<String> sizes) {
-    return TableRow(
-      decoration: BoxDecoration(color: Colors.grey.shade100),
-      children: [
-        const TableCell(
+
+TableRow _buildHeaderRow(List<String> sizes) {
+  return TableRow(
+    decoration: BoxDecoration(color: Colors.grey.shade100),
+    children: [
+      const TableCell(
+        verticalAlignment: TableCellVerticalAlignment.middle,
+        child: _TableHeaderCell(),
+      ),
+      ...sizes.map(
+        (size) => TableCell(
           verticalAlignment: TableCellVerticalAlignment.middle,
-          child: _TableHeaderCell(),
+          child: Center(
+            child: Text(
+              size,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
         ),
-        ...sizes.map((size) => Center(child: Text(size))),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
   TableRow _buildShadeRow(String shade, List<String> sizes) {
     return TableRow(
