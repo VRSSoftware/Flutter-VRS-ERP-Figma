@@ -87,78 +87,87 @@ class _CatalogPageState extends State<CatalogPage> {
   }
 
   // Fetch Catalog Items
-Future<void> _fetchCatalogItems() async {
-  try {
-    setState(() {
-      catalogItems = [];
-      isLoading = true;
-    });
-
-    // Fetch the catalog data
-    final result = await ApiService.fetchCatalogItem(
-      itemSubGrpKey: itemSubGrpKey!,
-      itemKey: itemKey!,
-      cobr: coBr!,
-      styleKey: selectedStyles.length == 1 ? selectedStyles[0].styleKey : null,
-      shadeKey: selectedShades.isEmpty
-          ? null
-          : selectedShades.map((s) => s.shadeKey).join(','),
-      sizeKey: selectedSize.isEmpty
-          ? null
-          : selectedSize.map((s) => s.itemSizeKey).join(','),
-      fromMRP: fromMRP == "" ? null : fromMRP,
-      toMRP: toMRP == "" ? null : toMRP,
-    );
-
-    int status = result["statusCode"];
-    if (status == 200) {
+  Future<void> _fetchCatalogItems() async {
+    try {
       setState(() {
-        isLoading = false;
+        catalogItems = [];
+        isLoading = true;
       });
+
+      // Fetch the catalog data
+      final result = await ApiService.fetchCatalogItem(
+        itemSubGrpKey: itemSubGrpKey!,
+        itemKey: itemKey!,
+        cobr: coBr!,
+        styleKey:
+            selectedStyles.length == 1 ? selectedStyles[0].styleKey : null,
+        shadeKey:
+            selectedShades.isEmpty
+                ? null
+                : selectedShades.map((s) => s.shadeKey).join(','),
+        sizeKey:
+            selectedSize.isEmpty
+                ? null
+                : selectedSize.map((s) => s.itemSizeKey).join(','),
+        fromMRP: fromMRP == "" ? null : fromMRP,
+        toMRP: toMRP == "" ? null : toMRP,
+      );
+
+      int status = result["statusCode"];
+      if (status == 200) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+
+      final items = result["catalogs"];
+
+      // Filter by WSP first
+      double? wspFrom = double.tryParse(WSPfrom);
+      double? wspTo = double.tryParse(WSPto);
+
+      List<Catalog> wspFilteredCatalogs = items;
+
+      if (wspFrom != null && wspTo != null) {
+        wspFilteredCatalogs =
+            wspFilteredCatalogs
+                .where(
+                  (catalog) => catalog.wsp >= wspFrom && catalog.wsp <= wspTo,
+                )
+                .toList();
+      } else if (wspFrom != null) {
+        wspFilteredCatalogs =
+            wspFilteredCatalogs
+                .where((catalog) => catalog.wsp >= wspFrom)
+                .toList();
+      } else if (wspTo != null) {
+        wspFilteredCatalogs =
+            wspFilteredCatalogs
+                .where((catalog) => catalog.wsp <= wspTo)
+                .toList();
+      }
+
+      // Now, filter by style if styles are selected
+      if (selectedStyles.isNotEmpty) {
+        final selectedStyleKeys =
+            selectedStyles.map((style) => style.styleKey).toSet();
+
+        wspFilteredCatalogs =
+            wspFilteredCatalogs
+                .where(
+                  (catalog) => selectedStyleKeys.contains(catalog.styleKey),
+                )
+                .toList();
+      }
+
+      // Set the final filtered catalog items
+      setState(() {
+        catalogItems = wspFilteredCatalogs;
+      });
+    } catch (e) {
+      print('Failed to load catalog items: $e');
     }
-
-    final items = result["catalogs"];
-
-    // Filter by WSP first
-    double? wspFrom = double.tryParse(WSPfrom);
-    double? wspTo = double.tryParse(WSPto);
-
-    List<Catalog> wspFilteredCatalogs = items;
-
-    if (wspFrom != null && wspTo != null) {
-      wspFilteredCatalogs = wspFilteredCatalogs
-          .where((catalog) => catalog.wsp >= wspFrom && catalog.wsp <= wspTo)
-          .toList();
-    } else if (wspFrom != null) {
-      wspFilteredCatalogs = wspFilteredCatalogs
-          .where((catalog) => catalog.wsp >= wspFrom)
-          .toList();
-    } else if (wspTo != null) {
-      wspFilteredCatalogs = wspFilteredCatalogs
-          .where((catalog) => catalog.wsp <= wspTo)
-          .toList();
-    }
-
-    // Now, filter by style if styles are selected
-    if (selectedStyles.isNotEmpty) {
-      final selectedStyleKeys = selectedStyles.map((style) => style.styleKey).toSet();
-
-      wspFilteredCatalogs = wspFilteredCatalogs
-          .where((catalog) => selectedStyleKeys.contains(catalog.styleKey))
-          .toList();
-    }
-
-    // Set the final filtered catalog items
-    setState(() {
-      catalogItems = wspFilteredCatalogs;
-    });
-
-  } catch (e) {
-    print('Failed to load catalog items: $e');
   }
-}
-
-
 
   // Fetch Styles by Item Key
   Future<void> _fetchStylesByItemKey(String itemKey) async {
@@ -272,51 +281,196 @@ Future<void> _fetchCatalogItems() async {
                             ), // Border color
                           ),
                           child: Padding(
-                            padding: const EdgeInsets.all(16.0),
+                            padding: EdgeInsets.all(
+                              MediaQuery.of(context).size.width > 600
+                                  ? 24.0
+                                  : 16.0,
+                            ),
                             child: StatefulBuilder(
                               builder: (context, setStateDialog) {
-                                return Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Options",
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                return SingleChildScrollView(
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxWidth:
+                                          MediaQuery.of(context).size.width >
+                                                  600
+                                              ? 500
+                                              : 400,
                                     ),
-                                    const SizedBox(height: 16),
-                                    _buildToggleRow("Show MRP", showMRP, (val) {
-                                      setState(() => showMRP = val);
-                                      setStateDialog(() {});
-                                    }),
-                                    _buildToggleRow("Show WSP", showWSP, (val) {
-                                      setState(() => showWSP = val);
-                                      setStateDialog(() {});
-                                    }),
-                                    _buildToggleRow("Show Sizes", showSizes, (
-                                      val,
-                                    ) {
-                                      setState(() => showSizes = val);
-                                      setStateDialog(() {});
-                                    }),
-                                    _buildToggleRow("Show Shades", showShades, (
-                                      val,
-                                    ) {
-                                      setState(() => showShades = val);
-                                      setStateDialog(() {});
-                                    }),
-                                    const SizedBox(height: 12),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: TextButton(
-                                        onPressed:
-                                            () => Navigator.of(context).pop(),
-                                        child: Text("Close"),
-                                      ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Options",
+                                          style: TextStyle(
+                                            fontSize:
+                                                MediaQuery.of(
+                                                          context,
+                                                        ).size.width >
+                                                        600
+                                                    ? 22
+                                                    : 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 20),
+                                        LayoutBuilder(
+                                          builder: (context, constraints) {
+                                            final isWide =
+                                                constraints.maxWidth > 400;
+                                            return isWide
+                                                ? Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Column(
+                                                        children: [
+                                                          _buildToggleRow(
+                                                            "Show MRP",
+                                                            showMRP,
+                                                            (val) {
+                                                              setState(
+                                                                () =>
+                                                                    showMRP =
+                                                                        val,
+                                                              );
+                                                              setStateDialog(
+                                                                () {},
+                                                              );
+                                                            },
+                                                          ),
+                                                          _buildToggleRow(
+                                                            "Show WSP",
+                                                            showWSP,
+                                                            (val) {
+                                                              setState(
+                                                                () =>
+                                                                    showWSP =
+                                                                        val,
+                                                              );
+                                                              setStateDialog(
+                                                                () {},
+                                                              );
+                                                            },
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 16),
+                                                    Expanded(
+                                                      child: Column(
+                                                        children: [
+                                                          _buildToggleRow(
+                                                            "Show Sizes",
+                                                            showSizes,
+                                                            (val) {
+                                                              setState(
+                                                                () =>
+                                                                    showSizes =
+                                                                        val,
+                                                              );
+                                                              setStateDialog(
+                                                                () {},
+                                                              );
+                                                            },
+                                                          ),
+                                                          _buildToggleRow(
+                                                            "Show Shades",
+                                                            showShades,
+                                                            (val) {
+                                                              setState(
+                                                                () =>
+                                                                    showShades =
+                                                                        val,
+                                                              );
+                                                              setStateDialog(
+                                                                () {},
+                                                              );
+                                                            },
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                )
+                                                : Column(
+                                                  children: [
+                                                    _buildToggleRow(
+                                                      "Show MRP",
+                                                      showMRP,
+                                                      (val) {
+                                                        setState(
+                                                          () => showMRP = val,
+                                                        );
+                                                        setStateDialog(() {});
+                                                      },
+                                                    ),
+                                                    _buildToggleRow(
+                                                      "Show WSP",
+                                                      showWSP,
+                                                      (val) {
+                                                        setState(
+                                                          () => showWSP = val,
+                                                        );
+                                                        setStateDialog(() {});
+                                                      },
+                                                    ),
+                                                    _buildToggleRow(
+                                                      "Show Sizes",
+                                                      showSizes,
+                                                      (val) {
+                                                        setState(
+                                                          () => showSizes = val,
+                                                        );
+                                                        setStateDialog(() {});
+                                                      },
+                                                    ),
+                                                    _buildToggleRow(
+                                                      "Show Shades",
+                                                      showShades,
+                                                      (val) {
+                                                        setState(
+                                                          () =>
+                                                              showShades = val,
+                                                        );
+                                                        setStateDialog(() {});
+                                                      },
+                                                    ),
+                                                  ],
+                                                );
+                                          },
+                                        ),
+                                        const SizedBox(height: 20),
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: TextButton(
+                                            onPressed:
+                                                () =>
+                                                    Navigator.of(context).pop(),
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 16.0,
+                                                  ),
+                                              child: Text(
+                                                "Close",
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      MediaQuery.of(
+                                                                context,
+                                                              ).size.width >
+                                                              600
+                                                          ? 18
+                                                          : 16,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
                                 );
                               },
                             ),
@@ -339,8 +493,9 @@ Future<void> _fetchCatalogItems() async {
               ),
               child:
                   isLoading
-                      ? Center(child: CircularProgressIndicator()) : 
-                      catalogItems.isEmpty ? Center(child: Text("No Item Available"),) 
+                      ? Center(child: CircularProgressIndicator())
+                      : catalogItems.isEmpty
+                      ? Center(child: Text("No Item Available"))
                       : LayoutBuilder(
                         builder: (context, constraints) {
                           if (viewOption == 0) {
@@ -416,9 +571,9 @@ Future<void> _fetchCatalogItems() async {
   }
 
   double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
-    if (constraints.maxWidth > 1000) return 0.75;
-    if (constraints.maxWidth > 600) return 0.7;
-    return 0.65;
+    if (constraints.maxWidth > 1000) return isLargeScreen ? 0.65 : 0.6;
+    if (constraints.maxWidth > 600) return isLargeScreen ? 0.6 : 0.55;
+    return 0.5;
   }
 
   Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
@@ -466,20 +621,25 @@ Future<void> _fetchCatalogItems() async {
                         Flexible(
                           flex: 2,
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              _getImageUrl(item),
-                              fit: BoxFit.cover,
-                              height: isLargeScreen ? 120 : 100,
-                              width: isLargeScreen ? 120 : 100,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.asset(
-                                  'assets/images/default.png',
-                                  fit: BoxFit.cover,
-                                  height: isLargeScreen ? 120 : 100,
-                                  width: isLargeScreen ? 120 : 100,
-                                );
-                              },
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              topRight: Radius.circular(12),
+                            ),
+                            child: AspectRatio(
+                              aspectRatio: 1, // Maintain square ratio
+                              child: Image.network(
+                                _getImageUrl(item),
+                                width: double.infinity,
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: Colors.grey.shade300,
+                                    child: const Center(
+                                      child: Icon(Icons.error),
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
                           ),
                         ),
@@ -520,7 +680,7 @@ Future<void> _fetchCatalogItems() async {
                               //     ),
                               //   ],
                               // ),
-                              // const SizedBox(height: 4),
+                              const SizedBox(height: 8),
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
@@ -543,7 +703,7 @@ Future<void> _fetchCatalogItems() async {
                                     ),
                                 ],
                               ),
-
+                              const SizedBox(height: 8),
                               if (item.sizeName.isNotEmpty && showSizes)
                                 SingleChildScrollView(
                                   scrollDirection: Axis.horizontal,
@@ -566,7 +726,7 @@ Future<void> _fetchCatalogItems() async {
                                 ),
 
                               // const SizedBox(height: 4),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 8),
                               if (showShades)
                                 SingleChildScrollView(
                                   scrollDirection: Axis.horizontal,
@@ -827,6 +987,7 @@ Future<void> _fetchCatalogItems() async {
     );
   }
 
+
   void _openImageZoom(BuildContext context, Catalog item) {
     Navigator.push(
       context,
@@ -869,26 +1030,24 @@ Future<void> _fetchCatalogItems() async {
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
                   ),
-                  child: Image.network(
-                    _getImageUrl(item),
-                    height: 140,
-                    width: double.infinity,
-                    fit: BoxFit.cover, // Fits width and crops height
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        height: 140,
-                        width: double.infinity,
-                        color: Colors.grey.shade300,
-                        child: Image.asset(
-                          'assets/images/default.png',
-                          fit: BoxFit.cover,
-                        ),
-                      );
-                    },
+                  child: AspectRatio(
+                    aspectRatio: 1, // Maintain square ratio
+                    child: Image.network(
+                      _getImageUrl(item),
+                      width: double.infinity,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey.shade300,
+                          child: const Center(child: Icon(Icons.error)),
+                        );
+                      },
+                    ),
                   ),
                 ),
 
                 // Info section
+                const SizedBox(height: 10),
                 Padding(
                   padding: EdgeInsets.symmetric(
                     horizontal: isLargeScreen ? 12 : 10,
@@ -902,13 +1061,13 @@ Future<void> _fetchCatalogItems() async {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: AppColors.primaryColor,
-                          fontSize: isLargeScreen ? 18 : 16,
+                          fontSize: isLargeScreen ? 20 : 18,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
 
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 10),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -930,7 +1089,7 @@ Future<void> _fetchCatalogItems() async {
                             ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
 
                       if (item.sizeName.isNotEmpty && showSizes)
                         SingleChildScrollView(
@@ -950,7 +1109,7 @@ Future<void> _fetchCatalogItems() async {
                           ),
                         ),
 
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
                       if (showShades)
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,

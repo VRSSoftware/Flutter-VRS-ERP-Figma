@@ -317,6 +317,7 @@ class _OrderPageState extends State<OrderPage> {
     );
   }
 
+
   double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
     if (constraints.maxWidth > 1000) return isLargeScreen ? 0.65 : 0.6;
     if (constraints.maxWidth > 600) return isLargeScreen ? 0.6 : 0.55;
@@ -381,6 +382,7 @@ class _OrderPageState extends State<OrderPage> {
                                 item.styleCode ,                               
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryColor,
                                   fontSize: isLargeScreen ? 24 : 20,
                                 ),
                               ),
@@ -512,6 +514,7 @@ class _OrderPageState extends State<OrderPage> {
                             item.styleCode,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
+                               color: AppColors.primaryColor,
                               fontSize: isLargeScreen ? 24 : 20,
                             ),
                           ),
@@ -612,7 +615,7 @@ class _OrderPageState extends State<OrderPage> {
                 text: '$value1   ',
                 style: TextStyle(
                   fontSize: isLargeScreen ? 16 : 14,
-                  color: AppColors.primaryColor,
+                  color: Colors.grey.shade700,
                   fontWeight: FontWeight.normal,
                 ),
               ),
@@ -628,7 +631,7 @@ class _OrderPageState extends State<OrderPage> {
                 text: value2,
                 style: TextStyle(
                   fontSize: isLargeScreen ? 16 : 14,
-                  color: AppColors.primaryColor,
+                  color:Colors.grey.shade700,
                   fontWeight: FontWeight.normal,
                 ),
               ),
@@ -739,12 +742,13 @@ class _OrderPageState extends State<OrderPage> {
                       item.styleCode,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: isLargeScreen ? 16 : 14,
+                        color: AppColors.primaryColor,
+                        fontSize: isLargeScreen ? 20 : 18,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(height: 6),
+                    SizedBox(height: 10),
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Text.rich(
@@ -764,7 +768,7 @@ class _OrderPageState extends State<OrderPage> {
                               text: '${item.mrp.toStringAsFixed(2)}  ',
                               style: TextStyle(
                                 fontSize: isLargeScreen ? 13 : 12,
-                                color: AppColors.primaryColor, // Value color
+                                color: Colors.grey.shade700, // Value color
                                 fontWeight:
                                     FontWeight
                                         .normal, // Normal weight for values
@@ -784,7 +788,7 @@ class _OrderPageState extends State<OrderPage> {
                               text: '${item.wsp.toStringAsFixed(2)}',
                               style: TextStyle(
                                 fontSize: isLargeScreen ? 13 : 12,
-                                color: AppColors.primaryColor, // Value color
+                                color: Colors.grey.shade700, // Value color
                                 fontWeight:
                                     FontWeight
                                         .normal, // Normal weight for values
@@ -900,6 +904,8 @@ class _OrderPageState extends State<OrderPage> {
       ),
     );
   }
+
+
 
   Widget _buildBottomButtons(bool isLargeScreen) {
     return SafeArea(
