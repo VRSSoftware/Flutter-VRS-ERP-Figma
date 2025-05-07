@@ -823,7 +823,7 @@ class _CatalogPageState extends State<CatalogPage> {
                 Column(
                   children: [
                     AspectRatio(
-                      aspectRatio: 5 / 9,
+                              aspectRatio: 5 / 5.5,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Image.network(

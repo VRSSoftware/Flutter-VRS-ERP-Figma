@@ -481,7 +481,7 @@ class _OrderPageState extends State<OrderPage> {
             child: Column(
               children: [
                 AspectRatio(
-                  aspectRatio: 5 / 9,
+                           aspectRatio: 5 / 5.5,
                   child: ClipRRect(
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(12),
