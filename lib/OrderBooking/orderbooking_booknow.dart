@@ -37,7 +37,7 @@ class _OrderPageState extends State<OrderPage> {
   String WSPto = "";
   bool isLoading = true;
   List<String> addedItems = [];
-    String? itemNamee;
+  String? itemNamee;
 
   @override
   void initState() {
@@ -52,7 +52,7 @@ class _OrderPageState extends State<OrderPage> {
           itemSubGrpKey = args['itemSubGrpKey']?.toString();
           coBr = args['coBr']?.toString();
           fcYrId = args['fcYrId']?.toString();
-                 itemNamee = args['itemName']?.toString();
+          itemNamee = args['itemName']?.toString();
         });
 
         if (coBr != null && fcYrId != null) {
@@ -184,7 +184,6 @@ class _OrderPageState extends State<OrderPage> {
     }
   }
 
-  
   Future<void> _fetchShadesByItemKey(String itemKey) async {
     try {
       final fetchedShades = await ApiService.fetchShadesByItemKey(itemKey);
@@ -261,24 +260,25 @@ class _OrderPageState extends State<OrderPage> {
                 horizontal: isLargeScreen ? 16.0 : 8.0,
                 vertical: 8.0,
               ),
-              child: isLoading
-                  ? Center(child: CircularProgressIndicator()) 
-                  : catalogItems.isEmpty 
-                  ? Center(child: Text("No Item Available")) 
-                  : LayoutBuilder(
-                    builder: (context, constraints) {
-                      if (viewOption == 0) {
-                        return _buildGridView(
-                          constraints,
-                          isLargeScreen,
-                          isPortrait,
-                        );
-                      } else if (viewOption == 1) {
-                        return _buildListView(constraints, isLargeScreen);
-                      }
-                      return _buildExpandedView(isLargeScreen);
-                    },
-                  ),
+              child:
+                  isLoading
+                      ? Center(child: CircularProgressIndicator())
+                      : catalogItems.isEmpty
+                      ? Center(child: Text("No Item Available"))
+                      : LayoutBuilder(
+                        builder: (context, constraints) {
+                          if (viewOption == 0) {
+                            return _buildGridView(
+                              constraints,
+                              isLargeScreen,
+                              isPortrait,
+                            );
+                          } else if (viewOption == 1) {
+                            return _buildListView(constraints, isLargeScreen);
+                          }
+                          return _buildExpandedView(isLargeScreen);
+                        },
+                      ),
             ),
           ),
           _buildBottomButtons(isLargeScreen),
@@ -318,13 +318,11 @@ class _OrderPageState extends State<OrderPage> {
     );
   }
 
-
   double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
     if (constraints.maxWidth > 1000) return isLargeScreen ? 0.65 : 0.6;
     if (constraints.maxWidth > 600) return isLargeScreen ? 0.6 : 0.55;
     return 0.6; // More height for small screens to fit full image
   }
-  
 
   Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
     return ListView.builder(
@@ -380,14 +378,14 @@ class _OrderPageState extends State<OrderPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                item.styleCode ,                               
+                                item.styleCode,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.primaryColor,
                                   fontSize: isLargeScreen ? 24 : 20,
                                 ),
                               ),
-                            
+
                               _buildDetailTextRow(
                                 'MRP',
                                 '${item.mrp.toStringAsFixed(2)}',
@@ -395,7 +393,7 @@ class _OrderPageState extends State<OrderPage> {
                                 '${item.wsp.toStringAsFixed(2)}',
                                 isLargeScreen,
                               ),
-                                _buildDetailText(
+                              _buildDetailText(
                                 'Sizes',
                                 item.sizeDetails,
                                 isLargeScreen,
@@ -405,7 +403,6 @@ class _OrderPageState extends State<OrderPage> {
                                 item.shadeName,
                                 isLargeScreen,
                               ),
-                            
                             ],
                           ),
 
@@ -481,7 +478,7 @@ class _OrderPageState extends State<OrderPage> {
             child: Column(
               children: [
                 AspectRatio(
-                           aspectRatio: 5 / 5.5,
+                  aspectRatio: 5 / 5.5,
                   child: ClipRRect(
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(12),
@@ -515,10 +512,11 @@ class _OrderPageState extends State<OrderPage> {
                             item.styleCode,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                               color: AppColors.primaryColor,
+                              color: AppColors.primaryColor,
                               fontSize: isLargeScreen ? 24 : 20,
                             ),
                           ),
+
                           // _buildDetailTextRow(
                           //   'MRP',
                           //   '${item.mrp.toStringAsFixed(2)}',
@@ -536,7 +534,6 @@ class _OrderPageState extends State<OrderPage> {
                           //   item.shadeName,
                           //   isLargeScreen,
                           // ),
-                        
                         ],
                       ),
 
@@ -589,8 +586,7 @@ class _OrderPageState extends State<OrderPage> {
     );
   }
 
-
- Widget _buildDetailTextRow(
+  Widget _buildDetailTextRow(
     String label1,
     String value1,
     String label2,
@@ -632,7 +628,7 @@ class _OrderPageState extends State<OrderPage> {
                 text: value2,
                 style: TextStyle(
                   fontSize: isLargeScreen ? 16 : 14,
-                  color:Colors.grey.shade700,
+                  color: Colors.grey.shade700,
                   fontWeight: FontWeight.normal,
                 ),
               ),
@@ -682,7 +678,6 @@ class _OrderPageState extends State<OrderPage> {
     );
   }
 
-
   void _openImageZoom(BuildContext context, Catalog item) {
     Navigator.push(
       context,
@@ -692,7 +687,6 @@ class _OrderPageState extends State<OrderPage> {
     );
   }
 
-  
   Widget _buildItemCard(
     Catalog item,
     bool isLargeScreen,
@@ -707,30 +701,29 @@ class _OrderPageState extends State<OrderPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-       ClipRRect(
-  borderRadius: const BorderRadius.only(
-    topLeft: Radius.circular(12),
-    topRight: Radius.circular(12),
-  ),
-  child: Container(
-    height: 200,  // Set the desired height for the image
-    child: AspectRatio(
-      aspectRatio: 1, // Maintain square ratio
-      child: Image.network(
-        _getImageUrl(item),
-        width: double.infinity,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            color: Colors.grey.shade300,
-            child: const Center(child: Icon(Icons.error)),
-          );
-        },
-      ),
-    ),
-  ),
-),
-
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+              child: Container(
+                height: 200, // Set the desired height for the image
+                child: AspectRatio(
+                  aspectRatio: 1, // Maintain square ratio
+                  child: Image.network(
+                    _getImageUrl(item),
+                    width: double.infinity,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey.shade300,
+                        child: const Center(child: Icon(Icons.error)),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
 
             // Content section
             Expanded(
@@ -909,8 +902,6 @@ class _OrderPageState extends State<OrderPage> {
     );
   }
 
-
-
   Widget _buildBottomButtons(bool isLargeScreen) {
     return SafeArea(
       child: Container(
@@ -919,14 +910,15 @@ class _OrderPageState extends State<OrderPage> {
           vertical: 12,
         ),
         color: Colors.white,
-        child: isLargeScreen
-            ? Row(children: _buildButtonChildren(isLargeScreen))
-            : Wrap(
-                alignment: WrapAlignment.spaceEvenly,
-                spacing: 8,
-                runSpacing: 8,
-                children: _buildButtonChildren(isLargeScreen),
-              ),
+        child:
+            isLargeScreen
+                ? Row(children: _buildButtonChildren(isLargeScreen))
+                : Wrap(
+                  alignment: WrapAlignment.spaceEvenly,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _buildButtonChildren(isLargeScreen),
+                ),
       ),
     );
   }
@@ -1030,21 +1022,23 @@ class _OrderPageState extends State<OrderPage> {
     }
   }
 
-
   void _showBookingDialog(BuildContext context, Catalog item) {
-  showDialog(
-    context: context,
-    builder: (context) => Dialog(
-      insetPadding: EdgeInsets.all(16),
-      child: CatalogBookingTable(
-        itemSubGrpKey: item.itemSubGrpKey.toString() ?? '',
-        itemKey: item.itemKey.toString() ?? '',
-        styleKey: item.styleKey.toString() ?? '',
-        onSuccess: () => setState(() { // Add this callback
-          addedItems.add(item.styleCode);
-        }),
-      ),
-    ),
-  );
-}
+    showDialog(
+      context: context,
+      builder:
+          (context) => Dialog(
+            insetPadding: EdgeInsets.all(16),
+            child: CatalogBookingTable(
+              itemSubGrpKey: item.itemSubGrpKey.toString() ?? '',
+              itemKey: item.itemKey.toString() ?? '',
+              styleKey: item.styleKey.toString() ?? '',
+              onSuccess:
+                  () => setState(() {
+                    // Add this callback
+                    addedItems.add(item.styleCode);
+                  }),
+            ),
+          ),
+    );
+  }
 }

@@ -24,7 +24,7 @@ class BarcodeWiseWidget extends StatefulWidget {
 class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
   final TextEditingController _barcodeController = TextEditingController();
   List<Map<String, dynamic>> _barcodeResults = [];
-
+List<String> addedItems = [];
   Map<String, bool> _filters = {
     'WSP': true,
     'Sizes': true,
@@ -37,6 +37,7 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
     _barcodeController.dispose();
     super.dispose();
   }
+
 
   void _showFilterPopup(BuildContext context) {
     showDialog(
@@ -183,6 +184,9 @@ Future<void> _searchBarcode() async {
                     child: BarcodeItemCard(
                       catalogItem: item,
                       activeFilters: widget.activeFilters,
+                       onSuccess: () => setState(() {
+    addedItems.add(item['styleCode']?.toString() ?? '');
+  }),
                     ),
                   );
                 }).toList(),

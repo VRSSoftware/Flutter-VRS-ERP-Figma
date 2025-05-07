@@ -5,11 +5,13 @@ import 'package:vrs_erp_figma/widget/booknowwidget.dart';
 class BarcodeItemCard extends StatelessWidget {
   final Map<String, dynamic> catalogItem;
   final Set<String> activeFilters;
+    final VoidCallback onSuccess; 
 
   const BarcodeItemCard({
     super.key,
     required this.catalogItem,
     required this.activeFilters,
+     required this.onSuccess,
   });
 
   
@@ -179,8 +181,9 @@ return Container(
           itemSubGrpKey: catalogItem['itemSubGrpKey']?.toString() ?? '',
           itemKey: catalogItem['itemKey']?.toString() ?? '',
           styleKey: catalogItem['styleKey']?.toString() ?? '',
-            onSuccess: () => { // Add this callback
-        
+            onSuccess: ()  { // Add this callback
+           onSuccess(); // Use the passed callback
+            Navigator.pop(context); // Close the dialog
         }),
         ),
       );
