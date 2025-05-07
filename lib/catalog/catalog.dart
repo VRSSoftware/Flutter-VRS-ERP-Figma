@@ -1103,7 +1103,7 @@ class _CatalogPageState extends State<CatalogPage> {
                                   color: Colors.grey[700],
                                 ),
                               ),
-                              Text(item.sizeDetails), // Data remains normal
+                              Text(item.sizeWithMrp), // Data remains normal
                             ],
                           ),
                         ),
