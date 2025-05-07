@@ -311,7 +311,7 @@ class _OrderPageState extends State<OrderPage> {
       itemBuilder: (context, index) {
         final item = catalogItems[index];
         return GestureDetector(
-          onTap: () => _openImageZoom(context, item),
+          onDoubleTap: () => _openImageZoom(context, item),
           child: _buildItemCard(item, isLargeScreen, addedItems),
         );
       },
@@ -330,7 +330,7 @@ class _OrderPageState extends State<OrderPage> {
       itemBuilder: (context, index) {
         final item = catalogItems[index];
         return GestureDetector(
-          onTap: () => _openImageZoom(context, item),
+          onDoubleTap: () => _openImageZoom(context, item),
           child: Container(
             margin: EdgeInsets.symmetric(vertical: 8),
             child: Card(
@@ -378,10 +378,10 @@ class _OrderPageState extends State<OrderPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                item.styleCode,
+                                item.styleCodeWithcount,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.primaryColor,
+                                  color: AppColors.red,
                                   fontSize: isLargeScreen ? 24 : 20,
                                 ),
                               ),
@@ -395,7 +395,7 @@ class _OrderPageState extends State<OrderPage> {
                               ),
                               _buildDetailText(
                                 'Sizes',
-                                item.sizeDetails,
+                                item.sizeWithMrp,
                                 isLargeScreen,
                               ),
                               _buildDetailText(
@@ -464,7 +464,7 @@ class _OrderPageState extends State<OrderPage> {
       itemBuilder: (context, index) {
         final item = catalogItems[index];
         return GestureDetector(
-          onTap: () => _openImageZoom(context, item),
+          onDoubleTap: () => _openImageZoom(context, item),
           child: Card(
             elevation: 4,
             margin: EdgeInsets.symmetric(
@@ -508,14 +508,14 @@ class _OrderPageState extends State<OrderPage> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            item.styleCode,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primaryColor,
-                              fontSize: isLargeScreen ? 24 : 20,
-                            ),
-                          ),
+                          // Text(
+                          //   item.styleCodeWithcount,
+                          //   style: TextStyle(
+                          //     fontWeight: FontWeight.bold,
+                          //     color: AppColors.red,
+                          //     fontSize: isLargeScreen ? 24 : 20,
+                          //   ),
+                          // ),
 
                           // _buildDetailTextRow(
                           //   'MRP',

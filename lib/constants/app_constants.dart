@@ -33,4 +33,5 @@ class AppColors {
   static const Color mutedPink = Color(0xFF917898); // Muted Pink shade
   static const Color deepPurple = Color(0xFF4c394f); // Deep Purple shade
   static const Color maroon = Color(0xFF2e1a1e); // Maroon shade
+  static const Color red = Colors.red;
 }
