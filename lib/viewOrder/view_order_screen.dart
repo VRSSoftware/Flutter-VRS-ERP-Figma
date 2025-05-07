@@ -11,6 +11,7 @@ import 'package:vrs_erp_figma/viewOrder/customer_master.dart';
 import 'package:vrs_erp_figma/viewOrder/style_card.dart';
 import 'package:vrs_erp_figma/models/consignee.dart';
 import 'package:vrs_erp_figma/models/PytTermDisc.dart';
+import 'package:vrs_erp_figma/models/item.dart';
 
 class ViewOrderScreen extends StatefulWidget {
   @override
@@ -26,6 +27,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   final _styleManager = _StyleManager();
   List<Consignee> consignees = [];
   List<PytTermDisc> paymentTerms = [];
+  List<Item> _bookingTypes = [];
   bool isLoading = true;
 
   @override
@@ -35,6 +37,24 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     _setInitialDates();
     fetchAndPrintSalesOrderNumber();
     _styleManager.updateTotalsCallback = _updateTotals;
+    _loadBookingTypes();
+  }
+
+  Future<void> _loadBookingTypes() async {
+    try {
+      final rawData = await ApiService.fetchBookingTypes(coBrId: '01');
+      setState(() {
+        _bookingTypes = (rawData as List)
+            .map((json) => Item(
+                  itemKey: json['key'],
+                  itemName: json['name'],
+                  itemSubGrpKey: '',
+                ))
+            .toList();
+      });
+    } catch (e) {
+      print('Failed to load booking types: $e');
+    }
   }
 
   Future<void> fetchPaymentTerms() async {
@@ -217,7 +237,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
           _additionalInfo['paymentterms'] ?? _orderControllers.pytTermDiscKey ?? '',
       "paymentdays":
           _additionalInfo['paymentdays'] ?? _orderControllers.creditPeriod?.toString() ?? '0',
-      "duedate": calculateFutureDateFromString(_orderControllers.deliveryDays.text),
+      "duedate": calculateDueDate(),
       "refno": _additionalInfo['refno'] ?? '',
       "date": '',
       "bookingtype": _additionalInfo['bookingtype'] ?? '',
@@ -228,7 +248,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     print("Saved Order Data:");
     print(orderDataJson);
 
-   String statusCode = await insertFinalSalesOrder(orderDataJson);
+    String statusCode = await insertFinalSalesOrder(orderDataJson);
 
     showDialog(
       context: context,
@@ -243,7 +263,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               Text(orderDataJson),
-             Text(statusCode),
+              Text(statusCode),
             ],
           ),
         ),
@@ -324,6 +344,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
                     additionalInfo: _additionalInfo,
                     consignees: consignees,
                     paymentTerms: paymentTerms,
+                    bookingTypes: _bookingTypes,
                     onAdditionalInfoUpdated: (newInfo) {
                       setState(() {
                         _additionalInfo = newInfo;
@@ -340,14 +361,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       },
     );
   }
-  String calculateFutureDateFromString2(String daysString) {
-    final int? days = int.tryParse(daysString);
-    if (days == null) {
-      return "";
-    }
-    final DateTime futureDate = DateTime.now().add(Duration(days: days));
-    return DateFormat('yyyy-MM-dd').format(futureDate);
-  }
+
   void _handlePartySelection(String? val, String? key) async {
     if (key == null) return;
     _orderControllers.selectedPartyKey = key;
@@ -705,6 +719,7 @@ class _OrderForm extends StatelessWidget {
   final Map<String, dynamic> additionalInfo;
   final List<Consignee> consignees;
   final List<PytTermDisc> paymentTerms;
+  final List<Item> bookingTypes;
   final Function(Map<String, dynamic>) onAdditionalInfoUpdated;
 
   const _OrderForm({
@@ -717,6 +732,7 @@ class _OrderForm extends StatelessWidget {
     required this.additionalInfo,
     required this.consignees,
     required this.paymentTerms,
+    required this.bookingTypes,
     required this.onAdditionalInfoUpdated,
   });
 
@@ -1001,6 +1017,7 @@ class _OrderForm extends StatelessWidget {
                   additionalInfo: additionalInfo,
                   consignees: consignees,
                   paymentTerms: paymentTerms,
+                  bookingTypes: bookingTypes,
                   onValueChanged: (newInfo) {
                     onAdditionalInfoUpdated(newInfo);
                   },
