@@ -50,11 +50,13 @@ class _CatalogPageState extends State<CatalogPage> {
   String WSPto = "";
   String WSPfrom = "";
   String? itemNamee;
-  bool showWSP = true;
+  bool showWSP = false;
   bool showSizes = true;
   bool showMRP = true;
   bool showShades = true;
   bool isLoading = true;
+  bool showProduct = true;
+  bool showonlySizes = true;
 
   @override
   void initState() {
@@ -86,6 +88,44 @@ class _CatalogPageState extends State<CatalogPage> {
     });
   }
 
+String _getSizeText(Catalog item) {
+  if (!showMRP) {
+    if (showWSP) {
+      // Parse WSP values from sizeDetailsWithoutWSp
+      return _extractWspSizes(item.sizeDetailsWithoutWSp);
+    } else {
+      return item.onlySizes;
+    }
+  } else {
+    if (showWSP) {
+      return item.sizeDetailsWithoutWSp;
+    } else {
+      return item.sizeWithMrp;
+    }
+  }
+}
+
+String _extractWspSizes(String sizeDetails) {
+  try {
+    List<String> sizeEntries = sizeDetails.split(', ');
+    List<String> wspSizes = [];
+    for (String entry in sizeEntries) {
+      List<String> parts = entry.split(' (');
+      if (parts.length >= 2) {
+        String size = parts[0];
+        String values = parts[1].replaceAll(')', '');
+        List<String> mrpWsp = values.split(',');
+        if (mrpWsp.length >= 2) {
+          String wsp = mrpWsp[1].trim();
+          wspSizes.add('$size : $wsp');
+        }
+      }
+    }
+    return wspSizes.join(', ');
+  } catch (e) {
+    return "Size info unavailable";
+  }
+}
   // Fetch Catalog Items
   Future<void> _fetchCatalogItems() async {
     try {
@@ -248,10 +288,10 @@ class _CatalogPageState extends State<CatalogPage> {
           IconButton(
             icon: Icon(
               viewOption == 0
-                  ? CupertinoIcons.square_grid_2x2_fill
+                  ? CupertinoIcons.rectangle_expand_vertical
                   : viewOption == 1
                   ? CupertinoIcons.list_bullet_below_rectangle
-                  : CupertinoIcons.rectangle_expand_vertical,
+                  : CupertinoIcons.square_grid_2x2_fill,
               color: Colors.white,
             ),
             onPressed: () {
@@ -499,15 +539,15 @@ class _CatalogPageState extends State<CatalogPage> {
                       : LayoutBuilder(
                         builder: (context, constraints) {
                           if (viewOption == 0) {
-                            return _buildGridView(
-                              constraints,
-                              isLargeScreen,
-                              isPortrait,
-                            );
+                            return _buildExpandedView(isLargeScreen);
                           } else if (viewOption == 1) {
                             return _buildListView(constraints, isLargeScreen);
                           }
-                          return _buildExpandedView(isLargeScreen);
+                          return _buildGridView(
+                            constraints,
+                            isLargeScreen,
+                            isPortrait,
+                          );
                         },
                       ),
             ),
@@ -571,9 +611,9 @@ class _CatalogPageState extends State<CatalogPage> {
   }
 
   double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
-    if (constraints.maxWidth > 1000) return isLargeScreen ? 0.65 : 0.6;
-    if (constraints.maxWidth > 600) return isLargeScreen ? 0.6 : 0.55;
-    return 0.5;
+    if (constraints.maxWidth > 1000) return isLargeScreen ? 0.35 : 0.4;
+    if (constraints.maxWidth > 400) return isLargeScreen ? 0.4 : 0.35;
+    return 0.4;
   }
 
   Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
@@ -616,6 +656,21 @@ class _CatalogPageState extends State<CatalogPage> {
               color: isSelected ? Colors.blue.shade50 : Colors.white,
               child: Stack(
                 children: [
+                  Positioned(
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
+                    child: Container(
+                      width: 8,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(12),
+                          bottomLeft: Radius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
                   Padding(
                     padding: EdgeInsets.all(isLargeScreen ? 12.0 : 8.0),
                     child: Row(
@@ -629,12 +684,12 @@ class _CatalogPageState extends State<CatalogPage> {
                               topLeft: Radius.circular(12),
                               topRight: Radius.circular(12),
                             ),
-                            child: AspectRatio(
-                              aspectRatio: 1, // Maintain square ratio
+                            child: SizedBox(
+                              height: 155,
+                              width: double.infinity,
                               child: Image.network(
                                 _getImageUrl(item),
-                                width: double.infinity,
-                                fit: BoxFit.contain,
+                                fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return Container(
                                     color: Colors.grey.shade300,
@@ -656,105 +711,127 @@ class _CatalogPageState extends State<CatalogPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              /// Item Name
-                              Text(
-                                item.styleCodeWithcount,
-                                style: TextStyle(
-                                  color: AppColors.primaryColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: isLargeScreen ? 18 : 16,
+                              Padding(
+                                padding: EdgeInsets.all(
+                                  isLargeScreen ? 16 : 12,
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-
-                              /// Row 1: Style, MRP, WSP in a single row
-                              // Row 1: Style, MRP, WSP in a single row
-                              // Row(
-                              //   mainAxisAlignment:
-                              //       MainAxisAlignment.spaceBetween,
-                              //   children: [
-                              //     Expanded(
-                              //       child: _buildDetailText(
-                              //         'Style',
-                              //         item.styleCode,
-                              //         isLargeScreen,
-                              //       ),
-                              //     ),
-                              //   ],
-                              // ),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  if (showMRP)
-                                    Expanded(
-                                      child: _buildDetailText(
-                                        'MRP',
-                                        item.mrp.toStringAsFixed(2),
-                                        isLargeScreen,
-                                      ),
-                                    ),
-                                  if (showWSP)
-                                    Expanded(
-                                      child: _buildDetailText(
-                                        'WSP',
-                                        item.wsp.toStringAsFixed(2),
-                                        isLargeScreen,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              if (item.sizeName.isNotEmpty && showSizes)
-                                SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Size : ',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.grey[700],
+                                child: Table(
+                                  columnWidths: const {
+                                    0: IntrinsicColumnWidth(), // Label
+                                    1: FixedColumnWidth(8), // Colon spacing
+                                    2: FlexColumnWidth(), // Value
+                                  },
+                                  defaultVerticalAlignment:
+                                      TableCellVerticalAlignment.middle,
+                                  children: [
+                                    // 1. Design
+                                    TableRow(
+                                      children: [
+                                        _buildLabelText('Design'),
+                                        const Text(':'),
+                                        Text(
+                                          item.styleCodeWithcount,
+                                          style: TextStyle(
+                                            color: Colors.red,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: isLargeScreen ? 20 : 16,
+                                          ),
                                         ),
-                                      ),
-                                      Text(
-                                        item.sizeWithMrp,
-                                      ), // Data remains normal
-                                    ],
-                                  ),
-                                ),
+                                      ],
+                                    ),
 
-                              // const SizedBox(height: 4),
-                              const SizedBox(height: 8),
-                              if (showShades)
-                                SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      _buildDetailText(
-                                        'Shades',
-                                        '',
-                                        isLargeScreen,
+                                    _buildSpacerRow(),
+
+                                    // 2. Shade
+                                    if (showShades && shades.isNotEmpty)
+                                      TableRow(
+                                        children: [
+                                          _buildLabelText('Shade'),
+                                          const Text(':'),
+                                          Text(
+                                            shades.join(', '),
+                                            style: TextStyle(
+                                              fontSize: isLargeScreen ? 14 : 13,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      Text(
-                                        shades.join(
-                                          ', ',
-                                        ), // Join shades with a comma
-                                        style: TextStyle(
-                                          fontSize: isLargeScreen ? 14 : 13,
-                                          color: Colors.grey[700],
-                                        ),
+
+                                    if (showShades && shades.isNotEmpty)
+                                      _buildSpacerRow(),
+
+                                    // 3. MRP
+                                    if (showMRP)
+                                      TableRow(
+                                        children: [
+                                          _buildLabelText('MRP'),
+                                          const Text(':'),
+                                          Text(
+                                            item.mrp.toStringAsFixed(2),
+                                            style: _valueTextStyle(),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
+
+                                    if (showMRP) _buildSpacerRow(),
+
+                                    // 4. Size
+                                    // 4. Size
+                                    if (item.sizeName.isNotEmpty && showSizes)
+                                      TableRow(
+                                        children: [
+                                          _buildLabelText('Size'),
+                                          const Text(':'),
+                                          SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            child: Text(
+                                              _getSizeText(
+                                                item,
+                                              ), // Updated line
+                                              style: _valueTextStyle(),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+
+                                    if (item.sizeName.isNotEmpty && showSizes)
+                                      _buildSpacerRow(),
+
+                                    // 5. Product
+                                    if (showProduct)
+                                      TableRow(
+                                        children: [
+                                          _buildLabelText('Product'),
+                                          const Text(':'),
+                                          Text(
+                                            item.itemName,
+                                            style: _valueTextStyle(),
+                                          ),
+                                        ],
+                                      ),
+
+                                    if (showProduct) _buildSpacerRow(),
+
+                                    // 6. Remark
+                                 TableRow(
+                        children: [
+                          _buildLabelText('Remark'),
+                          const Text(':'),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Text(
+                              item.remark?.trim().isNotEmpty == true
+                                  ? item.remark!
+                                  : '--',
+                              style: _valueTextStyle(),
+                            ),
+                          ),
+                        ],
+                      ),
+                                  ],
                                 ),
+                              ),
                             ],
                           ),
                         ),
@@ -830,119 +907,144 @@ class _CatalogPageState extends State<CatalogPage> {
               children: [
                 Column(
                   children: [
-                    AspectRatio(
-                      aspectRatio: 5 / 5.5,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
+                    ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
+                      ),
+                      child: SizedBox(
+                        height: 470,
+                        width: double.infinity,
                         child: Image.network(
                           _getImageUrl(item),
                           fit: BoxFit.cover,
-                          width: double.infinity,
                           errorBuilder: (context, error, stackTrace) {
-                            return Image.asset(
-                              'assets/images/default.png',
-                              fit: BoxFit.cover,
-                              width: double.infinity,
+                            return Container(
+                              color: Colors.grey.shade300,
+                              child: const Center(child: Icon(Icons.error)),
                             );
                           },
                         ),
                       ),
                     ),
+
                     Padding(
                       padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Table(
+                        columnWidths: const {
+                          0: IntrinsicColumnWidth(), // Label
+                          1: FixedColumnWidth(8), // Colon spacing
+                          2: FlexColumnWidth(), // Value
+                        },
+                        defaultVerticalAlignment:
+                            TableCellVerticalAlignment.middle,
                         children: [
-                          /// Item Name
-                          Text(
-                            item.styleCodeWithcount,
-                            style: TextStyle(
-                              color: AppColors.primaryColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: isLargeScreen ? 22 : 18,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: 8),
-
-                          /// Row 2: Style, MRP, WSP
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          // 1. Design
+                          TableRow(
                             children: [
-                              // Expanded(
-                              //   child: _buildDetailText(
-                              //     'Style', // The label
-                              //     item.styleCode, // The value
-                              //     isLargeScreen, // The boolean indicating large screen size
-                              //   ),
-                              // ),
-                              if (showMRP)
-                                Expanded(
-                                  child: _buildDetailText(
-                                    'MRP', // The label
-                                    item.mrp.toStringAsFixed(
-                                      2,
-                                    ), // Convert to string if necessary
-                                    isLargeScreen, // The boolean indicating large screen size
-                                  ),
+                              _buildLabelText('Design'),
+                              const Text(':'),
+                              Text(
+                                item.styleCodeWithcount,
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: isLargeScreen ? 20 : 16,
                                 ),
-                              if (showWSP)
-                                Expanded(
-                                  child: _buildDetailText(
-                                    'WSP', // The label
-                                    item.wsp.toStringAsFixed(
-                                      2,
-                                    ), // Convert to string if necessary
-                                    isLargeScreen, // The boolean indicating large screen size
-                                  ),
-                                ),
+                              ),
                             ],
                           ),
 
-                          // Add Sizes Row here
+                          _buildSpacerRow(),
+
+                          // 2. Shade
+                          if (showShades && shades.isNotEmpty)
+                            TableRow(
+                              children: [
+                                _buildLabelText('Shade'),
+                                const Text(':'),
+                                Text(
+                                  shades.join(', '),
+                                  style: TextStyle(
+                                    fontSize: isLargeScreen ? 14 : 13,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                          if (showShades && shades.isNotEmpty)
+                            _buildSpacerRow(),
+
+                          // 3. MRP
+                          if (showMRP)
+                            TableRow(
+                              children: [
+                                _buildLabelText('MRP'),
+                                const Text(':'),
+                                Text(
+                                  item.mrp.toStringAsFixed(2),
+                                  style: _valueTextStyle(),
+                                ),
+                              ],
+                            ),
+
+                          if (showMRP) _buildSpacerRow(),
+
+                          // 4. Size
+                          // 4. Size
                           if (item.sizeName.isNotEmpty && showSizes)
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Size : ',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey[700],
-                                    ),
+                            TableRow(
+                              children: [
+                                _buildLabelText('Size'),
+                                const Text(':'),
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Text(
+                                    _getSizeText(item), // Updated line
+                                    style: _valueTextStyle(),
                                   ),
-                                  Text(item.sizeWithMrp), // Data remains normal
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          const SizedBox(height: 4),
-                          if (showShades)
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildDetailText('Shades', '', isLargeScreen),
-                                  Text(
-                                    shades.join(
-                                      ', ',
-                                    ), // Join shades with a comma
-                                    style: TextStyle(
-                                      fontSize: isLargeScreen ? 14 : 13,
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
-                                ],
-                              ),
+
+                          if (item.sizeName.isNotEmpty && showSizes)
+                            _buildSpacerRow(),
+
+                          // 5. Product
+                          if (showProduct)
+                            TableRow(
+                              children: [
+                                _buildLabelText('Product'),
+                                const Text(':'),
+                                Text(item.itemName, style: _valueTextStyle()),
+                              ],
                             ),
+
+                          if (showProduct) _buildSpacerRow(),
+
+                          // 6. Remark
+                         TableRow(
+                        children: [
+                          _buildLabelText('Remark'),
+                          const Text(':'),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Text(
+                              item.remark?.trim().isNotEmpty == true
+                                  ? item.remark!
+                                  : '--',
+                              style: _valueTextStyle(),
+                            ),
+                          ),
+                        ],
+                      ),
                         ],
                       ),
                     ),
                   ],
                 ),
+
                 if (isSelected)
                   Positioned(
                     top: 8,
@@ -965,6 +1067,27 @@ class _CatalogPageState extends State<CatalogPage> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildLabelText(String label) {
+    return Text(
+      label,
+      style: TextStyle(
+        fontWeight: FontWeight.bold,
+        color: Colors.grey[700],
+        fontSize: 14,
+      ),
+    );
+  }
+
+  TextStyle _valueTextStyle() {
+    return TextStyle(color: Colors.grey[800], fontSize: 14);
+  }
+
+  TableRow _buildSpacerRow() {
+    return const TableRow(
+      children: [SizedBox(height: 8), SizedBox(height: 8), SizedBox(height: 8)],
     );
   }
 
@@ -1010,19 +1133,17 @@ class _CatalogPageState extends State<CatalogPage> {
         item.shadeName.split(',').map((s) => s.trim()).toList();
 
     return GestureDetector(
-          onDoubleTap: () {
-            _openImageZoom(context, item); // Always open image on double tap
-          },
-          onLongPress: () {
-            _toggleItemSelection(item); // Start selection mode
-          },
-          onTap: () {
-            if (selectedItems.isNotEmpty) {
-              _toggleItemSelection(
-                item,
-              ); // Only work if selection mode is active
-            }
-          },
+      onDoubleTap: () {
+        _openImageZoom(context, item); // Always open image on double tap
+      },
+      onLongPress: () {
+        _toggleItemSelection(item); // Start selection mode
+      },
+      onTap: () {
+        if (selectedItems.isNotEmpty) {
+          _toggleItemSelection(item); // Only work if selection mode is active
+        }
+      },
 
       child: Card(
         elevation: isSelected ? 8 : 4,
@@ -1032,18 +1153,21 @@ class _CatalogPageState extends State<CatalogPage> {
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize:
+                  MainAxisSize.min, // Ensures the card height matches content
               children: [
+                // Image Section
                 ClipRRect(
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
                   ),
-                  child: AspectRatio(
-                    aspectRatio: 1, // Maintain square ratio
+                  child: SizedBox(
+                    height: 240,
+                    width: double.infinity,
                     child: Image.network(
                       _getImageUrl(item),
-                      width: double.infinity,
-                      fit: BoxFit.contain,
+                      fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
                           color: Colors.grey.shade300,
@@ -1054,102 +1178,126 @@ class _CatalogPageState extends State<CatalogPage> {
                   ),
                 ),
 
-                // Info section
-                const SizedBox(height: 10),
+                // Padding + Table
                 Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isLargeScreen ? 12 : 10,
-                    vertical: 6,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
+                  child: Table(
+                    columnWidths: const {
+                      0: IntrinsicColumnWidth(),
+                      1: FixedColumnWidth(8),
+                      2: FlexColumnWidth(),
+                    },
+                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                     children: [
-                      Text(
-                        item.styleCodeWithcount,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryColor,
-                          fontSize: isLargeScreen ? 12 : 14,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-
-                      const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      // Design
+                      TableRow(
                         children: [
-                          if (showMRP)
-                            Expanded(
-                              child: _buildDetailText(
-                                'MRP',
-                                item.mrp.toStringAsFixed(2),
-                                isLargeScreen,
+                          _buildLabelText('Design'),
+                          const Text(':'),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Text(
+                              item.styleCodeWithcount,
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                                fontSize: isLargeScreen ? 20 : 16,
                               ),
                             ),
-                          if (showWSP)
-                            Expanded(
-                              child: _buildDetailText(
-                                'WSP',
-                                item.wsp.toStringAsFixed(2),
-                                isLargeScreen,
-                              ),
-                            ),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      _buildSpacerRow(),
 
+                      // Shade
+                      if (showShades && shades.isNotEmpty)
+                        TableRow(
+                          children: [
+                            _buildLabelText('Shade'),
+                            const Text(':'),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Text(
+                                shades.join(', '),
+                                style: TextStyle(
+                                  fontSize: isLargeScreen ? 14 : 13,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      if (showShades && shades.isNotEmpty) _buildSpacerRow(),
+
+                      // MRP
+                      if (showMRP)
+                        TableRow(
+                          children: [
+                            _buildLabelText('MRP'),
+                            const Text(':'),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Text(
+                                item.mrp.toStringAsFixed(2),
+                                style: _valueTextStyle(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      if (showMRP) _buildSpacerRow(),
+
+                      // Size (with horizontal scroll)
+                      // 4. Size
                       if (item.sizeName.isNotEmpty && showSizes)
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Size : ',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey[700],
-                                ),
+                        TableRow(
+                          children: [
+                            _buildLabelText('Size'),
+                            const Text(':'),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Text(
+                                _getSizeText(item), // Updated line
+                                style: _valueTextStyle(),
                               ),
-                              Text(item.sizeWithMrp), // Data remains normal
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
+                      if (item.sizeName.isNotEmpty && showSizes)
+                        _buildSpacerRow(),
 
-                      const SizedBox(height: 8),
-                      if (showShades)
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Shade : ',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey[700],
-                                ),
+                      // Product
+                      if (showProduct)
+                        TableRow(
+                          children: [
+                            _buildLabelText('Product'),
+                            const Text(':'),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Text(
+                                item.itemName,
+                                style: _valueTextStyle(),
                               ),
-                              Text(shades.join(', ')), // Data remains normal
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      // Row(
-                      //   crossAxisAlignment: CrossAxisAlignment.start,
-                      //   children: [
-                      //     _buildDetailText('Shades', '', isLargeScreen),
-                      //     Flexible(
-                      //       child: Text(
-                      //         shades.join(', '),
-                      //         style: TextStyle(
-                      //           fontSize: isLargeScreen ? 14 : 13,
-                      //           color: Colors.grey[700],
-                      //         ),
-                      //       ),
-                      //     ),
-                      //   ],
-                      // ),
+                      if (showProduct) _buildSpacerRow(),
+
+                      // Remark (always show label)
+                      TableRow(
+                        children: [
+                          _buildLabelText('Remark'),
+                          const Text(':'),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Text(
+                              item.remark?.trim().isNotEmpty == true
+                                  ? item.remark!
+                                  : '--',
+                              style: _valueTextStyle(),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),

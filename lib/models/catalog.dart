@@ -22,6 +22,7 @@ class Catalog {
   final String sizeDetailsWithoutWSp;
   final String sizeWithMrp;
   final String styleCodeWithcount;
+  final String onlySizes;
 
 
   Catalog({
@@ -48,6 +49,7 @@ class Catalog {
     this.sizeDetailsWithoutWSp = '',
     this.sizeWithMrp = '',
     this.styleCodeWithcount = '',
+    this.onlySizes='',
   });
 
   factory Catalog.fromJson(Map<String, dynamic> json) {
@@ -75,6 +77,7 @@ class Catalog {
       sizeDetailsWithoutWSp: json['sizeDetailsWithoutWSp'] ?? '',
       sizeWithMrp: json['sizeWithMrp'] ?? '',
       styleCodeWithcount: json['styleCodeWithcount'] ?? '',
+       onlySizes: json['onlySizes'] ?? '',
     );
   }
 
@@ -103,6 +106,7 @@ class Catalog {
       'sizeDetailsWithoutWSp' : sizeDetailsWithoutWSp,
       'sizeWithMrp' : sizeWithMrp,
       'styleCodeWithcount' : styleCodeWithcount,
+      'onlySizes':onlySizes,
     };
   }
 }
