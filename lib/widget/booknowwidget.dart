@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 
-
 class CatalogItem {
   final String styleCode;
   final String shadeName;
@@ -21,7 +20,6 @@ class CatalogItem {
     required this.wsp,
   });
 
-
   factory CatalogItem.fromJson(Map<String, dynamic> json) {
     return CatalogItem(
       styleCode: json['styleCode']?.toString() ?? '',
@@ -33,19 +31,21 @@ class CatalogItem {
     );
   }
 }
+
 class CatalogBookingTable extends StatefulWidget {
   final String itemSubGrpKey;
   final String itemKey;
   final String styleKey;
+  final VoidCallback onSuccess;
 
   const CatalogBookingTable({
     super.key,
     required this.itemSubGrpKey,
     required this.itemKey,
     required this.styleKey,
+    required this.onSuccess,
   });
 
-  
   @override
   State<CatalogBookingTable> createState() => _CatalogBookingTableState();
 }
@@ -252,83 +252,91 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              onPressed: () async {
-                                for (var color in controllers.entries) {
-                                  for (var size in color.value.entries) {
-                                    String qty = size.value.text;
-                                    if (qty.isNotEmpty &&
-                                        int.tryParse(qty) != null &&
-                                        int.parse(qty) > 0) {
-                                      final payload = {
-                                        "userId": userId,
-                                        "coBrId": coBrId,
-                                        "fcYrId": fcYrId,
-                                        "data": {
-                                          "designcode": styleCode,
-                                          "mrp": mrp.toStringAsFixed(0),
-                                          "WSP": wsp.toStringAsFixed(0),
-                                          "size": size.key,
-                                          "TotQty": totalQty.toString(),
-                                          "Note":
-                                              "n123", // You can replace this with a Note text controller
-                                          "color": color.key,
-                                          "Qty": qty,
-                                          "cobrid": coBrId,
-                                          "user": userId.toLowerCase(),
-                                          "barcode": "",
-                                        },
-                                        "typ": 0,
-                                      };
+                       onPressed: () async {
+  // Store all the API futures
+  List<Future> apiCalls = [];
 
-                                      final response = await http.post(
-                                        Uri.parse(
-                                          '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
-                                        ),
-                                        headers: {
-                                          'Content-Type': 'application/json',
-                                        },
-                                        body: jsonEncode(payload),
-                                      );
+  for (var color in controllers.entries) {
+    for (var size in color.value.entries) {
+      String qty = size.value.text;
+      if (qty.isNotEmpty && int.tryParse(qty) != null && int.parse(qty) > 0) {
+        final payload = {
+          "userId": userId,
+          "coBrId": coBrId,
+          "fcYrId": fcYrId,
+          "data": {
+            "designcode": styleCode,
+            "mrp": mrp.toStringAsFixed(0),
+            "WSP": wsp.toStringAsFixed(0),
+            "size": size.key,
+            "TotQty": totalQty.toString(),
+            "Note": "n123",
+            "color": color.key,
+            "Qty": qty,
+            "cobrid": coBrId,
+            "user": userId.toLowerCase(),
+            "barcode": "",
+          },
+          "typ": 0,
+        };
 
-                                      if (response.statusCode == 200) {
-                                        debugPrint(
-                                          '✅ Order for $color - ${size.key} submitted successfully',
-                                        );
-                                      } else {
-                                        debugPrint(
-                                          '❌ Failed to submit $color - ${size.key}: ${response.body}',
-                                        );
-                                      }
-                                    }
-                                  }
-                                }
+        apiCalls.add(
+          http.post(
+            Uri.parse(
+              '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(payload),
+          ),
+        );
+      }
+    }
+  }
 
-                                // Optionally show a success message after loop
-                                if (context.mounted) {
-                                  showDialog(
-                                    context: context,
-                                    builder:
-                                        (_) => AlertDialog(
-                                          title: const Text("Success"),
-                                          content: const Text(
-                                            "Booking submitted.",
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed:
-                                                  () => {
-                                                    Navigator.pop(context),
-                                                    Navigator.pop(context),
-                                                   Navigator.pushReplacementNamed(context, '/viewOrder'),
-                                                  },
-                                              child: const Text("OK"),
-                                            ),
-                                          ],
-                                        ),
-                                  );
-                                }
-                              },
-
+  try {
+    // Wait for all API calls to complete
+    final responses = await Future.wait(apiCalls);
+    
+    // Check if all responses are successful
+    if (responses.every((r) => r.statusCode == 200)) {
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text("Success"),
+            content: const Text("Booking submitted."),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  // Close both dialogs and trigger update
+                  Navigator.pop(context); // Close success dialog
+                  Navigator.pop(context); // Close booking table
+                  widget.onSuccess(); // Update parent state
+                },
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  } catch (e) {
+    if (context.mounted) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("Error"),
+          content: Text("Failed to submit: $e"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+},
                               child: const Text(
                                 'Add',
                                 style: TextStyle(fontSize: 16),

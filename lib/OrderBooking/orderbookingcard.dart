@@ -12,6 +12,8 @@ class BarcodeItemCard extends StatelessWidget {
     required this.activeFilters,
   });
 
+  
+
   String _getImageUrl(String? fullImagePath) {
     if (fullImagePath == null || fullImagePath.isEmpty) return '';
     if (fullImagePath.startsWith('http')) return fullImagePath;
@@ -177,8 +179,11 @@ return Container(
           itemSubGrpKey: catalogItem['itemSubGrpKey']?.toString() ?? '',
           itemKey: catalogItem['itemKey']?.toString() ?? '',
           styleKey: catalogItem['styleKey']?.toString() ?? '',
+            onSuccess: () => { // Add this callback
+        
+        }),
         ),
-      ),
-    );
+      );
+    
   }
 }

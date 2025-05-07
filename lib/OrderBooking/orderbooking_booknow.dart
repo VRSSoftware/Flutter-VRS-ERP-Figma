@@ -1032,16 +1032,19 @@ class _OrderPageState extends State<OrderPage> {
 
 
   void _showBookingDialog(BuildContext context, Catalog item) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        insetPadding: EdgeInsets.all(16),
-        child: CatalogBookingTable(
-          itemSubGrpKey: item.itemSubGrpKey.toString() ?? '',
-          itemKey: item.itemKey.toString() ?? '',
-          styleKey: item.styleKey.toString() ?? '',
-        ),
+  showDialog(
+    context: context,
+    builder: (context) => Dialog(
+      insetPadding: EdgeInsets.all(16),
+      child: CatalogBookingTable(
+        itemSubGrpKey: item.itemSubGrpKey.toString() ?? '',
+        itemKey: item.itemKey.toString() ?? '',
+        styleKey: item.styleKey.toString() ?? '',
+        onSuccess: () => setState(() { // Add this callback
+          addedItems.add(item.styleCode);
+        }),
       ),
-    );
-  }
+    ),
+  );
+}
 }
