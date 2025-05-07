@@ -56,6 +56,7 @@ class _CatalogPageState extends State<CatalogPage> {
   bool showShades = true;
   bool isLoading = true;
   bool showProduct = true;
+  bool showRemark = true;
   bool showonlySizes = true;
 
   @override
@@ -88,44 +89,45 @@ class _CatalogPageState extends State<CatalogPage> {
     });
   }
 
-String _getSizeText(Catalog item) {
-  if (!showMRP) {
-    if (showWSP) {
-      // Parse WSP values from sizeDetailsWithoutWSp
-      return _extractWspSizes(item.sizeDetailsWithoutWSp);
+  String _getSizeText(Catalog item) {
+    if (!showMRP) {
+      if (showWSP) {
+        // Parse WSP values from sizeDetailsWithoutWSp
+        return _extractWspSizes(item.sizeDetailsWithoutWSp);
+      } else {
+        return item.onlySizes;
+      }
     } else {
-      return item.onlySizes;
-    }
-  } else {
-    if (showWSP) {
-      return item.sizeDetailsWithoutWSp;
-    } else {
-      return item.sizeWithMrp;
-    }
-  }
-}
-
-String _extractWspSizes(String sizeDetails) {
-  try {
-    List<String> sizeEntries = sizeDetails.split(', ');
-    List<String> wspSizes = [];
-    for (String entry in sizeEntries) {
-      List<String> parts = entry.split(' (');
-      if (parts.length >= 2) {
-        String size = parts[0];
-        String values = parts[1].replaceAll(')', '');
-        List<String> mrpWsp = values.split(',');
-        if (mrpWsp.length >= 2) {
-          String wsp = mrpWsp[1].trim();
-          wspSizes.add('$size : $wsp');
-        }
+      if (showWSP) {
+        return item.sizeDetailsWithoutWSp;
+      } else {
+        return item.sizeWithMrp;
       }
     }
-    return wspSizes.join(', ');
-  } catch (e) {
-    return "Size info unavailable";
   }
-}
+
+  String _extractWspSizes(String sizeDetails) {
+    try {
+      List<String> sizeEntries = sizeDetails.split(', ');
+      List<String> wspSizes = [];
+      for (String entry in sizeEntries) {
+        List<String> parts = entry.split(' (');
+        if (parts.length >= 2) {
+          String size = parts[0];
+          String values = parts[1].replaceAll(')', '');
+          List<String> mrpWsp = values.split(',');
+          if (mrpWsp.length >= 2) {
+            String wsp = mrpWsp[1].trim();
+            wspSizes.add('$size : $wsp');
+          }
+        }
+      }
+      return wspSizes.join(', ');
+    } catch (e) {
+      return "Size info unavailable";
+    }
+  }
+
   // Fetch Catalog Items
   Future<void> _fetchCatalogItems() async {
     try {
@@ -394,6 +396,20 @@ String _extractWspSizes(String sizeDetails) {
                                                               );
                                                             },
                                                           ),
+                                                          _buildToggleRow(
+                                                            "Show Product",
+                                                            showProduct,
+                                                            (val) {
+                                                              setState(
+                                                                () =>
+                                                                    showProduct =
+                                                                        val,
+                                                              );
+                                                              setStateDialog(
+                                                                () {},
+                                                              );
+                                                            },
+                                                          ),
                                                         ],
                                                       ),
                                                     ),
@@ -422,6 +438,20 @@ String _extractWspSizes(String sizeDetails) {
                                                               setState(
                                                                 () =>
                                                                     showShades =
+                                                                        val,
+                                                              );
+                                                              setStateDialog(
+                                                                () {},
+                                                              );
+                                                            },
+                                                          ),
+                                                          _buildToggleRow(
+                                                            "Show Remark",
+                                                            showRemark,
+                                                            (val) {
+                                                              setState(
+                                                                () =>
+                                                                    showRemark =
                                                                         val,
                                                               );
                                                               setStateDialog(
@@ -473,6 +503,28 @@ String _extractWspSizes(String sizeDetails) {
                                                         setState(
                                                           () =>
                                                               showShades = val,
+                                                        );
+                                                        setStateDialog(() {});
+                                                      },
+                                                    ),
+                                                    _buildToggleRow(
+                                                      "Show Product",
+                                                      showProduct,
+                                                      (val) {
+                                                        setState(
+                                                          () =>
+                                                              showProduct = val,
+                                                        );
+                                                        setStateDialog(() {});
+                                                      },
+                                                    ),
+                                                    _buildToggleRow(
+                                                      "Show Remark",
+                                                      showRemark,
+                                                      (val) {
+                                                        setState(
+                                                          () =>
+                                                              showRemark = val,
                                                         );
                                                         setStateDialog(() {});
                                                       },
@@ -814,21 +866,23 @@ String _extractWspSizes(String sizeDetails) {
                                     if (showProduct) _buildSpacerRow(),
 
                                     // 6. Remark
-                                 TableRow(
-                        children: [
-                          _buildLabelText('Remark'),
-                          const Text(':'),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Text(
-                              item.remark?.trim().isNotEmpty == true
-                                  ? item.remark!
-                                  : '--',
-                              style: _valueTextStyle(),
-                            ),
-                          ),
-                        ],
-                      ),
+                                    if (showRemark)
+                                    TableRow(
+                                      children: [
+                                        _buildLabelText('Remark'),
+                                        const Text(':'),
+                                        SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: Text(
+                                            item.remark?.trim().isNotEmpty ==
+                                                    true
+                                                ? item.remark!
+                                                : '--',
+                                            style: _valueTextStyle(),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ],
                                 ),
                               ),
@@ -1024,21 +1078,22 @@ String _extractWspSizes(String sizeDetails) {
                           if (showProduct) _buildSpacerRow(),
 
                           // 6. Remark
-                         TableRow(
-                        children: [
-                          _buildLabelText('Remark'),
-                          const Text(':'),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Text(
-                              item.remark?.trim().isNotEmpty == true
-                                  ? item.remark!
-                                  : '--',
-                              style: _valueTextStyle(),
-                            ),
+                          if (showRemark)
+                          TableRow(
+                            children: [
+                              _buildLabelText('Remark'),
+                              const Text(':'),
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Text(
+                                  item.remark?.trim().isNotEmpty == true
+                                      ? item.remark!
+                                      : '--',
+                                  style: _valueTextStyle(),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
                         ],
                       ),
                     ),
@@ -1283,6 +1338,7 @@ String _extractWspSizes(String sizeDetails) {
                       if (showProduct) _buildSpacerRow(),
 
                       // Remark (always show label)
+                      if (showRemark)
                       TableRow(
                         children: [
                           _buildLabelText('Remark'),
