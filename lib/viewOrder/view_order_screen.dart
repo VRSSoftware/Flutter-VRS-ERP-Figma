@@ -26,6 +26,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   final _styleManager = _StyleManager();
   List<Consignee> consignees = [];
   List<PytTermDisc> paymentTerms = [];
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -47,15 +48,14 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as List;
         setState(() {
-          paymentTerms =
-              data
-                  .map(
-                    (e) => PytTermDisc(
-                      key: e['pytTermDiscKey']?.toString() ?? '',
-                      name: e['pytTermDiscName']?.toString() ?? '',
-                    ),
-                  )
-                  .toList();
+          paymentTerms = data
+              .map(
+                (e) => PytTermDisc(
+                  key: e['pytTermDiscKey']?.toString() ?? '',
+                  name: e['pytTermDiscName']?.toString() ?? '',
+                ),
+              )
+              .toList();
         });
       } else {
         print('API Error: ${response.statusCode}');
@@ -92,22 +92,18 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   }
 
   Future<void> fetchAndPrintSalesOrderNumber() async {
-    // Call the method with the required parameters
     Map<String, dynamic> salesOrderData = await ApiService.fetchSalesOrderNo(
-      coBrId: "01", // Example company code
-      userId: "Admin", // Example user ID
-      fcYrId: 24, // Example financial year ID
-      barcode: "false", // Example barcode flag
+      coBrId: "01",
+      userId: "Admin",
+      fcYrId: 24,
+      barcode: "false",
     );
 
-    // Check if the response contains the sales order number
     if (salesOrderData.isNotEmpty &&
         salesOrderData.containsKey('salesOrderNo')) {
       String salesOrderNo = salesOrderData['salesOrderNo'];
       _orderControllers.orderNo.text = salesOrderNo;
-      print(
-        'Sales Order Number: $salesOrderNo',
-      ); // Print the sales order number
+      print('Sales Order Number: $salesOrderNo');
     } else {
       print('Sales Order Number not found');
     }
@@ -126,19 +122,15 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse(
-          '${AppConstants.BASE_URL}/orderBooking/InsertFinalsalesorder',
-        ),
+        Uri.parse('${AppConstants.BASE_URL}/orderBooking/InsertFinalsalesorder'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
 
       if (response.statusCode == 200) {
         print('Success: ${response.body}');
-
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Order saved successfully')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Order saved successfully')));
         return response.statusCode.toString();
       } else {
         print('Error: ${response.statusCode}');
@@ -151,9 +143,8 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       }
     } catch (e) {
       print('Error: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error saving order: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving order: $e')));
     }
     return "fail";
   }
@@ -172,18 +163,15 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       fetchPaymentTerms(),
     ]);
     _updateTotals();
-    setState(() {});
+    setState(() {
+      isLoading = false;
+    });
   }
 
   String formatDate(String date, bool time) {
     try {
-      // Parse the input date (Assuming the input date is in the format yyyy-MM-dd)
       DateTime parsedDate = DateFormat("yyyy-MM-dd").parse(date);
-
-      // Format the date to yyyy-MM-dd
       String formattedDate = DateFormat("yyyy-MM-dd").format(parsedDate);
-
-      // If time is true, append current system time in HH:mm:ss format
       if (time) {
         String currentTime = DateFormat("HH:mm:ss").format(DateTime.now());
         return "$formattedDate $currentTime";
@@ -197,25 +185,17 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   }
 
   String getDateAfterDays(int days) {
-    // Get today's date
     DateTime today = DateTime.now();
-
-    // Calculate the date after the specified number of days
     DateTime futureDate = today.add(Duration(days: days));
-
-    // Format the future date in "yyyy-MM-dd" format
     String formattedDate = DateFormat("yyyy-MM-dd").format(futureDate);
-
     return formattedDate;
   }
 
-  // Saves the order data locally and sends it to the InsertFinalSalesOrder API
   Future<void> _saveOrderLocally() async {
     if (!_formKey.currentState!.validate()) return;
 
     final orderData = {
       "saleorderno": _orderControllers.orderNo.text,
-      // "orderdate": "${_orderControllers.date.text} 12:20:26",
       "orderdate": formatDate(_orderControllers.date.text, true),
       "customer": _orderControllers.selectedPartyKey ?? '',
       "broker": _orderControllers.selectedBrokerKey ?? '',
@@ -223,7 +203,6 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       "transporter": _orderControllers.selectedTransporterKey ?? '',
       "delivaryday": _orderControllers.deliveryDays.text,
       "delivarydate": formatDate(_orderControllers.deliveryDate.text, false),
-      // "delivarydate": "2025-05-06",
       "totitem": _orderControllers.totalItem.text,
       "totqty": _orderControllers.totalQty.text,
       "remark": _orderControllers.remark.text,
@@ -231,17 +210,14 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       "station": _additionalInfo['station'] ?? '',
       "paymentterms":
           _additionalInfo['paymentterms'] ??
-          _orderControllers.pytTermDiscKey ??
-          '',
+              _orderControllers.pytTermDiscKey ??
+              '',
       "paymentdays":
           _additionalInfo['paymentdays'] ??
-          _orderControllers.creditPeriod?.toString() ??
-          '0',
-      // "duedate": _additionalInfo['duedate'] ?? '',
+              _orderControllers.creditPeriod?.toString() ??
+              '0',
       "duedate": formatDate(_additionalInfo['duedate'], false),
-      // "duedate": getDateAfterDays(),
       "refno": _additionalInfo['refno'] ?? '',
-      // "date": _additionalInfo['date'] ?? '',
       "date": '',
       "bookingtype": _additionalInfo['bookingtype'] ?? '',
       "salesman":
@@ -252,34 +228,31 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     print("Saved Order Data:");
     print(orderDataJson);
 
-    // Call the API to insert the final sales order
     String StatusCode = await insertFinalSalesOrder(orderDataJson);
 
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Saved Order Data'),
-            content: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Order Data:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text(orderDataJson),
-                  //  Text("Success" + StatusCode),
-                ],
+      builder: (context) => AlertDialog(
+        title: Text('Saved Order Data'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Order Data:',
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('OK'),
-              ),
+              Text(orderDataJson),
             ],
           ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -324,11 +297,10 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       backgroundColor: AppColors.primaryColor,
       elevation: 1,
       leading: Builder(
-        builder:
-            (context) => IconButton(
-              icon: const Icon(Icons.menu, color: Colors.white),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-            ),
+        builder: (context) => IconButton(
+          icon: const Icon(Icons.menu, color: Colors.white),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ),
       ),
     );
   }
@@ -340,29 +312,28 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
           padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
-            child:
-                _showForm
-                    ? _OrderForm(
-                      controllers: _orderControllers,
-                      dropdownData: _dropdownData,
-                      constraints: constraints,
-                      onPartySelected: _handlePartySelection,
-                      updateTotals: _updateTotals,
-                      saveOrder: _saveOrderLocally,
-                      additionalInfo: _additionalInfo,
-                      consignees: consignees,
-                      paymentTerms: paymentTerms,
-                      onAdditionalInfoUpdated: (newInfo) {
-                        setState(() {
-                          _additionalInfo = newInfo;
-                        });
-                      },
-                    )
-                    : _StyleCardsView(
-                      styleManager: _styleManager,
-                      updateTotals: _updateTotals,
-                      getColor: _getColorCode,
-                    ),
+            child: _showForm
+                ? _OrderForm(
+                    controllers: _orderControllers,
+                    dropdownData: _dropdownData,
+                    constraints: constraints,
+                    onPartySelected: _handlePartySelection,
+                    updateTotals: _updateTotals,
+                    saveOrder: _saveOrderLocally,
+                    additionalInfo: _additionalInfo,
+                    consignees: consignees,
+                    paymentTerms: paymentTerms,
+                    onAdditionalInfoUpdated: (newInfo) {
+                      setState(() {
+                        _additionalInfo = newInfo;
+                      });
+                    },
+                  )
+                : _StyleCardsView(
+                    styleManager: _styleManager,
+                    updateTotals: _updateTotals,
+                    getColor: _getColorCode,
+                  ),
           ),
         );
       },
@@ -373,7 +344,6 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     if (key == null) return;
     _orderControllers.selectedPartyKey = key;
     try {
-      // Fetch consignees for the selected party
       await fetchAndMapConsignees(key: key, CoBrId: '01');
 
       final details = await _dropdownData.fetchLedgerDetails(key);
@@ -398,9 +368,8 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       });
     } catch (e) {
       print('Error fetching party details: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to load party details')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load party details')));
     }
   }
 
@@ -555,9 +524,10 @@ class _DropdownData {
 class _StyleManager {
   List<dynamic> _orderItems = [];
   final Set<String> removedStyles = {};
-  final Map<String, Map<String, Map<String, TextEditingController>>>
-  controllers = {};
+  final Map<String, Map<String, Map<String, TextEditingController>>> controllers =
+      {};
   VoidCallback? updateTotalsCallback;
+  bool isOrderItemsLoaded = false; // Flag to track API completion
 
   Map<String, List<dynamic>> get groupedItems {
     final map = <String, List<dynamic>>{};
@@ -585,6 +555,7 @@ class _StyleManager {
       _orderItems = json.decode(response.body);
       _initializeControllers();
     }
+    isOrderItemsLoaded = true; // Set flag after API call
   }
 
   void _initializeControllers() {
@@ -685,26 +656,34 @@ class _StyleCardsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return styleManager.groupedItems.isEmpty
-        ? const Center(child: CircularProgressIndicator())
-        : Column(
-          children:
-              styleManager.groupedItems.entries
-                  .map(
-                    (entry) => StyleCard(
-                      styleCode: entry.key,
-                      items: entry.value,
-                      controllers: styleManager.controllers[entry.key]!,
-                      onRemove: () {
-                        styleManager.removedStyles.add(entry.key);
-                        updateTotals();
-                      },
-                      updateTotals: updateTotals,
-                      getColor: getColor,
-                    ),
-                  )
-                  .toList(),
-        );
+    if (!styleManager.isOrderItemsLoaded) {
+      return const Center(child: CircularProgressIndicator());
+    } else if (styleManager.groupedItems.isEmpty) {
+      return const Center(
+        child: Text(
+          'No item added',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      );
+    } else {
+      return Column(
+        children: styleManager.groupedItems.entries
+            .map(
+              (entry) => StyleCard(
+                styleCode: entry.key,
+                items: entry.value,
+                controllers: styleManager.controllers[entry.key]!,
+                onRemove: () {
+                  styleManager.removedStyles.add(entry.key);
+                  updateTotals();
+                },
+                updateTotals: updateTotals,
+                getColor: getColor,
+              ),
+            )
+            .toList(),
+      );
+    }
   }
 }
 
@@ -791,9 +770,8 @@ class _OrderForm extends StatelessWidget {
               );
               if (picked != null) {
                 final difference = picked.difference(today).inDays;
-                controllers.deliveryDate.text = _OrderControllers.formatDate(
-                  picked,
-                );
+                controllers.deliveryDate.text =
+                    _OrderControllers.formatDate(picked);
                 controllers.deliveryDays.text = difference.toString();
               }
             },
@@ -898,11 +876,10 @@ class _OrderForm extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         ElevatedButton(
-          onPressed:
-              () => showDialog(
-                context: context,
-                builder: (_) => CustomerMasterDialog(),
-              ),
+          onPressed: () => showDialog(
+            context: context,
+            builder: (_) => CustomerMasterDialog(),
+          ),
           style: ElevatedButton.styleFrom(backgroundColor: Colors.lightBlue),
           child: const Text('+'),
         ),
@@ -986,12 +963,12 @@ class _OrderForm extends StatelessWidget {
   Widget _buildResponsiveRow(bool isWideScreen, Widget first, Widget second) {
     return isWideScreen
         ? Row(
-          children: [
-            Expanded(child: first),
-            const SizedBox(width: 10),
-            Expanded(child: second),
-          ],
-        )
+            children: [
+              Expanded(child: first),
+              const SizedBox(width: 10),
+              Expanded(child: second),
+            ],
+          )
         : Column(children: [first, second]);
   }
 
@@ -1005,22 +982,21 @@ class _OrderForm extends StatelessWidget {
               final partyLedKey = controllers.selectedPartyKey;
               final result = await showDialog(
                 context: context,
-                builder:
-                    (context) => AddMoreInfoDialog(
-                      salesPersonList: salesPersonList,
-                      partyLedKey: partyLedKey,
-                      pytTermDiscKey: controllers.pytTermDiscKey,
-                      salesPersonKey: controllers.salesPersonKey,
-                      creditPeriod: controllers.creditPeriod,
-                      salesLedKey: controllers.salesLedKey,
-                      ledgerName: controllers.ledgerName,
-                      additionalInfo: additionalInfo,
-                      consignees: consignees,
-                      paymentTerms: paymentTerms,
-                      onValueChanged: (newInfo) {
-                        onAdditionalInfoUpdated(newInfo);
-                      },
-                    ),
+                builder: (context) => AddMoreInfoDialog(
+                  salesPersonList: salesPersonList,
+                  partyLedKey: partyLedKey,
+                  pytTermDiscKey: controllers.pytTermDiscKey,
+                  salesPersonKey: controllers.salesPersonKey,
+                  creditPeriod: controllers.creditPeriod,
+                  salesLedKey: controllers.salesLedKey,
+                  ledgerName: controllers.ledgerName,
+                  additionalInfo: additionalInfo,
+                  consignees: consignees,
+                  paymentTerms: paymentTerms,
+                  onValueChanged: (newInfo) {
+                    onAdditionalInfoUpdated(newInfo);
+                  },
+                ),
               );
               if (result != null) {
                 onAdditionalInfoUpdated(result);
@@ -1038,7 +1014,7 @@ class _OrderForm extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(
           child: ElevatedButton(
-            onPressed: saveOrder, // Use saveOrder instead of _saveOrderLocally
+            onPressed: saveOrder,
             child: const Text(
               'Save',
               style: TextStyle(color: AppColors.primaryColor),
@@ -1064,10 +1040,9 @@ Widget buildTextField(
     child: TextFormField(
       controller: controller,
       readOnly: readOnly || isDate,
-      keyboardType:
-          isText == true
-              ? TextInputType.text
-              : TextInputType.numberWithOptions(signed: false, decimal: true),
+      keyboardType: isText == true
+          ? TextInputType.text
+          : TextInputType.numberWithOptions(signed: false, decimal: true),
       onTap: onTap ?? (isDate ? () => _selectDate(context, controller) : null),
       decoration: InputDecoration(
         labelText: label,
