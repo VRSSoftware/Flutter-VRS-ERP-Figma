@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import 'package:vrs_erp_figma/models/item.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
 import 'package:vrs_erp_figma/models/PytTermDisc.dart';
 import 'package:vrs_erp_figma/models/salesman.dart';
@@ -16,7 +17,7 @@ class AddMoreInfoDialog extends StatefulWidget {
   final String? ledgerName;
   final Map<String, dynamic>? additionalInfo;
   final List<Consignee> consignees;
-  final List<PytTermDisc> paymentTerms; // Added paymentTerms parameter
+  final List<PytTermDisc> paymentTerms;
   final Function(Map<String, dynamic>) onValueChanged;
 
   const AddMoreInfoDialog({
@@ -52,37 +53,46 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
   final TextEditingController dateController = TextEditingController();
 
   bool _isLoadingBookingTypes = false;
+  Item? _selectedBookingType;
+
   String? _selectedPytTermDiscKey;
   String? _selectedSalesmanKey;
-  List<Map<String, dynamic>> _bookingTypes = [];
+  List<Item> _bookingTypes = [];
 
   @override
   void initState() {
     super.initState();
     _baseDate = DateTime.now();
 
-    // Initialize fields with values from additionalInfo
-    paymentDaysController.text = widget.creditPeriod?.toString() ?? widget.additionalInfo?['paymentdays'] ?? '0';
-    dateController.text = widget.additionalInfo?['date'] ?? _formatDate(_baseDate);
-    dueDateController.text = widget.additionalInfo?['duedate'] ?? _formatDate(_baseDate);
+    paymentDaysController.text =
+        widget.creditPeriod?.toString() ??
+        widget.additionalInfo?['paymentdays'] ??
+        '0';
+    dateController.text =
+        widget.additionalInfo?['date'] ?? _formatDate(_baseDate);
+    dueDateController.text =
+        widget.additionalInfo?['duedate'] ?? _formatDate(_baseDate);
     referenceNoController.text = widget.additionalInfo?['refno'] ?? '';
-    _selectedPytTermDiscKey = widget.pytTermDiscKey ?? widget.additionalInfo?['paymentterms'];
+    _selectedPytTermDiscKey =
+        widget.pytTermDiscKey ?? widget.additionalInfo?['paymentterms'];
     selectedBookingType = widget.additionalInfo?['bookingtype'];
-    _selectedSalesmanKey = widget.salesPersonKey ?? widget.additionalInfo?['salesman'];
-    selectedSalesmanName = widget.salesPersonList
-        .firstWhere(
+    _selectedSalesmanKey =
+        widget.salesPersonKey ?? widget.additionalInfo?['salesman'];
+    selectedSalesmanName =
+        widget.salesPersonList.firstWhere(
           (e) => e['ledKey'] == _selectedSalesmanKey,
           orElse: () => {'ledName': ''},
         )['ledName'];
 
-    // Initialize selectedConsignee
-    if (widget.additionalInfo?['consignee'] != null && widget.additionalInfo!['consignee'].isNotEmpty) {
+    if (widget.additionalInfo?['consignee'] != null &&
+        widget.additionalInfo!['consignee'].isNotEmpty) {
       _initializeConsignee();
     }
 
     _updateDueDate();
     paymentDaysController.addListener(_updateDueDate);
     dueDateController.addListener(_updatePaymentDays);
+    dateController.addListener(_updatePaymentDays);
     _loadBookingTypes();
   }
 
@@ -100,13 +110,9 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
           pytTermDiscdays: '0',
         ),
       );
-      // Prefill payment terms and days if consignee has them
       if (selectedConsignee?.paymentTermsKey.isNotEmpty ?? false) {
         _selectedPytTermDiscKey = selectedConsignee!.paymentTermsKey;
         selectedPaymentTerms = selectedConsignee!.paymentTermsName;
-      }
-      if (selectedConsignee?.pytTermDiscdays.isNotEmpty ?? false) {
-        paymentDaysController.text = selectedConsignee!.pytTermDiscdays;
       }
     });
   }
@@ -114,9 +120,21 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
   Future<void> _loadBookingTypes() async {
     setState(() => _isLoadingBookingTypes = true);
     try {
-      final data = await ApiService.fetchBookingTypes(coBrId: '01');
+      final rawData = await ApiService.fetchBookingTypes(coBrId: '01');
+      final data = (rawData as List)
+          .map((json) => Item(
+                itemKey: json['key'],
+                itemName: json['name'],
+                itemSubGrpKey: '',
+              ))
+          .toList();
+
       setState(() {
         _bookingTypes = data;
+        _selectedBookingType = _bookingTypes.firstWhere(
+          (item) => item.itemKey == selectedBookingType,
+        //  orElse: () => _bookingTypes.isNotEmpty ? _bookingTypes[0] : null,
+        );
       });
     } catch (e) {
       print('Failed to load booking types: $e');
@@ -132,10 +150,16 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
   }
 
   void _updatePaymentDays() {
-    final dueDate = _parseDate(dueDateController.text);
-    if (dueDate != null) {
-      final difference = dueDate.difference(_baseDate).inDays;
-      paymentDaysController.text = difference.toString();
+    final dateStr = dateController.text;
+    final dueDateStr = dueDateController.text;
+
+    final baseDate = _parseDate(dateStr);
+    final dueDate = _parseDate(dueDateStr);
+
+    if (baseDate != null && dueDate != null) {
+      _baseDate = baseDate;
+      final days = dueDate.difference(baseDate).inDays;
+      paymentDaysController.text = days.toString();
     }
   }
 
@@ -162,10 +186,7 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 14,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       ),
     );
   }
@@ -178,10 +199,7 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
         labelText: label,
         border: const OutlineInputBorder(),
         suffixIcon: const Icon(Icons.calendar_today),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 14,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       ),
       onTap: () async {
         final picked = await showDatePicker(
@@ -192,11 +210,11 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
         );
         if (picked != null) {
           controller.text = _formatDate(picked);
-          if (label == 'Due Date') {
-            _updatePaymentDays();
-          } else if (label == 'Date') {
+          if (label == 'Date') {
             _baseDate = picked;
             _updateDueDate();
+          } else if (label == 'Due Date') {
+            _updatePaymentDays();
           }
         }
       },
@@ -216,14 +234,13 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
       onChanged: (value) {
         setState(() {
           selectedConsignee = value;
-          // Prefill payment terms and days if consignee has them
+
           if (value?.paymentTermsKey.isNotEmpty ?? false) {
             _selectedPytTermDiscKey = value!.paymentTermsKey;
             selectedPaymentTerms = value.paymentTermsName;
           }
-          if (value?.pytTermDiscdays.isNotEmpty ?? false) {
-            paymentDaysController.text = value!.pytTermDiscdays;
-          }
+
+          // DO NOT UPDATE paymentDaysController.text
         });
       },
       dropdownDecoratorProps: DropDownDecoratorProps(
@@ -264,39 +281,27 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
   }
 
   Widget _buildBookingTypeDropdown() {
-    return DropdownSearch<String>(
-      popupProps: PopupProps.menu(
-        showSearchBox: true,
-        searchFieldProps: TextFieldProps(
-          decoration: InputDecoration(
-            labelText: "Search Booking Type",
-            border: OutlineInputBorder(),
-          ),
-        ),
-        itemBuilder: (context, item, isSelected) => ListTile(title: Text(item)),
-      ),
-      items: _bookingTypes.map((e) => e['name'] as String).toList(),
-      selectedItem: selectedBookingType,
-      onChanged: (val) {
+    return DropdownButton<Item>(
+      value: _selectedBookingType,
+      hint: const Text("Select booking type"),
+      isExpanded: true,
+      items: _bookingTypes.map((Item item) {
+        return DropdownMenuItem<Item>(
+          value: item,
+          child: Text(item.itemName),
+        );
+      }).toList(),
+      onChanged: (Item? newValue) {
         setState(() {
-          selectedBookingType = val;
+          _selectedBookingType = newValue;
         });
       },
-      dropdownDecoratorProps: DropDownDecoratorProps(
-        dropdownSearchDecoration: InputDecoration(
-          labelText: 'Booking Type',
-          border: OutlineInputBorder(),
-        ),
-      ),
     );
   }
 
   Widget _buildSalesmanDropdown() {
     final salesmenFromConstructor = widget.salesPersonList
-        .map((e) => Salesman(
-              key: e['ledKey'] ?? '',
-              name: e['ledName'] ?? '',
-            ))
+        .map((e) => Salesman(key: e['ledKey'] ?? '', name: e['ledName'] ?? ''))
         .toList();
 
     return DropdownSearch<Salesman>(
@@ -335,7 +340,7 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
       'duedate': dueDateController.text,
       'refno': referenceNoController.text,
       'date': dateController.text,
-      'bookingtype': selectedBookingType ?? '',
+      'bookingtype': _selectedBookingType?.itemKey ?? '',
       'salesman': _selectedSalesmanKey ?? '',
     };
     widget.onValueChanged(formData);
@@ -346,6 +351,7 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
   void dispose() {
     paymentDaysController.removeListener(_updateDueDate);
     dueDateController.removeListener(_updatePaymentDays);
+    dateController.removeListener(_updatePaymentDays);
     paymentDaysController.dispose();
     dueDateController.dispose();
     referenceNoController.dispose();
@@ -369,10 +375,7 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
                   const Expanded(
                     child: Text(
                       "Add More Info",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
                   IconButton(
@@ -392,9 +395,7 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
                     child: _buildTextField("Payment Days", paymentDaysController),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildDateField("Due Date", dueDateController),
-                  ),
+                  Expanded(child: _buildDateField("Due Date", dueDateController)),
                 ],
               ),
               const SizedBox(height: 12),
@@ -426,15 +427,9 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(24),
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 12,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                     ),
-                    child: const Text(
-                      "OK",
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    child: const Text("OK", style: TextStyle(color: Colors.white)),
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton(
@@ -444,15 +439,9 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(24),
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 12,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                     ),
-                    child: const Text(
-                      "Close",
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    child: const Text("Close", style: TextStyle(color: Colors.white)),
                   ),
                 ],
               ),

@@ -80,8 +80,6 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
           setState(() {
             consignees = responseMap['result'];
           });
-        } else {
-          // consignees = []; // Set to empty if response is not a valid list
         }
       } else {
         print('API Error: ${responseMap['statusCode']}');
@@ -110,14 +108,11 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   }
 
   Future<String> insertFinalSalesOrder(String orderDataJson) async {
-    final String baseUrl = AppConstants.BASE_URL;
-
     final Map<String, dynamic> body = {
       'userId': 'Admin',
       'coBrId': '01',
       'fcYrId': 24,
       'data2': orderDataJson.toString(),
-      // 'barcodewise': false,
     };
 
     try {
@@ -143,8 +138,8 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       }
     } catch (e) {
       print('Error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving order: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error saving order: $e')));
     }
     return "fail";
   }
@@ -179,16 +174,26 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
         return formattedDate;
       }
     } catch (e) {
-      print("Error: $e");
-      return "Invalid date format";
+      print("Error parsing date: $e");
+      return DateFormat("yyyy-MM-dd").format(DateTime.now());
     }
   }
 
-  String getDateAfterDays(int days) {
-    DateTime today = DateTime.now();
-    DateTime futureDate = today.add(Duration(days: days));
-    String formattedDate = DateFormat("yyyy-MM-dd").format(futureDate);
-    return formattedDate;
+  String calculateFutureDateFromString(String daysString) {
+    final int? days = int.tryParse(daysString);
+    if (days == null) {
+      return "";
+    }
+    final DateTime futureDate = DateTime.now().add(Duration(days: days));
+    return DateFormat('yyyy-MM-dd').format(futureDate);
+  }
+
+  String calculateDueDate() {
+    final paymentDays = _additionalInfo['paymentdays'];
+    if (paymentDays != null && paymentDays is String && int.tryParse(paymentDays) != null) {
+      return calculateFutureDateFromString(paymentDays);
+    }
+    return "";
   }
 
   Future<void> _saveOrderLocally() async {
@@ -209,26 +214,21 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       "consignee": _additionalInfo['consignee'] ?? '',
       "station": _additionalInfo['station'] ?? '',
       "paymentterms":
-          _additionalInfo['paymentterms'] ??
-              _orderControllers.pytTermDiscKey ??
-              '',
+          _additionalInfo['paymentterms'] ?? _orderControllers.pytTermDiscKey ?? '',
       "paymentdays":
-          _additionalInfo['paymentdays'] ??
-              _orderControllers.creditPeriod?.toString() ??
-              '0',
-      "duedate": formatDate(_additionalInfo['duedate'], false),
+          _additionalInfo['paymentdays'] ?? _orderControllers.creditPeriod?.toString() ?? '0',
+      "duedate": calculateFutureDateFromString(_orderControllers.deliveryDays.text),
       "refno": _additionalInfo['refno'] ?? '',
       "date": '',
       "bookingtype": _additionalInfo['bookingtype'] ?? '',
-      "salesman":
-          _additionalInfo['salesman'] ?? _orderControllers.salesLedKey ?? '',
+      "salesman": _additionalInfo['salesman'] ?? _orderControllers.salesLedKey ?? '',
     };
 
     final orderDataJson = jsonEncode(orderData);
     print("Saved Order Data:");
     print(orderDataJson);
 
-    String StatusCode = await insertFinalSalesOrder(orderDataJson);
+   String statusCode = await insertFinalSalesOrder(orderDataJson);
 
     showDialog(
       context: context,
@@ -243,6 +243,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               Text(orderDataJson),
+             Text(statusCode),
             ],
           ),
         ),
@@ -339,7 +340,14 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       },
     );
   }
-
+  String calculateFutureDateFromString2(String daysString) {
+    final int? days = int.tryParse(daysString);
+    if (days == null) {
+      return "";
+    }
+    final DateTime futureDate = DateTime.now().add(Duration(days: days));
+    return DateFormat('yyyy-MM-dd').format(futureDate);
+  }
   void _handlePartySelection(String? val, String? key) async {
     if (key == null) return;
     _orderControllers.selectedPartyKey = key;
@@ -417,7 +425,7 @@ class _OrderControllers {
   String? selectedBrokerKey;
 
   static String formatDate(DateTime date) {
-    return "${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}";
+    return DateFormat("yyyy-MM-dd").format(date);
   }
 
   void updateFromPartyDetails(
@@ -527,7 +535,7 @@ class _StyleManager {
   final Map<String, Map<String, Map<String, TextEditingController>>> controllers =
       {};
   VoidCallback? updateTotalsCallback;
-  bool isOrderItemsLoaded = false; // Flag to track API completion
+  bool isOrderItemsLoaded = false;
 
   Map<String, List<dynamic>> get groupedItems {
     final map = <String, List<dynamic>>{};
@@ -555,7 +563,7 @@ class _StyleManager {
       _orderItems = json.decode(response.body);
       _initializeControllers();
     }
-    isOrderItemsLoaded = true; // Set flag after API call
+    isOrderItemsLoaded = true;
   }
 
   void _initializeControllers() {
@@ -817,21 +825,15 @@ class _OrderForm extends StatelessWidget {
                     _buildInfoRow('Due Date:', additionalInfo['duedate']),
                   if (additionalInfo['paymentterms'] != null)
                     _buildInfoRow(
-                      'Payment Terms:',
-                      additionalInfo['paymentterms'],
-                    ),
+                        'Payment Terms:', additionalInfo['paymentterms']),
                   if (additionalInfo['salesman'] != null)
                     _buildInfoRow('Sales Person:', additionalInfo['salesman']),
                   if (additionalInfo['paymentdays'] != null)
                     _buildInfoRow(
-                      'Credit Period:',
-                      '${additionalInfo['paymentdays']} days',
-                    ),
+                        'Credit Period:', '${additionalInfo['paymentdays']} days'),
                   if (additionalInfo['bookingtype'] != null)
                     _buildInfoRow(
-                      'Booking Type:',
-                      additionalInfo['bookingtype'],
-                    ),
+                        'Booking Type:', additionalInfo['bookingtype']),
                 ],
               ),
             ),
@@ -857,7 +859,13 @@ class _OrderForm extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          Expanded(child: Text(value)),
+          Expanded(
+            child: Text(
+              value.isNotEmpty ? value : 'Not specified',
+              style: TextStyle(
+                  color: value.isNotEmpty ? Colors.black : Colors.grey),
+            ),
+          ),
         ],
       ),
     );
