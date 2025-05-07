@@ -6,9 +6,9 @@ class ShareOptionsPage extends StatelessWidget {
   final Function() onImageShare;
   final Function() onWhatsAppShare;
   final Function() onPDFShare;
-  final Function() onWeblinkShare;
-  final Function() onVideoShare;
-  final Function() onQRCodeShare;
+  // final Function() onWeblinkShare;
+  // final Function() onVideoShare;
+  // final Function() onQRCodeShare;
   final Function(bool, bool, bool, bool, bool, bool) onToggleOptions;
 
   const ShareOptionsPage({
@@ -16,9 +16,9 @@ class ShareOptionsPage extends StatelessWidget {
     required this.onImageShare,
     required this.onWhatsAppShare,
     required this.onPDFShare,
-    required this.onWeblinkShare,
-    required this.onVideoShare,
-    required this.onQRCodeShare,
+    // required this.onWeblinkShare,
+    // required this.onVideoShare,
+    // required this.onQRCodeShare,
     required this.onToggleOptions,
   }) : super(key: key);
 
@@ -69,24 +69,24 @@ class ShareOptionsPage extends StatelessWidget {
             onTap: onPDFShare,
             context: context,
           ),
-          _buildShareOption(
-            icon: Icons.link,
-            title: 'Weblink',
-            onTap: onWeblinkShare,
-            context: context,
-          ),
-          _buildShareOption(
-            icon: Icons.video_library,
-            title: 'Video',
-            onTap: onVideoShare,
-            context: context,
-          ),
-          _buildShareOption(
-            icon: Icons.qr_code,
-            title: 'With QR Code',
-            onTap: onQRCodeShare,
-            context: context,
-          ),
+          // _buildShareOption(
+          //   icon: Icons.link,
+          //   title: 'Weblink',
+          //   onTap: onWeblinkShare,
+          //   context: context,
+          // ),
+          // _buildShareOption(
+          //   icon: Icons.video_library,
+          //   title: 'Video',
+          //   onTap: onVideoShare,
+          //   context: context,
+          // ),
+          // _buildShareOption(
+          //   icon: Icons.qr_code,
+          //   title: 'With QR Code',
+          //   onTap: onQRCodeShare,
+          //   context: context,
+          // ),
         ],
       ),
     );

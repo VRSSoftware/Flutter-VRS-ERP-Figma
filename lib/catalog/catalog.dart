@@ -591,13 +591,17 @@ class _CatalogPageState extends State<CatalogPage> {
 
         return GestureDetector(
           onDoubleTap: () {
-            if (selectedItems.length == 0)
-              _openImageZoom(context, item);
-            else
-              _toggleItemSelection(item);
+            _openImageZoom(context, item); // Always open image on double tap
           },
           onLongPress: () {
-            if (selectedItems.length == 0) _toggleItemSelection(item);
+            _toggleItemSelection(item); // Start selection mode
+          },
+          onTap: () {
+            if (selectedItems.isNotEmpty) {
+              _toggleItemSelection(
+                item,
+              ); // Only work if selection mode is active
+            }
           },
           // onTap: () => _toggleItemSelection(item),
           // onLongPress: () => _enableMultiSelect(item),
@@ -797,13 +801,17 @@ class _CatalogPageState extends State<CatalogPage> {
 
         return GestureDetector(
           onDoubleTap: () {
-            if (selectedItems.length == 0)
-              _openImageZoom(context, item);
-            else
-              _toggleItemSelection(item);
+            _openImageZoom(context, item); // Always open image on double tap
           },
           onLongPress: () {
-            if (selectedItems.length == 0) _toggleItemSelection(item);
+            _toggleItemSelection(item); // Start selection mode
+          },
+          onTap: () {
+            if (selectedItems.isNotEmpty) {
+              _toggleItemSelection(
+                item,
+              ); // Only work if selection mode is active
+            }
           },
           // onTap: () => _toggleItemSelection(item),
           // onLongPress: () => _enableMultiSelect(item),
@@ -823,7 +831,7 @@ class _CatalogPageState extends State<CatalogPage> {
                 Column(
                   children: [
                     AspectRatio(
-                              aspectRatio: 5 / 5.5,
+                      aspectRatio: 5 / 5.5,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Image.network(
@@ -1002,18 +1010,19 @@ class _CatalogPageState extends State<CatalogPage> {
         item.shadeName.split(',').map((s) => s.trim()).toList();
 
     return GestureDetector(
-      // onTap: () => _toggleItemSelection(item),
-      // onLongPress: () => _enableMultiSelect(item),
-      // onDoubleTap: () => _openImageZoom(context, item),
-      onDoubleTap: () {
-        if (selectedItems.length == 0)
-          _openImageZoom(context, item);
-        else
-          _toggleItemSelection(item);
-      },
-      onLongPress: () {
-        if (selectedItems.length == 0) _toggleItemSelection(item);
-      },
+          onDoubleTap: () {
+            _openImageZoom(context, item); // Always open image on double tap
+          },
+          onLongPress: () {
+            _toggleItemSelection(item); // Start selection mode
+          },
+          onTap: () {
+            if (selectedItems.isNotEmpty) {
+              _toggleItemSelection(
+                item,
+              ); // Only work if selection mode is active
+            }
+          },
 
       child: Card(
         elevation: isSelected ? 8 : 4,
@@ -1396,7 +1405,7 @@ class _CatalogPageState extends State<CatalogPage> {
         if (includeDesign) catalogItem['design'] = item.itemName;
         if (includeShade) catalogItem['shade'] = item.shadeName;
         if (includeRate) catalogItem['rate'] = item.mrp.toString();
-        if (includeSize)   catalogItem['sizeWithMrp'] = item.sizeWithMrp;
+        if (includeSize) catalogItem['sizeWithMrp'] = item.sizeWithMrp;
         if (includeProduct) catalogItem['product'] = item.itemName;
         if (includeRemark) catalogItem['remark'] = item.remark;
 
@@ -1830,18 +1839,18 @@ class _CatalogPageState extends State<CatalogPage> {
               includeRemark: includeRemark,
             );
           },
-          onWeblinkShare: () {
-            //  Navigator.pop(context);
-            //  _shareSelectedItems(shareType: 'image');
-          },
-          onVideoShare: () {
-            //  Navigator.pop(context);
-            //  _shareSelectedItems(shareType: 'image');
-          },
-          onQRCodeShare: () {
-            //  Navigator.pop(context);
-            //   _shareSelectedItems(shareType: 'image');
-          },
+          // onWeblinkShare: () {
+          //   //  Navigator.pop(context);
+          //   //  _shareSelectedItems(shareType: 'image');
+          // },
+          // onVideoShare: () {
+          //   //  Navigator.pop(context);
+          //   //  _shareSelectedItems(shareType: 'image');
+          // },
+          // onQRCodeShare: () {
+          //   //  Navigator.pop(context);
+          //   //   _shareSelectedItems(shareType: 'image');
+          // },
           onToggleOptions: (design, shade, rate, size, product, remark) {
             includeDesign = design;
             includeShade = shade;
