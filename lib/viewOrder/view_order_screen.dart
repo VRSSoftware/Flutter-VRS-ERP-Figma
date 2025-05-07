@@ -312,19 +312,17 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     );
   }
 
-  AppBar _buildAppBar() {
-    return AppBar(
-      title: const Text('View Order', style: TextStyle(color: Colors.white)),
-      backgroundColor: AppColors.primaryColor,
-      elevation: 1,
-      leading: Builder(
-        builder: (context) => IconButton(
-          icon: const Icon(Icons.menu, color: Colors.white),
-          onPressed: () => Scaffold.of(context).openDrawer(),
-        ),
-      ),
-    );
-  }
+   AppBar _buildAppBar() {
+  return AppBar(
+    title: const Text('View Order', style: TextStyle(color: Colors.white)),
+    backgroundColor: AppColors.primaryColor,
+    elevation: 1,
+    leading: IconButton(
+      icon: const Icon(Icons.arrow_back, color: Colors.white),
+      onPressed: () => Navigator.of(context).pop(),
+    ),
+  );
+}
 
   Widget _buildMainContent() {
     return LayoutBuilder(
