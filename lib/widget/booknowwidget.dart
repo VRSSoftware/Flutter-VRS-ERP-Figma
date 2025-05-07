@@ -67,6 +67,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
   String fcYrId = "24";
   bool stockWise = true;
   bool isLoading = true;
+  TextEditingController noteController = TextEditingController();
 
   int get totalQty {
     int total = 0;
@@ -225,6 +226,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
                         SizedBox(
                           width: 300,
                           child: TextField(
+                            controller: noteController,
                             decoration: InputDecoration(
                               labelText: 'Note',
                               border: OutlineInputBorder(
@@ -296,7 +298,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
                                                       "size": size.key,
                                                       "TotQty":
                                                           totalQty.toString(),
-                                                      "Note": "n123",
+                                                      "Note": noteController.text,
                                                       "color": color.key,
                                                       "Qty": qty,
                                                       "cobrid": coBrId,
