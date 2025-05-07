@@ -590,7 +590,7 @@ class _CatalogPageState extends State<CatalogPage> {
             item.shadeName.split(',').map((shade) => shade.trim()).toList();
 
         return GestureDetector(
-          onTap: () {
+          onDoubleTap: () {
             if (selectedItems.length == 0)
               _openImageZoom(context, item);
             else
@@ -796,7 +796,7 @@ class _CatalogPageState extends State<CatalogPage> {
             item.shadeName.split(',').map((shade) => shade.trim()).toList();
 
         return GestureDetector(
-          onTap: () {
+          onDoubleTap: () {
             if (selectedItems.length == 0)
               _openImageZoom(context, item);
             else
@@ -1005,7 +1005,7 @@ class _CatalogPageState extends State<CatalogPage> {
       // onTap: () => _toggleItemSelection(item),
       // onLongPress: () => _enableMultiSelect(item),
       // onDoubleTap: () => _openImageZoom(context, item),
-      onTap: () {
+      onDoubleTap: () {
         if (selectedItems.length == 0)
           _openImageZoom(context, item);
         else
