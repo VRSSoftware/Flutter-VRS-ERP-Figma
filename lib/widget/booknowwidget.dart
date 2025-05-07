@@ -66,6 +66,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
   String coBrId = "01";
   String fcYrId = "24";
   bool stockWise = true;
+  bool isLoading = true;
 
   int get totalQty {
     int total = 0;
@@ -112,6 +113,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
 
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
+      if(data.isNotEmpty){
       final items = data.map((e) => CatalogItem.fromJson(e)).toList();
 
       final uniqueSizes = items.map((e) => e.sizeName).toSet().toList()..sort();
@@ -145,7 +147,14 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
             controllers[color]![size] = controller;
           }
         }
+        isLoading=false;
       });
+      }
+      else{
+        setState(() {
+           isLoading=false;
+        });
+      }
     } else {
       debugPrint('Failed to fetch catalog data: ${response.statusCode}');
     }
@@ -172,8 +181,11 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
 
   @override
   Widget build(BuildContext context) {
-    if (catalogItems.isEmpty) {
+    if ( isLoading) {
       return const Center(child: CircularProgressIndicator());
+    }
+    else if (catalogItems.isEmpty) {
+      return const Center(child: Text("Empty"));
     }
 
     return Padding(
