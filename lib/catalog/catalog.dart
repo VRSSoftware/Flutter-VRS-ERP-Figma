@@ -654,7 +654,7 @@ class _CatalogPageState extends State<CatalogPage> {
                             children: [
                               /// Item Name
                               Text(
-                                item.styleCode,
+                                item.styleCodeWithcount,
                                 style: TextStyle(
                                   color: AppColors.primaryColor,
                                   fontWeight: FontWeight.bold,
@@ -719,7 +719,7 @@ class _CatalogPageState extends State<CatalogPage> {
                                         ),
                                       ),
                                       Text(
-                                        item.sizeDetails,
+                                        item.sizeWithMrp,
                                       ), // Data remains normal
                                     ],
                                   ),
@@ -847,7 +847,7 @@ class _CatalogPageState extends State<CatalogPage> {
                         children: [
                           /// Item Name
                           Text(
-                            item.styleCode,
+                            item.styleCodeWithcount,
                             style: TextStyle(
                               color: AppColors.primaryColor,
                               fontWeight: FontWeight.bold,
@@ -906,7 +906,7 @@ class _CatalogPageState extends State<CatalogPage> {
                                       color: Colors.grey[700],
                                     ),
                                   ),
-                                  Text(item.sizeDetails), // Data remains normal
+                                  Text(item.sizeWithMrp), // Data remains normal
                                 ],
                               ),
                             ),
@@ -1056,11 +1056,11 @@ class _CatalogPageState extends State<CatalogPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        item.styleCode,
+                        item.styleCodeWithcount,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: AppColors.primaryColor,
-                          fontSize: isLargeScreen ? 20 : 18,
+                          fontSize: isLargeScreen ? 12 : 14,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,

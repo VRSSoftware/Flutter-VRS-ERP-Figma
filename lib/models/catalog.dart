@@ -21,6 +21,7 @@ class Catalog {
   final String sizeDetails; 
   final String sizeDetailsWithoutWSp;
   final String sizeWithMrp;
+  final String styleCodeWithcount;
 
 
   Catalog({
@@ -46,6 +47,7 @@ class Catalog {
     this.sizeDetails = '', // ✅ Optional default value
     this.sizeDetailsWithoutWSp = '',
     this.sizeWithMrp = '',
+    this.styleCodeWithcount = '',
   });
 
   factory Catalog.fromJson(Map<String, dynamic> json) {
@@ -72,6 +74,7 @@ class Catalog {
       sizeDetails: json['sizeDetails'] ?? '', // ✅ Include in deserialization
       sizeDetailsWithoutWSp: json['sizeDetailsWithoutWSp'] ?? '',
       sizeWithMrp: json['sizeWithMrp'] ?? '',
+      styleCodeWithcount: json['styleCodeWithcount'] ?? '',
     );
   }
 
@@ -99,6 +102,7 @@ class Catalog {
       'sizeDetails': sizeDetails, // ✅ Include in serialization
       'sizeDetailsWithoutWSp' : sizeDetailsWithoutWSp,
       'sizeWithMrp' : sizeWithMrp,
+      'styleCodeWithcount' : styleCodeWithcount,
     };
   }
 }
