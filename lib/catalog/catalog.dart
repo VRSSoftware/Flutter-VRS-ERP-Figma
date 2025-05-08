@@ -755,8 +755,21 @@ LayoutBuilder(
                                       ),
 
                                     if (showMRP) _buildSpacerRow(),
+                                    
+                                    if (showWSP)
+                                      TableRow(
+                                        children: [
+                                          _buildLabelText('WSP'),
+                                          const Text(':'),
+                                          Text(
+                                            item.wsp.toStringAsFixed(2),
+                                            style: _valueTextStyle(),
+                                          ),
+                                        ],
+                                      ),
 
-                                    // 4. Size
+                                    if (showWSP) _buildSpacerRow(),
+                                  
                                     // 4. Size
                                     if (item.sizeName.isNotEmpty && showSizes)
                                       TableRow(
@@ -958,6 +971,20 @@ Widget _buildExpandedView(bool isLargeScreen) {
                             if (showMRP)
                               const TableRow(children: [SizedBox(height: 8), SizedBox(), SizedBox()]),
 
+
+            if (showWSP)
+                                      TableRow(
+                                        children: [
+                                          _buildLabelText('WSP'),
+                                          const Text(':'),
+                                          Text(
+                                            item.wsp.toStringAsFixed(2),
+                                            style: _valueTextStyle(),
+                                          ),
+                                        ],
+                                      ),
+
+                                    if (showWSP) _buildSpacerRow(),
                             if (item.sizeName.isNotEmpty && showSizes)
                               TableRow(
                                 children: [
@@ -1221,6 +1248,20 @@ Widget _buildExpandedView(bool isLargeScreen) {
                           ],
                         ),
                       if (showMRP) _buildSpacerRow(),
+
+                                  if (showWSP)
+                                      TableRow(
+                                        children: [
+                                          _buildLabelText('WSP'),
+                                          const Text(':'),
+                                          Text(
+                                            item.wsp.toStringAsFixed(2),
+                                            style: _valueTextStyle(),
+                                          ),
+                                        ],
+                                      ),
+
+                                    if (showWSP) _buildSpacerRow(),
 
                       // Size (with horizontal scroll)
                       // 4. Size
