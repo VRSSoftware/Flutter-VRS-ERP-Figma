@@ -231,7 +231,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       "refno": _additionalInfo['refno'] ?? '',
       "date": '',
       "bookingtype": _additionalInfo['bookingtype'] ?? '',
-      "salesman": _additionalInfo['salesman'] ?? _orderControllers.salesLedKey ?? '',
+      "salesman": _additionalInfo['salesman'] ?? _orderControllers.salesPersonKey ?? '',
     };
 
     final orderDataJson = jsonEncode(orderData);
