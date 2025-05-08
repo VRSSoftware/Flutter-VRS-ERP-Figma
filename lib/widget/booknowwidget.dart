@@ -56,8 +56,8 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
   List<String> colors = [];
   Map<String, Map<String, TextEditingController>> controllers = {};
   String styleCode = '';
-  double mrp = 0;
-  double wsp = 0;
+  late Map<String, double> sizeMrpMap;
+  late Map<String, double> sizeWspMap;
 
   String itemSubGrpKey = '';
   String itemKey = '';
@@ -89,7 +89,8 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
   }
 
   Future<void> fetchCatalogData() async {
-    const String apiUrl = '${AppConstants.BASE_URL}/catalog/GetOrderDetails';
+final String apiUrl = '${AppConstants.BASE_URL}/catalog/GetOrderDetails';
+
 
     final Map<String, dynamic> requestBody = {
       "itemSubGrpKey": itemSubGrpKey,
@@ -117,32 +118,36 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
       if (data.isNotEmpty) {
         final items = data.map((e) => CatalogItem.fromJson(e)).toList();
 
-        final uniqueSizes =
-            items.map((e) => e.sizeName).toSet().toList()..sort();
+        final uniqueSizes = items.map((e) => e.sizeName).toSet().toList()..sort();
         final uniqueColors = items.map((e) => e.shadeName).toSet().toList();
+
+        // Initialize size-specific price maps
+        sizeMrpMap = {};
+        sizeWspMap = {};
+        for (var item in items) {
+          sizeMrpMap[item.sizeName] = item.mrp;
+          sizeWspMap[item.sizeName] = item.wsp;
+        }
 
         setState(() {
           catalogItems = items;
           sizes = uniqueSizes;
           colors = uniqueColors;
           styleCode = items.first.styleCode;
-          mrp = items.first.mrp;
-          wsp = items.first.wsp;
 
           for (var color in colors) {
             controllers[color] = {};
             for (var size in sizes) {
               final match = items.firstWhere(
                 (item) => item.shadeName == color && item.sizeName == size,
-                orElse:
-                    () => CatalogItem(
-                      styleCode: styleCode,
-                      shadeName: color,
-                      sizeName: size,
-                      clQty: 0,
-                      mrp: mrp,
-                      wsp: wsp,
-                    ),
+                orElse: () => CatalogItem(
+                  styleCode: styleCode,
+                  shadeName: color,
+                  sizeName: size,
+                  clQty: 0,
+                  mrp: sizeMrpMap[size] ?? 0,
+                  wsp: sizeWspMap[size] ?? 0,
+                ),
               );
               final controller = TextEditingController();
               controller.addListener(() => setState(() {}));
@@ -214,8 +219,8 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        _buildPriceRow("MRP", mrp, FontWeight.w600),
-                        _buildPriceRow("WSP", wsp, FontWeight.w500),
+                        _buildPriceRow("MRP", sizeMrpMap, FontWeight.w600),
+                        _buildPriceRow("WSP", sizeWspMap, FontWeight.w500),
                         const SizedBox(height: 10),
                         _buildHeaderRow(),
                         const Divider(),
@@ -263,144 +268,20 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
                                 height: 45,
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor:
-                                        totalQty > 0
-                                            ? Colors.blue
-                                            : Colors.grey, // Grayed out
+                                    backgroundColor: totalQty > 0
+                                        ? Colors.blue
+                                        : Colors.grey,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                   ),
-                                  onPressed:
-                                      totalQty > 0
-                                          ? () async {
-                                            // Store all the API futures
-                                            List<Future> apiCalls = [];
-
-                                            for (var color
-                                                in controllers.entries) {
-                                              for (var size
-                                                  in color.value.entries) {
-                                                String qty = size.value.text;
-                                                if (qty.isNotEmpty &&
-                                                    int.tryParse(qty) != null &&
-                                                    int.parse(qty) > 0) {
-                                                  final payload = {
-                                                    "userId": userId,
-                                                    "coBrId": coBrId,
-                                                    "fcYrId": fcYrId,
-                                                    "data": {
-                                                      "designcode": styleCode,
-                                                      "mrp": mrp
-                                                          .toStringAsFixed(0),
-                                                      "WSP": wsp
-                                                          .toStringAsFixed(0),
-                                                      "size": size.key,
-                                                      "TotQty":
-                                                          totalQty.toString(),
-                                                      "Note": noteController.text,
-                                                      "color": color.key,
-                                                      "Qty": qty,
-                                                      "cobrid": coBrId,
-                                                      "user":
-                                                          userId.toLowerCase(),
-                                                      "barcode": "",
-                                                    },
-                                                    "typ": 0,
-                                                  };
-
-                                                  apiCalls.add(
-                                                    http.post(
-                                                      Uri.parse(
-                                                        '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
-                                                      ),
-                                                      headers: {
-                                                        'Content-Type':
-                                                            'application/json',
-                                                      },
-                                                      body: jsonEncode(payload),
-                                                    ),
-                                                  );
-                                                }
-                                              }
-                                            }
-
-                                            try {
-                                              final responses =
-                                                  await Future.wait(apiCalls);
-
-                                              if (responses.every(
-                                                (r) => r.statusCode == 200,
-                                              )) {
-                                                if (context.mounted) {
-                                                  showDialog(
-                                                    context: context,
-                                                    builder:
-                                                        (_) => AlertDialog(
-                                                          title: const Text(
-                                                            "Success",
-                                                          ),
-                                                          content: const Text(
-                                                            "Booking submitted.",
-                                                          ),
-                                                          actions: [
-                                                            TextButton(
-                                                              onPressed: () {
-                                                                Navigator.pop(
-                                                                  context,
-                                                                );
-                                                                Navigator.pop(
-                                                                  context,
-                                                                );
-                                                                widget
-                                                                    .onSuccess();
-                                                              },
-                                                              child: const Text(
-                                                                "OK",
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                  );
-                                                }
-                                              }
-                                            } catch (e) {
-                                              if (context.mounted) {
-                                                showDialog(
-                                                  context: context,
-                                                  builder:
-                                                      (_) => AlertDialog(
-                                                        title: const Text(
-                                                          "Error",
-                                                        ),
-                                                        content: Text(
-                                                          "Failed to submit: $e",
-                                                        ),
-                                                        actions: [
-                                                          TextButton(
-                                                            onPressed:
-                                                                () =>
-                                                                    Navigator.pop(
-                                                                      context,
-                                                                    ),
-                                                            child: const Text(
-                                                              "OK",
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                );
-                                              }
-                                            }
-                                          }
-                                          : null,
+                                  onPressed: totalQty > 0 ? _submitOrder : null,
                                   child: const Text(
                                     'Add',
                                     style: TextStyle(fontSize: 16),
                                   ),
                                 ),
                               ),
-
                               const SizedBox(width: 80),
                               SizedBox(
                                 width: 120,
@@ -408,14 +289,14 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.transparent,
-                                    elevation: 0, // Optional: remove shadow
-                                    foregroundColor: Colors.red, // Text color
+                                    elevation: 0,
+                                    foregroundColor: Colors.red,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                       side: const BorderSide(
                                         color: Colors.red,
                                         width: 2,
-                                      ), // Border color
+                                      ),
                                     ),
                                   ),
                                   onPressed: () => Navigator.pop(context),
@@ -439,41 +320,40 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
       ),
     );
   }
-
-  Widget _buildPriceRow(String label, double price, FontWeight weight) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 70,
-            child: Text(label, style: TextStyle(fontWeight: weight)),
-          ),
-          ...sizes.map(
-            (_) => SizedBox(
-              width: 100,
-              child: Center(
-                child: Text(
-                  price.toStringAsFixed(0),
-                  style: TextStyle(fontWeight: weight),
-                ),
+Widget _buildPriceRow(String label, Map<String, double> sizePriceMap, FontWeight weight) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4.0),
+    child: Row(
+      children: [
+        SizedBox(
+          width: 70,
+          child: Text(label, style: TextStyle(fontWeight: weight)),
+        ),
+        ...sizes.map((size) {
+          final price = sizePriceMap[size] ?? 0.0;
+          return SizedBox(
+            width: 100,
+            child: Center(
+              child: Text(
+                price.toStringAsFixed(0),
+                style: TextStyle(fontWeight: weight),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
+          );
+        }).toList(),
+      ],
+    ),
+  );
+}
 
-  Widget _buildHeaderRow() {
-    return Row(
-      children: [
-        const SizedBox(
-          width: 70,
-          child: Text('Size', style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
-        ...sizes.map(
-          (size) => SizedBox(
+Widget _buildHeaderRow() {
+  return Row(
+    children: [
+      const SizedBox(
+        width: 70,
+        child: Text('Size', style: TextStyle(fontWeight: FontWeight.bold)),
+      ),
+      ...sizes.map((size) => SizedBox(
             width: 100,
             child: Center(
               child: Text(
@@ -481,11 +361,11 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
-          ),
-        ),
-      ],
-    );
-  }
+          )),
+    ],
+  );
+}
+
 
   Widget _buildQuantityRow(String color) {
     return Padding(
@@ -513,22 +393,19 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
           ),
           ...sizes.map((size) {
             final controller = controllers[color]?[size];
-            final originalQty =
-                catalogItems
-                    .firstWhere(
-                      (item) =>
-                          item.shadeName == color && item.sizeName == size,
-                      orElse:
-                          () => CatalogItem(
-                            styleCode: styleCode,
-                            shadeName: color,
-                            sizeName: size,
-                            clQty: 0,
-                            mrp: mrp,
-                            wsp: wsp,
-                          ),
-                    )
-                    .clQty;
+            final originalQty = catalogItems
+                .firstWhere(
+                  (item) => item.shadeName == color && item.sizeName == size,
+                  orElse: () => CatalogItem(
+                    styleCode: styleCode,
+                    shadeName: color,
+                    sizeName: size,
+                    clQty: 0,
+                    mrp: sizeMrpMap[size] ?? 0,
+                    wsp: sizeWspMap[size] ?? 0,
+                  ),
+                )
+                .clQty;
 
             return SizedBox(
               width: 100,
@@ -559,5 +436,87 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
         ],
       ),
     );
+  }
+
+  Future<void> _submitOrder() async {
+    List<Future> apiCalls = [];
+
+    for (var colorEntry in controllers.entries) {
+      String color = colorEntry.key;
+      for (var sizeEntry in colorEntry.value.entries) {
+        String size = sizeEntry.key;
+        String qty = sizeEntry.value.text;
+        if (qty.isNotEmpty && int.tryParse(qty) != null && int.parse(qty) > 0) {
+          final payload = {
+            "userId": userId,
+            "coBrId": coBrId,
+            "fcYrId": fcYrId,
+            "data": {
+              "designcode": styleCode,
+              "mrp": sizeMrpMap[size]?.toStringAsFixed(0) ?? '0',
+              "WSP": sizeWspMap[size]?.toStringAsFixed(0) ?? '0',
+              "size": size,
+              "TotQty": totalQty.toString(),
+              "Note": noteController.text,
+              "color": color,
+              "Qty": qty,
+              "cobrid": coBrId,
+              "user": userId.toLowerCase(),
+              "barcode": "",
+            },
+            "typ": 0,
+          };
+
+          apiCalls.add(
+            http.post(
+              Uri.parse('${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails'),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode(payload),
+            ),
+          );
+        }
+      }
+    }
+
+    try {
+      final responses = await Future.wait(apiCalls);
+      if (responses.every((r) => r.statusCode == 200)) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: const Text("Success"),
+              content: const Text("Booking submitted."),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                    widget.onSuccess();
+                  },
+                  child: const Text("OK"),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text("Error"),
+            content: Text("Failed to submit: $e"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+      }
+    }
   }
 }
