@@ -826,7 +826,7 @@ class _OrderForm extends StatelessWidget {
             },
           ),
         ),
-        buildFullField(context, "Remark", controllers.remark),
+        buildFullField(context, "Remark", controllers.remark, true),
         _buildResponsiveRow(
           isWideScreen,
           buildTextField(
@@ -1131,9 +1131,10 @@ Widget buildFullField(
   BuildContext context,
   String label,
   TextEditingController controller,
+  bool? isText,
 ) {
   return Padding(
     padding: const EdgeInsets.only(top: 12),
-    child: buildTextField(context, label, controller),
+    child: buildTextField(context, label, controller,isText: isText),
   );
 }
