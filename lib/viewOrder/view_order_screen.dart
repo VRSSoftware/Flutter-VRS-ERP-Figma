@@ -786,7 +786,15 @@ class _OrderForm extends StatelessWidget {
           "Broker",
           "B",
           controllers.selectedBroker,
-          (val, key) => controllers.selectedBrokerKey = key,
+                    (val, key) async {
+            controllers.selectedBrokerKey = key;
+            if (key != null) {
+              final commission =
+                  await dropdownData.fetchCommissionPercentage(key);
+              controllers.comm.text = commission;
+            }
+          },
+          
         ),
         buildTextField(context, "Comm (%)", controllers.comm),
         _buildDropdown(
