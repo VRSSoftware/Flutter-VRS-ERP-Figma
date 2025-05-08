@@ -682,26 +682,36 @@ class _CatalogPageState extends State<CatalogPage> {
                             ),
                             child: LayoutBuilder(
                               builder: (context, constraints) {
-                                // Set max height relative to available width (e.g. 1.3 times narrower width)
                                 final maxImageHeight =
-                                    constraints.maxWidth * 1.6;
+                                    constraints.maxWidth * 1.2;
 
                                 return ConstrainedBox(
                                   constraints: BoxConstraints(
                                     maxHeight: maxImageHeight,
                                   ),
-                                  child: Image.network(
-                                    _getImageUrl(item),
-                                    fit: BoxFit.contain, // Prevents cropping
+                                  child: SizedBox(
+                                    height: maxImageHeight,
                                     width: double.infinity,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        color: Colors.grey.shade300,
-                                        child: const Center(
-                                          child: Icon(Icons.error),
-                                        ),
-                                      );
-                                    },
+                                    child: Center(
+                                      child: Image.network(
+                                        _getImageUrl(item),
+                                        fit:
+                                            BoxFit.contain, // Prevents cropping
+                                        width: double.infinity,
+                                        errorBuilder: (
+                                          context,
+                                          error,
+                                          stackTrace,
+                                        ) {
+                                          return Container(
+                                            color: Colors.grey.shade300,
+                                            child: const Center(
+                                              child: Icon(Icons.error),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
                                   ),
                                 );
                               },
@@ -925,30 +935,40 @@ class _CatalogPageState extends State<CatalogPage> {
                           ),
                           child: LayoutBuilder(
                             builder: (context, constraints) {
-                              // Set max height relative to available width (e.g. 1.3 times narrower width)
-                              final maxImageHeight = constraints.maxWidth * 1.2;
+                              final maxImageHeight = constraints.maxWidth * 1.6;
 
                               return ConstrainedBox(
                                 constraints: BoxConstraints(
                                   maxHeight: maxImageHeight,
                                 ),
-                                child: Image.network(
-                                  _getImageUrl(item),
-                                  fit: BoxFit.contain, // Prevents cropping
+                                child: SizedBox(
+                                  height: maxImageHeight,
                                   width: double.infinity,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      color: Colors.grey.shade300,
-                                      child: const Center(
-                                        child: Icon(Icons.error),
-                                      ),
-                                    );
-                                  },
+                                  child: Center(
+                                    child: Image.network(
+                                      _getImageUrl(item),
+                                      fit: BoxFit.contain, // Prevents cropping
+                                      width: double.infinity,
+                                      errorBuilder: (
+                                        context,
+                                        error,
+                                        stackTrace,
+                                      ) {
+                                        return Container(
+                                          color: Colors.grey.shade300,
+                                          child: const Center(
+                                            child: Icon(Icons.error),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
                                 ),
                               );
                             },
                           ),
                         ),
+
                         Padding(
                           padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
                           child: Table(
@@ -1175,20 +1195,19 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
-Widget _buildLabelText(String label) {
-  return Padding(
-    padding: const EdgeInsets.only(right: 5), // Adds space before colon
-    child: Text(
-      label,
-      style: TextStyle(
-        fontWeight: FontWeight.bold,
-        color: Colors.grey[700],
-        fontSize: 14,
+  Widget _buildLabelText(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 5), // Adds space before colon
+      child: Text(
+        label,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.grey[700],
+          fontSize: 14,
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   TextStyle _valueTextStyle() {
     return TextStyle(color: Colors.grey[800], fontSize: 14);
@@ -1273,21 +1292,26 @@ Widget _buildLabelText(String label) {
                   ),
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      // Set max height relative to available width (e.g. 1.3 times narrower width)
                       final maxImageHeight = constraints.maxWidth * 1.2;
 
                       return ConstrainedBox(
                         constraints: BoxConstraints(maxHeight: maxImageHeight),
-                        child: Image.network(
-                          _getImageUrl(item),
-                          fit: BoxFit.contain, // Prevents cropping
+                        child: SizedBox(
+                          height: maxImageHeight,
                           width: double.infinity,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.grey.shade300,
-                              child: const Center(child: Icon(Icons.error)),
-                            );
-                          },
+                          child: Center(
+                            child: Image.network(
+                              _getImageUrl(item),
+                              fit: BoxFit.contain, // Prevents cropping
+                              width: double.infinity,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Colors.grey.shade300,
+                                  child: const Center(child: Icon(Icons.error)),
+                                );
+                              },
+                            ),
+                          ),
                         ),
                       );
                     },
