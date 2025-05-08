@@ -1,13 +1,16 @@
-import 'package:flutter/material.dart';// Adjust as per your project structure
-import '../constants/app_constants.dart'; // Adjust as per your project structure
+import 'package:flutter/material.dart';
+import '../constants/app_constants.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-class StyleCard extends StatelessWidget {
+class StyleCard extends StatefulWidget {
   final String styleCode;
   final List<dynamic> items;
   final Map<String, Map<String, TextEditingController>> controllers;
   final VoidCallback onRemove;
   final VoidCallback updateTotals;
   final Color Function(String) getColor;
+  final VoidCallback onUpdate;
 
   const StyleCard({
     required this.styleCode,
@@ -16,12 +19,58 @@ class StyleCard extends StatelessWidget {
     required this.onRemove,
     required this.updateTotals,
     required this.getColor,
+    required this.onUpdate,
     Key? key,
   }) : super(key: key);
 
   @override
+  _StyleCardState createState() => _StyleCardState();
+}
+
+class _StyleCardState extends State<StyleCard> {
+  final TextEditingController noteController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchNote();
+  }
+
+  Future<void> _fetchNote() async {
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.BASE_URL}/orderBooking/GetSalesOrderDetails'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "userId": "Admin",
+          "coBrId": "01",
+          "fcYrId": "24",
+          "designcode": widget.styleCode,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final List data = jsonDecode(response.body);
+        if (data.isNotEmpty) {
+          final note = data.firstWhere(
+            (item) => item['Note'] != null && item['Note'].toString().isNotEmpty,
+            orElse: () => {'Note': ''},
+          )['Note']?.toString() ?? '';
+          setState(() {
+            noteController.text = note;
+          });
+        }
+      } else {
+        debugPrint('Failed to fetch note: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error fetching note: $e');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final firstItem = items.first;
+    final firstItem = widget.items.first;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -30,7 +79,7 @@ class StyleCard extends StatelessWidget {
             _buildHeaderSection(firstItem),
             const SizedBox(height: 16),
             _buildPriceTable(context),
-            _buildActionButtons(),
+            _buildActionButtons(context),
           ],
         ),
       ),
@@ -49,7 +98,7 @@ class StyleCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                styleCode,
+                widget.styleCode,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -111,9 +160,9 @@ class StyleCard extends StatelessWidget {
   }
 
   Widget _buildPriceTable(BuildContext context) {
-    final sizeDetails = _getSizeDetails(items);
+    final sizeDetails = _getSizeDetails(widget.items);
     final sortedSizes = sizeDetails.keys.toList()..sort();
-    final sortedShades = _getSortedShades(items);
+    final sortedShades = _getSortedShades(widget.items);
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -148,68 +197,66 @@ class StyleCard extends StatelessWidget {
   }
 
   List<String> _getSortedShades(List<dynamic> items) =>
-      items.map((e) => e['shadeName']?.toString() ?? '').toSet().toList()
-        ..sort();
+      items.map((e) => e['shadeName']?.toString() ?? '').toSet().toList()..sort();
 
   Map<int, TableColumnWidth> _buildColumnWidths(List<String> sizes) => {
         0: const FixedColumnWidth(100),
         for (var i = 0; i < sizes.length; i++) i + 1: const FixedColumnWidth(80),
       };
 
-TableRow _buildTableRow(
-  String label,
-  List<String> sizes,
-  Map<String, Map<String, num>> details,
-  String key,
-) {
-  return TableRow(
-    children: [
-      TableCell(
-        verticalAlignment: TableCellVerticalAlignment.middle,
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Text(label),
-        ),
-      ),
-      ...sizes.map(
-        (size) => TableCell(
+  TableRow _buildTableRow(
+    String label,
+    List<String> sizes,
+    Map<String, Map<String, num>> details,
+    String key,
+  ) {
+    return TableRow(
+      children: [
+        TableCell(
           verticalAlignment: TableCellVerticalAlignment.middle,
-          child: Center(
-            child: Text(
-              '${details[size]?[key]?.toStringAsFixed(0) ?? '0'}',
-              textAlign: TextAlign.center,
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Text(label),
+          ),
+        ),
+        ...sizes.map(
+          (size) => TableCell(
+            verticalAlignment: TableCellVerticalAlignment.middle,
+            child: Center(
+              child: Text(
+                '${details[size]?[key]?.toStringAsFixed(0) ?? '0'}',
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
         ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 
-
-TableRow _buildHeaderRow(List<String> sizes) {
-  return TableRow(
-    decoration: BoxDecoration(color: Colors.grey.shade100),
-    children: [
-      const TableCell(
-        verticalAlignment: TableCellVerticalAlignment.middle,
-        child: _TableHeaderCell(),
-      ),
-      ...sizes.map(
-        (size) => TableCell(
+  TableRow _buildHeaderRow(List<String> sizes) {
+    return TableRow(
+      decoration: BoxDecoration(color: Colors.grey.shade100),
+      children: [
+        const TableCell(
           verticalAlignment: TableCellVerticalAlignment.middle,
-          child: Center(
-            child: Text(
-              size,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontWeight: FontWeight.bold),
+          child: _TableHeaderCell(),
+        ),
+        ...sizes.map(
+          (size) => TableCell(
+            verticalAlignment: TableCellVerticalAlignment.middle,
+            child: Center(
+              child: Text(
+                size,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 
   TableRow _buildShadeRow(String shade, List<String> sizes) {
     return TableRow(
@@ -223,7 +270,7 @@ TableRow _buildHeaderRow(List<String> sizes) {
                 Text(
                   shade,
                   style: TextStyle(
-                    color: getColor(shade),
+                    color: widget.getColor(shade),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -235,10 +282,10 @@ TableRow _buildHeaderRow(List<String> sizes) {
           (size) => Padding(
             padding: const EdgeInsets.all(4),
             child: TextField(
-              controller: controllers[shade]?[size],
+              controller: widget.controllers[shade]?[size],
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center,
-              onChanged: (_) => updateTotals(),
+              onChanged: (_) => widget.updateTotals(),
               decoration: const InputDecoration(
                 contentPadding: EdgeInsets.symmetric(vertical: 8),
                 hintText: '0',
@@ -252,23 +299,40 @@ TableRow _buildHeaderRow(List<String> sizes) {
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 14),
-      child: Row(
+      child: Column(
         children: [
-          _buildActionButton(
-            label: 'Update',
-            icon: Icons.update,
-            color: AppColors.primaryColor,
-            onPressed: () {},
+          SizedBox(
+            width: 300,
+            child: TextField(
+              controller: noteController,
+              decoration: InputDecoration(
+                labelText: 'Note',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
           ),
-          const SizedBox(width: 16),
-          _buildActionButton(
-            label: 'Remove',
-            icon: Icons.delete,
-            color: Colors.grey,
-            onPressed: onRemove,
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _buildActionButton(
+                label: 'Update',
+                icon: Icons.update,
+                color: AppColors.primaryColor,
+                onPressed: () => _submitUpdate(context),
+              ),
+              const SizedBox(width: 16),
+              _buildActionButton(
+                label: 'Remove',
+                icon: Icons.delete,
+                color: Colors.grey,
+                onPressed: widget.onRemove,
+              ),
+            ],
           ),
         ],
       ),
@@ -297,23 +361,133 @@ TableRow _buildHeaderRow(List<String> sizes) {
     );
   }
 
-  /// Color resolver for shade names
-  Color _getColorCode(String color) {
-    switch (color.toLowerCase()) {
-      case 'red':
-        return Colors.red;
-      case 'green':
-        return Colors.green;
-      case 'blue':
-        return Colors.blue;
-      case 'yellow':
-        return Colors.yellow[800]!;
-      case 'black':
-        return Colors.black;
-      case 'white':
-        return Colors.grey;
-      default:
-        return Colors.black;
+  Future<void> _submitUpdate(BuildContext context) async {
+    List<Future> apiCalls = [];
+    final sizeDetails = _getSizeDetails(widget.items);
+    int totalQty = 0;
+    List<String> updatedData = [];
+
+    debugPrint('Submitting update for styleCode: ${widget.styleCode}');
+
+    for (var shadeEntry in widget.controllers.entries) {
+      String shade = shadeEntry.key;
+      for (var sizeEntry in shadeEntry.value.entries) {
+        String size = sizeEntry.key;
+        String qty = sizeEntry.value.text;
+        if (qty.isNotEmpty && int.tryParse(qty) != null && int.parse(qty) > 0) {
+          totalQty += int.parse(qty);
+          updatedData.add('Shade: $shade, Size: $size, Qty: $qty');
+          final payload = {
+            "userId": "Admin",
+            "coBrId": "01",
+            "fcYrId": "24",
+            "data": {
+              "designcode": widget.styleCode,
+              "mrp": sizeDetails[size]?['mrp']?.toStringAsFixed(0) ?? '0',
+              "WSP": sizeDetails[size]?['wsp']?.toStringAsFixed(0) ?? '0',
+              "size": size,
+              "TotQty": totalQty.toString(),
+              "Note": noteController.text,
+              "color": shade,
+              "Qty": qty,
+              "cobrid": "01",
+              "user": "admin",
+              "barcode": "",
+            },
+            "typ": 1,
+          };
+
+          apiCalls.add(
+            http.post(
+              Uri.parse('${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails'),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode(payload),
+            ),
+          );
+        }
+      }
+    }
+
+    if (apiCalls.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("No Updates"),
+          content: const Text("No quantities have been updated."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    if (noteController.text.isNotEmpty) {
+      updatedData.add('Note: ${noteController.text}');
+    }
+
+    try {
+      final responses = await Future.wait(apiCalls);
+      if (responses.every((r) => r.statusCode == 200)) {
+        debugPrint('Update successful for styleCode: ${widget.styleCode}');
+        widget.onUpdate(); // Trigger refresh without removing card
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text("Success"),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text("Order details updated successfully:"),
+                  const SizedBox(height: 8),
+                  Text(updatedData.join('\n')),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+      } else {
+        debugPrint('Update failed for some items: ${responses.map((r) => r.statusCode).toList()}');
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text("Error"),
+            content: const Text("Failed to update some order details."),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error during update: $e');
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("Error"),
+          content: Text("Failed to submit update: $e"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
     }
   }
 }
@@ -355,10 +529,7 @@ class _TableHeaderCell extends StatelessWidget {
               top: 20,
               child: Text(
                 'Shade',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
               ),
             ),
             Positioned(
@@ -366,10 +537,7 @@ class _TableHeaderCell extends StatelessWidget {
               bottom: 20,
               child: Text(
                 'Size',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
               ),
             ),
           ],
