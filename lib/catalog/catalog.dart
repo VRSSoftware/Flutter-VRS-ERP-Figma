@@ -675,33 +675,38 @@ class _CatalogPageState extends State<CatalogPage> {
                         /// Image section (fixed width)
                         Flexible(
                           flex: 2,
-                          child:       ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    topRight: Radius.circular(12),
-                  ),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      // Set max height relative to available width (e.g. 1.3 times narrower width)
-                      final maxImageHeight = constraints.maxWidth * 1.6;
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              topRight: Radius.circular(12),
+                            ),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                // Set max height relative to available width (e.g. 1.3 times narrower width)
+                                final maxImageHeight =
+                                    constraints.maxWidth * 1.6;
 
-                      return ConstrainedBox(
-                        constraints: BoxConstraints(maxHeight: maxImageHeight),
-                        child: Image.network(
-                          _getImageUrl(item),
-                          fit: BoxFit.contain, // Prevents cropping
-                          width: double.infinity,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.grey.shade300,
-                              child: const Center(child: Icon(Icons.error)),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                                return ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxHeight: maxImageHeight,
+                                  ),
+                                  child: Image.network(
+                                    _getImageUrl(item),
+                                    fit: BoxFit.contain, // Prevents cropping
+                                    width: double.infinity,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        color: Colors.grey.shade300,
+                                        child: const Center(
+                                          child: Icon(Icons.error),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
                         ),
                         SizedBox(width: isLargeScreen ? 16 : 8),
 
@@ -913,33 +918,37 @@ class _CatalogPageState extends State<CatalogPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                             ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    topRight: Radius.circular(12),
-                  ),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      // Set max height relative to available width (e.g. 1.3 times narrower width)
-                      final maxImageHeight = constraints.maxWidth * 1.2;
+                        ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(12),
+                            topRight: Radius.circular(12),
+                          ),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              // Set max height relative to available width (e.g. 1.3 times narrower width)
+                              final maxImageHeight = constraints.maxWidth * 1.2;
 
-                      return ConstrainedBox(
-                        constraints: BoxConstraints(maxHeight: maxImageHeight),
-                        child: Image.network(
-                          _getImageUrl(item),
-                          fit: BoxFit.contain, // Prevents cropping
-                          width: double.infinity,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.grey.shade300,
-                              child: const Center(child: Icon(Icons.error)),
-                            );
-                          },
+                              return ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxHeight: maxImageHeight,
+                                ),
+                                child: Image.network(
+                                  _getImageUrl(item),
+                                  fit: BoxFit.contain, // Prevents cropping
+                                  width: double.infinity,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: Colors.grey.shade300,
+                                      child: const Center(
+                                        child: Icon(Icons.error),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
                         ),
-                      );
-                    },
-                  ),
-                ),
                         Padding(
                           padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
                           child: Table(
@@ -1025,14 +1034,12 @@ class _CatalogPageState extends State<CatalogPage> {
                                     ),
                                   ],
                                 ),
-                              if (showMRP)_buildSpacerRow(),
-                               
-                                
+                              if (showMRP) _buildSpacerRow(),
 
                               if (showWSP)
                                 TableRow(
                                   children: [
-                                   Text(
+                                    Text(
                                       'WSP',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
@@ -1081,12 +1088,18 @@ class _CatalogPageState extends State<CatalogPage> {
                               if (showProduct)
                                 TableRow(
                                   children: [
-                                    Text(
-                                      'Product',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        right: 5,
+                                      ), // adjust as needed
+                                      child: Text(
+                                        'Product',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
+
                                     const Text(':'),
                                     Text(
                                       item.itemName,
@@ -1162,16 +1175,20 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
-  Widget _buildLabelText(String label) {
-    return Text(
+Widget _buildLabelText(String label) {
+  return Padding(
+    padding: const EdgeInsets.only(right: 5), // Adds space before colon
+    child: Text(
       label,
       style: TextStyle(
         fontWeight: FontWeight.bold,
         color: Colors.grey[700],
         fontSize: 14,
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   TextStyle _valueTextStyle() {
     return TextStyle(color: Colors.grey[800], fontSize: 14);
@@ -1249,7 +1266,7 @@ class _CatalogPageState extends State<CatalogPage> {
                   MainAxisSize.min, // Ensures the card height matches content
               children: [
                 // Image Section
-                  ClipRRect(
+                ClipRRect(
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
@@ -2331,10 +2348,7 @@ class _CatalogPageState extends State<CatalogPage> {
                     Row(
                       children: [
                         SizedBox(width: 10),
-                        Text(
-                          '(Label)',
-                          style: TextStyle(color: Colors.grey),
-                        ),
+                        Text('(Label)', style: TextStyle(color: Colors.grey)),
                         Checkbox(
                           value: showFullSizeDetails,
                           onChanged: (val) {
