@@ -1025,19 +1025,19 @@ class _CatalogPageState extends State<CatalogPage> {
                                     ),
                                   ],
                                 ),
-                              if (showMRP)
-                                const TableRow(
-                                  children: [
-                                    SizedBox(height: 8),
-                                    SizedBox(),
-                                    SizedBox(),
-                                  ],
-                                ),
+                              if (showMRP)_buildSpacerRow(),
+                               
+                                
 
                               if (showWSP)
                                 TableRow(
                                   children: [
-                                    _buildLabelText('WSP'),
+                                   Text(
+                                      'WSP',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                     const Text(':'),
                                     Text(
                                       item.wsp.toStringAsFixed(2),
