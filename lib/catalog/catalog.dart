@@ -58,6 +58,7 @@ class _CatalogPageState extends State<CatalogPage> {
   bool showProduct = true;
   bool showRemark = true;
   bool showonlySizes = true;
+  bool showFullSizeDetails = false;
 
   @override
   void initState() {
@@ -89,22 +90,16 @@ class _CatalogPageState extends State<CatalogPage> {
     });
   }
 
-  String _getSizeText(Catalog item) {
-    if (!showMRP) {
-      if (showWSP) {
-        // Parse WSP values from sizeDetailsWithoutWSp
-        return _extractWspSizes(item.sizeDetailsWithoutWSp);
-      } else {
-        return item.onlySizes;
-      }
-    } else {
-      if (showWSP) {
-        return item.sizeDetailsWithoutWSp;
-      } else {
-        return item.sizeWithMrp;
-      }
-    }
+String _getSizeText(Catalog item) {
+  if (showMRP && showWSP && showFullSizeDetails) {
+    return item.sizeDetails;
   }
+  if (!showMRP) {
+    return showWSP ? _extractWspSizes(item.sizeDetailsWithoutWSp) : item.onlySizes;
+  }
+  return showWSP ? item.sizeDetailsWithoutWSp : item.sizeWithMrp;
+}
+
 
   String _extractWspSizes(String sizeDetails) {
     try {
@@ -358,181 +353,116 @@ class _CatalogPageState extends State<CatalogPage> {
                                           ),
                                         ),
                                         const SizedBox(height: 20),
-                                        LayoutBuilder(
-                                          builder: (context, constraints) {
-                                            final isWide =
-                                                constraints.maxWidth > 400;
-                                            return isWide
-                                                ? Row(
-                                                  children: [
-                                                    Expanded(
-                                                      child: Column(
-                                                        children: [
-                                                          _buildToggleRow(
-                                                            "Show MRP",
-                                                            showMRP,
-                                                            (val) {
-                                                              setState(
-                                                                () =>
-                                                                    showMRP =
-                                                                        val,
-                                                              );
-                                                              setStateDialog(
-                                                                () {},
-                                                              );
-                                                            },
-                                                          ),
-                                                          _buildToggleRow(
-                                                            "Show WSP",
-                                                            showWSP,
-                                                            (val) {
-                                                              setState(
-                                                                () =>
-                                                                    showWSP =
-                                                                        val,
-                                                              );
-                                                              setStateDialog(
-                                                                () {},
-                                                              );
-                                                            },
-                                                          ),
-                                                          _buildToggleRow(
-                                                            "Show Product",
-                                                            showProduct,
-                                                            (val) {
-                                                              setState(
-                                                                () =>
-                                                                    showProduct =
-                                                                        val,
-                                                              );
-                                                              setStateDialog(
-                                                                () {},
-                                                              );
-                                                            },
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 16),
-                                                    Expanded(
-                                                      child: Column(
-                                                        children: [
-                                                          _buildToggleRow(
-                                                            "Show Sizes",
-                                                            showSizes,
-                                                            (val) {
-                                                              setState(
-                                                                () =>
-                                                                    showSizes =
-                                                                        val,
-                                                              );
-                                                              setStateDialog(
-                                                                () {},
-                                                              );
-                                                            },
-                                                          ),
-                                                          _buildToggleRow(
-                                                            "Show Shades",
-                                                            showShades,
-                                                            (val) {
-                                                              setState(
-                                                                () =>
-                                                                    showShades =
-                                                                        val,
-                                                              );
-                                                              setStateDialog(
-                                                                () {},
-                                                              );
-                                                            },
-                                                          ),
-                                                          _buildToggleRow(
-                                                            "Show Remark",
-                                                            showRemark,
-                                                            (val) {
-                                                              setState(
-                                                                () =>
-                                                                    showRemark =
-                                                                        val,
-                                                              );
-                                                              setStateDialog(
-                                                                () {},
-                                                              );
-                                                            },
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ],
-                                                )
-                                                : Column(
-                                                  children: [
-                                                    _buildToggleRow(
-                                                      "Show MRP",
-                                                      showMRP,
-                                                      (val) {
-                                                        setState(
-                                                          () => showMRP = val,
-                                                        );
-                                                        setStateDialog(() {});
-                                                      },
-                                                    ),
-                                                    _buildToggleRow(
-                                                      "Show WSP",
-                                                      showWSP,
-                                                      (val) {
-                                                        setState(
-                                                          () => showWSP = val,
-                                                        );
-                                                        setStateDialog(() {});
-                                                      },
-                                                    ),
-                                                    _buildToggleRow(
-                                                      "Show Sizes",
-                                                      showSizes,
-                                                      (val) {
-                                                        setState(
-                                                          () => showSizes = val,
-                                                        );
-                                                        setStateDialog(() {});
-                                                      },
-                                                    ),
-                                                    _buildToggleRow(
-                                                      "Show Shades",
-                                                      showShades,
-                                                      (val) {
-                                                        setState(
-                                                          () =>
-                                                              showShades = val,
-                                                        );
-                                                        setStateDialog(() {});
-                                                      },
-                                                    ),
-                                                    _buildToggleRow(
-                                                      "Show Product",
-                                                      showProduct,
-                                                      (val) {
-                                                        setState(
-                                                          () =>
-                                                              showProduct = val,
-                                                        );
-                                                        setStateDialog(() {});
-                                                      },
-                                                    ),
-                                                    _buildToggleRow(
-                                                      "Show Remark",
-                                                      showRemark,
-                                                      (val) {
-                                                        setState(
-                                                          () =>
-                                                              showRemark = val,
-                                                        );
-                                                        setStateDialog(() {});
-                                                      },
-                                                    ),
-                                                  ],
-                                                );
-                                          },
-                                        ),
+                                    // In the dialog layout
+LayoutBuilder(
+  builder: (context, constraints) {
+    final isWide = constraints.maxWidth > 400;
+    return isWide
+        ? Row(
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildToggleRow(
+                      "Show MRP",
+                      showMRP,
+                      (val) {
+                        setState(() => showMRP = val);
+                        setStateDialog(() {});
+                      },
+                    ),
+                    _buildToggleRow(
+                      "Show WSP",
+                      showWSP,
+                      (val) {
+                        setState(() => showWSP = val);
+                        setStateDialog(() {});
+                      },
+                    ),
+                    _buildToggleRow(
+                      "Show Product",
+                      showProduct,
+                      (val) {
+                        setState(() => showProduct = val);
+                        setStateDialog(() {});
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildSizeToggleRow(), // Updated line
+                    _buildToggleRow(
+                      "Show Shades",
+                      showShades,
+                      (val) {
+                        setState(() => showShades = val);
+                        setStateDialog(() {});
+                      },
+                    ),
+                    _buildToggleRow(
+                      "Show Remark",
+                      showRemark,
+                      (val) {
+                        setState(() => showRemark = val);
+                        setStateDialog(() {});
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          )
+        : Column(
+            children: [
+              _buildToggleRow(
+                "Show MRP",
+                showMRP,
+                (val) {
+                  setState(() => showMRP = val);
+                  setStateDialog(() {});
+                },
+              ),
+              _buildToggleRow(
+                "Show WSP",
+                showWSP,
+                (val) {
+                  setState(() => showWSP = val);
+                  setStateDialog(() {});
+                },
+              ),
+              _buildSizeToggleRow(), // Updated line
+              _buildToggleRow(
+                "Show Shades",
+                showShades,
+                (val) {
+                  setState(() => showShades = val);
+                  setStateDialog(() {});
+                },
+              ),
+              _buildToggleRow(
+                "Show Product",
+                showProduct,
+                (val) {
+                  setState(() => showProduct = val);
+                  setStateDialog(() {});
+                },
+              ),
+              _buildToggleRow(
+                "Show Remark",
+                showRemark,
+                (val) {
+                  setState(() => showRemark = val);
+                  setStateDialog(() {});
+                },
+              ),
+            ],
+          );
+  },
+),
                                         const SizedBox(height: 20),
                                         Align(
                                           alignment: Alignment.centerRight,
@@ -2248,7 +2178,46 @@ Widget _buildExpandedView(bool isLargeScreen) {
       },
     );
   }
-
+Widget _buildSizeToggleRow() {
+  return StatefulBuilder(
+    builder: (context, setStateDialog) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Text('Show Sizes', style: TextStyle(fontSize: 16)),
+                if (showMRP && showWSP)
+                  Row(
+                    children: [
+                      SizedBox(width: 10),
+                      Text('(With Label)', style: TextStyle(color: Colors.grey)),
+                      Checkbox(
+                        value: showFullSizeDetails,
+                        onChanged: (val) {
+                          setState(() => showFullSizeDetails = val!);
+                          setStateDialog(() {});
+                        },
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+            Switch(
+              value: showSizes,
+              onChanged: (val) {
+                if (!val) setState(() => showFullSizeDetails = false);
+                setState(() => showSizes = val);
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
   Widget _buildToggleRow(String title, bool value, Function(bool) onChanged) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
