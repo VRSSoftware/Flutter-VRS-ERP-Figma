@@ -675,28 +675,33 @@ class _CatalogPageState extends State<CatalogPage> {
                         /// Image section (fixed width)
                         Flexible(
                           flex: 2,
-                          child: ClipRRect(
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(12),
-                              topRight: Radius.circular(12),
-                            ),
-                            child: AspectRatio(
-                              aspectRatio: 16 / 21,
-                              child: Image.network(
-                                _getImageUrl(item),
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    color: Colors.grey.shade300,
-                                    child: const Center(
-                                      child: Icon(Icons.error),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
+                          child:       ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // Set max height relative to available width (e.g. 1.3 times narrower width)
+                      final maxImageHeight = constraints.maxWidth * 1.6;
+
+                      return ConstrainedBox(
+                        constraints: BoxConstraints(maxHeight: maxImageHeight),
+                        child: Image.network(
+                          _getImageUrl(item),
+                          fit: BoxFit.contain, // Prevents cropping
+                          width: double.infinity,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey.shade300,
+                              child: const Center(child: Icon(Icons.error)),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
                         ),
                         SizedBox(width: isLargeScreen ? 16 : 8),
 
@@ -908,26 +913,33 @@ class _CatalogPageState extends State<CatalogPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(12),
-                            topRight: Radius.circular(12),
-                          ),
-                          child: AspectRatio(
-                            aspectRatio: 16 / 21,
-                            child: Image.network(
-                              _getImageUrl(item),
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  color: Colors.grey.shade300,
-                                  child: const Center(child: Icon(Icons.error)),
-                                );
-                              },
-                            ),
-                          ),
+                             ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // Set max height relative to available width (e.g. 1.3 times narrower width)
+                      final maxImageHeight = constraints.maxWidth * 1.2;
+
+                      return ConstrainedBox(
+                        constraints: BoxConstraints(maxHeight: maxImageHeight),
+                        child: Image.network(
+                          _getImageUrl(item),
+                          fit: BoxFit.contain, // Prevents cropping
+                          width: double.infinity,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey.shade300,
+                              child: const Center(child: Icon(Icons.error)),
+                            );
+                          },
                         ),
+                      );
+                    },
+                  ),
+                ),
                         Padding(
                           padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
                           child: Table(
@@ -1237,24 +1249,31 @@ class _CatalogPageState extends State<CatalogPage> {
                   MainAxisSize.min, // Ensures the card height matches content
               children: [
                 // Image Section
-                ClipRRect(
+                  ClipRRect(
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
                   ),
-                  child: AspectRatio(
-                    aspectRatio: 16 / 21,
-                    child: Image.network(
-                      _getImageUrl(item),
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey.shade300,
-                          child: const Center(child: Icon(Icons.error)),
-                        );
-                      },
-                    ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // Set max height relative to available width (e.g. 1.3 times narrower width)
+                      final maxImageHeight = constraints.maxWidth * 1.2;
+
+                      return ConstrainedBox(
+                        constraints: BoxConstraints(maxHeight: maxImageHeight),
+                        child: Image.network(
+                          _getImageUrl(item),
+                          fit: BoxFit.contain, // Prevents cropping
+                          width: double.infinity,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey.shade300,
+                              child: const Center(child: Icon(Icons.error)),
+                            );
+                          },
+                        ),
+                      );
+                    },
                   ),
                 ),
 
