@@ -9,7 +9,7 @@ class ImageZoomScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onDoubleTap: () {
-        Navigator.pop(context); // This will close the screen and go back
+        Navigator.pop(context); // Double tap to go back
       },
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -18,23 +18,18 @@ class ImageZoomScreen extends StatelessWidget {
           elevation: 0,
           iconTheme: const IconThemeData(color: Colors.white),
         ),
-        body: Center(
-          child: InteractiveViewer(
-            panEnabled: true,
-            minScale: 0.5,
-            maxScale: 4.0,
+        body: InteractiveViewer(
+          panEnabled: true,
+          minScale: 0.5,
+          maxScale: 4.0,
+          child: SizedBox.expand(
             child: Image.network(
               imageUrl,
               fit: BoxFit.contain,
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) return child;
-                return Center(
-                  child: CircularProgressIndicator(
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                        : null,
-                  ),
+                return const Center(
+                  child: CircularProgressIndicator(),
                 );
               },
               errorBuilder: (context, error, stackTrace) {
