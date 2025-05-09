@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:vrs_erp_figma/constants/app_constants.dart';
@@ -89,8 +90,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
   }
 
   Future<void> fetchCatalogData() async {
-final String apiUrl = '${AppConstants.BASE_URL}/catalog/GetOrderDetails';
-
+    final String apiUrl = '${AppConstants.BASE_URL}/catalog/GetOrderDetails';
 
     final Map<String, dynamic> requestBody = {
       "itemSubGrpKey": itemSubGrpKey,
@@ -118,7 +118,8 @@ final String apiUrl = '${AppConstants.BASE_URL}/catalog/GetOrderDetails';
       if (data.isNotEmpty) {
         final items = data.map((e) => CatalogItem.fromJson(e)).toList();
 
-        final uniqueSizes = items.map((e) => e.sizeName).toSet().toList()..sort();
+        final uniqueSizes =
+            items.map((e) => e.sizeName).toSet().toList()..sort();
         final uniqueColors = items.map((e) => e.shadeName).toSet().toList();
 
         // Initialize size-specific price maps
@@ -140,14 +141,15 @@ final String apiUrl = '${AppConstants.BASE_URL}/catalog/GetOrderDetails';
             for (var size in sizes) {
               final match = items.firstWhere(
                 (item) => item.shadeName == color && item.sizeName == size,
-                orElse: () => CatalogItem(
-                  styleCode: styleCode,
-                  shadeName: color,
-                  sizeName: size,
-                  clQty: 0,
-                  mrp: sizeMrpMap[size] ?? 0,
-                  wsp: sizeWspMap[size] ?? 0,
-                ),
+                orElse:
+                    () => CatalogItem(
+                      styleCode: styleCode,
+                      shadeName: color,
+                      sizeName: size,
+                      clQty: 0,
+                      mrp: sizeMrpMap[size] ?? 0,
+                      wsp: sizeWspMap[size] ?? 0,
+                    ),
               );
               final controller = TextEditingController();
               controller.addListener(() => setState(() {}));
@@ -196,143 +198,171 @@ final String apiUrl = '${AppConstants.BASE_URL}/catalog/GetOrderDetails';
     return Padding(
       padding: const EdgeInsets.all(16),
       child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Stack(
+        //scrollDirection: Axis.horizontal,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Price tag widget
+            SizedBox(
+              height: 35,
+              width: 120,
+              child: CustomPaint(
+                painter: PriceTagPaint(),
+                child: Center(
+                  child: Text(
+                    styleCode,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Container(
+                width: (100 + (80 * sizes.length)).toDouble(),
+
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade500, width: 1),
+                  borderRadius: BorderRadius.circular(0),
+                ),
+                child: Table(
+                  border: TableBorder.symmetric(
+                    inside: BorderSide(
+                      color: const Color.fromARGB(255, 209, 208, 208),
+                      width: 1,
+                    ),
+                  ),
+                  columnWidths: {
+                    0: const FixedColumnWidth(100),
+                    for (int i = 0; i < sizes.length; i++)
+                      (i + 1): const FixedColumnWidth(80),
+                  },
+                  children: [
+                    _buildPriceRow("MRP", sizeMrpMap, FontWeight.w600),
+                    _buildPriceRow("WSP", sizeMrpMap, FontWeight.w400),
+                    _buildHeaderRow(),
+                    for (var color in colors) _buildQuantityRow(color),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+            SizedBox(
+              width: 327,
+              child: TextField(
+                controller: noteController,
+                decoration: InputDecoration(
+                  labelText: 'Note',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(0),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: 327,
+              child: TextField(
+                readOnly: true,
+                decoration: InputDecoration(
+                  labelText: 'TotalQty',
+                  filled: true,
+                  fillColor: Colors.transparent,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(0),
+                  ),
+                ),
+                controller: TextEditingController(text: totalQty.toString()),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          styleCode,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: Colors.blue,
-                            decoration: TextDecoration.underline,
+                  SizedBox(
+                    width: 140,
+                    height: 45,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      label: const Text(
+                        'Add',
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            totalQty > 0 ? AppColors.primaryColor : Colors.grey,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: totalQty > 0 ? _submitOrder : null,
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  SizedBox(
+                    width: 140,
+                    height: 45,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(
+                        Icons.close,
+                        color: AppColors.primaryColor,
+                      ),
+                      label: const Text(
+                        'Close',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppColors.primaryColor,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: const BorderSide(
+                            color: AppColors.primaryColor,
+                            width: 2,
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        _buildPriceRow("MRP", sizeMrpMap, FontWeight.w600),
-                        _buildPriceRow("WSP", sizeWspMap, FontWeight.w500),
-                        const SizedBox(height: 10),
-                        _buildHeaderRow(),
-                        const Divider(),
-                        ...colors
-                            .map((color) => _buildQuantityRow(color))
-                            .toList(),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: 300,
-                          child: TextField(
-                            controller: noteController,
-                            decoration: InputDecoration(
-                              labelText: 'Note',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: 200,
-                          child: TextField(
-                            readOnly: true,
-                            decoration: InputDecoration(
-                              labelText: 'TotalQty',
-                              filled: true,
-                              fillColor: Colors.grey.shade200,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            controller: TextEditingController(
-                              text: totalQty.toString(),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Center(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                width: 120,
-                                height: 45,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: totalQty > 0
-                                        ? Colors.blue
-                                        : Colors.grey,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  onPressed: totalQty > 0 ? _submitOrder : null,
-                                  child: const Text(
-                                    'Add',
-                                    style: TextStyle(fontSize: 16),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 80),
-                              SizedBox(
-                                width: 120,
-                                height: 45,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    elevation: 0,
-                                    foregroundColor: Colors.red,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      side: const BorderSide(
-                                        color: Colors.red,
-                                        width: 2,
-                                      ),
-                                    ),
-                                  ),
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text(
-                                    'Close',
-                                    style: TextStyle(fontSize: 16),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                      ),
+                      onPressed: () => Navigator.pop(context),
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
-Widget _buildPriceRow(String label, Map<String, double> sizePriceMap, FontWeight weight) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 4.0),
-    child: Row(
+
+  TableRow _buildPriceRow(
+    String label,
+    Map<String, double> sizePriceMap,
+    FontWeight weight,
+  ) {
+    return TableRow(
       children: [
-        SizedBox(
-          width: 70,
-          child: Text(label, style: TextStyle(fontWeight: weight)),
+        TableCell(
+          verticalAlignment: TableCellVerticalAlignment.middle,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(label, style: TextStyle(fontWeight: weight)),
+          ),
         ),
         ...sizes.map((size) {
           final price = sizePriceMap[size] ?? 0.0;
-          return SizedBox(
-            width: 100,
+          return TableCell(
+            verticalAlignment: TableCellVerticalAlignment.middle,
             child: Center(
               child: Text(
                 price.toStringAsFixed(0),
@@ -342,99 +372,98 @@ Widget _buildPriceRow(String label, Map<String, double> sizePriceMap, FontWeight
           );
         }).toList(),
       ],
-    ),
-  );
-}
+    );
+  }
 
-Widget _buildHeaderRow() {
-  return Row(
-    children: [
-      const SizedBox(
-        width: 70,
-        child: Text('Size', style: TextStyle(fontWeight: FontWeight.bold)),
+  TableRow _buildHeaderRow() {
+    return TableRow(
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 236, 212, 204),
       ),
-      ...sizes.map((size) => SizedBox(
-            width: 100,
-            child: Center(
-              child: Text(
-                size,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+      children: [
+        const TableCell(
+          verticalAlignment: TableCellVerticalAlignment.middle,
+          child: _TableHeaderCell(),
+        ),
+        ...sizes
+            .map(
+              (size) => TableCell(
+                verticalAlignment: TableCellVerticalAlignment.middle,
+                child: Center(
+                  child: Text(
+                    size,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ),
-            ),
-          )),
-    ],
-  );
-}
+            )
+            .toList(),
+      ],
+    );
+  }
 
-
-  Widget _buildQuantityRow(String color) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 70,
+  TableRow _buildQuantityRow(String color) {
+    return TableRow(
+      children: [
+        TableCell(
+          verticalAlignment: TableCellVerticalAlignment.middle,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
-                Icon(Icons.circle, size: 12, color: _getColorCode(color)),
+                // Icon(Icons.circle, size: 12, color: _getColorCode(color)),
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
                     color,
                     style: TextStyle(
                       color: _getColorCode(color),
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          ...sizes.map((size) {
-            final controller = controllers[color]?[size];
-            final originalQty = catalogItems
-                .firstWhere(
-                  (item) => item.shadeName == color && item.sizeName == size,
-                  orElse: () => CatalogItem(
-                    styleCode: styleCode,
-                    shadeName: color,
-                    sizeName: size,
-                    clQty: 0,
-                    mrp: sizeMrpMap[size] ?? 0,
-                    wsp: sizeWspMap[size] ?? 0,
-                  ),
-                )
-                .clQty;
+        ),
+        ...sizes.map((size) {
+          final controller = controllers[color]?[size];
+          final originalQty =
+              catalogItems
+                  .firstWhere(
+                    (item) => item.shadeName == color && item.sizeName == size,
+                    orElse:
+                        () => CatalogItem(
+                          styleCode: styleCode,
+                          shadeName: color,
+                          sizeName: size,
+                          clQty: 0,
+                          mrp: sizeMrpMap[size] ?? 0,
+                          wsp: sizeWspMap[size] ?? 0,
+                        ),
+                  )
+                  .clQty;
 
-            return SizedBox(
-              width: 100,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: SizedBox(
-                  height: 50,
-                  child: TextField(
-                    controller: controller,
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      hintText: originalQty > 0 ? originalQty.toString() : '',
-                      hintStyle: TextStyle(
-                        color: Colors.grey.shade500,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
+          return TableCell(
+            verticalAlignment: TableCellVerticalAlignment.middle,
+            child: Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  hintText: originalQty > 0 ? originalQty.toString() : '0',
+                  hintStyle: const TextStyle(color: Colors.grey),
+                  border: InputBorder.none,
                 ),
               ),
-            );
-          }).toList(),
-        ],
-      ),
+            ),
+          );
+        }).toList(),
+      ],
     );
   }
 
@@ -469,7 +498,9 @@ Widget _buildHeaderRow() {
 
           apiCalls.add(
             http.post(
-              Uri.parse('${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails'),
+              Uri.parse(
+                '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
+              ),
               headers: {'Content-Type': 'application/json'},
               body: jsonEncode(payload),
             ),
@@ -484,20 +515,21 @@ Widget _buildHeaderRow() {
         if (mounted) {
           showDialog(
             context: context,
-            builder: (_) => AlertDialog(
-              title: const Text("Success"),
-              content: const Text("Booking submitted."),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pop(context);
-                    widget.onSuccess();
-                  },
-                  child: const Text("OK"),
+            builder:
+                (_) => AlertDialog(
+                  title: const Text("Success"),
+                  content: const Text("Booking submitted."),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.pop(context);
+                        widget.onSuccess();
+                      },
+                      child: const Text("OK"),
+                    ),
+                  ],
                 ),
-              ],
-            ),
           );
         }
       }
@@ -505,18 +537,101 @@ Widget _buildHeaderRow() {
       if (mounted) {
         showDialog(
           context: context,
-          builder: (_) => AlertDialog(
-            title: const Text("Error"),
-            content: Text("Failed to submit: $e"),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("OK"),
+          builder:
+              (_) => AlertDialog(
+                title: const Text("Error"),
+                content: Text("Failed to submit: $e"),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("OK"),
+                  ),
+                ],
               ),
-            ],
-          ),
         );
       }
     }
   }
 }
+
+class _TableHeaderCell extends StatelessWidget {
+  const _TableHeaderCell();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      child: CustomPaint(
+        painter: _DiagonalLinePainter(),
+        child: const Stack(
+          children: [
+            Positioned(
+              left: 12,
+              top: 20,
+              child: Text(
+                'Shade',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+              ),
+            ),
+            Positioned(
+              right: 14,
+              bottom: 20,
+              child: Text(
+                'Size',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DiagonalLinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint =
+        Paint()
+          ..color = Colors.grey.shade400
+          ..strokeWidth = 1
+          ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset.zero, Offset(size.width, size.height), paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class PriceTagPaint extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    Paint paint =
+        Paint()
+          ..color = AppColors.primaryColor
+          ..strokeCap = StrokeCap.round
+          ..style = PaintingStyle.fill;
+
+    Path path = Path();
+
+    path
+      ..moveTo(0, size.height * .5)
+      ..lineTo(size.width * .13, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width, size.height)
+      ..lineTo(size.width * .13, size.height)
+      ..lineTo(0, size.height * .5)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
