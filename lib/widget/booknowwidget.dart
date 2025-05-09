@@ -112,7 +112,7 @@ final String apiUrl = '${AppConstants.BASE_URL}/catalog/GetOrderDetails';
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(requestBody),
     );
-
+    print("${response.body}");
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
       if (data.isNotEmpty) {

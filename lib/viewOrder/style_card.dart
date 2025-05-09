@@ -33,40 +33,10 @@ class _StyleCardState extends State<StyleCard> {
   @override
   void initState() {
     super.initState();
-    _fetchNote();
+    
   }
 
-  Future<void> _fetchNote() async {
-    try {
-      final response = await http.post(
-        Uri.parse('${AppConstants.BASE_URL}/orderBooking/GetSalesOrderDetails'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "userId": "Admin",
-          "coBrId": "01",
-          "fcYrId": "24",
-          "designcode": widget.styleCode,
-        }),
-      );
 
-      if (response.statusCode == 200) {
-        final List data = jsonDecode(response.body);
-        if (data.isNotEmpty) {
-          final note = data.firstWhere(
-            (item) => item['Note'] != null && item['Note'].toString().isNotEmpty,
-            orElse: () => {'Note': ''},
-          )['Note']?.toString() ?? '';
-          setState(() {
-            noteController.text = note;
-          });
-        }
-      } else {
-        debugPrint('Failed to fetch note: ${response.statusCode}');
-      }
-    } catch (e) {
-      debugPrint('Error fetching note: $e');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -299,46 +269,71 @@ class _StyleCardState extends State<StyleCard> {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 14),
-      child: Column(
-        children: [
-          SizedBox(
-            width: 300,
-            child: TextField(
-              controller: noteController,
-              decoration: InputDecoration(
-                labelText: 'Note',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+Widget _buildActionButtons(BuildContext context) {
+  // Calculate total quantity for this specific style card
+  int styleTotalQty = 0;
+  widget.controllers.forEach((shade, sizes) {
+    sizes.forEach((size, controller) {
+      styleTotalQty += int.tryParse(controller.text) ?? 0;
+    });
+  });
+
+  return Padding(
+    padding: const EdgeInsets.only(top: 14),
+    child: Column(
+      children: [
+        SizedBox(
+          width: 350,
+          child: TextField(
+            controller: noteController,
+            decoration: InputDecoration(
+              labelText: 'Note',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(0),
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _buildActionButton(
-                label: 'Update',
-                icon: Icons.update,
-                color: AppColors.primaryColor,
-                onPressed: () => _submitUpdate(context),
+        ),
+        const SizedBox(height: 16),
+        // Add total quantity display
+        SizedBox(
+          width: 350,
+          child: TextFormField(
+            readOnly: true,
+            decoration: InputDecoration(
+              labelText: 'Style Total Quantity',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(0),
               ),
-              const SizedBox(width: 16),
-              _buildActionButton(
-                label: 'Remove',
-                icon: Icons.delete,
-                color: Colors.grey,
-                onPressed: widget.onRemove,
-              ),
-            ],
+             
+            ),
+            controller: TextEditingController(
+              text: styleTotalQty.toString(),
+            )..selection = TextSelection.collapsed(offset: styleTotalQty.toString().length),
           ),
-        ],
-      ),
-    );
-  }
-
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            _buildActionButton(
+              label: 'Update',
+              icon: Icons.update,
+              color: AppColors.primaryColor,
+              onPressed: () => _submitUpdate(context),
+            ),
+            const SizedBox(width: 16),
+            _buildActionButton(
+              label: 'Remove',
+              icon: Icons.delete,
+              color: Colors.grey,
+              onPressed: widget.onRemove,
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
   Widget _buildActionButton({
     required String label,
     required IconData icon,
