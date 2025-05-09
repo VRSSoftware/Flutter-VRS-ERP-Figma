@@ -525,7 +525,7 @@ class _CatalogPageState extends State<CatalogPage> {
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: isLargeScreen ? 16.0 : 8.0,
-                vertical: 4.0,
+                vertical: 8.0,
               ),
               child:
                   isLoading
@@ -670,7 +670,7 @@ class _CatalogPageState extends State<CatalogPage> {
                   Padding(
                     padding: EdgeInsets.all(isLargeScreen ? 12.0 : 8.0),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         /// Image section (fixed width)
                         Flexible(
@@ -916,8 +916,8 @@ class _CatalogPageState extends State<CatalogPage> {
               child: Card(
                 elevation: isSelected ? 8 : 4,
                 margin: EdgeInsets.symmetric(
-                  vertical: 2,
-                  horizontal: isLargeScreen ? 16 : 4,
+                  vertical: 8,
+                  horizontal: isLargeScreen ? 16 : 8,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -935,7 +935,7 @@ class _CatalogPageState extends State<CatalogPage> {
                           ),
                           child: LayoutBuilder(
                             builder: (context, constraints) {
-                              final maxImageHeight = constraints.maxWidth * 1.2;
+                              final maxImageHeight = constraints.maxWidth * 1.6;
 
                               return ConstrainedBox(
                                 constraints: BoxConstraints(
@@ -1676,6 +1676,7 @@ class _CatalogPageState extends State<CatalogPage> {
     bool includeSize = true,
     bool includeProduct = true,
     bool includeRemark = true,
+    bool includeLabel = true,
   }) async {
     if (selectedItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1702,27 +1703,40 @@ class _CatalogPageState extends State<CatalogPage> {
       final apiUrl = '${AppConstants.BASE_URL}/pdf/generate';
       List<Map<String, dynamic>> catalogItems = [];
 
-      for (var item in selectedItems) {
-        Map<String, dynamic> catalogItem = {};
-        catalogItem['fullImagePath'] = item.fullImagePath;
-        if (includeDesign) catalogItem['design'] = item.itemName;
-        if (includeShade) catalogItem['shade'] = item.shadeName;
-        if (includeRate) catalogItem['rate'] = item.mrp.toString();
-        if (includeSize) catalogItem['sizeWithMrp'] = item.sizeWithMrp;
-        if (includeProduct) catalogItem['product'] = item.itemName;
-        if (includeRemark) catalogItem['remark'] = item.remark;
-
-        catalogItems.add(catalogItem);
-      }
       // Prepare request body
       final requestBody = {
         "company": "VRS Software",
         "createdBy": "admin",
         "mobile": "",
-        "catalogItems": catalogItems,
+        "catalogItems":
+            selectedItems.map((item) {
+              Map<String, dynamic> catalogItem = {
+                'fullImagePath': item.fullImagePath,
+              };
+              if (includeDesign) catalogItem['design'] = item.styleCode;
+              if (includeShade) catalogItem['shade'] = item.shadeName;
+              if (includeRate) catalogItem['rate'] = item.mrp;
+
+              // Handle size based on toggle and checkbox state
+              if (includeSize) {
+                if (includeLabel) {
+                  // If "with label" checkbox is selected
+                  catalogItem['sizeDetails'] = item.sizeDetails;
+                } else {
+                  // If only size toggle is on
+                  catalogItem['sizeWithMrp'] = item.sizeWithMrp;
+                }
+              }
+
+              if (includeProduct) catalogItem['product'] = item.itemName;
+              if (includeRemark) catalogItem['remark'] = item.remark;
+              return catalogItem;
+            }).toList(),
       };
-      print("ssssssss");
-      print(selectedItems.map((item) => item.itemKey).toList());
+
+      print(
+        "Selected items: ${selectedItems.map((item) => item.itemKey).toList()}",
+      );
       final response = await http.post(
         Uri.parse(apiUrl),
         headers: {'Content-Type': 'application/json'},
@@ -1730,7 +1744,6 @@ class _CatalogPageState extends State<CatalogPage> {
       );
 
       if (response.statusCode == 200) {
-        print("ddddddddddddddddd");
         final file = File(
           '${tempDir.path}/catalog_${DateTime.now().millisecondsSinceEpoch}.pdf',
         );
@@ -1761,6 +1774,7 @@ class _CatalogPageState extends State<CatalogPage> {
     bool includeSize = true,
     bool includeProduct = true,
     bool includeRemark = true,
+    bool includeLabel = true,
   }) async {
     if (selectedItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1805,8 +1819,10 @@ class _CatalogPageState extends State<CatalogPage> {
             if (includeDesign) caption += '*Design*\t\t: ${item.styleCode}\n';
             if (includeShade) caption += '*Shade*\t\t: ${item.shadeName}\n';
             if (includeRate) caption += '*MRP*\t\t\t: ${item.mrp.toString()}\n';
-            if (includeSize)
-              caption += '*Sizes*\t\t\t: ${formatSizes(item.sizeWithMrp)}\n';
+            if (includeSize) {
+              caption +=
+                  '*Sizes*\t\t\t: ${includeLabel ? item.sizeDetails : formatSizes(item.sizeWithMrp)}\n';
+            }
             if (includeProduct) caption += '*Product*\t: ${item.itemName}\n';
             if (includeRemark) caption += '*Remark*\t\t: ${item.remark}\n';
 
@@ -2101,6 +2117,7 @@ class _CatalogPageState extends State<CatalogPage> {
     bool includeSize = true;
     bool includeProduct = true;
     bool includeRemark = true;
+    bool includeLabel = true; // Add this line
 
     showModalBottomSheet(
       context: context,
@@ -2116,6 +2133,7 @@ class _CatalogPageState extends State<CatalogPage> {
               includeSize: includeSize,
               includeProduct: includeProduct,
               includeRemark: includeRemark,
+              includeLabel: includeLabel,  // Add this line
             );
           },
           onImageShare: () {
@@ -2128,6 +2146,7 @@ class _CatalogPageState extends State<CatalogPage> {
               includeSize: includeSize,
               includeProduct: includeProduct,
               includeRemark: includeRemark,
+              // includeLabel: includeLabel,  // Add this line
             );
           },
           onPDFShare: () {
@@ -2140,27 +2159,17 @@ class _CatalogPageState extends State<CatalogPage> {
               includeSize: includeSize,
               includeProduct: includeProduct,
               includeRemark: includeRemark,
+              includeLabel: includeLabel, // Add this line
             );
           },
-          // onWeblinkShare: () {
-          //   //  Navigator.pop(context);
-          //   //  _shareSelectedItems(shareType: 'image');
-          // },
-          // onVideoShare: () {
-          //   //  Navigator.pop(context);
-          //   //  _shareSelectedItems(shareType: 'image');
-          // },
-          // onQRCodeShare: () {
-          //   //  Navigator.pop(context);
-          //   //   _shareSelectedItems(shareType: 'image');
-          // },
-          onToggleOptions: (design, shade, rate, size, product, remark) {
+          onToggleOptions: (design, shade, rate, size, product, remark, label) {
             includeDesign = design;
             includeShade = shade;
             includeRate = rate;
             includeSize = size;
             includeProduct = product;
             includeRemark = remark;
+            includeLabel = label; // Add this line
           },
         );
       },
