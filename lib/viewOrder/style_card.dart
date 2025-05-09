@@ -96,28 +96,25 @@ class _StyleCardState extends State<StyleCard> {
     );
   }
 
-  Widget _buildItemImage(String imagePath) {
-    return GestureDetector(
-      onDoubleTap: () => _openImageZoom(context, imagePath),
-      child: Container(
-        width: 100,
-        height: 120,
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
-        child: Image.network(
-          _getImageUrl(imagePath),
-          fit: BoxFit.fitWidth,
-          loadingBuilder:
-              (context, child, loadingProgress) =>
-                  loadingProgress == null
-                      ? child
-                      : const Center(child: CircularProgressIndicator()),
-          errorBuilder:
-              (context, error, stackTrace) => const _ImageErrorWidget(),
-        ),
+Widget _buildItemImage(String imagePath) {
+  return GestureDetector(
+    onDoubleTap: () => _openImageZoom(context, imagePath),
+    child: Container(
+      constraints: const BoxConstraints(
+        maxWidth: 100, // Maximum width you want the image to occupy
       ),
-    );
-  }
-
+      child: Image.network(
+        _getImageUrl(imagePath),
+        fit: BoxFit.contain,
+        loadingBuilder: (context, child, loadingProgress) =>
+            loadingProgress == null
+                ? child
+                : const Center(child: CircularProgressIndicator()),
+        errorBuilder: (context, error, stackTrace) => const _ImageErrorWidget(),
+      ),
+    ),
+  );
+}
   String _getImageUrl(String fullImagePath) =>
       fullImagePath.startsWith('http')
           ? fullImagePath
