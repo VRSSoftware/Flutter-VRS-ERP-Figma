@@ -326,7 +326,7 @@ Widget _buildActionButtons(BuildContext context) {
               label: 'Remove',
               icon: Icons.delete,
               color: Colors.grey,
-              onPressed: widget.onRemove,
+              onPressed: () => _submitDelete(context),
             ),
           ],
         ),
@@ -355,7 +355,103 @@ Widget _buildActionButtons(BuildContext context) {
       ),
     );
   }
+Future<void> _submitDelete(BuildContext context) async {
+    List<Future> apiCalls = [];
+    final sizeDetails = _getSizeDetails(widget.items);
+    int totalQty = 0;
+    List<String> updatedData = [];
 
+    debugPrint('Submitting update for styleCode: ${widget.styleCode}');
+          //updatedData.add('Shade: $shade, Size: $size, Qty: $qty');
+          final payload = {
+            "userId": "Admin",
+            "coBrId": "01",
+            "fcYrId": "24",
+            "data": {
+              "designcode": widget.styleCode,
+              "mrp": '0',
+              "WSP":  '0',
+              "size": '',
+              "TotQty": totalQty.toString(),
+              "Note": noteController.text,
+              "color": "",
+              "Qty": " ",
+              "cobrid": "01",
+              "user": "admin",
+              "barcode": "",
+            },
+            "typ": 2,
+          };
+
+          apiCalls.add(
+            http.post(
+              Uri.parse('${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails'),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode(payload),
+            ),
+          );
+    
+
+    if (apiCalls.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("No Updates"),
+          content: const Text("No quantities have been updated."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    if (noteController.text.isNotEmpty) {
+      updatedData.add('Note: ${noteController.text}');
+    }
+
+    try {
+      final responses = await Future.wait(apiCalls);
+      if (responses.every((r) => r.statusCode == 200)) {
+        debugPrint('Update successful for styleCode: ${widget.styleCode}');
+        widget.onUpdate(); // Trigger refresh without removing card
+      
+      } else {
+        debugPrint('Update failed for some items: ${responses.map((r) => r.statusCode).toList()}');
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text("Error"),
+            content: const Text("Failed to update some order details."),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error during update: $e');
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("Error"),
+          content: Text("Failed to submit update: $e"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+    }
+  }
   Future<void> _submitUpdate(BuildContext context) async {
     List<Future> apiCalls = [];
     final sizeDetails = _getSizeDetails(widget.items);
@@ -363,7 +459,34 @@ Widget _buildActionButtons(BuildContext context) {
     List<String> updatedData = [];
 
     debugPrint('Submitting update for styleCode: ${widget.styleCode}');
+          //updatedData.add('Shade: $shade, Size: $size, Qty: $qty');
+          final payload = {
+            "userId": "Admin",
+            "coBrId": "01",
+            "fcYrId": "24",
+            "data": {
+              "designcode": widget.styleCode,
+              "mrp": '0',
+              "WSP":  '0',
+              "size": '',
+              "TotQty": totalQty.toString(),
+              "Note": noteController.text,
+              "color": "",
+              "Qty": " ",
+              "cobrid": "01",
+              "user": "admin",
+              "barcode": "",
+            },
+            "typ": 1,
+          };
 
+          apiCalls.add(
+            http.post(
+              Uri.parse('${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails'),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode(payload),
+            ),
+          );
     for (var shadeEntry in widget.controllers.entries) {
       String shade = shadeEntry.key;
       for (var sizeEntry in shadeEntry.value.entries) {
@@ -389,7 +512,7 @@ Widget _buildActionButtons(BuildContext context) {
               "user": "admin",
               "barcode": "",
             },
-            "typ": 1,
+            "typ": 0,
           };
 
           apiCalls.add(
@@ -429,29 +552,29 @@ Widget _buildActionButtons(BuildContext context) {
       if (responses.every((r) => r.statusCode == 200)) {
         debugPrint('Update successful for styleCode: ${widget.styleCode}');
         widget.onUpdate(); // Trigger refresh without removing card
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text("Success"),
-            content: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text("Order details updated successfully:"),
-                  const SizedBox(height: 8),
-                  Text(updatedData.join('\n')),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("OK"),
-              ),
-            ],
-          ),
-        );
+        // showDialog(
+        //   context: context,
+        //   builder: (_) => AlertDialog(
+        //     title: const Text("Success"),
+        //     content: SingleChildScrollView(
+        //       child: Column(
+        //         crossAxisAlignment: CrossAxisAlignment.start,
+        //         mainAxisSize: MainAxisSize.min,
+        //         children: [
+        //           const Text("Order details updated successfully:"),
+        //           // const SizedBox(height: 8),
+        //           // Text(updatedData.join('\n')),
+        //         ],
+        //       ),
+        //     ),
+        //     actions: [
+        //       TextButton(
+        //         onPressed: () => Navigator.pop(context),
+        //         child: const Text("OK"),
+        //       ),
+        //     ],
+        //   ),
+        // );
       } else {
         debugPrint('Update failed for some items: ${responses.map((r) => r.statusCode).toList()}');
         showDialog(
