@@ -1774,7 +1774,7 @@ class _CatalogPageState extends State<CatalogPage> {
     bool includeSize = true,
     bool includeProduct = true,
     bool includeRemark = true,
-    bool includeLabel = true,
+    bool includeLabel = false,
   }) async {
     if (selectedItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2117,7 +2117,7 @@ class _CatalogPageState extends State<CatalogPage> {
     bool includeSize = true;
     bool includeProduct = true;
     bool includeRemark = true;
-    bool includeLabel = true; // Add this line
+    bool includeLabel = false; // Add this line
 
     showModalBottomSheet(
       context: context,

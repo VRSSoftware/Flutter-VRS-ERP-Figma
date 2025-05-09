@@ -113,7 +113,7 @@ class ShareOptionsPage extends StatelessWidget {
         options['size'] ?? true,
         options['product'] ?? true,
         options['remark'] ?? true,
-        options['label'] ?? true,  // Add this line
+        options['label'] ?? false,  // Add this line
       );
     }
   }
