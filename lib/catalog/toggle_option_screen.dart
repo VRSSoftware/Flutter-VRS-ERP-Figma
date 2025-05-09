@@ -9,13 +9,13 @@ class ToggleOptionsScreen extends StatefulWidget {
 }
 
 class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
-bool includeDesign = true;
-bool includeShade = true;
-bool includeRate = true;
-bool includeSize = true;
-bool includeProduct = true;
-bool includeRemark = true;
-
+  bool includeDesign = true;
+  bool includeShade = true;
+  bool includeRate = true;
+  bool includeSize = true;
+  bool includeProduct = true;
+  bool includeRemark = true;
+  bool includeLabel = false; // New state for the additional checkbox
 
   bool get allSelected =>
       includeDesign &&
@@ -23,7 +23,8 @@ bool includeRemark = true;
       includeRate &&
       includeSize &&
       includeProduct &&
-      includeRemark;
+      includeRemark &&
+      includeLabel;
 
   void toggleAll(bool? value) {
     final newValue = value ?? false;
@@ -34,6 +35,7 @@ bool includeRemark = true;
       includeSize = newValue;
       includeProduct = newValue;
       includeRemark = newValue;
+      includeLabel = newValue;
     });
   }
 
@@ -46,39 +48,36 @@ bool includeRemark = true;
           maxHeight: MediaQuery.of(context).size.height * 0.65,
         ),
         child: Column(
-                    mainAxisSize: MainAxisSize.min,
-
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Header with Select All checkbox and close button
-Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    const Text(
-      'Select Share Options',
-      style: TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-    Row(
-      children: [
-        Checkbox(
-          value: allSelected,
-          onChanged: toggleAll,
-          activeColor: AppColors.primaryColor,
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        ),
-        IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ],
-    ),
-  ],
-),
-
-
-   Expanded(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Select Share Options',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Row(
+                  children: [
+                    Checkbox(
+                      value: allSelected,
+                      onChanged: toggleAll,
+                      activeColor: AppColors.primaryColor,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
@@ -95,8 +94,31 @@ Row(
                         (v) => setState(() => includeRate = v)),
                   ),
                   Flexible(
-                    child: _buildCompactSwitchTile('Include Size', includeSize, 
-                        (v) => setState(() => includeSize = v)),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          ' Include Size',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        // const SizedBox(width: 2),
+                        const Text(
+                          '(with Label)',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                        Checkbox(
+                          value: includeLabel,
+                          onChanged: (v) => setState(() => includeLabel = v ?? false),
+                          activeColor: AppColors.primaryColor,
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        Switch(
+                          value: includeSize,
+                          onChanged: (v) => setState(() => includeSize = v),
+                          activeColor: AppColors.primaryColor,
+                        ),
+                      ],
+                    ),
                   ),
                   Flexible(
                     child: _buildCompactSwitchTile('Include Product', includeProduct, 
@@ -109,45 +131,43 @@ Row(
                 ],
               ),
             ),
-
             // Done button
-Container(
+            Container(
               padding: const EdgeInsets.only(top: 12, bottom: 8),
-  child: ElevatedButton(
-    onPressed: () {
-      Navigator.pop(context, {
-        'design': includeDesign,
-        'shade': includeShade,
-        'rate': includeRate,
-        'size': includeSize,
-        'product': includeProduct,
-        'remark': includeRemark,
-      });
-    },
-    child: Text(
-      'Done',
-      style: TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-    style: ElevatedButton.styleFrom(
-      minimumSize: const Size(double.infinity, 50),
-      backgroundColor:AppColors.primaryColor ,
-      side: BorderSide(color: AppColors.primaryColor),
-      shape: RoundedRectangleBorder( // 👈 Add this for rounded corners
-        borderRadius: BorderRadius.circular(12),
-      ),
-    ),
-  ),
-),
-
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context, {
+                    'design': includeDesign,
+                    'shade': includeShade,
+                    'rate': includeRate,
+                    'size': includeSize,
+                    'product': includeProduct,
+                    'remark': includeRemark,
+                    'label': includeLabel, // Include new option in result
+                  });
+                },
+                child: Text(
+                  'Done',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 50),
+                  backgroundColor: AppColors.primaryColor,
+                  side: BorderSide(color: AppColors.primaryColor),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-}
 
   Widget _buildCompactSwitchTile(String title, bool value, Function(bool) onChanged) {
     return SwitchListTile(
@@ -159,3 +179,4 @@ Container(
       activeColor: AppColors.primaryColor,
     );
   }
+}

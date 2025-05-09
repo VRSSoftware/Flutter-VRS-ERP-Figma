@@ -6,19 +6,13 @@ class ShareOptionsPage extends StatelessWidget {
   final Function() onImageShare;
   final Function() onWhatsAppShare;
   final Function() onPDFShare;
-  // final Function() onWeblinkShare;
-  // final Function() onVideoShare;
-  // final Function() onQRCodeShare;
-  final Function(bool, bool, bool, bool, bool, bool) onToggleOptions;
+  final Function(bool, bool, bool, bool, bool, bool, bool) onToggleOptions;
 
   const ShareOptionsPage({
     Key? key,
     required this.onImageShare,
     required this.onWhatsAppShare,
     required this.onPDFShare,
-    // required this.onWeblinkShare,
-    // required this.onVideoShare,
-    // required this.onQRCodeShare,
     required this.onToggleOptions,
   }) : super(key: key);
 
@@ -105,7 +99,7 @@ class ShareOptionsPage extends StatelessWidget {
     );
   }
 
-  Future<void> _showToggleOptions(BuildContext context) async {
+   Future<void> _showToggleOptions(BuildContext context) async {
     final options = await showModalBottomSheet<Map<String, bool>>(
       context: context,
       builder: (context) => const ToggleOptionsScreen(),
@@ -119,6 +113,7 @@ class ShareOptionsPage extends StatelessWidget {
         options['size'] ?? true,
         options['product'] ?? true,
         options['remark'] ?? true,
+        options['label'] ?? true,  // Add this line
       );
     }
   }
