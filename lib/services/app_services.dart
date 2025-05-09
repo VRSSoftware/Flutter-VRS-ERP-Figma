@@ -4,6 +4,7 @@ import 'package:vrs_erp_figma/models/brand.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
 import 'package:vrs_erp_figma/models/category.dart';
 import 'package:vrs_erp_figma/models/item.dart';
+import 'package:vrs_erp_figma/models/keyName.dart';
 import 'package:vrs_erp_figma/models/shade.dart';
 import 'package:vrs_erp_figma/models/size.dart';
 import 'package:vrs_erp_figma/models/style.dart';
@@ -359,9 +360,7 @@ class ApiService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse(
-          '${AppConstants.BASE_URL}/orderBooking/get-sales-order-no',
-        ),
+        Uri.parse('${AppConstants.BASE_URL}/orderBooking/get-sales-order-no'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'coBrId': coBrId,
@@ -381,6 +380,112 @@ class ApiService {
     } catch (e) {
       print('Exception in fetchSalesOrderNo: $e');
       return {}; // Return an empty map on exception
+    }
+  }
+
+  static Future<Map<String, dynamic>> fetchLedgers({
+    required String ledCat,
+    required String coBrId,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.BASE_URL}/users/getLedger'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'ledCat': ledCat, 'coBrId': coBrId}),
+      );
+
+      final int statusCode = response.statusCode;
+
+      if (statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        final List<KeyName> result =
+            data
+                .map(
+                  (item) => KeyName(
+                    key: item['ledKey'].toString(),
+                    name: item['ledName'].toString(),
+                  ),
+                )
+                .toList();
+
+        return {'statusCode': statusCode, 'result': result};
+      } else {
+        print('Error fetching ledgers: $statusCode');
+        return {'statusCode': statusCode, 'result': <KeyName>[]};
+      }
+    } catch (e) {
+      print('Exception in fetchLedgers: $e');
+      return {'statusCode': 500, 'result': <KeyName>[]};
+    }
+  }
+
+  static Future<Map<String, dynamic>> fetchPayTerms({
+    required String coBrId,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.BASE_URL}/users/getPytTermDisc'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'coBrId': coBrId}),
+      );
+
+      final int statusCode = response.statusCode;
+
+      if (statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        final List<KeyName> result =
+            data
+                .map(
+                  (item) => KeyName(
+                    key: item['pytTermDiscKey'].toString(),
+                    name: item['pytTermDiscName'].toString(),
+                  ),
+                )
+                .toList();
+
+        return {'statusCode': statusCode, 'result': result};
+      } else {
+        print('Error fetching pay terms: $statusCode');
+        return {'statusCode': statusCode, 'result': <KeyName>[]};
+      }
+    } catch (e) {
+      print('Exception in fetchPayTerms: $e');
+      return {'statusCode': 500, 'result': <KeyName>[]};
+    }
+  }
+
+  static Future<Map<String, dynamic>> fetchStations({
+    required String coBrId,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.BASE_URL}/users/getStation'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'coBrId': coBrId}),
+      );
+
+      final int statusCode = response.statusCode;
+
+      if (statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        final List<KeyName> result =
+            data
+                .map(
+                  (item) => KeyName(
+                    key: item['key'].toString(),
+                    name: item['value'].toString(),
+                  ),
+                )
+                .toList();
+
+        return {'statusCode': statusCode, 'result': result};
+      } else {
+        print('Error fetching stations: $statusCode');
+        return {'statusCode': statusCode, 'result': <KeyName>[]};
+      }
+    } catch (e) {
+      print('Exception in fetchStations: $e');
+      return {'statusCode': 500, 'result': <KeyName>[]};
     }
   }
 }

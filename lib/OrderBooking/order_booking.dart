@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:vrs_erp_figma/OrderBooking/Cart/viewCart.dart';
 import 'package:vrs_erp_figma/OrderBooking/orderbooking_drawer.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/category.dart';
@@ -148,6 +149,8 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
             ),
             onPressed: () {
               Navigator.pushNamed(context, '/viewOrder');
+              // Navigator.pushReplacement(context, 
+              // MaterialPageRoute(builder: (context) => ViewCartPage()));
             },
           ),
 
