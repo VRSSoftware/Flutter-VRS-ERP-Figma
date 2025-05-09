@@ -477,8 +477,9 @@ class _StyleCardState extends State<StyleCard> {
     List<String> updatedData = [];
 
     debugPrint('Submitting update for styleCode: ${widget.styleCode}');
-    //updatedData.add('Shade: $shade, Size: $size, Qty: $qty');
-    final payload = {
+
+    // Create the initial payload for the first API call
+    final initialPayload = {
       "userId": "Admin",
       "coBrId": "01",
       "fcYrId": "24",
@@ -498,15 +499,38 @@ class _StyleCardState extends State<StyleCard> {
       "typ": 1,
     };
 
-    apiCalls.add(
-      http.post(
-        Uri.parse(
-          '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
-        ),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
+    // Make the first API call and await the response
+    final firstResponse = await http.post(
+      Uri.parse(
+        '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
       ),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(initialPayload),
     );
+
+    // Check if the first API call is successful (status code 200)
+    if (firstResponse.statusCode != 200) {
+      debugPrint(
+        'First API call failed with status code: ${firstResponse.statusCode}',
+      );
+      showDialog(
+        context: context,
+        builder:
+            (_) => AlertDialog(
+              title: const Text("Error"),
+              content: const Text("Failed to submit initial order details."),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("OK"),
+                ),
+              ],
+            ),
+      );
+      return;
+    }
+
+    // If the first call is successful, proceed with the for loop
     for (var shadeEntry in widget.controllers.entries) {
       String shade = shadeEntry.key;
       for (var sizeEntry in shadeEntry.value.entries) {
@@ -515,6 +539,7 @@ class _StyleCardState extends State<StyleCard> {
         if (qty.isNotEmpty && int.tryParse(qty) != null && int.parse(qty) > 0) {
           totalQty += int.parse(qty);
           updatedData.add('Shade: $shade, Size: $size, Qty: $qty');
+
           final payload = {
             "userId": "Admin",
             "coBrId": "01",
@@ -577,26 +602,27 @@ class _StyleCardState extends State<StyleCard> {
         widget.onUpdate(); // Trigger refresh without removing card
         showDialog(
           context: context,
-          builder: (_) => AlertDialog(
-            title: const Text("Success"),
-            content: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text("Order details updated successfully:"),
-                  // const SizedBox(height: 8),
-                  // Text(updatedData.join('\n')),
+          builder:
+              (_) => AlertDialog(
+                title: const Text("Success"),
+                content: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text("Order details updated successfully:"),
+                      // const SizedBox(height: 8),
+                      // Text(updatedData.join('\n')),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("OK"),
+                  ),
                 ],
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("OK"),
-              ),
-            ],
-          ),
         );
       } else {
         debugPrint(
