@@ -525,7 +525,7 @@ class _CatalogPageState extends State<CatalogPage> {
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: isLargeScreen ? 16.0 : 8.0,
-                vertical: 8.0,
+                vertical: 4.0,
               ),
               child:
                   isLoading
@@ -670,7 +670,7 @@ class _CatalogPageState extends State<CatalogPage> {
                   Padding(
                     padding: EdgeInsets.all(isLargeScreen ? 12.0 : 8.0),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         /// Image section (fixed width)
                         Flexible(
@@ -916,8 +916,8 @@ class _CatalogPageState extends State<CatalogPage> {
               child: Card(
                 elevation: isSelected ? 8 : 4,
                 margin: EdgeInsets.symmetric(
-                  vertical: 8,
-                  horizontal: isLargeScreen ? 16 : 8,
+                  vertical: 2,
+                  horizontal: isLargeScreen ? 16 : 4,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -935,7 +935,7 @@ class _CatalogPageState extends State<CatalogPage> {
                           ),
                           child: LayoutBuilder(
                             builder: (context, constraints) {
-                              final maxImageHeight = constraints.maxWidth * 1.6;
+                              final maxImageHeight = constraints.maxWidth * 1.2;
 
                               return ConstrainedBox(
                                 constraints: BoxConstraints(
