@@ -575,29 +575,29 @@ class _StyleCardState extends State<StyleCard> {
       if (responses.every((r) => r.statusCode == 200)) {
         debugPrint('Update successful for styleCode: ${widget.styleCode}');
         widget.onUpdate(); // Trigger refresh without removing card
-        // showDialog(
-        //   context: context,
-        //   builder: (_) => AlertDialog(
-        //     title: const Text("Success"),
-        //     content: SingleChildScrollView(
-        //       child: Column(
-        //         crossAxisAlignment: CrossAxisAlignment.start,
-        //         mainAxisSize: MainAxisSize.min,
-        //         children: [
-        //           const Text("Order details updated successfully:"),
-        //           // const SizedBox(height: 8),
-        //           // Text(updatedData.join('\n')),
-        //         ],
-        //       ),
-        //     ),
-        //     actions: [
-        //       TextButton(
-        //         onPressed: () => Navigator.pop(context),
-        //         child: const Text("OK"),
-        //       ),
-        //     ],
-        //   ),
-        // );
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text("Success"),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text("Order details updated successfully:"),
+                  // const SizedBox(height: 8),
+                  // Text(updatedData.join('\n')),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
       } else {
         debugPrint(
           'Update failed for some items: ${responses.map((r) => r.statusCode).toList()}',
