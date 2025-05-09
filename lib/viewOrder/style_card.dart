@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vrs_erp_figma/catalog/imagezoom.dart';
 import '../constants/app_constants.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -33,10 +34,7 @@ class _StyleCardState extends State<StyleCard> {
   @override
   void initState() {
     super.initState();
-    
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +50,15 @@ class _StyleCardState extends State<StyleCard> {
             _buildActionButtons(context),
           ],
         ),
+      ),
+    );
+  }
+
+  void _openImageZoom(BuildContext context, String imageUrl) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ImageZoomScreen(imageUrl: _getImageUrl(imageUrl)),
       ),
     );
   }
@@ -90,18 +97,23 @@ class _StyleCardState extends State<StyleCard> {
   }
 
   Widget _buildItemImage(String imagePath) {
-    return Container(
-      width: 100,
-      height: 120,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
-      child: Image.network(
-        _getImageUrl(imagePath),
-        fit: BoxFit.fitWidth,
-        loadingBuilder: (context, child, loadingProgress) =>
-            loadingProgress == null
-                ? child
-                : const Center(child: CircularProgressIndicator()),
-        errorBuilder: (context, error, stackTrace) => const _ImageErrorWidget(),
+    return GestureDetector(
+      onDoubleTap: () => _openImageZoom(context, imagePath),
+      child: Container(
+        width: 100,
+        height: 120,
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
+        child: Image.network(
+          _getImageUrl(imagePath),
+          fit: BoxFit.fitWidth,
+          loadingBuilder:
+              (context, child, loadingProgress) =>
+                  loadingProgress == null
+                      ? child
+                      : const Center(child: CircularProgressIndicator()),
+          errorBuilder:
+              (context, error, stackTrace) => const _ImageErrorWidget(),
+        ),
       ),
     );
   }
@@ -167,12 +179,13 @@ class _StyleCardState extends State<StyleCard> {
   }
 
   List<String> _getSortedShades(List<dynamic> items) =>
-      items.map((e) => e['shadeName']?.toString() ?? '').toSet().toList()..sort();
+      items.map((e) => e['shadeName']?.toString() ?? '').toSet().toList()
+        ..sort();
 
   Map<int, TableColumnWidth> _buildColumnWidths(List<String> sizes) => {
-        0: const FixedColumnWidth(100),
-        for (var i = 0; i < sizes.length; i++) i + 1: const FixedColumnWidth(80),
-      };
+    0: const FixedColumnWidth(100),
+    for (var i = 0; i < sizes.length; i++) i + 1: const FixedColumnWidth(80),
+  };
 
   TableRow _buildTableRow(
     String label,
@@ -184,10 +197,7 @@ class _StyleCardState extends State<StyleCard> {
       children: [
         TableCell(
           verticalAlignment: TableCellVerticalAlignment.middle,
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Text(label),
-          ),
+          child: Padding(padding: const EdgeInsets.all(8), child: Text(label)),
         ),
         ...sizes.map(
           (size) => TableCell(
@@ -269,71 +279,72 @@ class _StyleCardState extends State<StyleCard> {
     );
   }
 
-Widget _buildActionButtons(BuildContext context) {
-  // Calculate total quantity for this specific style card
-  int styleTotalQty = 0;
-  widget.controllers.forEach((shade, sizes) {
-    sizes.forEach((size, controller) {
-      styleTotalQty += int.tryParse(controller.text) ?? 0;
+  Widget _buildActionButtons(BuildContext context) {
+    // Calculate total quantity for this specific style card
+    int styleTotalQty = 0;
+    widget.controllers.forEach((shade, sizes) {
+      sizes.forEach((size, controller) {
+        styleTotalQty += int.tryParse(controller.text) ?? 0;
+      });
     });
-  });
 
-  return Padding(
-    padding: const EdgeInsets.only(top: 14),
-    child: Column(
-      children: [
-        SizedBox(
-          width: 350,
-          child: TextField(
-            controller: noteController,
-            decoration: InputDecoration(
-              labelText: 'Note',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(0),
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: Column(
+        children: [
+          SizedBox(
+            width: 350,
+            child: TextField(
+              controller: noteController,
+              decoration: InputDecoration(
+                labelText: 'Note',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(0),
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 16),
-        // Add total quantity display
-        SizedBox(
-          width: 350,
-          child: TextFormField(
-            readOnly: true,
-            decoration: InputDecoration(
-              labelText: 'Style Total Quantity',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(0),
+          const SizedBox(height: 16),
+          // Add total quantity display
+          SizedBox(
+            width: 350,
+            child: TextFormField(
+              readOnly: true,
+              decoration: InputDecoration(
+                labelText: 'Style Total Quantity',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(0),
+                ),
               ),
-             
+              controller: TextEditingController(text: styleTotalQty.toString())
+                ..selection = TextSelection.collapsed(
+                  offset: styleTotalQty.toString().length,
+                ),
             ),
-            controller: TextEditingController(
-              text: styleTotalQty.toString(),
-            )..selection = TextSelection.collapsed(offset: styleTotalQty.toString().length),
           ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            _buildActionButton(
-              label: 'Update',
-              icon: Icons.update,
-              color: AppColors.primaryColor,
-              onPressed: () => _submitUpdate(context),
-            ),
-            const SizedBox(width: 16),
-            _buildActionButton(
-              label: 'Remove',
-              icon: Icons.delete,
-              color: Colors.grey,
-              onPressed: () => _submitDelete(context),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _buildActionButton(
+                label: 'Update',
+                icon: Icons.update,
+                color: AppColors.primaryColor,
+                onPressed: () => _submitUpdate(context),
+              ),
+              const SizedBox(width: 16),
+              _buildActionButton(
+                label: 'Remove',
+                icon: Icons.delete,
+                color: Colors.grey,
+                onPressed: () => _submitDelete(context),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildActionButton({
     required String label,
     required IconData icon,
@@ -355,56 +366,59 @@ Widget _buildActionButtons(BuildContext context) {
       ),
     );
   }
-Future<void> _submitDelete(BuildContext context) async {
+
+  Future<void> _submitDelete(BuildContext context) async {
     List<Future> apiCalls = [];
     final sizeDetails = _getSizeDetails(widget.items);
     int totalQty = 0;
     List<String> updatedData = [];
 
     debugPrint('Submitting update for styleCode: ${widget.styleCode}');
-          //updatedData.add('Shade: $shade, Size: $size, Qty: $qty');
-          final payload = {
-            "userId": "Admin",
-            "coBrId": "01",
-            "fcYrId": "24",
-            "data": {
-              "designcode": widget.styleCode,
-              "mrp": '0',
-              "WSP":  '0',
-              "size": '',
-              "TotQty": totalQty.toString(),
-              "Note": noteController.text,
-              "color": "",
-              "Qty": " ",
-              "cobrid": "01",
-              "user": "admin",
-              "barcode": "",
-            },
-            "typ": 2,
-          };
+    //updatedData.add('Shade: $shade, Size: $size, Qty: $qty');
+    final payload = {
+      "userId": "Admin",
+      "coBrId": "01",
+      "fcYrId": "24",
+      "data": {
+        "designcode": widget.styleCode,
+        "mrp": '0',
+        "WSP": '0',
+        "size": '',
+        "TotQty": totalQty.toString(),
+        "Note": noteController.text,
+        "color": "",
+        "Qty": " ",
+        "cobrid": "01",
+        "user": "admin",
+        "barcode": "",
+      },
+      "typ": 2,
+    };
 
-          apiCalls.add(
-            http.post(
-              Uri.parse('${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails'),
-              headers: {'Content-Type': 'application/json'},
-              body: jsonEncode(payload),
-            ),
-          );
-    
+    apiCalls.add(
+      http.post(
+        Uri.parse(
+          '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      ),
+    );
 
     if (apiCalls.isEmpty) {
       showDialog(
         context: context,
-        builder: (_) => AlertDialog(
-          title: const Text("No Updates"),
-          content: const Text("No quantities have been updated."),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
+        builder:
+            (_) => AlertDialog(
+              title: const Text("No Updates"),
+              content: const Text("No quantities have been updated."),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("OK"),
+                ),
+              ],
             ),
-          ],
-        ),
       );
       return;
     }
@@ -418,40 +432,44 @@ Future<void> _submitDelete(BuildContext context) async {
       if (responses.every((r) => r.statusCode == 200)) {
         debugPrint('Update successful for styleCode: ${widget.styleCode}');
         widget.onUpdate(); // Trigger refresh without removing card
-      
       } else {
-        debugPrint('Update failed for some items: ${responses.map((r) => r.statusCode).toList()}');
+        debugPrint(
+          'Update failed for some items: ${responses.map((r) => r.statusCode).toList()}',
+        );
         showDialog(
           context: context,
-          builder: (_) => AlertDialog(
-            title: const Text("Error"),
-            content: const Text("Failed to update some order details."),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("OK"),
+          builder:
+              (_) => AlertDialog(
+                title: const Text("Error"),
+                content: const Text("Failed to update some order details."),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("OK"),
+                  ),
+                ],
               ),
-            ],
-          ),
         );
       }
     } catch (e) {
       debugPrint('Error during update: $e');
       showDialog(
         context: context,
-        builder: (_) => AlertDialog(
-          title: const Text("Error"),
-          content: Text("Failed to submit update: $e"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
+        builder:
+            (_) => AlertDialog(
+              title: const Text("Error"),
+              content: Text("Failed to submit update: $e"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("OK"),
+                ),
+              ],
             ),
-          ],
-        ),
       );
     }
   }
+
   Future<void> _submitUpdate(BuildContext context) async {
     List<Future> apiCalls = [];
     final sizeDetails = _getSizeDetails(widget.items);
@@ -459,34 +477,36 @@ Future<void> _submitDelete(BuildContext context) async {
     List<String> updatedData = [];
 
     debugPrint('Submitting update for styleCode: ${widget.styleCode}');
-          //updatedData.add('Shade: $shade, Size: $size, Qty: $qty');
-          final payload = {
-            "userId": "Admin",
-            "coBrId": "01",
-            "fcYrId": "24",
-            "data": {
-              "designcode": widget.styleCode,
-              "mrp": '0',
-              "WSP":  '0',
-              "size": '',
-              "TotQty": totalQty.toString(),
-              "Note": noteController.text,
-              "color": "",
-              "Qty": " ",
-              "cobrid": "01",
-              "user": "admin",
-              "barcode": "",
-            },
-            "typ": 1,
-          };
+    //updatedData.add('Shade: $shade, Size: $size, Qty: $qty');
+    final payload = {
+      "userId": "Admin",
+      "coBrId": "01",
+      "fcYrId": "24",
+      "data": {
+        "designcode": widget.styleCode,
+        "mrp": '0',
+        "WSP": '0',
+        "size": '',
+        "TotQty": totalQty.toString(),
+        "Note": noteController.text,
+        "color": "",
+        "Qty": " ",
+        "cobrid": "01",
+        "user": "admin",
+        "barcode": "",
+      },
+      "typ": 1,
+    };
 
-          apiCalls.add(
-            http.post(
-              Uri.parse('${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails'),
-              headers: {'Content-Type': 'application/json'},
-              body: jsonEncode(payload),
-            ),
-          );
+    apiCalls.add(
+      http.post(
+        Uri.parse(
+          '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      ),
+    );
     for (var shadeEntry in widget.controllers.entries) {
       String shade = shadeEntry.key;
       for (var sizeEntry in shadeEntry.value.entries) {
@@ -517,7 +537,9 @@ Future<void> _submitDelete(BuildContext context) async {
 
           apiCalls.add(
             http.post(
-              Uri.parse('${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails'),
+              Uri.parse(
+                '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
+              ),
               headers: {'Content-Type': 'application/json'},
               body: jsonEncode(payload),
             ),
@@ -529,16 +551,17 @@ Future<void> _submitDelete(BuildContext context) async {
     if (apiCalls.isEmpty) {
       showDialog(
         context: context,
-        builder: (_) => AlertDialog(
-          title: const Text("No Updates"),
-          content: const Text("No quantities have been updated."),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
+        builder:
+            (_) => AlertDialog(
+              title: const Text("No Updates"),
+              content: const Text("No quantities have been updated."),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("OK"),
+                ),
+              ],
             ),
-          ],
-        ),
       );
       return;
     }
@@ -576,35 +599,39 @@ Future<void> _submitDelete(BuildContext context) async {
         //   ),
         // );
       } else {
-        debugPrint('Update failed for some items: ${responses.map((r) => r.statusCode).toList()}');
+        debugPrint(
+          'Update failed for some items: ${responses.map((r) => r.statusCode).toList()}',
+        );
         showDialog(
           context: context,
-          builder: (_) => AlertDialog(
-            title: const Text("Error"),
-            content: const Text("Failed to update some order details."),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("OK"),
+          builder:
+              (_) => AlertDialog(
+                title: const Text("Error"),
+                content: const Text("Failed to update some order details."),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("OK"),
+                  ),
+                ],
               ),
-            ],
-          ),
         );
       }
     } catch (e) {
       debugPrint('Error during update: $e');
       showDialog(
         context: context,
-        builder: (_) => AlertDialog(
-          title: const Text("Error"),
-          content: Text("Failed to submit update: $e"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
+        builder:
+            (_) => AlertDialog(
+              title: const Text("Error"),
+              content: Text("Failed to submit update: $e"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("OK"),
+                ),
+              ],
             ),
-          ],
-        ),
       );
     }
   }
@@ -647,7 +674,10 @@ class _TableHeaderCell extends StatelessWidget {
               top: 20,
               child: Text(
                 'Shade',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
               ),
             ),
             Positioned(
@@ -655,7 +685,10 @@ class _TableHeaderCell extends StatelessWidget {
               bottom: 20,
               child: Text(
                 'Size',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
               ),
             ),
           ],
@@ -668,10 +701,11 @@ class _TableHeaderCell extends StatelessWidget {
 class _DiagonalLinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.grey.shade400
-      ..strokeWidth = 1
-      ..style = PaintingStyle.stroke;
+    final paint =
+        Paint()
+          ..color = Colors.grey.shade400
+          ..strokeWidth = 1
+          ..style = PaintingStyle.stroke;
     canvas.drawLine(Offset.zero, Offset(size.width, size.height), paint);
   }
 
