@@ -1988,6 +1988,7 @@ class _CatalogPageState extends State<CatalogPage> {
     bool includeSize = true,
     bool includeProduct = true,
     bool includeRemark = true,
+    bool includeLabel = true,
   }) async {
     if (selectedItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2018,7 +2019,10 @@ class _CatalogPageState extends State<CatalogPage> {
               'design': includeDesign ? item.styleCode : '',
               'shade': includeShade ? item.shadeName : '',
               'rate': includeRate ? item.mrp.toString() : '',
-              'size': includeSize ? item.sizeWithMrp : '',
+              'size':
+                  includeSize
+                      ? (includeLabel ? item.sizeDetails : item.sizeWithMrp)
+                      : '',
               'product': includeProduct ? item.itemName : '',
               'remark': includeRemark ? item.remark : '',
             };
@@ -2133,7 +2137,7 @@ class _CatalogPageState extends State<CatalogPage> {
               includeSize: includeSize,
               includeProduct: includeProduct,
               includeRemark: includeRemark,
-              includeLabel: includeLabel,  // Add this line
+              includeLabel: includeLabel, // Add this line
             );
           },
           onImageShare: () {
@@ -2146,7 +2150,7 @@ class _CatalogPageState extends State<CatalogPage> {
               includeSize: includeSize,
               includeProduct: includeProduct,
               includeRemark: includeRemark,
-              // includeLabel: includeLabel,  // Add this line
+              includeLabel: includeLabel, // Add this line
             );
           },
           onPDFShare: () {
@@ -2185,6 +2189,7 @@ class _CatalogPageState extends State<CatalogPage> {
     bool includeSize = true,
     bool includeProduct = true,
     bool includeRemark = true,
+    bool includeLabel = false, // Add this parameter
   }) async {
     if (selectedItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2222,7 +2227,6 @@ class _CatalogPageState extends State<CatalogPage> {
           '${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}';
 
       if (option == 'pdf') {
-        // Keep the existing PDF logic unchanged
         final apiUrl = '${AppConstants.BASE_URL}/pdf/generate';
         List<Map<String, dynamic>> catalogItems = [];
 
@@ -2231,12 +2235,17 @@ class _CatalogPageState extends State<CatalogPage> {
           catalogItem['fullImagePath'] = item.fullImagePath;
           if (includeDesign) catalogItem['design'] = item.styleCode;
           if (includeShade) catalogItem['shade'] = item.shadeName;
-          // if (includeRate) {
-          //   catalogItem['mrp'] = item.mrp.toString();
-          //   catalogItem['wsp'] = item.wsp.toString();
-          // }
           if (includeRate) catalogItem['rate'] = item.mrp;
-          if (includeSize) catalogItem['sizeWithMrp'] = item.sizeWithMrp;
+
+          // Handle size based on toggle and checkbox state
+          if (includeSize) {
+            if (includeLabel) {
+              catalogItem['sizeDetails'] = item.sizeDetails;
+            } else {
+              catalogItem['sizeWithMrp'] = item.sizeWithMrp;
+            }
+          }
+
           if (includeProduct) catalogItem['product'] = item.itemName;
           if (includeRemark) catalogItem['remark'] = item.remark;
 
@@ -2271,7 +2280,6 @@ class _CatalogPageState extends State<CatalogPage> {
           );
         }
       } else if (option == 'image') {
-        // Use the API approach from _shareSelectedItems
         final List<Map<String, String>> catalogItems =
             selectedItems.map((item) {
               return {
@@ -2279,13 +2287,15 @@ class _CatalogPageState extends State<CatalogPage> {
                 'design': includeDesign ? item.styleCode : '',
                 'shade': includeShade ? item.shadeName : '',
                 'rate': includeRate ? item.mrp.toString() : '',
-                'size': includeSize ? item.sizeWithMrp : '',
+                'size':
+                    includeSize
+                        ? (includeLabel ? item.sizeDetails : item.sizeWithMrp)
+                        : '',
                 'product': includeProduct ? item.itemName : '',
                 'remark': includeRemark ? item.remark : '',
               };
             }).toList();
 
-        // Call the image generation API
         final response = await http.post(
           Uri.parse('${AppConstants.BASE_URL}/image/generate-and-share'),
           headers: {'Content-Type': 'application/json'},
@@ -2297,6 +2307,7 @@ class _CatalogPageState extends State<CatalogPage> {
             'includeSize': includeSize,
             'includeProduct': includeProduct,
             'includeRemark': includeRemark,
+            'includeLabel': includeLabel, // Pass the label option to backend
           }),
         );
 
@@ -2345,7 +2356,6 @@ class _CatalogPageState extends State<CatalogPage> {
   }
 
   void _showDownloadOptions() {
-    // No need to provide initial options - they'll default to false
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -2359,6 +2369,8 @@ class _CatalogPageState extends State<CatalogPage> {
               includeSize: selectedOptions['size'] ?? false,
               includeProduct: selectedOptions['product'] ?? false,
               includeRemark: selectedOptions['remark'] ?? false,
+              includeLabel:
+                  selectedOptions['label'] ?? false, // Pass label option
             );
           },
         );

@@ -21,7 +21,7 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
   @override
   void initState() {
     super.initState();
-    // Set all options to false by default
+    // Initialize options with default values, including 'label'
     options =
         widget.initialOptions ??
         {
@@ -31,6 +31,7 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
           'size': true,
           'product': true,
           'remark': true,
+          'label': false, // Default to false for the "(with Label)" checkbox
         };
   }
 
@@ -59,44 +60,44 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-   Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    const Text(
-      'Select Fields to Include',
-      style: TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-    Row(
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(right: 8.0),
-          child: SizedBox(
-            height: 24,
-            width: 24,
-            child: Checkbox(
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              value: options.values.every((v) => v),
-              onChanged: (value) {
-                setState(() {
-                  final newValue = value ?? false;
-                  options.updateAll((key, value) => newValue);
-                });
-              },
-              activeColor: AppColors.primaryColor,
-            ),
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ],
-    ),
-  ],
-),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Select Fields to Include',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: Checkbox(
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  value: options.values.every((v) => v),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _toggleAllOptions(value);
+                                    });
+                                  },
+                                  activeColor: AppColors.primaryColor,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 16),
                     _buildToggleOption('Design', options['design']!, (value) {
                       setState(() => options['design'] = value);
@@ -107,9 +108,37 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
                     _buildToggleOption('Rate', options['rate']!, (value) {
                       setState(() => options['rate'] = value);
                     }),
-                    _buildToggleOption('Size', options['size']!, (value) {
-                      setState(() => options['size'] = value);
-                    }),
+                    Flexible(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Include Size',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                          const Text(
+                            '(with Label)',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          Checkbox(
+                            value: options['label'],
+                            onChanged: (value) {
+                              setState(() => options['label'] = value ?? false);
+                            },
+                            activeColor: AppColors.primaryColor,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          Switch(
+                            value: options['size']!,
+                            onChanged: (value) {
+                              setState(() => options['size'] = value);
+                            },
+                            activeColor: AppColors.primaryColor,
+                          ),
+                        ],
+                      ),
+                    ),
                     _buildToggleOption('Product', options['product']!, (value) {
                       setState(() => options['product'] = value);
                     }),
@@ -124,15 +153,13 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
                         child: Text(
                           'Done',
                           style: TextStyle(
-                            color: Colors.white, // Text color is white
+                            color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 50),
-                          backgroundColor:
-                              AppColors
-                                  .primaryColor, // Primary background color
+                          backgroundColor: AppColors.primaryColor,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
