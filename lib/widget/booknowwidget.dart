@@ -113,7 +113,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(requestBody),
     );
-  //  print("${response.body}");
+    //  print("${response.body}");
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
       if (data.isNotEmpty) {
@@ -169,6 +169,38 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
     }
   }
 
+  void _copyQtyInAllShade() {
+    if (colors.isEmpty || sizes.isEmpty) return;
+
+    // Copy from first row, first column
+    final sourceColor = colors.first;
+    final sourceSize = sizes.first;
+    final valueToCopy = controllers[sourceColor]?[sourceSize]?.text ?? '';
+
+    for (var color in colors) {
+      for (var size in sizes) {
+        controllers[color]?[size]?.text = valueToCopy;
+      }
+    }
+
+    setState(() {});
+  }
+
+  void _copySizeQtyInAllShade() {
+    if (colors.isEmpty || sizes.isEmpty) return;
+
+    // Copy the first row (colors[0]) values to other rows (vertically)
+    final sourceColor = colors.first;
+    for (var size in sizes) {
+      final valueToCopy = controllers[sourceColor]?[size]?.text ?? '';
+      for (var color in colors) {
+        controllers[color]?[size]?.text = valueToCopy;
+      }
+    }
+
+    setState(() {});
+  }
+
   Color _getColorCode(String color) {
     switch (color.toLowerCase()) {
       case 'red':
@@ -188,118 +220,140 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
     }
   }
 
-  
-@override
-Widget build(BuildContext context) {
-  if (isLoading) {
-    return const Center(child: CircularProgressIndicator());
-  } else if (catalogItems.isEmpty) {
-    return const Center(child: Text("Empty"));
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    } else if (catalogItems.isEmpty) {
+      return const Center(child: Text("Empty"));
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    _buildPriceTag(context),
+                    const SizedBox(width: 4),
+                    // Icon(Icons.copy_outlined) //copy size qty in all shades
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.copy_outlined),
+                      onSelected: (value) {
+                        if (value == 'copy_qty_all_shade') {
+                          _copyQtyInAllShade();
+                        } else if (value == 'copy_size_qty_all_shade') {
+                          _copySizeQtyInAllShade();
+                        }
+                      },
+                      itemBuilder:
+                          (BuildContext context) => [
+                            const PopupMenuItem(
+                              value: 'copy_qty_all_shade',
+                              child: Text('Copy Qty in All Shade'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'copy_size_qty_all_shade',
+                              child: Text('Copy Size Qty in All Shade'),
+                            ),
+                          ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _buildCatalogTable(constraints.maxWidth),
+                const SizedBox(height: 16),
+                // Add matching width constraints to note and total qty
+                _buildNoteField(constraints.maxWidth),
+                const SizedBox(height: 12),
+                _buildTotalQtyField(constraints.maxWidth),
+                const SizedBox(height: 16),
+                _buildActionButtons(),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 16),
-    child: LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildPriceTag(context),
-              const SizedBox(height: 12),
-              _buildCatalogTable(constraints.maxWidth),
-              const SizedBox(height: 16),
-              // Add matching width constraints to note and total qty
-              _buildNoteField(constraints.maxWidth),
-              const SizedBox(height: 12),
-              _buildTotalQtyField(constraints.maxWidth),
-              const SizedBox(height: 16),
-              _buildActionButtons(),
-            ],
-          ),
-        );
-      },
-    ),
-  );
-}
+  Widget _buildPriceTag(BuildContext context) {
+    final textScale = MediaQuery.of(context).textScaleFactor;
 
-Widget _buildPriceTag(BuildContext context) {
-  final textScale = MediaQuery.of(context).textScaleFactor;
-
-  return Container(
-    margin: const EdgeInsets.symmetric(horizontal: 16),
-    child: SizedBox(
-      height: 35 * textScale,
-      width: 120 * textScale,
-      child: CustomPaint(
-        painter: PriceTagPaint(),
-        child: Center(
-          child: Text(
-            styleCode,
-            style: TextStyle(
-              fontSize: 20 * textScale,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: SizedBox(
+        height: 35 * textScale,
+        width: 120 * textScale,
+        child: CustomPaint(
+          painter: PriceTagPaint(),
+          child: Center(
+            child: Text(
+              styleCode,
+              style: TextStyle(
+                fontSize: 20 * textScale,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ),
-        ),
-      ),
-    ),
-  );
-}
-
-Widget _buildCatalogTable(double maxWidth) {
-  final requiredTableWidth = 100 + (80 * sizes.length);
-  final hasHorizontalScroll = requiredTableWidth > maxWidth;
-
-  // Handle empty state early
-  if (sizes.isEmpty || colors.isEmpty) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: const Center(
-        child: Text(
-          'No items available',
-          style: TextStyle(fontSize: 16, color: Colors.grey),
         ),
       ),
     );
   }
 
- return Container(
-    margin: const EdgeInsets.symmetric(horizontal: 16),
-    decoration: BoxDecoration(
-      border: Border.all(color: Colors.grey.shade500),
-    ),
-    child: SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minWidth: maxWidth - 32),
-        child: Container(
-          width: requiredTableWidth.toDouble(),
-          child: Table(
-            border: TableBorder.symmetric(
-              inside: BorderSide(
-                color: Colors.grey.shade400,
-                width: 1,
+  Widget _buildCatalogTable(double maxWidth) {
+    final requiredTableWidth = 100 + (80 * sizes.length);
+    final hasHorizontalScroll = requiredTableWidth > maxWidth;
+
+    // Handle empty state early
+    if (sizes.isEmpty || colors.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        child: const Center(
+          child: Text(
+            'No items available',
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade500),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: maxWidth - 32),
+          child: Container(
+            width: requiredTableWidth.toDouble(),
+            child: Table(
+              border: TableBorder.symmetric(
+                inside: BorderSide(color: Colors.grey.shade400, width: 1),
               ),
+              columnWidths: _buildColumnWidths(maxWidth),
+              children: [
+                _buildPriceRow("MRP", sizeMrpMap, FontWeight.w600),
+                _buildPriceRow("WSP", sizeWspMap, FontWeight.w400),
+                _buildHeaderRow(),
+                // ...colors.map((color) => _buildQuantityRow(color)),
+                for (var i = 0; i < colors.length; i++)
+                  _buildQuantityRow(colors[i], i),
+              ],
             ),
-            columnWidths: _buildColumnWidths(maxWidth),
-            children: [
-              _buildPriceRow("MRP", sizeMrpMap, FontWeight.w600),
-              _buildPriceRow("WSP", sizeWspMap, FontWeight.w400),
-              _buildHeaderRow(),
-              // ...colors.map((color) => _buildQuantityRow(color)),
-              for (var i = 0; i < colors.length; i++)
-                      _buildQuantityRow(colors[i], i),
-            ],
           ),
         ),
       ),
-    ),
-  );
-}
- 
- 
+    );
+  }
+
   Map<int, TableColumnWidth> _buildColumnWidths(double maxWidth) {
     final baseWidth = maxWidth < 600 ? 80.0 : 100.0;
     return {
@@ -309,113 +363,103 @@ Widget _buildCatalogTable(double maxWidth) {
     };
   }
 
-Widget _buildNoteField(double maxWidth) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-    child: ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: maxWidth - 32),
-      child: TextField(
-        controller: noteController,
-        decoration: InputDecoration(
-          border: const OutlineInputBorder(
-             borderRadius: BorderRadius.zero,
-          ),
-          contentPadding: const EdgeInsets.all(16),
-          labelText: 'Note',
-        ),
-      ),
-    ),
-  );
-}
-
-Widget _buildTotalQtyField(double maxWidth) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-    child: ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: maxWidth - 32),
-      child: TextField(
-        readOnly: true,
-        controller: TextEditingController(text: totalQty.toString()),
-        decoration: InputDecoration(
-          border: const OutlineInputBorder(
-             borderRadius: BorderRadius.zero,
-          ),
-          contentPadding: const EdgeInsets.all(16),
-          labelText: 'Total Qty',
-          filled: true,
-          fillColor: Colors.grey[100],
-        ),
-      ),
-    ),
-  );
-}
-
-Widget _buildActionButtons() {
-  return Center(
-    child: SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildAddButton(),
-          const SizedBox(width: 24),
-          _buildCloseButton(),
-        ],
-      ),
-    ),
-  );
-}
-// Keep the button widgets exactly as they were before
-Widget _buildAddButton() {
-  return SizedBox(
-    width: 140,
-    height: 45,
-    child: ElevatedButton.icon(
-      icon: const Icon(Icons.add, color: Colors.white),
-      label: const Text(
-        'Add',
-        style: TextStyle(fontSize: 16, color: Colors.white),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: totalQty > 0 ? AppColors.primaryColor : Colors.grey,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      onPressed: totalQty > 0 ? _submitOrder : null,
-    ),
-  );
-}
-
-Widget _buildCloseButton() {
-  return SizedBox(
-    width: 140,
-    height: 45,
-    child: ElevatedButton.icon(
-      icon: const Icon(Icons.close, color: AppColors.primaryColor),
-      label: const Text(
-        'Close',
-        style: TextStyle(
-          fontSize: 16,
-          color: AppColors.primaryColor,
-        ),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(
-            color: AppColors.primaryColor,
-            width: 2,
+  Widget _buildNoteField(double maxWidth) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth - 32),
+        child: TextField(
+          controller: noteController,
+          decoration: InputDecoration(
+            border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
+            contentPadding: const EdgeInsets.all(16),
+            labelText: 'Note',
           ),
         ),
       ),
-      onPressed: () => Navigator.pop(context),
-    ),
-  );
-}
+    );
+  }
 
+  Widget _buildTotalQtyField(double maxWidth) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth - 32),
+        child: TextField(
+          readOnly: true,
+          controller: TextEditingController(text: totalQty.toString()),
+          decoration: InputDecoration(
+            border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
+            contentPadding: const EdgeInsets.all(16),
+            labelText: 'Total Qty',
+            filled: true,
+            fillColor: Colors.grey[100],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Center(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildAddButton(),
+            const SizedBox(width: 24),
+            _buildCloseButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Keep the button widgets exactly as they were before
+  Widget _buildAddButton() {
+    return SizedBox(
+      width: 140,
+      height: 45,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          'Add',
+          style: TextStyle(fontSize: 16, color: Colors.white),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: totalQty > 0 ? AppColors.primaryColor : Colors.grey,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        onPressed: totalQty > 0 ? _submitOrder : null,
+      ),
+    );
+  }
+
+  Widget _buildCloseButton() {
+    return SizedBox(
+      width: 140,
+      height: 45,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.close, color: AppColors.primaryColor),
+        label: const Text(
+          'Close',
+          style: TextStyle(fontSize: 16, color: AppColors.primaryColor),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: AppColors.primaryColor, width: 2),
+          ),
+        ),
+        onPressed: () => Navigator.pop(context),
+      ),
+    );
+  }
 
   TableRow _buildPriceRow(
     String label,
@@ -803,4 +847,3 @@ class PriceTagPaint extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
