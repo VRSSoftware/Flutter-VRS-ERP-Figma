@@ -43,7 +43,7 @@ class ApiService {
   }
 
   static Future<List<Item>> fetchAllItems() async {
-    final response = await http.get(Uri.parse('${AppConstants.BASE_URL}/item'));
+    final response = await http.get(Uri.parse('${AppConstants.BASE_URL}/item/raju'));
 
     // print("@@@@@@@@@@@@@@@@@@Item API response for${response.body}");
 
