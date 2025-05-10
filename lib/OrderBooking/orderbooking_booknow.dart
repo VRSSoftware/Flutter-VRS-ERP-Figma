@@ -925,34 +925,32 @@ class _OrderPageState extends State<OrderPage> {
 
   List<Widget> _buildButtonChildren(bool isLargeScreen) {
     return [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: _showFilterDialog,
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: AppColors.primaryColor),
-                backgroundColor: Colors.white,
-                foregroundColor: AppColors.primaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: EdgeInsets.symmetric(
-                  horizontal: isLargeScreen ? 24 : 16,
-                  vertical: 12,
-                ),
-              ),
-              icon: Icon(Icons.filter_list, size: isLargeScreen ? 24 : 20),
-              label: Text(
-                'Filter',
-                style: TextStyle(fontSize: isLargeScreen ? 16 : 14),
-              ),
-            ),
-          ),
-        ],
-      ),
+      if (isLargeScreen)
+        Expanded(child: _buildFilterButton(isLargeScreen))
+      else
+        _buildFilterButton(isLargeScreen),
     ];
+  }
+
+  Widget _buildFilterButton(bool isLargeScreen) {
+    return OutlinedButton.icon(
+      onPressed: _showFilterDialog,
+      style: OutlinedButton.styleFrom(
+        side: BorderSide(color: AppColors.primaryColor),
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.primaryColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        padding: EdgeInsets.symmetric(
+          horizontal: isLargeScreen ? 24 : 16,
+          vertical: 12,
+        ),
+      ),
+      icon: Icon(Icons.filter_list, size: isLargeScreen ? 24 : 20),
+      label: Text(
+        'Filter',
+        style: TextStyle(fontSize: isLargeScreen ? 16 : 14),
+      ),
+    );
   }
 
   String _getImageUrl(Catalog catalog) {

@@ -223,9 +223,12 @@ Widget build(BuildContext context) {
   );
 }
 
-  Widget _buildPriceTag(BuildContext context) {
-    final textScale = MediaQuery.of(context).textScaleFactor;
-    return SizedBox(
+Widget _buildPriceTag(BuildContext context) {
+  final textScale = MediaQuery.of(context).textScaleFactor;
+
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 16),
+    child: SizedBox(
       height: 35 * textScale,
       width: 120 * textScale,
       child: CustomPaint(
@@ -241,8 +244,9 @@ Widget build(BuildContext context) {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
 Widget _buildCatalogTable(double maxWidth) {
   final requiredTableWidth = 100 + (80 * sizes.length);
@@ -294,6 +298,8 @@ Widget _buildCatalogTable(double maxWidth) {
     ),
   );
 }
+ 
+ 
   Map<int, TableColumnWidth> _buildColumnWidths(double maxWidth) {
     final baseWidth = maxWidth < 600 ? 80.0 : 100.0;
     return {
