@@ -317,12 +317,17 @@ class _OrderPageState extends State<OrderPage> {
       },
     );
   }
+double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
+  if (constraints.maxWidth > 1000) return isLargeScreen ? 0.85 : 0.8;
+  if (constraints.maxWidth > 600) return isLargeScreen ? 0.8 : 0.75;
+  return 0.75; // Less height for small screens
+}
 
-  double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
-    if (constraints.maxWidth > 1000) return isLargeScreen ? 0.65 : 0.6;
-    if (constraints.maxWidth > 600) return isLargeScreen ? 0.6 : 0.55;
-    return 0.6; // More height for small screens to fit full image
-  }
+  // double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
+  //   if (constraints.maxWidth > 1000) return isLargeScreen ? 0.65 : 0.6;
+  //   if (constraints.maxWidth > 600) return isLargeScreen ? 0.6 : 0.55;
+  //   return 0.6; // More height for small screens to fit full image
+  // }
 
   Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
     return ListView.builder(
@@ -423,7 +428,7 @@ class _OrderPageState extends State<OrderPage> {
                                   ),
                                   shape: MaterialStateProperty.all(
                                     RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(0),
                                     ),
                                   ),
                                 ),
@@ -478,7 +483,7 @@ class _OrderPageState extends State<OrderPage> {
             child: Column(
               children: [
                 AspectRatio(
-                  aspectRatio: 5 / 5.5,
+                  aspectRatio: 5 / 6.5,
                   child: ClipRRect(
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(12),

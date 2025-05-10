@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/models/brand.dart';
 import 'package:vrs_erp_figma/models/shade.dart';
 import 'package:vrs_erp_figma/models/size.dart';
 import 'package:vrs_erp_figma/models/style.dart';
@@ -16,12 +17,16 @@ class _FilterPageState extends State<FilterPage> {
   List<Style> styles = [];
   List<Shade> shades = [];
   List<Sizes> sizes = [];
-
   List<Shade> selectedShades = [];
   List<Sizes> selectedSizes = [];
   List<Style> selectedStyles = [];
   //List<String> selectedStyleCodes = [];
   List<String> selectedStyleKeys = [];
+
+  List<Brand> brands = [];
+  List<Brand> selectedBrands = [];
+  bool isCheckboxModeBrand = true;
+  bool isBrandExpanded = true;
 
   TextEditingController fromMRPController = TextEditingController();
   TextEditingController toMRPController = TextEditingController();
@@ -34,7 +39,8 @@ class _FilterPageState extends State<FilterPage> {
   bool isShadeExpanded = true;
   bool isCheckboxModeSize = true;
   bool isSizeExpanded = true;
-
+  String? sortBy;
+  String? sortType;
   DateTime? fromDate;
   DateTime? toDate;
 
@@ -65,7 +71,15 @@ class _FilterPageState extends State<FilterPage> {
       toMRPController.text = args['toMRP'] is String ? args['toMRP'] : "";
       wspFromController.text = args['WSPfrom'] is String ? args['WSPfrom'] : "";
       wspToController.text = args['WSPto'] is String ? args['WSPto'] : "";
+      brands = args['brands'] is List<Brand> ? args['brands'] : [];
+      selectedBrands = args['selectedBrands'] is List<Brand> ? args['selectedBrands'] : [];
     }
+  }
+
+  void syncSelectedBrands(List<Brand> newSelectedBrands) {
+    setState(() {
+      selectedBrands = List.from(newSelectedBrands);
+    });
   }
 
   Future<void> _selectDate(
@@ -205,6 +219,51 @@ class _FilterPageState extends State<FilterPage> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
             child: Column(
               children: [
+                _buildExpansionTile(
+                  title: 'Sort By',
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      child: Column(
+                        children: [
+                          _buildRadioOption(
+                            'Latest Design',
+                            isSelected:
+                                sortBy == 'createdDate' && sortType == 'desc',
+                            onTap:
+                                () => setState(() {
+                                  sortBy = 'createdDate';
+                                  sortType = 'desc';
+                                }),
+                          ),
+                          _buildRadioOption(
+                            'Price: Low to High',
+                            isSelected: sortBy == 'mrp' && sortType == 'asc',
+                            onTap:
+                                () => setState(() {
+                                  sortBy = 'mrp';
+                                  sortType = 'asc';
+                                }),
+                          ),
+                          _buildRadioOption(
+                            'Price: High to Low',
+                            isSelected: sortBy == 'mrp' && sortType == 'desc',
+                            onTap:
+                                () => setState(() {
+                                  sortBy = 'mrp';
+                                  sortType = 'desc';
+                                }),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                 SizedBox(height: 16),
                 // Styles Section
                 _buildExpansionTile(
                   title: 'Select Styles',
@@ -390,6 +449,62 @@ class _FilterPageState extends State<FilterPage> {
                   ],
                 ),
                 SizedBox(height: 16),
+
+                _buildExpansionTile(
+  title: 'Select Brands',
+  initiallyExpanded: isBrandExpanded,
+  onExpansionChanged: (expanded) => setState(() => isBrandExpanded = expanded),
+  children: [
+    Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildModeSelector(
+                isCheckboxMode: isCheckboxModeBrand,
+                onChanged: (value) => setState(
+                  () => isCheckboxModeBrand = value == 'Checkbox',
+                ),
+              ),
+              _buildSelectAllButton(
+                selectedCount: selectedBrands.length,
+                totalCount: brands.length,
+                onPressed: () => setState(() {
+                  selectedBrands = selectedBrands.length == brands.length
+                      ? []
+                      : List.from(brands);
+                }),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: isCheckboxModeBrand
+                ? _buildCheckboxSection<Brand>(
+                    brands,
+                    selectedBrands,
+                    (a, b) => a.brandKey == b.brandKey,
+                    (b) => b.brandName,
+                    syncSelectedBrands,
+                  )
+                : _buildDropdownSection<Brand>(
+                    items: brands,
+                    selectedItems: selectedBrands,
+                    hintText: 'Search and select brands',
+                    itemAsString: (b) => b.brandName,
+                    compareFn: (a, b) => a.brandKey == b.brandKey,
+                    onChanged: syncSelectedBrands,
+                  ),
+          ),
+        ],
+      ),
+    ),
+  ],
+),
+
+SizedBox(height: 16),
                 // MRP Range Section
                 _buildExpansionTile(
                   title: 'MRP Range',
@@ -440,21 +555,25 @@ class _FilterPageState extends State<FilterPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
                   padding: EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder( // Add this
-          borderRadius: BorderRadius.circular(12), // No curvature
-        ),
+                  shape: RoundedRectangleBorder(
+                    // Add this
+                    borderRadius: BorderRadius.circular(12), // No curvature
+                  ),
                 ),
                 onPressed: () {
                   Map<String, dynamic> selectedFilters = {
                     'styles': selectedStyles,
                     'shades': selectedShades,
                     'sizes': selectedSizes,
+                    'brands': selectedBrands,
                     'fromMRP': fromMRPController.text,
                     'toMRP': toMRPController.text,
                     'fromDate': fromDateController.text,
                     'toDate': toDateController.text,
                     'WSPfrom': wspFromController.text,
                     'WSPto': wspToController.text,
+                    'sortBy': sortBy,
+                    'sortType': sortType,
                   };
                   Navigator.pop(context, selectedFilters);
                 },
@@ -471,72 +590,67 @@ class _FilterPageState extends State<FilterPage> {
   }
 
   // Common Widgets
-Widget _buildModeSelector({
-  required bool isCheckboxMode,
-  required ValueChanged<String?> onChanged,
-}) {
-  return ToggleButtons(
-    isSelected: [
-      isCheckboxMode, 
-      !isCheckboxMode
-    ],
-    onPressed: (int index) {
-      final value = index == 0 ? 'Checkbox' : 'select';
-      onChanged(value);
-    },
-    children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.check_box,
-              color: isCheckboxMode ? Colors.white : AppColors.primaryColor,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              'Checkbox',
-              style: TextStyle(
+  Widget _buildModeSelector({
+    required bool isCheckboxMode,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return ToggleButtons(
+      isSelected: [isCheckboxMode, !isCheckboxMode],
+      onPressed: (int index) {
+        final value = index == 0 ? 'Checkbox' : 'select';
+        onChanged(value);
+      },
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.check_box,
                 color: isCheckboxMode ? Colors.white : AppColors.primaryColor,
               ),
-            ),
-          ],
+              const SizedBox(width: 6),
+              Text(
+                'Checkbox',
+                style: TextStyle(
+                  color: isCheckboxMode ? Colors.white : AppColors.primaryColor,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.list,
-              color: !isCheckboxMode ? Colors.white : AppColors.primaryColor,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              'Combo',
-              style: TextStyle(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.list,
                 color: !isCheckboxMode ? Colors.white : AppColors.primaryColor,
               ),
-            ),
-          ],
+              const SizedBox(width: 6),
+              Text(
+                'Combo',
+                style: TextStyle(
+                  color:
+                      !isCheckboxMode ? Colors.white : AppColors.primaryColor,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-    ],
-    color: AppColors.primaryColor.withOpacity(0.2),
-    selectedColor: AppColors.primaryColor,
-    fillColor: AppColors.primaryColor,
-    borderRadius: BorderRadius.circular(8),
-    borderColor: AppColors.primaryColor,
-    selectedBorderColor: AppColors.primaryColor,
-    constraints: const BoxConstraints(
-      minHeight: 40,
-      minWidth: 100,
-    ),
-  );
-}
- 
+      ],
+      color: AppColors.primaryColor.withOpacity(0.2),
+      selectedColor: AppColors.primaryColor,
+      fillColor: AppColors.primaryColor,
+      borderRadius: BorderRadius.circular(8),
+      borderColor: AppColors.primaryColor,
+      selectedBorderColor: AppColors.primaryColor,
+      constraints: const BoxConstraints(minHeight: 40, minWidth: 100),
+    );
+  }
+
   Widget _buildSelectAllButton({
     required int selectedCount,
     required int totalCount,
@@ -671,6 +785,32 @@ Widget _buildModeSelector({
       ),
     );
   }
+
+  Widget _buildRadioOption(
+    String title, {
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+      visualDensity: VisualDensity.compact,
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 14,
+          color: isSelected ? AppColors.primaryColor : Colors.black87,
+        ),
+      ),
+      leading: Radio<bool>(
+        value: isSelected,
+        groupValue: true,
+        activeColor: AppColors.primaryColor,
+        onChanged: (_) => onTap(),
+      ),
+      onTap: onTap,
+    );
+  }
 }
 
 class CustomExpansionTile extends StatefulWidget {
@@ -719,7 +859,7 @@ class _CustomExpansionTileState extends State<CustomExpansionTile> {
         },
         tilePadding: EdgeInsets.symmetric(horizontal: 16),
         backgroundColor: Colors.grey.withOpacity(0.1),
-        collapsedBackgroundColor:Colors.grey.withOpacity(0.2),
+        collapsedBackgroundColor: Colors.grey.withOpacity(0.2),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         collapsedShape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
@@ -737,3 +877,16 @@ class _CustomExpansionTileState extends State<CustomExpansionTile> {
     );
   }
 }
+
+
+// logic for sort by:
+// if (sortBy != null && sortType != null) {
+//   if (sortBy == 'createdDate') {
+//     query = query.orderBy('created_date', descending: sortType == 'desc');
+//   } 
+//   else if (sortBy == 'mrp') {
+//     query = sortType == 'asc' 
+//       ? query.orderBy('mrp', ascending: true)
+//       : query.orderBy('mrp', descending: true);
+//   }
+// }

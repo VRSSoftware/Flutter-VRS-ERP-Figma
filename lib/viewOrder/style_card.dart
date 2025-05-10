@@ -36,23 +36,26 @@ class _StyleCardState extends State<StyleCard> {
     super.initState();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final firstItem = widget.items.first;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildHeaderSection(firstItem),
-            const SizedBox(height: 16),
-            _buildPriceTable(context),
-            _buildActionButtons(context),
-          ],
-        ),
+@override
+Widget build(BuildContext context) {
+  final firstItem = widget.items.first;
+  return Card(
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.zero,
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _buildHeaderSection(firstItem),
+          const SizedBox(height: 16),
+          _buildPriceTable(context),
+          _buildActionButtons(context),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _openImageZoom(BuildContext context, String imageUrl) {
     Navigator.push(
@@ -276,22 +279,22 @@ Widget _buildItemImage(String imagePath) {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
-    // Calculate total quantity for this specific style card
-    int styleTotalQty = 0;
-    widget.controllers.forEach((shade, sizes) {
-      sizes.forEach((size, controller) {
-        styleTotalQty += int.tryParse(controller.text) ?? 0;
-      });
+Widget _buildActionButtons(BuildContext context) {
+  int styleTotalQty = 0;
+  widget.controllers.forEach((shade, sizes) {
+    sizes.forEach((size, controller) {
+      styleTotalQty += int.tryParse(controller.text) ?? 0;
     });
+  });
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 14),
-      child: Column(
-        children: [
-          SizedBox(
-            width: 350,
-            child: TextField(
+  return Padding(
+    padding: const EdgeInsets.only(top: 14),
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
               controller: noteController,
               decoration: InputDecoration(
                 labelText: 'Note',
@@ -300,12 +303,8 @@ Widget _buildItemImage(String imagePath) {
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          // Add total quantity display
-          SizedBox(
-            width: 350,
-            child: TextFormField(
+            const SizedBox(height: 16),
+            TextFormField(
               readOnly: true,
               decoration: InputDecoration(
                 labelText: 'Style Total Quantity',
@@ -318,29 +317,34 @@ Widget _buildItemImage(String imagePath) {
                   offset: styleTotalQty.toString().length,
                 ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _buildActionButton(
-                label: 'Update',
-                icon: Icons.update,
-                color: AppColors.primaryColor,
-                onPressed: () => _submitUpdate(context),
-              ),
-              const SizedBox(width: 16),
-              _buildActionButton(
-                label: 'Remove',
-                icon: Icons.delete,
-                color: Colors.grey,
-                onPressed: () => _submitDelete(context),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildActionButton(
+                    label: 'Update',
+                    icon: Icons.update,
+                    color: AppColors.primaryColor,
+                    onPressed: () => _submitUpdate(context),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildActionButton(
+                    label: 'Remove',
+                    icon: Icons.delete,
+                    color: Colors.grey,
+                    onPressed: () => _submitDelete(context),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}
 
   Widget _buildActionButton({
     required String label,
