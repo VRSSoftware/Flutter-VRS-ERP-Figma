@@ -113,7 +113,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(requestBody),
     );
-    print("${response.body}");
+  //  print("${response.body}");
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
       if (data.isNotEmpty) {
