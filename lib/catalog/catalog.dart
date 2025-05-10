@@ -286,9 +286,9 @@ class _CatalogPageState extends State<CatalogPage> {
           IconButton(
             icon: Icon(
               viewOption == 0
-                  ? CupertinoIcons.rectangle_expand_vertical
-                  : viewOption == 1
                   ? CupertinoIcons.list_bullet_below_rectangle
+                  : viewOption == 1
+                  ? CupertinoIcons.rectangle_expand_vertical
                   : CupertinoIcons.square_grid_2x2_fill,
               color: Colors.white,
             ),
@@ -535,9 +535,9 @@ class _CatalogPageState extends State<CatalogPage> {
                       : LayoutBuilder(
                         builder: (context, constraints) {
                           if (viewOption == 0) {
-                            return _buildExpandedView(isLargeScreen);
+                             return _buildListView(constraints, isLargeScreen);
                           } else if (viewOption == 1) {
-                            return _buildListView(constraints, isLargeScreen);
+                           return _buildExpandedView(isLargeScreen);
                           }
                           return _buildGridView(
                             constraints,
@@ -1692,10 +1692,10 @@ class _CatalogPageState extends State<CatalogPage> {
             children: [
               CircularProgressIndicator(),
               SizedBox(width: 16),
-              Text('Generating PDF from server...'),
+              Text('Sharing PDF .....'),
             ],
           ),
-          duration: Duration(seconds: 3),
+          duration: Duration(seconds: 1),
         ),
       );
 
@@ -2014,7 +2014,7 @@ class _CatalogPageState extends State<CatalogPage> {
               Text('Preparing items for sharing...'),
             ],
           ),
-          duration: Duration(seconds: 2),
+          duration: Duration(seconds: 1),
         ),
       );
 
@@ -2074,7 +2074,7 @@ class _CatalogPageState extends State<CatalogPage> {
             //subject: 'Catalog Items from VRS ERP',
           );
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Items shared successfully')),
+            const SnackBar(content: Text('')),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -2215,7 +2215,7 @@ class _CatalogPageState extends State<CatalogPage> {
               Text('Preparing download...'),
             ],
           ),
-          duration: Duration(seconds: 3),
+         duration: Duration(seconds: 1),
         ),
       );
 
