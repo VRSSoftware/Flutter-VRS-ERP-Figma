@@ -12,19 +12,23 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
   bool includeDesign = true;
   bool includeShade = true;
   bool includeRate = true;
+  bool includeWsp = true;
   bool includeSize = true;
+  bool includeSizeMrp = true;
+  bool includeSizeWsp = true;
   bool includeProduct = true;
   bool includeRemark = true;
-  bool includeLabel = false; // New state for the additional checkbox
 
   bool get allSelected =>
       includeDesign &&
       includeShade &&
       includeRate &&
+      includeWsp &&
       includeSize &&
+      includeSizeMrp &&
+      includeSizeWsp &&
       includeProduct &&
-      includeRemark &&
-      includeLabel;
+      includeRemark;
 
   void toggleAll(bool? value) {
     final newValue = value ?? false;
@@ -32,10 +36,12 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
       includeDesign = newValue;
       includeShade = newValue;
       includeRate = newValue;
+      includeWsp = newValue;
       includeSize = newValue;
+      includeSizeMrp = newValue;
+      includeSizeWsp = newValue;
       includeProduct = newValue;
       includeRemark = newValue;
-      includeLabel = newValue;
     });
   }
 
@@ -82,51 +88,45 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   Flexible(
-                    child: _buildCompactSwitchTile('Include Design', includeDesign, 
-                        (v) => setState(() => includeDesign = v)),
+                    child: _buildCompactSwitchTile(
+                        'Include Design No', includeDesign, (v) => setState(() => includeDesign = v)),
                   ),
                   Flexible(
-                    child: _buildCompactSwitchTile('Include Shade', includeShade, 
-                        (v) => setState(() => includeShade = v)),
+                    child: _buildCompactSwitchTile(
+                        'Include Shade', includeShade, (v) => setState(() => includeShade = v)),
                   ),
                   Flexible(
-                    child: _buildCompactSwitchTile('Include Rate', includeRate, 
-                        (v) => setState(() => includeRate = v)),
+                    child: _buildCompactSwitchTile(
+                        'Include Mrp', includeRate, (v) => setState(() => includeRate = v)),
                   ),
                   Flexible(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          ' Include Size',
-                          style: TextStyle(fontSize: 14),
-                        ),
-                        // const SizedBox(width: 2),
-                        const Text(
-                          '(with Label)',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        Checkbox(
-                          value: includeLabel,
-                          onChanged: (v) => setState(() => includeLabel = v ?? false),
-                          activeColor: AppColors.primaryColor,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        Switch(
-                          value: includeSize,
-                          onChanged: (v) => setState(() => includeSize = v),
-                          activeColor: AppColors.primaryColor,
-                        ),
-                      ],
-                    ),
+                    child: _buildCompactSwitchTile(
+                        'Include Wsp', includeWsp, (v) => setState(() => includeWsp = v)),
                   ),
                   Flexible(
-                    child: _buildCompactSwitchTile('Include Product', includeProduct, 
-                        (v) => setState(() => includeProduct = v)),
+                    child: _buildCompactSwitchTile('Include Size', includeSize, (v) => setState(() {
+                          includeSize = v;
+                          if (!v) {
+                            includeSizeMrp = false;
+                            includeSizeWsp = false;
+                          }
+                        })),
                   ),
                   Flexible(
-                    child: _buildCompactSwitchTile('Include Remark', includeRemark, 
-                        (v) => setState(() => includeRemark = v)),
+                    child: _buildCompactSwitchTile('Include Size With Mrp', includeSizeMrp,
+                        (v) => setState(() => includeSizeMrp = v), disabled: !includeSize),
+                  ),
+                  Flexible(
+                    child: _buildCompactSwitchTile('Include Size with Wsp', includeSizeWsp,
+                        (v) => setState(() => includeSizeWsp = v), disabled: !includeSize),
+                  ),
+                  Flexible(
+                    child: _buildCompactSwitchTile(
+                        'Include Product', includeProduct, (v) => setState(() => includeProduct = v)),
+                  ),
+                  Flexible(
+                    child: _buildCompactSwitchTile(
+                        'Include Remark', includeRemark, (v) => setState(() => includeRemark = v)),
                   ),
                 ],
               ),
@@ -140,10 +140,12 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
                     'design': includeDesign,
                     'shade': includeShade,
                     'rate': includeRate,
+                    'wsp': includeWsp,
                     'size': includeSize,
                     'product': includeProduct,
                     'remark': includeRemark,
-                    'label': includeLabel, // Include new option in result
+                    'rate1': includeSizeMrp,
+                    'wsp1': includeSizeWsp,
                   });
                 },
                 child: Text(
@@ -169,14 +171,15 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
     );
   }
 
-  Widget _buildCompactSwitchTile(String title, bool value, Function(bool) onChanged) {
+  Widget _buildCompactSwitchTile(String title, bool value, Function(bool) onChanged, {bool disabled = false}) {
     return SwitchListTile(
       title: Text(title),
       value: value,
-      onChanged: onChanged,
+      onChanged: disabled ? null : onChanged,
       dense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
       activeColor: AppColors.primaryColor,
+      inactiveTrackColor: Colors.grey[300],
     );
   }
 }

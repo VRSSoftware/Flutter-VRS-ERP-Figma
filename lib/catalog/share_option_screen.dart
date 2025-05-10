@@ -6,7 +6,7 @@ class ShareOptionsPage extends StatelessWidget {
   final Function() onImageShare;
   final Function() onWhatsAppShare;
   final Function() onPDFShare;
-  final Function(bool, bool, bool, bool, bool, bool, bool) onToggleOptions;
+  final Function(bool, bool, bool, bool, bool, bool, bool,bool,bool) onToggleOptions;
 
   const ShareOptionsPage({
     Key? key,
@@ -110,10 +110,13 @@ class ShareOptionsPage extends StatelessWidget {
         options['design'] ?? true,
         options['shade'] ?? true,
         options['rate'] ?? true,
+        options['wsp'] ?? true,
         options['size'] ?? true,
+        options['rate1'] ?? true,
+        options['wsp1'] ?? true,
         options['product'] ?? true,
-        options['remark'] ?? true,
-        options['label'] ?? false,  // Add this line
+        options['remark'] ?? true
+       // options['label'] ?? false,  // Add this line
       );
     }
   }

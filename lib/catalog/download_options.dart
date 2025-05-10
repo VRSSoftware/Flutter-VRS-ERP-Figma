@@ -21,18 +21,18 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
   @override
   void initState() {
     super.initState();
-    // Initialize options with default values, including 'label'
-    options =
-        widget.initialOptions ??
-        {
-          'design': true,
-          'shade': true,
-          'rate': true,
-          'size': true,
-          'product': true,
-          'remark': true,
-          'label': false, // Default to false for the "(with Label)" checkbox
-        };
+    // Initialize options with default values
+    options = widget.initialOptions ?? {
+      'design': true,
+      'shade': true,
+      'rate': true,
+      'wsp': true,
+      'size': true,
+      'rate1': true,
+      'wsp1': true,
+      'product': true,
+      'remark': true,
+    };
   }
 
   void _toggleAllOptions(bool? value) {
@@ -99,50 +99,37 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    _buildToggleOption('Design', options['design']!, (value) {
+                    _buildToggleOption('Include Design No', options['design']!, (value) {
                       setState(() => options['design'] = value);
                     }),
-                    _buildToggleOption('Shade', options['shade']!, (value) {
+                    _buildToggleOption('Include Shade', options['shade']!, (value) {
                       setState(() => options['shade'] = value);
                     }),
-                    _buildToggleOption('Rate', options['rate']!, (value) {
+                    _buildToggleOption('Include Mrp', options['rate']!, (value) {
                       setState(() => options['rate'] = value);
                     }),
-                    Flexible(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Include Size',
-                            style: TextStyle(fontSize: 14),
-                          ),
-                          const Text(
-                            '(with Label)',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                          Checkbox(
-                            value: options['label'],
-                            onChanged: (value) {
-                              setState(() => options['label'] = value ?? false);
-                            },
-                            activeColor: AppColors.primaryColor,
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          Switch(
-                            value: options['size']!,
-                            onChanged: (value) {
-                              setState(() => options['size'] = value);
-                            },
-                            activeColor: AppColors.primaryColor,
-                          ),
-                        ],
-                      ),
-                    ),
-                    _buildToggleOption('Product', options['product']!, (value) {
+                    _buildToggleOption('Include Wsp', options['wsp']!, (value) {
+                      setState(() => options['wsp'] = value);
+                    }),
+                    _buildToggleOption('Include Size', options['size']!, (value) {
+                      setState(() {
+                        options['size'] = value;
+                        if (!value) {
+                          options['rate1'] = false;
+                          options['wsp1'] = false;
+                        }
+                      });
+                    }),
+                    _buildToggleOption('Include Size With Mrp', options['rate1']!, (value) {
+                      setState(() => options['rate1'] = value);
+                    }, disabled: !options['size']!),
+                    _buildToggleOption('Include Size with Wsp', options['wsp1']!, (value) {
+                      setState(() => options['wsp1'] = value);
+                    }, disabled: !options['size']!),
+                    _buildToggleOption('Include Product', options['product']!, (value) {
                       setState(() => options['product'] = value);
                     }),
-                    _buildToggleOption('Remark', options['remark']!, (value) {
+                    _buildToggleOption('Include Remark', options['remark']!, (value) {
                       setState(() => options['remark'] = value);
                     }),
                     const SizedBox(height: 16),
@@ -260,8 +247,9 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
   Widget _buildToggleOption(
     String label,
     bool value,
-    Function(bool) onChanged,
-  ) {
+    Function(bool) onChanged, {
+    bool disabled = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -269,8 +257,9 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
           Expanded(child: Text(label)),
           Switch(
             value: value,
-            onChanged: onChanged,
+            onChanged: disabled ? null : onChanged,
             activeColor: AppColors.primaryColor,
+            inactiveTrackColor: Colors.grey[300],
           ),
         ],
       ),

@@ -1673,10 +1673,13 @@ class _CatalogPageState extends State<CatalogPage> {
     bool includeDesign = true,
     bool includeShade = true,
     bool includeRate = true,
+    bool includeWsp = true,
     bool includeSize = true,
+    bool includeSizeMrp = true,
+    bool includeSizeWsp = true,
     bool includeProduct = true,
     bool includeRemark = true,
-    bool includeLabel = true,
+  //  bool includeLabel = true,
   }) async {
     if (selectedItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1716,18 +1719,10 @@ class _CatalogPageState extends State<CatalogPage> {
               if (includeDesign) catalogItem['design'] = item.styleCode;
               if (includeShade) catalogItem['shade'] = item.shadeName;
               if (includeRate) catalogItem['rate'] = item.mrp;
-
-              // Handle size based on toggle and checkbox state
-              if (includeSize) {
-                if (includeLabel) {
-                  // If "with label" checkbox is selected
-                  catalogItem['sizeDetails'] = item.sizeDetails;
-                } else {
-                  // If only size toggle is on
-                  catalogItem['sizeWithMrp'] = item.sizeWithMrp;
-                }
-              }
-
+              if (includeWsp) catalogItem['wsp'] = item.wsp;
+              if (includeSize) catalogItem['sizeWithMrp'] = item.sizeWithMrp;
+              if (includeSizeMrp) catalogItem['sizeWithMrp'] = item.sizeWithMrp;
+              if (includeSizeWsp) catalogItem['sizeWithWsp'] = item.sizeWithWsp;
               if (includeProduct) catalogItem['product'] = item.itemName;
               if (includeRemark) catalogItem['remark'] = item.remark;
               return catalogItem;
@@ -1992,10 +1987,13 @@ class _CatalogPageState extends State<CatalogPage> {
     bool includeDesign = true,
     bool includeShade = true,
     bool includeRate = true,
+    bool includeWsp = true,
     bool includeSize = true,
+    bool includeSizeMrp = true,
+    bool includeSizeWsp = true,
     bool includeProduct = true,
     bool includeRemark = true,
-    bool includeLabel = true,
+   // bool includeLabel = true,
   }) async {
     if (selectedItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2026,10 +2024,10 @@ class _CatalogPageState extends State<CatalogPage> {
               'design': includeDesign ? item.styleCode : '',
               'shade': includeShade ? item.shadeName : '',
               'rate': includeRate ? item.mrp.toString() : '',
-              'size':
-                  includeSize
-                      ? (includeLabel ? item.sizeDetails : item.sizeWithMrp)
-                      : '',
+              'wsp' : includeWsp ? item.wsp.toString() : '',
+              'size': includeSize ? item.sizeWithMrp : '',
+              'rate1': includeSizeMrp ? item.sizeWithMrp : '',
+              'wsp1' : includeSizeWsp ? item.sizeWithWsp : '',
               'product': includeProduct ? item.itemName : '',
               'remark': includeRemark ? item.remark : '',
             };
@@ -2044,7 +2042,10 @@ class _CatalogPageState extends State<CatalogPage> {
           'includeDesign': includeDesign,
           'includeShade': includeShade,
           'includeRate': includeRate,
+          'includeWsp' : includeWsp,
           'includeSize': includeSize,
+          'includeSizeMrp': includeSizeMrp,
+          'includeSizeWsp' : includeSizeWsp,
           'includeProduct': includeProduct,
           'includeRemark': includeRemark,
         }),
@@ -2125,10 +2126,13 @@ class _CatalogPageState extends State<CatalogPage> {
     bool includeDesign = true;
     bool includeShade = true;
     bool includeRate = true;
+    bool includeWsp = true;
     bool includeSize = true;
+    bool includeSizeMrp = true;
+    bool includeSizeWsp = true;
     bool includeProduct = true;
     bool includeRemark = true;
-    bool includeLabel = false; // Add this line
+    // bool includeLabel = false; // Add this line
 
     showModalBottomSheet(
       context: context,
@@ -2144,7 +2148,7 @@ class _CatalogPageState extends State<CatalogPage> {
               includeSize: includeSize,
               includeProduct: includeProduct,
               includeRemark: includeRemark,
-              includeLabel: includeLabel, // Add this line
+              // includeLabel: includeLabel, // Add this line
             );
           },
           onImageShare: () {
@@ -2154,10 +2158,13 @@ class _CatalogPageState extends State<CatalogPage> {
               includeDesign: includeDesign,
               includeShade: includeShade,
               includeRate: includeRate,
+              includeWsp: includeWsp,
               includeSize: includeSize,
+              includeSizeMrp: includeSizeMrp,
+              includeSizeWsp : includeSizeWsp,
               includeProduct: includeProduct,
               includeRemark: includeRemark,
-              includeLabel: includeLabel, // Add this line
+              // includeLabel: includeLabel, // Add this line
             );
           },
           onPDFShare: () {
@@ -2167,20 +2174,26 @@ class _CatalogPageState extends State<CatalogPage> {
               includeDesign: includeDesign,
               includeShade: includeShade,
               includeRate: includeRate,
+              includeWsp: includeWsp,
               includeSize: includeSize,
+              includeSizeMrp: includeSizeMrp,
+              includeSizeWsp: includeSizeWsp,
               includeProduct: includeProduct,
               includeRemark: includeRemark,
-              includeLabel: includeLabel, // Add this line
+              // includeLabel: includeLabel, // Add this line
             );
           },
-          onToggleOptions: (design, shade, rate, size, product, remark, label) {
+          onToggleOptions: (design, shade,rate,wsp, size,rate1,wsp1, product, remark) {
             includeDesign = design;
             includeShade = shade;
             includeRate = rate;
+            includeWsp = wsp;
             includeSize = size;
+            includeSizeMrp = rate1;
+            includeSizeWsp = wsp1;
             includeProduct = product;
             includeRemark = remark;
-            includeLabel = label; // Add this line
+            // includeLabel = label; // Add this line
           },
         );
       },
@@ -2193,10 +2206,13 @@ class _CatalogPageState extends State<CatalogPage> {
     bool includeDesign = true,
     bool includeShade = true,
     bool includeRate = true,
+    bool includeWsp = true,
     bool includeSize = true,
+    bool includeSizeMrp = true,
+    bool includeSizeWsp = true,
     bool includeProduct = true,
     bool includeRemark = true,
-    bool includeLabel = false, // Add this parameter
+    // bool includeLabel = false, // Add this parameter
   }) async {
     if (selectedItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2243,16 +2259,12 @@ class _CatalogPageState extends State<CatalogPage> {
           if (includeDesign) catalogItem['design'] = item.styleCode;
           if (includeShade) catalogItem['shade'] = item.shadeName;
           if (includeRate) catalogItem['rate'] = item.mrp;
+          if (includeWsp) catalogItem['wsp'] = item.wsp;
 
           // Handle size based on toggle and checkbox state
-          if (includeSize) {
-            if (includeLabel) {
-              catalogItem['sizeDetails'] = item.sizeDetails;
-            } else {
-              catalogItem['sizeWithMrp'] = item.sizeWithMrp;
-            }
-          }
-
+          if (includeSize) catalogItem['sizeWithMrp'] = item.sizeWithMrp;
+          if(includeSizeMrp) catalogItem['sizeWithMrp'] = item.sizeWithMrp;
+          if(includeSizeWsp) catalogItem['sizeWithWsp'] = item.sizeWithWsp;
           if (includeProduct) catalogItem['product'] = item.itemName;
           if (includeRemark) catalogItem['remark'] = item.remark;
 
@@ -2294,10 +2306,10 @@ class _CatalogPageState extends State<CatalogPage> {
                 'design': includeDesign ? item.styleCode : '',
                 'shade': includeShade ? item.shadeName : '',
                 'rate': includeRate ? item.mrp.toString() : '',
-                'size':
-                    includeSize
-                        ? (includeLabel ? item.sizeDetails : item.sizeWithMrp)
-                        : '',
+                'wsp' : includeWsp ? item.wsp.toString() : '',
+                'size': includeSize ? item.sizeWithMrp : '',
+                'rate1':includeSizeMrp ? item.sizeWithMrp : '',
+                'wsp1':includeSizeWsp ? item.sizeWithWsp : '',
                 'product': includeProduct ? item.itemName : '',
                 'remark': includeRemark ? item.remark : '',
               };
@@ -2311,10 +2323,13 @@ class _CatalogPageState extends State<CatalogPage> {
             'includeDesign': includeDesign,
             'includeShade': includeShade,
             'includeRate': includeRate,
+            'includeWsp' : includeWsp,
             'includeSize': includeSize,
+            'includeSizeMrp' : includeSizeMrp,
+            'includeSizeWsp' : includeSizeWsp,
             'includeProduct': includeProduct,
             'includeRemark': includeRemark,
-            'includeLabel': includeLabel, // Pass the label option to backend
+            // 'includeLabel': includeLabel, // Pass the label option to backend
           }),
         );
 
@@ -2373,11 +2388,14 @@ class _CatalogPageState extends State<CatalogPage> {
               includeDesign: selectedOptions['design'] ?? false,
               includeShade: selectedOptions['shade'] ?? false,
               includeRate: selectedOptions['rate'] ?? false,
+              includeWsp: selectedOptions['wsp'] ?? false,
               includeSize: selectedOptions['size'] ?? false,
+              includeSizeMrp: selectedOptions['rate1'] ?? false,
+              includeSizeWsp: selectedOptions['wsp1'] ?? false,
               includeProduct: selectedOptions['product'] ?? false,
               includeRemark: selectedOptions['remark'] ?? false,
-              includeLabel:
-                  selectedOptions['label'] ?? false, // Pass label option
+              // includeLabel:
+              //     selectedOptions['label'] ?? false, // Pass label option
             );
           },
         );
