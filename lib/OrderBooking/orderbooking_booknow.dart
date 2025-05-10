@@ -320,7 +320,7 @@ class _OrderPageState extends State<OrderPage> {
 double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
   if (constraints.maxWidth > 1000) return isLargeScreen ? 0.85 : 0.8;
   if (constraints.maxWidth > 600) return isLargeScreen ? 0.8 : 0.75;
-  return 0.7; // Less height for small screens
+  return 0.6; // Less height for small screens
 }
 
   // double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
