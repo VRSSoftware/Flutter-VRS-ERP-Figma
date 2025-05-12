@@ -12,10 +12,10 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
   bool includeDesign = true;
   bool includeShade = true;
   bool includeRate = true;
-  bool includeWsp = true;
+  bool includeWsp = false;
   bool includeSize = true;
   bool includeSizeMrp = true;
-  bool includeSizeWsp = true;
+  bool includeSizeWsp = false;
   bool includeProduct = true;
   bool includeRemark = true;
 
@@ -113,12 +113,15 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
                         })),
                   ),
                   Flexible(
-                    child: _buildCompactSwitchTile('Include Size With Mrp', includeSizeMrp,
-                        (v) => setState(() => includeSizeMrp = v), disabled: !includeSize),
+                    child: _buildCompactSwitchTile('Include Size Wise Mrp', includeSizeMrp,
+                        (v) => setState(() {
+                          includeSizeMrp = v;
+                          if (!v) includeSizeWsp = false;
+                        }), disabled: !includeSize),
                   ),
                   Flexible(
-                    child: _buildCompactSwitchTile('Include Size with Wsp', includeSizeWsp,
-                        (v) => setState(() => includeSizeWsp = v), disabled: !includeSize),
+                    child: _buildCompactSwitchTile('Include Size wise Wsp', includeSizeWsp,
+                        (v) => setState(() => includeSizeWsp = v), disabled: !includeSize || !includeSizeMrp),
                   ),
                   Flexible(
                     child: _buildCompactSwitchTile(

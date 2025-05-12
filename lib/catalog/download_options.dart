@@ -26,10 +26,10 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
       'design': true,
       'shade': true,
       'rate': true,
-      'wsp': true,
+      'wsp': false,
       'size': true,
       'rate1': true,
-      'wsp1': true,
+      'wsp1': false,
       'product': true,
       'remark': true,
     };
@@ -120,12 +120,15 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
                         }
                       });
                     }),
-                    _buildToggleOption('Include Size With Mrp', options['rate1']!, (value) {
-                      setState(() => options['rate1'] = value);
+                    _buildToggleOption('Include Size Wise Mrp', options['rate1']!, (value) {
+                      setState(() {
+                        options['rate1'] = value;
+                        if (!value) options['wsp1'] = false;
+                      });
                     }, disabled: !options['size']!),
-                    _buildToggleOption('Include Size with Wsp', options['wsp1']!, (value) {
+                    _buildToggleOption('Include Size wise Wsp', options['wsp1']!, (value) {
                       setState(() => options['wsp1'] = value);
-                    }, disabled: !options['size']!),
+                    }, disabled: !options['size']! || !options['rate1']!),
                     _buildToggleOption('Include Product', options['product']!, (value) {
                       setState(() => options['product'] = value);
                     }),

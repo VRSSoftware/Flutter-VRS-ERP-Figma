@@ -1668,7 +1668,7 @@ class _CatalogPageState extends State<CatalogPage> {
     }
   }
 
-  Future<void> _shareSelectedItemsPDF({
+ Future<void> _shareSelectedItemsPDF({
     required String shareType,
     bool includeDesign = true,
     bool includeShade = true,
@@ -1679,8 +1679,7 @@ class _CatalogPageState extends State<CatalogPage> {
     bool includeSizeWsp = true,
     bool includeProduct = true,
     bool includeRemark = true,
-  //  bool includeLabel = true,
-  }) async {
+}) async {
     if (selectedItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select items to share')),
@@ -1720,9 +1719,18 @@ class _CatalogPageState extends State<CatalogPage> {
               if (includeShade) catalogItem['shade'] = item.shadeName;
               if (includeRate) catalogItem['rate'] = item.mrp;
               if (includeWsp) catalogItem['wsp'] = item.wsp;
-              if (includeSize) catalogItem['sizeWithMrp'] = item.sizeWithMrp;
-              if (includeSizeMrp) catalogItem['sizeWithMrp'] = item.sizeWithMrp;
-              if (includeSizeWsp) catalogItem['sizeWithWsp'] = item.sizeWithWsp;
+              // Handle sizeWithMrp based on toggle states
+              if (includeSize) {
+                if (includeSizeMrp && includeSizeWsp) {
+                  catalogItem['sizeDetailsWithoutWSp'] = item.sizeDetailsWithoutWSp ?? '';
+                } else if (!includeSizeMrp && !includeSizeWsp) {
+                  catalogItem['onlySizes'] = item.onlySizes ?? '';
+                } else {
+                  catalogItem['sizeWithMrp'] = item.sizeWithMrp ?? '';
+                }
+              }
+              // if (includeSizeMrp) catalogItem['sizeWithMrp'] = item.sizeWithMrp;
+              // if (includeSizeWsp) catalogItem['sizeWithWsp'] = item.sizeWithWsp;
               if (includeProduct) catalogItem['product'] = item.itemName;
               if (includeRemark) catalogItem['remark'] = item.remark;
               return catalogItem;
@@ -1759,7 +1767,7 @@ class _CatalogPageState extends State<CatalogPage> {
         SnackBar(content: Text('Failed to share items: ${e.toString()}')),
       );
     }
-  }
+}
 
   Future<void> _shareSelectedWhatsApp({
     required String shareType,
@@ -1779,20 +1787,6 @@ class _CatalogPageState extends State<CatalogPage> {
     }
 
     try {
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   const SnackBar(
-      //     content: Row(
-      //       children: [
-      //         CircularProgressIndicator(),
-      //         SizedBox(width: 16),
-      //         Text('Sending to WhatsApp...'),
-      //       ],
-      //     ),
-      //     duration: Duration(seconds: 3),
-      //   ),
-      // );
-
-      // Show the dialog to enter the mobile number
       String mobileNo = await _showMobileNumberDialog();
 
       // Proceed only if a valid mobile number is entered
@@ -1933,18 +1927,18 @@ class _CatalogPageState extends State<CatalogPage> {
             );
           },
         ) ??
-        ''; // Default to empty string if dialog is dismissed or cancelled
+        ''; 
 
     return mobileNo;
   }
 
   String formatSizes(String input) {
-    // Regular expression to match the size (any word before the opening parenthesis)
+    
     RegExp regExp = RegExp(r'(\w+)(?=\s?\()');
 
-    // Replace each match (size) with *size*
+    
     return input.replaceAllMapped(regExp, (match) {
-      return '*${match.group(0)}*'; // Add * before and after the size
+      return '*${match.group(0)}*'; 
     });
   }
 
@@ -1963,13 +1957,13 @@ class _CatalogPageState extends State<CatalogPage> {
           'data': fileBase64,
           'filename': fileType == 'image' ? 'catalog.jpg' : 'catalog.pdf',
           'key': AppConstants.whatsappKey,
-          'number': '91$mobileNo', // Add country code before mobile number
+          'number': '91$mobileNo', 
           'caption': caption ?? 'Please find the file attached.',
         },
       );
 
       if (response.statusCode == 200) {
-        // Successfully sent
+        
         print('File sent successfully');
         return true;
       } else {
@@ -1982,7 +1976,7 @@ class _CatalogPageState extends State<CatalogPage> {
     }
   }
 
-  Future<void> _shareSelectedItems({
+Future<void> _shareSelectedItems({
     required String shareType,
     bool includeDesign = true,
     bool includeShade = true,
@@ -1993,8 +1987,7 @@ class _CatalogPageState extends State<CatalogPage> {
     bool includeSizeWsp = true,
     bool includeProduct = true,
     bool includeRemark = true,
-   // bool includeLabel = true,
-  }) async {
+}) async {
     if (selectedItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select items to share')),
@@ -2016,18 +2009,33 @@ class _CatalogPageState extends State<CatalogPage> {
         ),
       );
 
-      // Prepare request data
+      
       final List<Map<String, String>> catalogItems =
           selectedItems.map((item) {
+           
+            String sizeValue = '';
+            if (includeSize) {
+              if (includeSizeMrp && includeSizeWsp) {
+              
+                sizeValue = item.sizeDetailsWithoutWSp ?? '';
+              } else if (!includeSizeMrp && !includeSizeWsp) {
+              
+                sizeValue = item.onlySizes ?? '';
+              } else {
+               
+                sizeValue = item.sizeWithMrp ?? '';
+              }
+            }
+
             return {
               'fullImagePath': _getImageUrl(item),
               'design': includeDesign ? item.styleCode : '',
               'shade': includeShade ? item.shadeName : '',
               'rate': includeRate ? item.mrp.toString() : '',
-              'wsp' : includeWsp ? item.wsp.toString() : '',
-              'size': includeSize ? item.sizeWithMrp : '',
-              'rate1': includeSizeMrp ? item.sizeWithMrp : '',
-              'wsp1' : includeSizeWsp ? item.sizeWithWsp : '',
+              'wsp': includeWsp ? item.wsp.toString() : '',
+              'size': sizeValue,
+             // 'rate1': includeSizeMrp ? item.sizeWithMrp : '',
+             // 'wsp1': includeSizeWsp ? item.sizeWithWsp : '',
               'product': includeProduct ? item.itemName : '',
               'remark': includeRemark ? item.remark : '',
             };
@@ -2042,10 +2050,10 @@ class _CatalogPageState extends State<CatalogPage> {
           'includeDesign': includeDesign,
           'includeShade': includeShade,
           'includeRate': includeRate,
-          'includeWsp' : includeWsp,
+          'includeWsp': includeWsp,
           'includeSize': includeSize,
-          'includeSizeMrp': includeSizeMrp,
-          'includeSizeWsp' : includeSizeWsp,
+         // 'includeSizeMrp': includeSizeMrp,
+        //  'includeSizeWsp': includeSizeWsp,
           'includeProduct': includeProduct,
           'includeRemark': includeRemark,
         }),
@@ -2072,7 +2080,6 @@ class _CatalogPageState extends State<CatalogPage> {
         if (filePaths.isNotEmpty) {
           await Share.shareFiles(
             filePaths,
-            //subject: 'Catalog Items from VRS ERP',
           );
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('')),
@@ -2095,7 +2102,7 @@ class _CatalogPageState extends State<CatalogPage> {
       );
       print('Error in _shareSelectedItems: $e');
     }
-  }
+}
 
   void _toggleItemSelection(Catalog item) {
     setState(() {
@@ -2126,10 +2133,10 @@ class _CatalogPageState extends State<CatalogPage> {
     bool includeDesign = true;
     bool includeShade = true;
     bool includeRate = true;
-    bool includeWsp = true;
+    bool includeWsp = false;
     bool includeSize = true;
     bool includeSizeMrp = true;
-    bool includeSizeWsp = true;
+    bool includeSizeWsp = false;
     bool includeProduct = true;
     bool includeRemark = true;
     // bool includeLabel = false; // Add this line
@@ -2262,9 +2269,17 @@ class _CatalogPageState extends State<CatalogPage> {
           if (includeWsp) catalogItem['wsp'] = item.wsp;
 
           // Handle size based on toggle and checkbox state
-          if (includeSize) catalogItem['sizeWithMrp'] = item.sizeWithMrp;
-          if(includeSizeMrp) catalogItem['sizeWithMrp'] = item.sizeWithMrp;
-          if(includeSizeWsp) catalogItem['sizeWithWsp'] = item.sizeWithWsp;
+          if (includeSize) {
+                if (includeSizeMrp && includeSizeWsp) {
+                  catalogItem['sizeDetailsWithoutWSp'] = item.sizeDetailsWithoutWSp ?? '';
+                } else if (!includeSizeMrp && !includeSizeWsp) {
+                  catalogItem['onlySizes'] = item.onlySizes ?? '';
+                } else {
+                  catalogItem['sizeWithMrp'] = item.sizeWithMrp ?? '';
+                }
+              }
+         // if(includeSizeMrp) catalogItem['sizeWithMrp'] = item.sizeWithMrp;
+         // if(includeSizeWsp) catalogItem['sizeWithWsp'] = item.sizeWithWsp;
           if (includeProduct) catalogItem['product'] = item.itemName;
           if (includeRemark) catalogItem['remark'] = item.remark;
 
@@ -2299,21 +2314,36 @@ class _CatalogPageState extends State<CatalogPage> {
           );
         }
       } else if (option == 'image') {
-        final List<Map<String, String>> catalogItems =
-            selectedItems.map((item) {
-              return {
-                'fullImagePath': _getImageUrl(item),
-                'design': includeDesign ? item.styleCode : '',
-                'shade': includeShade ? item.shadeName : '',
-                'rate': includeRate ? item.mrp.toString() : '',
-                'wsp' : includeWsp ? item.wsp.toString() : '',
-                'size': includeSize ? item.sizeWithMrp : '',
-                'rate1':includeSizeMrp ? item.sizeWithMrp : '',
-                'wsp1':includeSizeWsp ? item.sizeWithWsp : '',
-                'product': includeProduct ? item.itemName : '',
-                'remark': includeRemark ? item.remark : '',
-              };
-            }).toList();
+             final List<Map<String, String>> catalogItems =
+          selectedItems.map((item) {
+           
+            String sizeValue = '';
+            if (includeSize) {
+              if (includeSizeMrp && includeSizeWsp) {
+              
+                sizeValue = item.sizeDetailsWithoutWSp ?? '';
+              } else if (!includeSizeMrp && !includeSizeWsp) {
+              
+                sizeValue = item.onlySizes ?? '';
+              } else {
+               
+                sizeValue = item.sizeWithMrp ?? '';
+              }
+            }
+
+            return {
+              'fullImagePath': _getImageUrl(item),
+              'design': includeDesign ? item.styleCode : '',
+              'shade': includeShade ? item.shadeName : '',
+              'rate': includeRate ? item.mrp.toString() : '',
+              'wsp': includeWsp ? item.wsp.toString() : '',
+              'size': sizeValue,
+             // 'rate1': includeSizeMrp ? item.sizeWithMrp : '',
+             // 'wsp1': includeSizeWsp ? item.sizeWithWsp : '',
+              'product': includeProduct ? item.itemName : '',
+              'remark': includeRemark ? item.remark : '',
+            };
+          }).toList();
 
         final response = await http.post(
           Uri.parse('${AppConstants.BASE_URL}/image/generate-and-share'),
@@ -2325,8 +2355,8 @@ class _CatalogPageState extends State<CatalogPage> {
             'includeRate': includeRate,
             'includeWsp' : includeWsp,
             'includeSize': includeSize,
-            'includeSizeMrp' : includeSizeMrp,
-            'includeSizeWsp' : includeSizeWsp,
+           // 'includeSizeMrp' : includeSizeMrp,
+           // 'includeSizeWsp' : includeSizeWsp,
             'includeProduct': includeProduct,
             'includeRemark': includeRemark,
             // 'includeLabel': includeLabel, // Pass the label option to backend
