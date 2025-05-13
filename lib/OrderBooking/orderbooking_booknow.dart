@@ -35,6 +35,7 @@ class _OrderPageState extends State<OrderPage> {
   String toMRP = "";
   String WSPfrom = "";
   String WSPto = "";
+  String sortBy = "";
   bool isLoading = true;
   List<String> addedItems = [];
   String? itemNamee;
@@ -102,6 +103,7 @@ class _OrderPageState extends State<OrderPage> {
         itemSubGrpKey: itemSubGrpKey!,
         itemKey: itemKey!,
         cobr: coBr!,
+        sortBy : sortBy,
         styleKey:
             selectedStyles.length == 1 ? selectedStyles[0].styleKey : null,
         shadeKey:
@@ -987,6 +989,7 @@ double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
             'toMRP': toMRP,
             'WSPfrom': WSPfrom,
             'WSPto': WSPto,
+            'sortBy': sortBy,
           },
         ),
         transitionDuration: Duration(milliseconds: 500),
@@ -1010,6 +1013,7 @@ double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
         toMRP = selectedFilters['toMRP'];
         WSPfrom = selectedFilters['WSPfrom'];
         WSPto = selectedFilters['WSPto'];
+        sortBy = selectedFilters['sortBy'];
       });
       print("aaaaaaaa  ${selectedFilters['styles']}");
       print("aaaaaaaa  ${selectedFilters['WSPfrom']}");

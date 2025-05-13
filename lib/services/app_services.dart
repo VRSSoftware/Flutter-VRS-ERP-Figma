@@ -226,6 +226,7 @@ class ApiService {
     required String itemKey,
     required String cobr,
     String? brandKey,
+    String? sortBy,
     String? styleKey,
     String? shadeKey,
     String? sizeKey,
@@ -244,6 +245,7 @@ class ApiService {
       "fromMRP": fromMRP,
       "toMRP": toMRP,
       "cobr": cobr,
+      "sortBy": sortBy,
     };
 
     final response = await http.post(

@@ -71,8 +71,10 @@ class _FilterPageState extends State<FilterPage> {
       toMRPController.text = args['toMRP'] is String ? args['toMRP'] : "";
       wspFromController.text = args['WSPfrom'] is String ? args['WSPfrom'] : "";
       wspToController.text = args['WSPto'] is String ? args['WSPto'] : "";
+      sortBy = args['sortBy'] is String ? args['sortBy'] : "";
       brands = args['brands'] is List<Brand> ? args['brands'] : [];
-      selectedBrands = args['selectedBrands'] is List<Brand> ? args['selectedBrands'] : [];
+      selectedBrands =
+          args['selectedBrands'] is List<Brand> ? args['selectedBrands'] : [];
     }
   }
 
@@ -231,30 +233,29 @@ class _FilterPageState extends State<FilterPage> {
                         children: [
                           _buildRadioOption(
                             'Latest Design',
-                            isSelected:
-                                sortBy == 'createdDate' && sortType == 'desc',
+                            isSelected: sortBy == 'design desc',
                             onTap:
                                 () => setState(() {
-                                  sortBy = 'createdDate';
-                                  sortType = 'desc';
+                                  sortBy =
+                                      'design desc'; // maps to ORDER BY created_dt DESC
                                 }),
                           ),
                           _buildRadioOption(
                             'Price: Low to High',
-                            isSelected: sortBy == 'mrp' && sortType == 'asc',
+                            isSelected: sortBy == 'MRP asc',
                             onTap:
                                 () => setState(() {
-                                  sortBy = 'mrp';
-                                  sortType = 'asc';
+                                  sortBy =
+                                      'MRP asc'; // maps to ORDER BY MRP ASC
                                 }),
                           ),
                           _buildRadioOption(
                             'Price: High to Low',
-                            isSelected: sortBy == 'mrp' && sortType == 'desc',
+                            isSelected: sortBy == 'MRP desc',
                             onTap:
                                 () => setState(() {
-                                  sortBy = 'mrp';
-                                  sortType = 'desc';
+                                  sortBy =
+                                      'MRP desc'; // maps to ORDER BY MRP DESC
                                 }),
                           ),
                         ],
@@ -263,7 +264,7 @@ class _FilterPageState extends State<FilterPage> {
                   ],
                 ),
 
-                 SizedBox(height: 16),
+                SizedBox(height: 16),
                 // Styles Section
                 _buildExpansionTile(
                   title: 'Select Styles',
@@ -451,60 +452,71 @@ class _FilterPageState extends State<FilterPage> {
                 SizedBox(height: 16),
 
                 _buildExpansionTile(
-  title: 'Select Brands',
-  initiallyExpanded: isBrandExpanded,
-  onExpansionChanged: (expanded) => setState(() => isBrandExpanded = expanded),
-  children: [
-    Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildModeSelector(
-                isCheckboxMode: isCheckboxModeBrand,
-                onChanged: (value) => setState(
-                  () => isCheckboxModeBrand = value == 'Checkbox',
+                  title: 'Select Brands',
+                  initiallyExpanded: isBrandExpanded,
+                  onExpansionChanged:
+                      (expanded) => setState(() => isBrandExpanded = expanded),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildModeSelector(
+                                isCheckboxMode: isCheckboxModeBrand,
+                                onChanged:
+                                    (value) => setState(
+                                      () =>
+                                          isCheckboxModeBrand =
+                                              value == 'Checkbox',
+                                    ),
+                              ),
+                              _buildSelectAllButton(
+                                selectedCount: selectedBrands.length,
+                                totalCount: brands.length,
+                                onPressed:
+                                    () => setState(() {
+                                      selectedBrands =
+                                          selectedBrands.length == brands.length
+                                              ? []
+                                              : List.from(brands);
+                                    }),
+                              ),
+                            ],
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child:
+                                isCheckboxModeBrand
+                                    ? _buildCheckboxSection<Brand>(
+                                      brands,
+                                      selectedBrands,
+                                      (a, b) => a.brandKey == b.brandKey,
+                                      (b) => b.brandName,
+                                      syncSelectedBrands,
+                                    )
+                                    : _buildDropdownSection<Brand>(
+                                      items: brands,
+                                      selectedItems: selectedBrands,
+                                      hintText: 'Search and select brands',
+                                      itemAsString: (b) => b.brandName,
+                                      compareFn:
+                                          (a, b) => a.brandKey == b.brandKey,
+                                      onChanged: syncSelectedBrands,
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              _buildSelectAllButton(
-                selectedCount: selectedBrands.length,
-                totalCount: brands.length,
-                onPressed: () => setState(() {
-                  selectedBrands = selectedBrands.length == brands.length
-                      ? []
-                      : List.from(brands);
-                }),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: isCheckboxModeBrand
-                ? _buildCheckboxSection<Brand>(
-                    brands,
-                    selectedBrands,
-                    (a, b) => a.brandKey == b.brandKey,
-                    (b) => b.brandName,
-                    syncSelectedBrands,
-                  )
-                : _buildDropdownSection<Brand>(
-                    items: brands,
-                    selectedItems: selectedBrands,
-                    hintText: 'Search and select brands',
-                    itemAsString: (b) => b.brandName,
-                    compareFn: (a, b) => a.brandKey == b.brandKey,
-                    onChanged: syncSelectedBrands,
-                  ),
-          ),
-        ],
-      ),
-    ),
-  ],
-),
 
-SizedBox(height: 16),
+                SizedBox(height: 16),
                 // MRP Range Section
                 _buildExpansionTile(
                   title: 'MRP Range',
@@ -573,7 +585,7 @@ SizedBox(height: 16),
                     'WSPfrom': wspFromController.text,
                     'WSPto': wspToController.text,
                     'sortBy': sortBy,
-                    'sortType': sortType,
+                    //'sortType': sortType,
                   };
                   Navigator.pop(context, selectedFilters);
                 },
