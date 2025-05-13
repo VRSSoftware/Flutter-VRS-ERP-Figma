@@ -14,6 +14,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
 import 'package:vrs_erp_figma/catalog/download_options.dart';
 import 'package:vrs_erp_figma/catalog/filter.dart';
+import 'package:vrs_erp_figma/catalog/image_zoom1.dart';
 import 'package:vrs_erp_figma/catalog/imagezoom.dart';
 import 'package:vrs_erp_figma/catalog/share_option_screen.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
@@ -535,9 +536,9 @@ class _CatalogPageState extends State<CatalogPage> {
                       : LayoutBuilder(
                         builder: (context, constraints) {
                           if (viewOption == 0) {
-                             return _buildListView(constraints, isLargeScreen);
+                            return _buildListView(constraints, isLargeScreen);
                           } else if (viewOption == 1) {
-                           return _buildExpandedView(isLargeScreen);
+                            return _buildExpandedView(isLargeScreen);
                           }
                           return _buildGridView(
                             constraints,
@@ -621,27 +622,38 @@ class _CatalogPageState extends State<CatalogPage> {
         final item = filteredItems[index];
         bool isSelected = selectedItems.contains(item);
 
-        // Split shades by comma and trim any extra spaces
+        // Split shades by comma and trim any extra spaces, with null safety
         List<String> shades =
-            item.shadeName.split(',').map((shade) => shade.trim()).toList();
+            item.shadeName != null && item.shadeName.isNotEmpty
+                ? item.shadeName
+                    .split(',')
+                    .map((shade) => shade.trim())
+                    .toList()
+                    .cast<String>()
+                : [];
 
         return GestureDetector(
           onDoubleTap: () {
-            _openImageZoom(context, item); // Always open image on double tap
+            _openImageZoom1(
+              context,
+              item,
+              showShades: showShades,
+              showMRP: showMRP,
+              showWSP: showWSP,
+              showSizes: showSizes,
+              showProduct: showProduct,
+              showRemark: showRemark,
+              isLargeScreen: isLargeScreen,
+            );
           },
           onLongPress: () {
             _toggleItemSelection(item); // Start selection mode
           },
           onTap: () {
             if (selectedItems.isNotEmpty) {
-              _toggleItemSelection(
-                item,
-              ); // Only work if selection mode is active
+              _toggleItemSelection(item); // Selection mode behavior
             }
           },
-          // onTap: () => _toggleItemSelection(item),
-          // onLongPress: () => _enableMultiSelect(item),
-          // onDoubleTap: () => _openImageZoom(context, item),
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 8),
             child: Card(
@@ -675,46 +687,66 @@ class _CatalogPageState extends State<CatalogPage> {
                         /// Image section (fixed width)
                         Flexible(
                           flex: 2,
-                          child: ClipRRect(
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(12),
-                              topRight: Radius.circular(12),
-                            ),
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                final maxImageHeight =
-                                    constraints.maxWidth * 1.2;
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => ImageZoomScreen1(
+                                        imageUrl: _getImageUrl(item),
+                                        item: item,
+                                        showShades: showShades,
+                                        showMRP: showMRP,
+                                        showWSP: showWSP,
+                                        showSizes: showSizes,
+                                        showProduct: showProduct,
+                                        showRemark: showRemark,
+                                        isLargeScreen: isLargeScreen,
+                                      ),
+                                ),
+                              );
+                            },
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(12),
+                                topRight: Radius.circular(12),
+                              ),
+                              child: LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final maxImageHeight =
+                                      constraints.maxWidth * 1.2;
 
-                                return ConstrainedBox(
-                                  constraints: BoxConstraints(
-                                    maxHeight: maxImageHeight,
-                                  ),
-                                  child: SizedBox(
-                                    height: maxImageHeight,
-                                    width: double.infinity,
-                                    child: Center(
-                                      child: Image.network(
-                                        _getImageUrl(item),
-                                        fit:
-                                            BoxFit.contain, // Prevents cropping
-                                        width: double.infinity,
-                                        errorBuilder: (
-                                          context,
-                                          error,
-                                          stackTrace,
-                                        ) {
-                                          return Container(
-                                            color: Colors.grey.shade300,
-                                            child: const Center(
-                                              child: Icon(Icons.error),
-                                            ),
-                                          );
-                                        },
+                                  return ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxHeight: maxImageHeight,
+                                    ),
+                                    child: SizedBox(
+                                      height: maxImageHeight,
+                                      width: double.infinity,
+                                      child: Center(
+                                        child: Image.network(
+                                          _getImageUrl(item),
+                                          fit: BoxFit.contain,
+                                          width: double.infinity,
+                                          errorBuilder: (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) {
+                                            return Container(
+                                              color: Colors.grey.shade300,
+                                              child: const Center(
+                                                child: Icon(Icons.error),
+                                              ),
+                                            );
+                                          },
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              },
+                                  );
+                                },
+                              ),
                             ),
                           ),
                         ),
@@ -815,9 +847,7 @@ class _CatalogPageState extends State<CatalogPage> {
                                           SingleChildScrollView(
                                             scrollDirection: Axis.horizontal,
                                             child: Text(
-                                              _getSizeText(
-                                                item,
-                                              ), // Updated line
+                                              _getSizeText(item),
                                               style: _valueTextStyle(),
                                             ),
                                           ),
@@ -908,7 +938,19 @@ class _CatalogPageState extends State<CatalogPage> {
                 item.shadeName.split(',').map((s) => s.trim()).toList();
 
             return GestureDetector(
-              onDoubleTap: () => _openImageZoom(context, item),
+              onDoubleTap: () {
+                _openImageZoom1(
+                  context,
+                  item,
+                  showShades: showShades,
+                  showMRP: showMRP,
+                  showWSP: showWSP,
+                  showSizes: showSizes,
+                  showProduct: showProduct,
+                  showRemark: showRemark,
+                  isLargeScreen: isLargeScreen,
+                );
+              },
               onLongPress: () => _toggleItemSelection(item),
               onTap: () {
                 if (selectedItems.isNotEmpty) _toggleItemSelection(item);
@@ -1246,6 +1288,36 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
+  void _openImageZoom1(
+    BuildContext context,
+    Catalog item, {
+    required bool showShades,
+    required bool showMRP,
+    required bool showWSP,
+    required bool showSizes,
+    required bool showProduct,
+    required bool showRemark,
+    required bool isLargeScreen,
+  }) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => ImageZoomScreen1(
+              imageUrl: _getImageUrl(item),
+              item: item,
+              showShades: showShades,
+              showMRP: showMRP,
+              showWSP: showWSP,
+              showSizes: showSizes,
+              showProduct: showProduct,
+              showRemark: showRemark,
+              isLargeScreen: isLargeScreen,
+            ),
+      ),
+    );
+  }
+
   void _openImageZoom(BuildContext context, Catalog item) {
     Navigator.push(
       context,
@@ -1262,7 +1334,17 @@ class _CatalogPageState extends State<CatalogPage> {
 
     return GestureDetector(
       onDoubleTap: () {
-        _openImageZoom(context, item); // Always open image on double tap
+        _openImageZoom1(
+          context,
+          item,
+          showShades: showShades,
+          showMRP: showMRP,
+          showWSP: showWSP,
+          showSizes: showSizes,
+          showProduct: showProduct,
+          showRemark: showRemark,
+          isLargeScreen: isLargeScreen,
+        );
       },
       onLongPress: () {
         _toggleItemSelection(item); // Start selection mode
@@ -1668,7 +1750,7 @@ class _CatalogPageState extends State<CatalogPage> {
     }
   }
 
- Future<void> _shareSelectedItemsPDF({
+  Future<void> _shareSelectedItemsPDF({
     required String shareType,
     bool includeDesign = true,
     bool includeShade = true,
@@ -1679,7 +1761,7 @@ class _CatalogPageState extends State<CatalogPage> {
     bool includeSizeWsp = true,
     bool includeProduct = true,
     bool includeRemark = true,
-}) async {
+  }) async {
     if (selectedItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select items to share')),
@@ -1722,7 +1804,8 @@ class _CatalogPageState extends State<CatalogPage> {
               // Handle sizeWithMrp based on toggle states
               if (includeSize) {
                 if (includeSizeMrp && includeSizeWsp) {
-                  catalogItem['sizeDetailsWithoutWSp'] = item.sizeDetailsWithoutWSp ?? '';
+                  catalogItem['sizeDetailsWithoutWSp'] =
+                      item.sizeDetailsWithoutWSp ?? '';
                 } else if (!includeSizeMrp && !includeSizeWsp) {
                   catalogItem['onlySizes'] = item.onlySizes ?? '';
                 } else {
@@ -1767,7 +1850,7 @@ class _CatalogPageState extends State<CatalogPage> {
         SnackBar(content: Text('Failed to share items: ${e.toString()}')),
       );
     }
-}
+  }
 
   Future<void> _shareSelectedWhatsApp({
     required String shareType,
@@ -1793,16 +1876,14 @@ class _CatalogPageState extends State<CatalogPage> {
       if (mobileNo.isNotEmpty) {
         // Loop through selected items and send each one
         for (var item in selectedItems) {
-          String url= '';
-          if(item.fullImagePath.contains("http://") || item.fullImagePath.contains("https://")){
+          String url = '';
+          if (item.fullImagePath.contains("http://") ||
+              item.fullImagePath.contains("https://")) {
             url = item.fullImagePath;
+          } else {
+            url = '${AppConstants.BASE_URL}/images${item.fullImagePath}';
           }
-          else{
-            url= '${AppConstants.BASE_URL}/images${item.fullImagePath}';
-          }
-          final response = await http.get(
-            Uri.parse(url),
-          );
+          final response = await http.get(Uri.parse(url));
 
           // Check if the request was successful
           if (response.statusCode == 200) {
@@ -1927,18 +2008,16 @@ class _CatalogPageState extends State<CatalogPage> {
             );
           },
         ) ??
-        ''; 
+        '';
 
     return mobileNo;
   }
 
   String formatSizes(String input) {
-    
     RegExp regExp = RegExp(r'(\w+)(?=\s?\()');
 
-    
     return input.replaceAllMapped(regExp, (match) {
-      return '*${match.group(0)}*'; 
+      return '*${match.group(0)}*';
     });
   }
 
@@ -1957,13 +2036,12 @@ class _CatalogPageState extends State<CatalogPage> {
           'data': fileBase64,
           'filename': fileType == 'image' ? 'catalog.jpg' : 'catalog.pdf',
           'key': AppConstants.whatsappKey,
-          'number': '91$mobileNo', 
+          'number': '91$mobileNo',
           'caption': caption ?? 'Please find the file attached.',
         },
       );
 
       if (response.statusCode == 200) {
-        
         print('File sent successfully');
         return true;
       } else {
@@ -1976,7 +2054,7 @@ class _CatalogPageState extends State<CatalogPage> {
     }
   }
 
-Future<void> _shareSelectedItems({
+  Future<void> _shareSelectedItems({
     required String shareType,
     bool includeDesign = true,
     bool includeShade = true,
@@ -1987,7 +2065,7 @@ Future<void> _shareSelectedItems({
     bool includeSizeWsp = true,
     bool includeProduct = true,
     bool includeRemark = true,
-}) async {
+  }) async {
     if (selectedItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select items to share')),
@@ -2009,20 +2087,15 @@ Future<void> _shareSelectedItems({
         ),
       );
 
-      
       final List<Map<String, String>> catalogItems =
           selectedItems.map((item) {
-           
             String sizeValue = '';
             if (includeSize) {
               if (includeSizeMrp && includeSizeWsp) {
-              
                 sizeValue = item.sizeDetailsWithoutWSp ?? '';
               } else if (!includeSizeMrp && !includeSizeWsp) {
-              
                 sizeValue = item.onlySizes ?? '';
               } else {
-               
                 sizeValue = item.sizeWithMrp ?? '';
               }
             }
@@ -2034,8 +2107,8 @@ Future<void> _shareSelectedItems({
               'rate': includeRate ? item.mrp.toString() : '',
               'wsp': includeWsp ? item.wsp.toString() : '',
               'size': sizeValue,
-             // 'rate1': includeSizeMrp ? item.sizeWithMrp : '',
-             // 'wsp1': includeSizeWsp ? item.sizeWithWsp : '',
+              // 'rate1': includeSizeMrp ? item.sizeWithMrp : '',
+              // 'wsp1': includeSizeWsp ? item.sizeWithWsp : '',
               'product': includeProduct ? item.itemName : '',
               'remark': includeRemark ? item.remark : '',
             };
@@ -2052,8 +2125,8 @@ Future<void> _shareSelectedItems({
           'includeRate': includeRate,
           'includeWsp': includeWsp,
           'includeSize': includeSize,
-         // 'includeSizeMrp': includeSizeMrp,
-        //  'includeSizeWsp': includeSizeWsp,
+          // 'includeSizeMrp': includeSizeMrp,
+          //  'includeSizeWsp': includeSizeWsp,
           'includeProduct': includeProduct,
           'includeRemark': includeRemark,
         }),
@@ -2078,11 +2151,9 @@ Future<void> _shareSelectedItems({
         }
 
         if (filePaths.isNotEmpty) {
-          await Share.shareFiles(
-            filePaths,
-          );
+          await Share.shareFiles(filePaths);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('')),
+            const SnackBar(content: Text('Image Share Successfully')),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -2102,7 +2173,7 @@ Future<void> _shareSelectedItems({
       );
       print('Error in _shareSelectedItems: $e');
     }
-}
+  }
 
   void _toggleItemSelection(Catalog item) {
     setState(() {
@@ -2168,7 +2239,7 @@ Future<void> _shareSelectedItems({
               includeWsp: includeWsp,
               includeSize: includeSize,
               includeSizeMrp: includeSizeMrp,
-              includeSizeWsp : includeSizeWsp,
+              includeSizeWsp: includeSizeWsp,
               includeProduct: includeProduct,
               includeRemark: includeRemark,
               // includeLabel: includeLabel, // Add this line
@@ -2190,7 +2261,17 @@ Future<void> _shareSelectedItems({
               // includeLabel: includeLabel, // Add this line
             );
           },
-          onToggleOptions: (design, shade,rate,wsp, size,rate1,wsp1, product, remark) {
+          onToggleOptions: (
+            design,
+            shade,
+            rate,
+            wsp,
+            size,
+            rate1,
+            wsp1,
+            product,
+            remark,
+          ) {
             includeDesign = design;
             includeShade = shade;
             includeRate = rate;
@@ -2238,7 +2319,7 @@ Future<void> _shareSelectedItems({
               Text('Preparing download...'),
             ],
           ),
-         duration: Duration(seconds: 1),
+          duration: Duration(seconds: 1),
         ),
       );
 
@@ -2270,16 +2351,17 @@ Future<void> _shareSelectedItems({
 
           // Handle size based on toggle and checkbox state
           if (includeSize) {
-                if (includeSizeMrp && includeSizeWsp) {
-                  catalogItem['sizeDetailsWithoutWSp'] = item.sizeDetailsWithoutWSp ?? '';
-                } else if (!includeSizeMrp && !includeSizeWsp) {
-                  catalogItem['onlySizes'] = item.onlySizes ?? '';
-                } else {
-                  catalogItem['sizeWithMrp'] = item.sizeWithMrp ?? '';
-                }
-              }
-         // if(includeSizeMrp) catalogItem['sizeWithMrp'] = item.sizeWithMrp;
-         // if(includeSizeWsp) catalogItem['sizeWithWsp'] = item.sizeWithWsp;
+            if (includeSizeMrp && includeSizeWsp) {
+              catalogItem['sizeDetailsWithoutWSp'] =
+                  item.sizeDetailsWithoutWSp ?? '';
+            } else if (!includeSizeMrp && !includeSizeWsp) {
+              catalogItem['onlySizes'] = item.onlySizes ?? '';
+            } else {
+              catalogItem['sizeWithMrp'] = item.sizeWithMrp ?? '';
+            }
+          }
+          // if(includeSizeMrp) catalogItem['sizeWithMrp'] = item.sizeWithMrp;
+          // if(includeSizeWsp) catalogItem['sizeWithWsp'] = item.sizeWithWsp;
           if (includeProduct) catalogItem['product'] = item.itemName;
           if (includeRemark) catalogItem['remark'] = item.remark;
 
@@ -2314,36 +2396,32 @@ Future<void> _shareSelectedItems({
           );
         }
       } else if (option == 'image') {
-             final List<Map<String, String>> catalogItems =
-          selectedItems.map((item) {
-           
-            String sizeValue = '';
-            if (includeSize) {
-              if (includeSizeMrp && includeSizeWsp) {
-              
-                sizeValue = item.sizeDetailsWithoutWSp ?? '';
-              } else if (!includeSizeMrp && !includeSizeWsp) {
-              
-                sizeValue = item.onlySizes ?? '';
-              } else {
-               
-                sizeValue = item.sizeWithMrp ?? '';
+        final List<Map<String, String>> catalogItems =
+            selectedItems.map((item) {
+              String sizeValue = '';
+              if (includeSize) {
+                if (includeSizeMrp && includeSizeWsp) {
+                  sizeValue = item.sizeDetailsWithoutWSp ?? '';
+                } else if (!includeSizeMrp && !includeSizeWsp) {
+                  sizeValue = item.onlySizes ?? '';
+                } else {
+                  sizeValue = item.sizeWithMrp ?? '';
+                }
               }
-            }
 
-            return {
-              'fullImagePath': _getImageUrl(item),
-              'design': includeDesign ? item.styleCode : '',
-              'shade': includeShade ? item.shadeName : '',
-              'rate': includeRate ? item.mrp.toString() : '',
-              'wsp': includeWsp ? item.wsp.toString() : '',
-              'size': sizeValue,
-             // 'rate1': includeSizeMrp ? item.sizeWithMrp : '',
-             // 'wsp1': includeSizeWsp ? item.sizeWithWsp : '',
-              'product': includeProduct ? item.itemName : '',
-              'remark': includeRemark ? item.remark : '',
-            };
-          }).toList();
+              return {
+                'fullImagePath': _getImageUrl(item),
+                'design': includeDesign ? item.styleCode : '',
+                'shade': includeShade ? item.shadeName : '',
+                'rate': includeRate ? item.mrp.toString() : '',
+                'wsp': includeWsp ? item.wsp.toString() : '',
+                'size': sizeValue,
+                // 'rate1': includeSizeMrp ? item.sizeWithMrp : '',
+                // 'wsp1': includeSizeWsp ? item.sizeWithWsp : '',
+                'product': includeProduct ? item.itemName : '',
+                'remark': includeRemark ? item.remark : '',
+              };
+            }).toList();
 
         final response = await http.post(
           Uri.parse('${AppConstants.BASE_URL}/image/generate-and-share'),
@@ -2353,10 +2431,10 @@ Future<void> _shareSelectedItems({
             'includeDesign': includeDesign,
             'includeShade': includeShade,
             'includeRate': includeRate,
-            'includeWsp' : includeWsp,
+            'includeWsp': includeWsp,
             'includeSize': includeSize,
-           // 'includeSizeMrp' : includeSizeMrp,
-           // 'includeSizeWsp' : includeSizeWsp,
+            // 'includeSizeMrp' : includeSizeMrp,
+            // 'includeSizeWsp' : includeSizeWsp,
             'includeProduct': includeProduct,
             'includeRemark': includeRemark,
             // 'includeLabel': includeLabel, // Pass the label option to backend
