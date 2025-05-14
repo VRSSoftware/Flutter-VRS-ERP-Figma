@@ -612,6 +612,13 @@ class _FilterPageState extends State<FilterPage> {
         final value = index == 0 ? 'Checkbox' : 'select';
         onChanged(value);
       },
+      color: AppColors.primaryColor.withOpacity(0.2),
+      selectedColor: AppColors.primaryColor,
+      fillColor: AppColors.primaryColor,
+      borderRadius: BorderRadius.circular(8),
+      borderColor: AppColors.primaryColor,
+      selectedBorderColor: AppColors.primaryColor,
+      constraints: const BoxConstraints(minHeight: 40, minWidth: 100),
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -653,13 +660,6 @@ class _FilterPageState extends State<FilterPage> {
           ),
         ),
       ],
-      color: AppColors.primaryColor.withOpacity(0.2),
-      selectedColor: AppColors.primaryColor,
-      fillColor: AppColors.primaryColor,
-      borderRadius: BorderRadius.circular(8),
-      borderColor: AppColors.primaryColor,
-      selectedBorderColor: AppColors.primaryColor,
-      constraints: const BoxConstraints(minHeight: 40, minWidth: 100),
     );
   }
 

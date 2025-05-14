@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:vrs_erp_figma/OrderBooking/booking2/booking2.dart';
 import 'package:vrs_erp_figma/catalog/filter.dart';
 import 'package:vrs_erp_figma/catalog/imagezoom.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
@@ -103,7 +104,7 @@ class _OrderPageState extends State<OrderPage> {
         itemSubGrpKey: itemSubGrpKey!,
         itemKey: itemKey!,
         cobr: coBr!,
-        sortBy : sortBy,
+        sortBy: sortBy,
         styleKey:
             selectedStyles.length == 1 ? selectedStyles[0].styleKey : null,
         shadeKey:
@@ -170,7 +171,7 @@ class _OrderPageState extends State<OrderPage> {
         catalogItems = wspFilteredCatalogs;
       });
     } catch (e) {
-      print('Failed to load catalog items: $e');
+      debugPrint('Failed to load catalog items: $e');
     }
   }
 
@@ -206,6 +207,18 @@ class _OrderPageState extends State<OrderPage> {
     } catch (e) {
       print('Failed to load sizes: $e');
     }
+  }
+
+  List<Catalog> selectedItems = [];
+  void _toggleItemSelection(Catalog item) {
+    setState(() {
+      if (selectedItems.contains(item)) {
+        selectedItems.remove(item);
+      } else {
+        selectedItems.add(item);
+      }
+    });
+    debugPrint(selectedItems.length.toString());
   }
 
   @override
@@ -319,11 +332,12 @@ class _OrderPageState extends State<OrderPage> {
       },
     );
   }
-double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
-  if (constraints.maxWidth > 1000) return isLargeScreen ? 0.85 : 0.8;
-  if (constraints.maxWidth > 600) return isLargeScreen ? 0.8 : 0.75;
-  return 0.6; // Less height for small screens
-}
+
+  double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
+    if (constraints.maxWidth > 1000) return isLargeScreen ? 0.85 : 0.8;
+    if (constraints.maxWidth > 600) return isLargeScreen ? 0.8 : 0.75;
+    return 0.6; // Less height for small screens
+  }
 
   // double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
   //   if (constraints.maxWidth > 1000) return isLargeScreen ? 0.65 : 0.6;
@@ -701,6 +715,9 @@ double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
   ) {
     return GestureDetector(
       onDoubleTap: () => _openImageZoom(context, item),
+      onTap: () {
+        _toggleItemSelection(item);
+      },
       child: Card(
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -935,7 +952,27 @@ double _getChildAspectRatio(BoxConstraints constraints, bool isLargeScreen) {
       if (isLargeScreen)
         Expanded(child: _buildFilterButton(isLargeScreen))
       else
-        _buildFilterButton(isLargeScreen),
+        Row(
+          children: [
+            _buildFilterButton(isLargeScreen),
+            TextButton(
+              onPressed: () {
+                if (selectedItems.isNotEmpty) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => CreateOrderScreen(
+                            catalogs:selectedItems, 
+                          ),
+                    ),
+                  );
+                }
+              },
+              child: Text("Book Now"),
+            ),
+          ],
+        ),
     ];
   }
 
