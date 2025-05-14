@@ -64,81 +64,98 @@ class ImageZoomScreen1 extends StatelessWidget {
         ? item.shadeName.split(',').map((shade) => shade.trim()).toList().cast<String>()
         : [];
 
-    return GestureDetector(
-      onDoubleTap: () {
-        Navigator.pop(context); // Double tap to go back
-      },
-      child: Scaffold(
-        backgroundColor: Colors.grey[100], // Lighter background for contrast
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 3,
-          title: Text(
-            item.styleCode, // Display Style Code in AppBar
-            style: TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
-              fontSize: isLargeScreen ? 22 : 20,
-            ),
+    return Scaffold(
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 3,
+        title: Text(
+          item.styleCode,
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: isLargeScreen ? 22 : 20,
           ),
-          iconTheme: const IconThemeData(color: Colors.black87),
         ),
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Image Section (Updated to match _buildExpandedView)
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      spreadRadius: 2,
-                      blurRadius: 6,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    topRight: Radius.circular(12),
+        iconTheme: const IconThemeData(color: Colors.black87),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.fullscreen),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FullScreenImage(
+                    imageUrl: imageUrl,
+                    tag: 'fullscreen-${item.styleCode}',
                   ),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final maxImageHeight = constraints.maxWidth * 1.6;
-
-                      return ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxHeight: maxImageHeight,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Image Section with Zoom
+                Hero(
+                  tag: 'fullscreen-${item.styleCode}',
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.2),
+                          spreadRadius: 2,
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
                         ),
-                        child: SizedBox(
-                          height: maxImageHeight,
-                          width: double.infinity,
-                          child: Center(
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
+                      ),
+                      child: SizedBox(
+                        height: constraints.maxHeight * 0.7,
+                        width: double.infinity,
+                        child: InteractiveViewer(
+                          panEnabled: true,
+                          minScale: 1.0,
+                          maxScale: 4.0,
+                          boundaryMargin: const EdgeInsets.all(20),
+                          child: GestureDetector(
+                            onDoubleTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => FullScreenImage(
+                                    imageUrl: imageUrl,
+                                    tag: 'fullscreen-${item.styleCode}',
+                                  ),
+                                ),
+                              );
+                            },
                             child: Image.network(
                               imageUrl,
-                              fit: BoxFit.contain, // Prevents cropping
-                              width: double.infinity,
+                              fit: BoxFit.contain,
                               loadingBuilder: (context, child, loadingProgress) {
                                 if (loadingProgress == null) return child;
-                                return SizedBox(
-                                  height: maxImageHeight,
-                                  width: double.infinity,
-                                  child: const Center(
-                                    child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                                    ),
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
                                   ),
                                 );
                               },
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(
                                   color: Colors.grey[200],
-                                  height: maxImageHeight,
-                                  width: double.infinity,
                                   child: const Center(
                                     child: Icon(
                                       Icons.error,
@@ -151,162 +168,210 @@ class ImageZoomScreen1 extends StatelessWidget {
                             ),
                           ),
                         ),
-                      );
-                    },
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              // Description Section
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                padding: EdgeInsets.all(isLargeScreen ? 20 : 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      spreadRadius: 2,
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Table(
-                  columnWidths: const {
-                    0: IntrinsicColumnWidth(), // Label
-                    1: FixedColumnWidth(12), // Colon spacing
-                    2: FlexColumnWidth(), // Value
-                  },
-                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                  children: [
-                    // 1. Design
-                    TableRow(
-                      children: [
-                        _buildLabelText('Design'),
-                        const Text(':'),
-                        Text(
-                          item.styleCodeWithcount,
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                            fontSize: isLargeScreen ? 18 : 16,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    _buildSpacerRow(),
-
-                    // 2. Brand
-                    TableRow(
-                      children: [
-                        _buildLabelText('Brand'),
-                        const Text(':'),
-                        Text(
-                          item.brandName,
-                          style: _valueTextStyle(),
-                        ),
-                      ],
-                    ),
-
-                    _buildSpacerRow(),
-
-                    // 3. Shade
-                    if (showShades && shades.isNotEmpty)
+                
+                // Description Section
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: EdgeInsets.all(isLargeScreen ? 20 : 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.3),
+                        spreadRadius: 2,
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Table(
+                    columnWidths: const {
+                      0: IntrinsicColumnWidth(),
+                      1: FixedColumnWidth(12),
+                      2: FlexColumnWidth(),
+                    },
+                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                    children: [
+                      // 1. Design
                       TableRow(
                         children: [
-                          _buildLabelText('Shade'),
+                          _buildLabelText('Design'),
                           const Text(':'),
                           Text(
-                            shades.join(', '),
-                            style: _valueTextStyle(),
-                          ),
-                        ],
-                      ),
-
-                    if (showShades && shades.isNotEmpty) _buildSpacerRow(),
-
-                    // 4. MRP
-                    if (showMRP)
-                      TableRow(
-                        children: [
-                          _buildLabelText('MRP'),
-                          const Text(':'),
-                          Text(
-                            item.mrp.toStringAsFixed(2),
-                            style: _valueTextStyle(),
-                          ),
-                        ],
-                      ),
-
-                    if (showMRP) _buildSpacerRow(),
-
-                    // 5. WSP
-                    if (showWSP)
-                      TableRow(
-                        children: [
-                          _buildLabelText('WSP'),
-                          const Text(':'),
-                          Text(
-                            item.wsp.toStringAsFixed(2),
-                            style: _valueTextStyle(),
-                          ),
-                        ],
-                      ),
-
-                    if (showWSP) _buildSpacerRow(),
-
-                    // 6. Size
-                    if (item.sizeWithMrp.isNotEmpty && showSizes)
-                      TableRow(
-                        children: [
-                          _buildLabelText('Size'),
-                          const Text(':'),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Text(
-                              item.sizeWithMrp,
-                              style: _valueTextStyle(),
+                            item.styleCodeWithcount,
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                              fontSize: isLargeScreen ? 18 : 16,
                             ),
                           ),
                         ],
                       ),
+                      _buildSpacerRow(),
 
-                    if (item.sizeWithMrp.isNotEmpty && showSizes) _buildSpacerRow(),
-
-                    // 7. Product
-                    if (showProduct)
+                      // 2. Brand
                       TableRow(
                         children: [
-                          _buildLabelText('Product'),
+                          _buildLabelText('Brand'),
                           const Text(':'),
                           Text(
-                            item.itemName,
+                            item.brandName,
                             style: _valueTextStyle(),
                           ),
                         ],
                       ),
+                      _buildSpacerRow(),
 
-                    if (showProduct) _buildSpacerRow(),
-
-                    // 8. Quantity (clqty)
-                    TableRow(
-                      children: [
-                        _buildLabelText('Quantity'),
-                        const Text(':'),
-                        Text(
-                          item.clqty.toString(),
-                          style: _valueTextStyle(),
+                      // 3. Shade
+                      if (showShades && shades.isNotEmpty)
+                        TableRow(
+                          children: [
+                            _buildLabelText('Shade'),
+                            const Text(':'),
+                            Text(
+                              shades.join(', '),
+                              style: _valueTextStyle(),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      if (showShades && shades.isNotEmpty) _buildSpacerRow(),
 
-                    _buildSpacerRow(),
-                  ],
+                      // 4. MRP
+                      if (showMRP)
+                        TableRow(
+                          children: [
+                            _buildLabelText('MRP'),
+                            const Text(':'),
+                            Text(
+                              item.mrp.toStringAsFixed(2),
+                              style: _valueTextStyle(),
+                            ),
+                          ],
+                        ),
+                      if (showMRP) _buildSpacerRow(),
+
+                      // 5. WSP
+                      if (showWSP)
+                        TableRow(
+                          children: [
+                            _buildLabelText('WSP'),
+                            const Text(':'),
+                            Text(
+                              item.wsp.toStringAsFixed(2),
+                              style: _valueTextStyle(),
+                            ),
+                          ],
+                        ),
+                      if (showWSP) _buildSpacerRow(),
+
+                      // 6. Size
+                      if (item.sizeWithMrp.isNotEmpty && showSizes)
+                        TableRow(
+                          children: [
+                            _buildLabelText('Size'),
+                            const Text(':'),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Text(
+                                item.sizeWithMrp,
+                                style: _valueTextStyle(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      if (item.sizeWithMrp.isNotEmpty && showSizes) _buildSpacerRow(),
+
+                      // 7. Product
+                      if (showProduct)
+                        TableRow(
+                          children: [
+                            _buildLabelText('Product'),
+                            const Text(':'),
+                            Text(
+                              item.itemName,
+                              style: _valueTextStyle(),
+                            ),
+                          ],
+                        ),
+                      if (showProduct) _buildSpacerRow(),
+
+                      // 8. Quantity (clqty)
+                      TableRow(
+                        children: [
+                          _buildLabelText('Quantity'),
+                          const Text(':'),
+                          Text(
+                            item.clqty.toString(),
+                            style: _valueTextStyle(),
+                          ),
+                        ],
+                      ),
+                      _buildSpacerRow(),
+                    ],
+                  ),
                 ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+
+class FullScreenImage extends StatelessWidget {
+  final String imageUrl;
+  final String tag;
+
+  const FullScreenImage({
+    super.key,
+    required this.imageUrl,
+    required this.tag,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: SizedBox.expand( // Ensure the content takes up the full screen
+          child: Hero(
+            tag: tag,
+            child: InteractiveViewer(
+              panEnabled: true,
+              minScale: 1.0, // Initial scale: image fits the screen
+              maxScale: 5.0, // Allow zooming up to 5x
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain, // Maintain aspect ratio, fill screen
+                width: double.infinity,
+                height: double.infinity,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(
+                    child: Icon(
+                      Icons.error,
+                      color: Colors.red,
+                      size: 50,
+                    ),
+                  );
+                },
               ),
-            ],
+            ),
           ),
         ),
       ),
