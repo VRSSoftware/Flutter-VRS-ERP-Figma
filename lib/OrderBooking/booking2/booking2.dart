@@ -1,10 +1,11 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/models/CatalogOrderData.dart';
+import 'package:vrs_erp_figma/models/OrderMatrix.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
-
 
 class CreateOrderScreen extends StatefulWidget {
   final List<Catalog> catalogs;
@@ -16,23 +17,18 @@ class CreateOrderScreen extends StatefulWidget {
 }
 
 class _CreateOrderScreenState extends State<CreateOrderScreen> {
-   List<Catalog> updatedCatalogList = [];
-  final List<String> items = [
-    'Red',
-    'Blue',
-    'Black',
-    'Green',
-    'Yellow',
-    'White',
-    'Pink',
-  ];
-    @override
+  List<CatalogOrderData> catalogOrderList = [];
+  Map<String, Set<String>> selectedColors2 = {};
+  Map<String, Map<String, Map<String, int>>> quantities = {};
+
+  @override
   void initState() {
     super.initState();
     _loadOrderDetails();
   }
-    Future<void> _loadOrderDetails() async {
-    List<Catalog> tempList = [];
+
+  Future<void> _loadOrderDetails() async {
+    final List<CatalogOrderData> tempList = [];
 
     for (var item in widget.catalogs) {
       final payload = {
@@ -41,48 +37,48 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         "styleKey": item.styleKey,
         "userId": "Admin",
         "coBrId": "01",
-        "fcYrId": "24"
+        "fcYrId": "24",
       };
 
-      final response = await http.post(
-        Uri.parse('${AppConstants.BASE_URL}/api/v1/catalog/GetOrderDetails'),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(payload),
-      );
+      try {
+        final response = await http.post(
+          Uri.parse('${AppConstants.BASE_URL}/catalog/GetOrderDetails2'),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(payload),
+        );
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-
-        for (var entry in data) {
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final orderMatrix = OrderMatrix.fromJson(data);
           tempList.add(
-            Catalog(
-              itemSubGrpKey: item.itemSubGrpKey,
-              itemSubGrpName: item.itemSubGrpName,
-              itemKey: item.itemKey,
-              itemName: item.itemName,
-              brandKey: item.brandKey,
-              brandName: item.brandName,
-              styleKey: item.styleKey,
-              styleCode: entry['styleCode'] ?? item.styleCode,
-              shadeKey: item.shadeKey,
-              shadeName: entry['shadeName'] ?? '',
-              styleSizeId: item.styleSizeId,
-              sizeName: entry['sizeName'] ?? '',
-              mrp: (entry['mrp'] ?? 0).toDouble(),
-              wsp: (entry['wsp'] ?? 0).toDouble(),
-              onlyMRP: (entry['mrp'] ?? 0).toDouble(),
-              clqty: 0,
-              fullImagePath: item.fullImagePath,
-              remark: item.remark,
-              imageId: item.imageId,
-            ),
+            CatalogOrderData(catalog: item, orderMatrix: orderMatrix),
+          );
+          selectedColors2[item.styleKey] = <String>{};
+          quantities[item.styleKey] = {};
+        } else {
+          debugPrint(
+            'Failed to fetch order details for ${item.styleKey}: ${response.statusCode}',
           );
         }
+      } catch (e) {
+        debugPrint('Error fetching order details for ${item.styleKey}: $e');
       }
     }
 
     setState(() {
-      updatedCatalogList = tempList;
+      catalogOrderList = tempList;
+    });
+  }
+
+  int _getQuantity(String styleKey, String shade, String size) {
+    return quantities[styleKey]?[shade]?[size] ?? 0;
+  }
+
+  void _setQuantity(String styleKey, String shade, String size, int value) {
+    setState(() {
+      quantities.putIfAbsent(styleKey, () => {});
+      quantities[styleKey]!.putIfAbsent(shade, () => {});
+      quantities[styleKey]![shade]![size] = value.clamp(0, 9999);
     });
   }
 
@@ -91,7 +87,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blue,
-        title: const Text('Order Booking', style: TextStyle(color: Colors.white)),
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          'Order Booking',
+          style: GoogleFonts.poppins(color: Colors.white),
+        ),
         actions: const [
           Padding(
             padding: EdgeInsets.all(8.0),
@@ -102,12 +102,21 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           preferredSize: const Size.fromHeight(40.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: const [
-              Text('Total : ₹402.00', style: TextStyle(color: Colors.white)),
-              VerticalDivider(color: Colors.white),
-              Text('Total Item : 1', style: TextStyle(color: Colors.white)),
-              VerticalDivider(color: Colors.white, thickness: 2),
-              Text('Total Qty : 332', style: TextStyle(color: Colors.white)),
+            children: [
+              Text(
+                'Total: ₹${_calculateTotalPrice().toStringAsFixed(2)}',
+                style: GoogleFonts.roboto(color: Colors.white),
+              ),
+              const VerticalDivider(color: Colors.white),
+              Text(
+                'Total Item: ${catalogOrderList.length}',
+                style: GoogleFonts.roboto(color: Colors.white),
+              ),
+              const VerticalDivider(color: Colors.white, thickness: 2),
+              Text(
+                'Total Qty: ${_calculateTotalQuantity()}',
+                style: GoogleFonts.roboto(color: Colors.white),
+              ),
             ],
           ),
         ),
@@ -118,75 +127,72 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 10),
-            const Text('LK00001'),
-            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
                       labelText: 'Qty',
+                      labelStyle: GoogleFonts.lora(),
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
                         icon: const Icon(Icons.copy),
                         onPressed: () {
-                          // Add copy logic
+                          // Add copy logic here
                         },
                       ),
                     ),
+                    style: GoogleFonts.roboto(),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: TextField(
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Rate',
-                      border: OutlineInputBorder(),
+                      labelStyle: GoogleFonts.lora(),
+                      border: const OutlineInputBorder(),
                     ),
+                    style: GoogleFonts.roboto(),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 10),
-            ListTile(
-              title: const Text('Boys Jeans (102)'),
-              subtitle: const Text('Total Qty: 332\nWip Stock: 0\nPending Qty: 0'),
-              trailing: Image.network(
-                '${AppConstants.BASE_URL}/images/NoImage.jpg',
+            const Divider(),
+            ...catalogOrderList.map(
+              (catalogOrder) => Column(
+                children: [buildOrderItem(catalogOrder), const Divider()],
               ),
             ),
-            const Divider(),
-            Wrap(
-              spacing: 8.0,
-              runSpacing: 8.0,
-              children: items.map((color) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(color, style: const TextStyle(fontSize: 16)),
-                );
-              }).toList(),
-            ),
-            const Divider(),
-            _buildColorSection('BLACK'),
-            const SizedBox(height: 15),
-            const Divider(),
-            const SizedBox(height: 15),
-            _buildColorSection('BLUE'),
           ],
         ),
       ),
       bottomNavigationBar: BottomAppBar(
+        height: 60,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 12.0),
+          padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              TextButton(onPressed: () {}, child: const Text('BACK')),
-              TextButton(onPressed: () {}, child: const Text('SAVE')),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text(
+                  'BACK',
+                  style: GoogleFonts.montserrat(),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  debugPrint('Quantities: $quantities');
+                },
+                child: Text(
+                  'SAVE',
+                  style: GoogleFonts.montserrat(),
+                ),
+              ),
             ],
           ),
         ),
@@ -194,64 +200,323 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     );
   }
 
-  Widget _buildColorSection(String color) {
+  int _calculateTotalQuantity() {
+    int total = 0;
+    for (var styleKey in quantities.keys) {
+      for (var shade in quantities[styleKey]!.keys) {
+        for (var size in quantities[styleKey]![shade]!.keys) {
+          total += quantities[styleKey]![shade]![size]!;
+        }
+      }
+    }
+    return total;
+  }
+
+  double _calculateTotalPrice() {
+    double total = 0;
+    for (var catalogOrder in catalogOrderList) {
+      final styleKey = catalogOrder.catalog.styleKey;
+      final matrix = catalogOrder.orderMatrix;
+      for (var shade in quantities[styleKey]?.keys ?? []) {
+        final shadeIndex = matrix.shades.indexOf(shade.toString());
+        if (shadeIndex == -1) continue;
+        for (var size in quantities[styleKey]![shade]!.keys) {
+          final sizeIndex = matrix.sizes.indexOf(size);
+          if (sizeIndex == -1) continue;
+          final rate = double.tryParse(matrix.matrix[shadeIndex][sizeIndex].split(',')[0]) ?? 0;
+          final quantity = quantities[styleKey]![shade]![size]!;
+          total += rate * quantity;
+        }
+      }
+    }
+    return total;
+  }
+
+  Widget buildOrderItem(CatalogOrderData catalogOrder) {
+    final catalog = catalogOrder.catalog;
+    selectedColors2.putIfAbsent(catalog.styleKey, () => <String>{});
+    final Set<String> selectedColors = selectedColors2[catalog.styleKey]!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(color, style: const TextStyle(fontWeight: FontWeight.bold)),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [Text('Quantity : 0'), Text('Price : 0')],
+        ListTile(
+          title: Text(
+            catalog.styleCode,
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.blue),
+          ),
+          subtitle: Text(
+            'Total Qty: ${_calculateCatalogQuantity(catalog.styleKey)}\n'
+            'Wip Stock: 0\n'
+            'Pending Qty: 0',
+            style: GoogleFonts.roboto(),
+          ),
+          trailing: Image.network(
+            '${AppConstants.BASE_URL}/images${catalog.fullImagePath}',
+            width: 50,
+            height: 50,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+          ),
         ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text("Size", style: TextStyle(fontWeight: FontWeight.bold)),
-            Row(
-              children: [
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.remove, color: Colors.transparent),
-                ),
-                const Text("Qty", style: TextStyle(fontWeight: FontWeight.bold)),
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.add, color: Colors.transparent),
-                ),
-              ],
-            ),
-            const Text("Rate", style: TextStyle(fontWeight: FontWeight.bold)),
-            const Text("WIP", style: TextStyle(fontWeight: FontWeight.bold)),
-            const Text("Stock", style: TextStyle(fontWeight: FontWeight.bold)),
-          ],
+        const SizedBox(height: 5),
+        Text(
+          'Select Shades',
+          style: GoogleFonts.lora(fontWeight: FontWeight.normal),
         ),
-        _buildSizeRow(24, 10, 1099, 0, -2),
-        _buildSizeRow(26, 10, 1099, 0, -2),
-        _buildSizeRow(28, 10, 1099, 0, -2),
-        _buildSizeRow(30, 10, 1099, 0, 0),
-        _buildSizeRow(32, 10, 1099, 0, 0),
-        _buildSizeRow(34, 10, 1099, 0, 2),
+        const SizedBox(height: 5),
+        Wrap(
+          spacing: 8.0,
+          runSpacing: 8.0,
+          children: catalog.shadeName.split(',').map((color) {
+            final isSelected = selectedColors.contains(color);
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  if (isSelected) {
+                    selectedColors.remove(color);
+                    quantities[catalog.styleKey]?.remove(color);
+                  } else {
+                    selectedColors.add(color);
+                  }
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.blue : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isSelected ? Colors.blue : Colors.black,
+                  ),
+                ),
+                child: Text(
+                  color,
+                  style: GoogleFonts.roboto(
+                    color: isSelected ? Colors.white : Colors.black,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 15),
+        ...selectedColors.map(
+          (color) => Column(children: [_buildColorSection(catalogOrder, color)]),
+        ),
+        const SizedBox(height: 15),
       ],
     );
   }
 
-  Widget _buildSizeRow(int size, int qty, int rate, int wip, int stock) {
+  int _calculateCatalogQuantity(String styleKey) {
+    int total = 0;
+    for (var shade in quantities[styleKey]?.keys ?? []) {
+      for (var size in quantities[styleKey]![shade]!.keys) {
+        total += quantities[styleKey]![shade]![size]!;
+      }
+    }
+    return total;
+  }
+
+  Widget _buildColorSection(CatalogOrderData catalogOrder, String shade) {
+    final sizes = catalogOrder.orderMatrix.sizes;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          shade,
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Quantity: ${_calculateShadeQuantity(catalogOrder.catalog.styleKey, shade)}',
+              style: GoogleFonts.roboto(),
+            ),
+            Row(
+              children: [
+                Text(
+                  'Price: ',
+                  style: GoogleFonts.roboto(),
+                ),
+                Text(
+                  '${_calculateShadePrice(catalogOrder, shade).toStringAsFixed(2)}',
+                  style: GoogleFonts.roboto(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: Text(
+                "Size",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.lora(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Expanded(
+              flex: 1,
+              child: Text(
+                "Rate",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.lora(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Expanded(
+              flex: 1,
+              child: Text(
+                "WIP",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.lora(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Expanded(
+              flex: 1,
+              child: Text(
+                "Stock",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.lora(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Expanded(
+              flex: 3,
+              child: Text(
+                "Qty",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.lora(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        for (var size in sizes) _buildSizeRow(catalogOrder, shade, size),
+      ],
+    );
+  }
+
+  int _calculateShadeQuantity(String styleKey, String shade) {
+    int total = 0;
+    for (var size in quantities[styleKey]?[shade]?.keys ?? []) {
+      total += quantities[styleKey]![shade]![size]!;
+    }
+    return total;
+  }
+
+  double _calculateShadePrice(CatalogOrderData catalogOrder, String shade) {
+    double total = 0;
+    final styleKey = catalogOrder.catalog.styleKey;
+    final matrix = catalogOrder.orderMatrix;
+    final shadeIndex = matrix.shades.indexOf(shade);
+    if (shadeIndex == -1) return total;
+    for (var size in quantities[styleKey]?[shade]?.keys ?? []) {
+      final sizeIndex = matrix.sizes.indexOf(size.toString());
+      if (sizeIndex == -1) continue;
+      final rate = double.tryParse(matrix.matrix[shadeIndex][sizeIndex].split(',')[0]) ?? 0;
+      final quantity = quantities[styleKey]![shade]![size]!;
+      total += rate * quantity;
+    }
+    return total;
+  }
+
+  Widget _buildSizeRow(CatalogOrderData catalogOrder, String shade, String size) {
+    final matrix = catalogOrder.orderMatrix;
+    final shadeIndex = matrix.shades.indexOf(shade);
+    final sizeIndex = matrix.sizes.indexOf(size);
+    final styleKey = catalogOrder.catalog.styleKey;
+
+    String rate = '';
+    if (shadeIndex != -1 && sizeIndex != -1) {
+      final value = matrix.matrix[shadeIndex][sizeIndex];
+      rate = value.split(',')[0];
+    }
+
+    final quantity = _getQuantity(styleKey, shade, size);
+    final TextEditingController controller = TextEditingController(text: quantity.toString());
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(size.toString()),
-          Row(
-            children: [
-              IconButton(onPressed: () {}, icon: const Icon(Icons.remove)),
-              Text(qty.toString()),
-              IconButton(onPressed: () {}, icon: const Icon(Icons.add)),
-            ],
+          Expanded(
+            flex: 2,
+            child: Text(
+              size,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.roboto(),
+            ),
           ),
-          Text(rate.toString()),
-          Text(wip.toString()),
-          Text(stock.toString()),
+          Expanded(
+            flex: 1,
+            child: Text(
+              rate,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.roboto(),
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Text(
+              "0",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.roboto(),
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Text(
+              "0",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.roboto(),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  onPressed: () {
+                    _setQuantity(styleKey, shade, size, quantity - 1);
+                    controller.text = _getQuantity(styleKey, shade, size).toString();
+                  },
+                  icon: const Icon(Icons.remove),
+                ),
+                SizedBox(
+                  width: 40,
+                  child: TextField(
+                    controller: controller,
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    style: GoogleFonts.roboto(),
+                    onChanged: (value) {
+                      final newQuantity = int.tryParse(value) ?? 0;
+                      _setQuantity(styleKey, shade, size, newQuantity);
+                    },
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    _setQuantity(styleKey, shade, size, quantity + 1);
+                    controller.text = _getQuantity(styleKey, shade, size).toString();
+                  },
+                  icon: const Icon(Icons.add),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
