@@ -233,11 +233,11 @@ class _FilterPageState extends State<FilterPage> {
                         children: [
                           _buildRadioOption(
                             'Latest Design',
-                            isSelected: sortBy == 'design desc',
+                            isSelected: sortBy == 'design asc',
                             onTap:
                                 () => setState(() {
                                   sortBy =
-                                      'design desc'; // maps to ORDER BY created_dt DESC
+                                      'design asc'; // maps to ORDER BY created_dt DESC
                                 }),
                           ),
                           _buildRadioOption(

@@ -1532,6 +1532,16 @@ class _CatalogPageState extends State<CatalogPage> {
                             ),
                           ],
                         ),
+                        TableRow(
+                          children: [
+                            _buildLabelText('date'),
+                            const Text(':'),
+                            Text(
+                              item.createdDate,
+                              style: _valueTextStyle(),
+                            ),
+                          ],
+                        ),
 
                       if (showWSP) _buildSpacerRow(),
 
