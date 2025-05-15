@@ -24,6 +24,7 @@ class Catalog {
   final String styleCodeWithcount;
   final String onlySizes;
   final String sizeWithWsp;
+  final String createdDate;
 
 
   Catalog({
@@ -52,6 +53,7 @@ class Catalog {
     this.styleCodeWithcount = '',
     this.onlySizes='',
     this.sizeWithWsp='',
+    this.createdDate='',
   });
 
   factory Catalog.fromJson(Map<String, dynamic> json) {
@@ -81,6 +83,7 @@ class Catalog {
       styleCodeWithcount: json['styleCodeWithcount'] ?? '',
        onlySizes: json['onlySizes'] ?? '',
        sizeWithWsp: json['sizeWithWsp'] ?? '',
+       createdDate: json['createdDate'] ?? '',
     );
   }
 
@@ -111,6 +114,7 @@ class Catalog {
       'styleCodeWithcount' : styleCodeWithcount,
       'onlySizes':onlySizes,
       'sizeWithWsp':sizeWithWsp,
+      'createdDate':createdDate,
     };
   }
 }

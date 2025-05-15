@@ -233,7 +233,7 @@ class ApiService {
     String? fromMRP,
     String? toMRP,
   }) async {
-    final url = Uri.parse('${AppConstants.BASE_URL}/catalog');
+    final url = Uri.parse('${AppConstants.BASE_URL}/catalog/catlogDetailsPgn');
 
     final Map<String, dynamic> body = {
       "itemSubGrpKey": itemSubGrpKey,

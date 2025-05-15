@@ -60,6 +60,7 @@ class _CatalogPageState extends State<CatalogPage> {
   bool showRemark = true;
   bool showonlySizes = true;
   bool showFullSizeDetails = false;
+    String sortBy = "";
 
   @override
   void initState() {
@@ -126,6 +127,87 @@ class _CatalogPageState extends State<CatalogPage> {
   }
 
   // Fetch Catalog Items
+  // Future<void> _fetchCatalogItems() async {
+  //   try {
+  //     setState(() {
+  //       catalogItems = [];
+  //       isLoading = true;
+  //     });
+
+  //     // Fetch the catalog data
+  //     final result = await ApiService.fetchCatalogItem(
+  //       itemSubGrpKey: itemSubGrpKey!,
+  //       itemKey: itemKey!,
+  //       cobr: coBr!,
+  //       styleKey:
+  //           selectedStyles.length == 1 ? selectedStyles[0].styleKey : null,
+  //       shadeKey:
+  //           selectedShades.isEmpty
+  //               ? null
+  //               : selectedShades.map((s) => s.shadeKey).join(','),
+  //       sizeKey:
+  //           selectedSize.isEmpty
+  //               ? null
+  //               : selectedSize.map((s) => s.itemSizeKey).join(','),
+  //       fromMRP: fromMRP == "" ? null : fromMRP,
+  //       toMRP: toMRP == "" ? null : toMRP,
+  //     );
+
+  //     int status = result["statusCode"];
+  //     if (status == 200) {
+  //       setState(() {
+  //         isLoading = false;
+  //       });
+  //     }
+
+  //     final items = result["catalogs"];
+
+  //     // Filter by WSP first
+  //     double? wspFrom = double.tryParse(WSPfrom);
+  //     double? wspTo = double.tryParse(WSPto);
+
+  //     List<Catalog> wspFilteredCatalogs = items;
+
+  //     if (wspFrom != null && wspTo != null) {
+  //       wspFilteredCatalogs =
+  //           wspFilteredCatalogs
+  //               .where(
+  //                 (catalog) => catalog.wsp >= wspFrom && catalog.wsp <= wspTo,
+  //               )
+  //               .toList();
+  //     } else if (wspFrom != null) {
+  //       wspFilteredCatalogs =
+  //           wspFilteredCatalogs
+  //               .where((catalog) => catalog.wsp >= wspFrom)
+  //               .toList();
+  //     } else if (wspTo != null) {
+  //       wspFilteredCatalogs =
+  //           wspFilteredCatalogs
+  //               .where((catalog) => catalog.wsp <= wspTo)
+  //               .toList();
+  //     }
+
+  //     // Now, filter by style if styles are selected
+  //     if (selectedStyles.isNotEmpty) {
+  //       final selectedStyleKeys =
+  //           selectedStyles.map((style) => style.styleKey).toSet();
+
+  //       wspFilteredCatalogs =
+  //           wspFilteredCatalogs
+  //               .where(
+  //                 (catalog) => selectedStyleKeys.contains(catalog.styleKey),
+  //               )
+  //               .toList();
+  //     }
+
+  //     // Set the final filtered catalog items
+  //     setState(() {
+  //       catalogItems = wspFilteredCatalogs;
+  //     });
+  //   } catch (e) {
+  //     print('Failed to load catalog items: $e');
+  //   }
+  // }
   Future<void> _fetchCatalogItems() async {
     try {
       setState(() {
@@ -133,11 +215,11 @@ class _CatalogPageState extends State<CatalogPage> {
         isLoading = true;
       });
 
-      // Fetch the catalog data
       final result = await ApiService.fetchCatalogItem(
         itemSubGrpKey: itemSubGrpKey!,
         itemKey: itemKey!,
         cobr: coBr!,
+        sortBy: sortBy,
         styleKey:
             selectedStyles.length == 1 ? selectedStyles[0].styleKey : null,
         shadeKey:
@@ -161,7 +243,6 @@ class _CatalogPageState extends State<CatalogPage> {
 
       final items = result["catalogs"];
 
-      // Filter by WSP first
       double? wspFrom = double.tryParse(WSPfrom);
       double? wspTo = double.tryParse(WSPto);
 
@@ -186,7 +267,6 @@ class _CatalogPageState extends State<CatalogPage> {
                 .toList();
       }
 
-      // Now, filter by style if styles are selected
       if (selectedStyles.isNotEmpty) {
         final selectedStyleKeys =
             selectedStyles.map((style) => style.styleKey).toSet();
@@ -199,12 +279,11 @@ class _CatalogPageState extends State<CatalogPage> {
                 .toList();
       }
 
-      // Set the final filtered catalog items
       setState(() {
         catalogItems = wspFilteredCatalogs;
       });
     } catch (e) {
-      print('Failed to load catalog items: $e');
+      debugPrint('Failed to load catalog items: $e');
     }
   }
 
@@ -613,273 +692,291 @@ class _CatalogPageState extends State<CatalogPage> {
     return 0.4;
   }
 
-Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
-  final filteredItems = _getFilteredItems();
+  Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
+    final filteredItems = _getFilteredItems();
 
-  return ListView.builder(
-    itemCount: filteredItems.length,
-    itemBuilder: (context, index) {
-      final item = filteredItems[index];
-      bool isSelected = selectedItems.contains(item);
+    return ListView.builder(
+      itemCount: filteredItems.length,
+      itemBuilder: (context, index) {
+        final item = filteredItems[index];
+        bool isSelected = selectedItems.contains(item);
 
-      List<String> shades = item.shadeName != null && item.shadeName.isNotEmpty
-          ? item.shadeName.split(',').map((shade) => shade.trim()).toList().cast<String>()
-          : [];
+        List<String> shades =
+            item.shadeName != null && item.shadeName.isNotEmpty
+                ? item.shadeName
+                    .split(',')
+                    .map((shade) => shade.trim())
+                    .toList()
+                    .cast<String>()
+                : [];
 
-      return GestureDetector(
-        onDoubleTap: () {
-          _openImageZoom1(
-            context,
-            item,
-            showShades: showShades,
-            showMRP: showMRP,
-            showWSP: showWSP,
-            showSizes: showSizes,
-            showProduct: showProduct,
-            showRemark: showRemark,
-            isLargeScreen: isLargeScreen,
-          );
-        },
-        onLongPress: () {
-          _toggleItemSelection(item);
-        },
-        onTap: () {
-          if (selectedItems.isNotEmpty) {
+        return GestureDetector(
+          onDoubleTap: () {
+            _openImageZoom1(
+              context,
+              item,
+              showShades: showShades,
+              showMRP: showMRP,
+              showWSP: showWSP,
+              showSizes: showSizes,
+              showProduct: showProduct,
+              showRemark: showRemark,
+              isLargeScreen: isLargeScreen,
+            );
+          },
+          onLongPress: () {
             _toggleItemSelection(item);
-          }
-        },
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          child: Card(
-            elevation: isSelected ? 8 : 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            color: isSelected ? Colors.blue.shade50 : Colors.white,
-            child: Stack(
-              children: [
-                Positioned(
-                  top: 0,
-                  bottom: 0,
-                  left: 0,
-                  child: Container(
-                    width: 8,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        bottomLeft: Radius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(isLargeScreen ? 12.0 : 8.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      /// Image section
-                      Flexible(
-                        flex: 2,
-                        child: ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(12),
-                            topRight: Radius.circular(12),
-                          ),
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              final maxImageHeight = constraints.maxWidth * 1.2;
-
-                              return ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxHeight: maxImageHeight,
-                                ),
-                                child: SizedBox(
-                                  height: maxImageHeight,
-                                  width: double.infinity,
-                                  child: Center(
-                                    child: Image.network(
-                                      _getImageUrl(item),
-                                      fit: BoxFit.contain,
-                                      width: double.infinity,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return Container(
-                                          color: Colors.grey.shade300,
-                                          child: const Center(
-                                            child: Icon(Icons.error),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(width: isLargeScreen ? 16 : 8),
-
-                      /// Details section
-                      Flexible(
-                        flex: 5,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
-                              child: Table(
-                                columnWidths: const {
-                                  0: IntrinsicColumnWidth(),
-                                  1: FixedColumnWidth(8),
-                                  2: FlexColumnWidth(),
-                                },
-                                defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                                children: [
-                                  // 1. Design
-                                  TableRow(
-                                    children: [
-                                      _buildLabelText('Design'),
-                                      const Text(':'),
-                                      Text(
-                                        item.styleCodeWithcount,
-                                        style: TextStyle(
-                                          color: Colors.red,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: isLargeScreen ? 20 : 16,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  _buildSpacerRow(),
-
-                                  // 2. Shade
-                                  if (showShades && shades.isNotEmpty)
-                                    TableRow(
-                                      children: [
-                                        _buildLabelText('Shade'),
-                                        const Text(':'),
-                                        Text(
-                                          shades.join(', '),
-                                          style: TextStyle(
-                                            fontSize: isLargeScreen ? 14 : 13,
-                                            color: Colors.grey[700],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  if (showShades && shades.isNotEmpty) _buildSpacerRow(),
-
-                                  // 3. MRP
-                                  if (showMRP)
-                                    TableRow(
-                                      children: [
-                                        _buildLabelText('MRP'),
-                                        const Text(':'),
-                                        Text(
-                                          item.mrp.toStringAsFixed(2),
-                                          style: _valueTextStyle(),
-                                        ),
-                                      ],
-                                    ),
-                                  if (showMRP) _buildSpacerRow(),
-
-                                  // 4. WSP
-                                  if (showWSP)
-                                    TableRow(
-                                      children: [
-                                        _buildLabelText('WSP'),
-                                        const Text(':'),
-                                        Text(
-                                          item.wsp.toStringAsFixed(2),
-                                          style: _valueTextStyle(),
-                                        ),
-                                      ],
-                                    ),
-                                  if (showWSP) _buildSpacerRow(),
-
-                                  // 5. Size
-                                  if (item.sizeName.isNotEmpty && showSizes)
-                                    TableRow(
-                                      children: [
-                                        _buildLabelText('Size'),
-                                        const Text(':'),
-                                        SingleChildScrollView(
-                                          scrollDirection: Axis.horizontal,
-                                          child: Text(
-                                            _getSizeText(item),
-                                            style: _valueTextStyle(),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  if (item.sizeName.isNotEmpty && showSizes) _buildSpacerRow(),
-
-                                  // 6. Product
-                                  if (showProduct)
-                                    TableRow(
-                                      children: [
-                                        _buildLabelText('Product'),
-                                        const Text(':'),
-                                        Text(
-                                          item.itemName,
-                                          style: _valueTextStyle(),
-                                        ),
-                                      ],
-                                    ),
-                                  if (showProduct) _buildSpacerRow(),
-
-                                  // 7. Remark
-                                  if (showRemark)
-                                    TableRow(
-                                      children: [
-                                        _buildLabelText('Remark'),
-                                        const Text(':'),
-                                        SingleChildScrollView(
-                                          scrollDirection: Axis.horizontal,
-                                          child: Text(
-                                            item.remark?.trim().isNotEmpty == true ? item.remark! : '--',
-                                            style: _valueTextStyle(),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (isSelected)
+          },
+          onTap: () {
+            if (selectedItems.isNotEmpty) {
+              _toggleItemSelection(item);
+            }
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            child: Card(
+              elevation: isSelected ? 8 : 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              color: isSelected ? Colors.blue.shade50 : Colors.white,
+              child: Stack(
+                children: [
                   Positioned(
-                    top: 8,
-                    right: 8,
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
                     child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.check_circle,
+                      width: 8,
+                      decoration: BoxDecoration(
                         color: AppColors.primaryColor,
-                        size: 24,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(12),
+                          bottomLeft: Radius.circular(12),
+                        ),
                       ),
                     ),
                   ),
-              ],
+                  Padding(
+                    padding: EdgeInsets.all(isLargeScreen ? 12.0 : 8.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        /// Image section
+                        Flexible(
+                          flex: 2,
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              topRight: Radius.circular(12),
+                            ),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final maxImageHeight =
+                                    constraints.maxWidth * 1.2;
+
+                                return ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxHeight: maxImageHeight,
+                                  ),
+                                  child: SizedBox(
+                                    height: maxImageHeight,
+                                    width: double.infinity,
+                                    child: Center(
+                                      child: Image.network(
+                                        _getImageUrl(item),
+                                        fit: BoxFit.contain,
+                                        width: double.infinity,
+                                        errorBuilder: (
+                                          context,
+                                          error,
+                                          stackTrace,
+                                        ) {
+                                          return Container(
+                                            color: Colors.grey.shade300,
+                                            child: const Center(
+                                              child: Icon(Icons.error),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(width: isLargeScreen ? 16 : 8),
+
+                        /// Details section
+                        Flexible(
+                          flex: 5,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.all(
+                                  isLargeScreen ? 16 : 12,
+                                ),
+                                child: Table(
+                                  columnWidths: const {
+                                    0: IntrinsicColumnWidth(),
+                                    1: FixedColumnWidth(8),
+                                    2: FlexColumnWidth(),
+                                  },
+                                  defaultVerticalAlignment:
+                                      TableCellVerticalAlignment.middle,
+                                  children: [
+                                    // 1. Design
+                                    TableRow(
+                                      children: [
+                                        _buildLabelText('Design'),
+                                        const Text(':'),
+                                        Text(
+                                          item.styleCodeWithcount,
+                                          style: TextStyle(
+                                            color: Colors.red,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: isLargeScreen ? 20 : 16,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    _buildSpacerRow(),
+
+                                    // 2. Shade
+                                    if (showShades && shades.isNotEmpty)
+                                      TableRow(
+                                        children: [
+                                          _buildLabelText('Shade'),
+                                          const Text(':'),
+                                          Text(
+                                            shades.join(', '),
+                                            style: TextStyle(
+                                              fontSize: isLargeScreen ? 14 : 13,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    if (showShades && shades.isNotEmpty)
+                                      _buildSpacerRow(),
+
+                                    // 3. MRP
+                                    if (showMRP)
+                                      TableRow(
+                                        children: [
+                                          _buildLabelText('MRP'),
+                                          const Text(':'),
+                                          Text(
+                                            item.mrp.toStringAsFixed(2),
+                                            style: _valueTextStyle(),
+                                          ),
+                                        ],
+                                      ),
+                                    if (showMRP) _buildSpacerRow(),
+
+                                    // 4. WSP
+                                    if (showWSP)
+                                      TableRow(
+                                        children: [
+                                          _buildLabelText('WSP'),
+                                          const Text(':'),
+                                          Text(
+                                            item.wsp.toStringAsFixed(2),
+                                            style: _valueTextStyle(),
+                                          ),
+                                        ],
+                                      ),
+                                    if (showWSP) _buildSpacerRow(),
+
+                                    // 5. Size
+                                    if (item.sizeName.isNotEmpty && showSizes)
+                                      TableRow(
+                                        children: [
+                                          _buildLabelText('Size'),
+                                          const Text(':'),
+                                          SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            child: Text(
+                                              _getSizeText(item),
+                                              style: _valueTextStyle(),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    if (item.sizeName.isNotEmpty && showSizes)
+                                      _buildSpacerRow(),
+
+                                    // 6. Product
+                                    if (showProduct)
+                                      TableRow(
+                                        children: [
+                                          _buildLabelText('Product'),
+                                          const Text(':'),
+                                          Text(
+                                            item.itemName,
+                                            style: _valueTextStyle(),
+                                          ),
+                                        ],
+                                      ),
+                                    if (showProduct) _buildSpacerRow(),
+
+                                    // 7. Remark
+                                    if (showRemark)
+                                      TableRow(
+                                        children: [
+                                          _buildLabelText('Remark'),
+                                          const Text(':'),
+                                          SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            child: Text(
+                                              item.remark?.trim().isNotEmpty ==
+                                                      true
+                                                  ? item.remark!
+                                                  : '--',
+                                              style: _valueTextStyle(),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isSelected)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.check_circle,
+                          color: AppColors.primaryColor,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
   Widget _buildExpandedView(bool isLargeScreen) {
     final filteredItems = _getFilteredItems();
@@ -1623,6 +1720,88 @@ Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
     return '${AppConstants.BASE_URL}/images/$imageName';
   }
 
+  // void _showFilterDialog() async {
+  //   final result = await Navigator.push(
+  //     context,
+  //     PageRouteBuilder(
+  //       pageBuilder: (context, animation, secondaryAnimation) => FilterPage(),
+  //       settings: RouteSettings(
+  //         arguments: {
+  //           'itemKey': itemKey,
+  //           'itemSubGrpKey': itemSubGrpKey,
+  //           'coBr': coBr,
+  //           'fcYrId': fcYrId,
+  //           'styles': styles,
+  //           'shades': shades,
+  //           'sizes': sizes,
+  //           'selectedShades': selectedShades,
+  //           'selectedSizes': selectedSize,
+  //           'selectedStyles': selectedStyles,
+  //           'fromMRP': fromMRP,
+  //           'toMRP': toMRP,
+  //           'WSPfrom': WSPfrom,
+  //           'WSPto': WSPto,
+  //         },
+  //       ),
+  //       transitionDuration: Duration(milliseconds: 500),
+  //       transitionsBuilder: (context, animation, secondaryAnimation, child) {
+  //         return ScaleTransition(
+  //           scale: animation,
+  //           alignment: Alignment.bottomRight, // Open from bottom right corner
+  //           child: FadeTransition(opacity: animation, child: child),
+  //         );
+  //       },
+  //     ),
+  //   );
+
+  //   // Handle the result after returning from the FilterPage
+  //   if (result != null) {
+  //     // The result will contain the selected filter values
+  //     Map<String, dynamic> selectedFilters = result;
+
+  //     // Example of how to handle the selected filters
+
+  //     // var selectedShades = selectedFilters['shades'];
+  //     // var selectedShade = selectedFilters['shades'];
+  //     // var selectedSizes = selectedFilters['sizes'];
+  //     // var fromMRP = selectedFilters['fromMRP'];
+  //     // var toMRP = selectedFilters['toMRP'];
+  //     // var fromDate = selectedFilters['fromDate'];
+  //     // var toDate = selectedFilters['toDate'];
+  //     // var shadeKeysString = selectedShades.map((s) => s.shadeKey).join(',');
+  //     // var sizeKeysString = selectedSizes.map((s) => s.itemSizeKey).join(',');
+  //     // print('Selected Styles: ${selectedFilters['styles']}');
+  //     // print('Selected Shades: $selectedShades');
+  //     // print('Selected Sizes: $selectedSizes');
+  //     // print('From MRP: $fromMRP');
+  //     // print('To MRP: $toMRP');
+  //     // print('From Date: $fromDate');
+  //     // print('To Date: $toDate');
+  //     // print('Selected Shades (shadeKey): $shadeKeysString');
+  //     // print('Selected Sizes (itemSizeKey): $sizeKeysString');
+  //     setState(() {
+  //       //selectedStyles = selectedFilters['selectedStyles'];
+  //       selectedStyles = selectedFilters['styles'];
+  //       selectedSize = selectedFilters['sizes'];
+  //       selectedShades = selectedFilters['shades'];
+  //       fromMRP = selectedFilters['fromMRP'];
+  //       toMRP = selectedFilters['toMRP'];
+  //       WSPfrom = selectedFilters['WSPfrom'];
+  //       WSPto = selectedFilters['WSPto'];
+  //     });
+  //     print("aaaaaaaa  ${selectedFilters['styles']}");
+  //     print("aaaaaaaa  ${selectedFilters['WSPfrom']}");
+  //     print("aaaaaaaa  ${selectedFilters['WSPto']}");
+  //     if (!(selectedStyles.length == 0 &&
+  //         selectedSize.length == 0 &&
+  //         selectedShades == 0 &&
+  //         fromMRP == "" &&
+  //         toMRP == "" &&
+  //         WSPfrom == "" &&
+  //         WSPto == ""))
+  //       _fetchCatalogItems();
+  //   }
+  // }
   void _showFilterDialog() async {
     final result = await Navigator.push(
       context,
@@ -1644,46 +1823,23 @@ Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
             'toMRP': toMRP,
             'WSPfrom': WSPfrom,
             'WSPto': WSPto,
+            'sortBy': sortBy,
           },
         ),
         transitionDuration: Duration(milliseconds: 500),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return ScaleTransition(
             scale: animation,
-            alignment: Alignment.bottomRight, // Open from bottom right corner
+            alignment: Alignment.bottomRight,
             child: FadeTransition(opacity: animation, child: child),
           );
         },
       ),
     );
 
-    // Handle the result after returning from the FilterPage
     if (result != null) {
-      // The result will contain the selected filter values
       Map<String, dynamic> selectedFilters = result;
-
-      // Example of how to handle the selected filters
-
-      // var selectedShades = selectedFilters['shades'];
-      // var selectedShade = selectedFilters['shades'];
-      // var selectedSizes = selectedFilters['sizes'];
-      // var fromMRP = selectedFilters['fromMRP'];
-      // var toMRP = selectedFilters['toMRP'];
-      // var fromDate = selectedFilters['fromDate'];
-      // var toDate = selectedFilters['toDate'];
-      // var shadeKeysString = selectedShades.map((s) => s.shadeKey).join(',');
-      // var sizeKeysString = selectedSizes.map((s) => s.itemSizeKey).join(',');
-      // print('Selected Styles: ${selectedFilters['styles']}');
-      // print('Selected Shades: $selectedShades');
-      // print('Selected Sizes: $selectedSizes');
-      // print('From MRP: $fromMRP');
-      // print('To MRP: $toMRP');
-      // print('From Date: $fromDate');
-      // print('To Date: $toDate');
-      // print('Selected Shades (shadeKey): $shadeKeysString');
-      // print('Selected Sizes (itemSizeKey): $sizeKeysString');
       setState(() {
-        //selectedStyles = selectedFilters['selectedStyles'];
         selectedStyles = selectedFilters['styles'];
         selectedSize = selectedFilters['sizes'];
         selectedShades = selectedFilters['shades'];
@@ -1691,6 +1847,7 @@ Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
         toMRP = selectedFilters['toMRP'];
         WSPfrom = selectedFilters['WSPfrom'];
         WSPto = selectedFilters['WSPto'];
+        sortBy = selectedFilters['sortBy'];
       });
       print("aaaaaaaa  ${selectedFilters['styles']}");
       print("aaaaaaaa  ${selectedFilters['WSPfrom']}");
