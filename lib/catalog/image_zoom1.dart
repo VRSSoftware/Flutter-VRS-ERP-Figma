@@ -95,13 +95,13 @@ class ImageZoomScreen1 extends StatelessWidget {
           ),
         ],
       ),
-      body: LayoutBuilder(
+       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Image Section with Zoom
+                // Image Section with Fixed Zoom Box
                 Hero(
                   tag: 'fullscreen-${item.styleCode}',
                   child: Container(
@@ -122,49 +122,52 @@ class ImageZoomScreen1 extends StatelessWidget {
                         topLeft: Radius.circular(12),
                         topRight: Radius.circular(12),
                       ),
-                      child: SizedBox(
-                        height: constraints.maxHeight * 0.7,
-                        width: double.infinity,
-                        child: InteractiveViewer(
-                          panEnabled: true,
-                          minScale: 1.0,
-                          maxScale: 4.0,
-                          boundaryMargin: const EdgeInsets.all(20),
-                          child: GestureDetector(
-                            onDoubleTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => FullScreenImage(
-                                    imageUrl: imageUrl,
-                                    tag: 'fullscreen-${item.styleCode}',
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Image.network(
-                              imageUrl,
-                              fit: BoxFit.contain,
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return Center(
-                                  child: CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                                  ),
-                                );
-                              },
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  color: Colors.grey[200],
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.error,
-                                      color: Colors.red,
-                                      size: 40,
+                      child: ClipRect(
+                        child: SizedBox(
+                          height: constraints.maxHeight * 0.7,
+                          width: double.infinity,
+                          child: InteractiveViewer(
+                            panEnabled: true,
+                            minScale: 1.0,
+                            maxScale: 4.0,
+                            boundaryMargin: EdgeInsets.zero,
+                            constrained: true,
+                            child: GestureDetector(
+                              onDoubleTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => FullScreenImage(
+                                      imageUrl: imageUrl,
+                                      tag: 'fullscreen-${item.styleCode}',
                                     ),
                                   ),
                                 );
                               },
+                              child: Image.network(
+                                imageUrl,
+                                fit: BoxFit.contain,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return const Center(
+                                    child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: Colors.grey[200],
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.error,
+                                        color: Colors.red,
+                                        size: 40,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
                           ),
                         ),
