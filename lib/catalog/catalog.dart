@@ -19,6 +19,7 @@ import 'package:vrs_erp_figma/catalog/image_zoom1.dart';
 import 'package:vrs_erp_figma/catalog/imagezoom.dart';
 import 'package:vrs_erp_figma/catalog/share_option_screen.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/models/brand.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
 import 'package:vrs_erp_figma/models/shade.dart';
 import 'package:vrs_erp_figma/models/size.dart';
@@ -64,6 +65,7 @@ class _CatalogPageState extends State<CatalogPage> {
     String sortBy = "";
     String fromDate = "";
     String toDate = "";
+    List<Brand> brands = [];
 
 
   @override
@@ -91,11 +93,15 @@ class _CatalogPageState extends State<CatalogPage> {
           _fetchStylesByItemKey(itemKey!);
           _fetchShadesByItemKey(itemKey!);
           _fetchStylesSizeByItemKey(itemKey!);
+          _fetchBrands();
+         
         }
       }
     });
   }
-
+  Future<void> _fetchBrands() async {
+     brands = await ApiService.fetchBrands();
+  }
   String _getSizeText(Catalog item) {
     if (showMRP && showWSP && showFullSizeDetails) {
       return item.sizeDetails;
@@ -1836,6 +1842,7 @@ class _CatalogPageState extends State<CatalogPage> {
             'sortBy': sortBy,
             'fromDate': fromDate,
             'toDate': toDate,
+            'brands' : brands,
           },
         ),
         transitionDuration: Duration(milliseconds: 500),

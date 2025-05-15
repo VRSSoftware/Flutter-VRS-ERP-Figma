@@ -81,6 +81,7 @@ class _FilterPageState extends State<FilterPage> {
       //         ? DateTime.tryParse(args['toDate'])
       //         : null;
       brands = args['brands'] is List<Brand> ? args['brands'] : [];
+    
       selectedBrands =
           args['selectedBrands'] is List<Brand> ? args['selectedBrands'] : [];
     }
