@@ -66,6 +66,7 @@ class _CatalogPageState extends State<CatalogPage> {
     String fromDate = "";
     String toDate = "";
     List<Brand> brands = [];
+    List<Brand> selectedBrands = [];
 
 
   @override
@@ -244,6 +245,7 @@ class _CatalogPageState extends State<CatalogPage> {
         toMRP: toMRP == "" ? null : toMRP,
         fromDate: fromDate == "" ? null : fromDate,
         toDate: toDate == "" ? null : toDate,
+        brandKey: selectedBrands.isEmpty ? null : selectedBrands[0].brandKey 
       );
 
       int status = result["statusCode"];
@@ -1843,6 +1845,7 @@ class _CatalogPageState extends State<CatalogPage> {
             'fromDate': fromDate,
             'toDate': toDate,
             'brands' : brands,
+            'selectedBrands' : selectedBrands,
           },
         ),
         transitionDuration: Duration(milliseconds: 500),
@@ -1869,6 +1872,7 @@ class _CatalogPageState extends State<CatalogPage> {
         sortBy = selectedFilters['sortBy'];
         fromDate = selectedFilters['fromDate'];
         toDate = selectedFilters['toDate'];
+        selectedBrands = selectedFilters['selectedBrands'];
       });
       print("fromDate  ${selectedFilters['fromDate']}");
       print("todate  ${selectedFilters['toDate']}");
@@ -1881,6 +1885,7 @@ class _CatalogPageState extends State<CatalogPage> {
           fromMRP == "" &&
           toMRP == "" &&
           WSPfrom == "" &&
+          selectedBrands.isEmpty  &&
           WSPto == ""
            &&
           (fromDate == "") &&

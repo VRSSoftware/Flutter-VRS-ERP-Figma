@@ -67,6 +67,8 @@ class _FilterPageState extends State<FilterPage> {
           args['selectedStyles'] is List<Style> ? args['selectedStyles'] : [];
       selectedSizes =
           args['selectedSizes'] is List<Sizes> ? args['selectedSizes'] : [];
+      selectedBrands =
+          args['selectedBrands'] is List<Brand> ? args['selectedBrands'] : [];
       fromMRPController.text = args['fromMRP'] is String ? args['fromMRP'] : "";
       toMRPController.text = args['toMRP'] is String ? args['toMRP'] : "";
       wspFromController.text = args['WSPfrom'] is String ? args['WSPfrom'] : "";
