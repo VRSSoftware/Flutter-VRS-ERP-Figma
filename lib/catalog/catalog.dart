@@ -2678,17 +2678,17 @@ class _CatalogPageState extends State<CatalogPage> {
                   Text('Show Sizes', style: TextStyle(fontSize: 16)),
                   if (showMRP && showWSP && showSizes)
                     Row(
-                      children: [
-                        SizedBox(width: 10),
-                        Text('(Label)', style: TextStyle(color: Colors.grey)),
-                        Checkbox(
-                          value: showFullSizeDetails,
-                          onChanged: (val) {
-                            parentSetState(() => showFullSizeDetails = val!);
-                            setStateDialog(() {});
-                          },
-                        ),
-                      ],
+                      // children: [
+                      //   SizedBox(width: 10),
+                      //   Text('(Label)', style: TextStyle(color: Colors.grey)),
+                      //   Checkbox(
+                      //     value: showFullSizeDetails,
+                      //     onChanged: (val) {
+                      //       parentSetState(() => showFullSizeDetails = val!);
+                      //       setStateDialog(() {});
+                      //     },
+                      //   ),
+                      // ],
                     ),
                 ],
               ),
