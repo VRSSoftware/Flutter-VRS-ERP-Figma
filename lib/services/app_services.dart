@@ -232,6 +232,8 @@ class ApiService {
     String? sizeKey,
     String? fromMRP,
     String? toMRP,
+    String? fromDate,
+    String? toDate,
   }) async {
     final url = Uri.parse('${AppConstants.BASE_URL}/catalog/catlogDetailsPgn');
 
@@ -246,6 +248,8 @@ class ApiService {
       "toMRP": toMRP,
       "cobr": cobr,
       "sortBy": sortBy,
+      "fromDate": fromDate,
+      "toDate": toDate,
     };
 
     final response = await http.post(

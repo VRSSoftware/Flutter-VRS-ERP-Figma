@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui';
 import 'dart:ui' as pw;
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:dio/dio.dart';
 // import 'package:device_apps/device_apps.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -61,6 +62,9 @@ class _CatalogPageState extends State<CatalogPage> {
   bool showonlySizes = true;
   bool showFullSizeDetails = false;
     String sortBy = "";
+    String fromDate = "";
+    String toDate = "";
+
 
   @override
   void initState() {
@@ -232,6 +236,8 @@ class _CatalogPageState extends State<CatalogPage> {
                 : selectedSize.map((s) => s.itemSizeKey).join(','),
         fromMRP: fromMRP == "" ? null : fromMRP,
         toMRP: toMRP == "" ? null : toMRP,
+        fromDate: fromDate == "" ? null : fromDate,
+        toDate: toDate == "" ? null : toDate,
       );
 
       int status = result["statusCode"];
@@ -1834,6 +1840,8 @@ class _CatalogPageState extends State<CatalogPage> {
             'WSPfrom': WSPfrom,
             'WSPto': WSPto,
             'sortBy': sortBy,
+            'fromDate': fromDate,
+            'toDate': toDate,
           },
         ),
         transitionDuration: Duration(milliseconds: 500),
@@ -1858,18 +1866,35 @@ class _CatalogPageState extends State<CatalogPage> {
         WSPfrom = selectedFilters['WSPfrom'];
         WSPto = selectedFilters['WSPto'];
         sortBy = selectedFilters['sortBy'];
+        fromDate = selectedFilters['fromDate'];
+        toDate = selectedFilters['toDate'];
       });
+      print("fromDate  ${selectedFilters['fromDate']}");
+      print("todate  ${selectedFilters['toDate']}");
       print("aaaaaaaa  ${selectedFilters['styles']}");
       print("aaaaaaaa  ${selectedFilters['WSPfrom']}");
       print("aaaaaaaa  ${selectedFilters['WSPto']}");
-      if (!(selectedStyles.length == 0 &&
-          selectedSize.length == 0 &&
-          selectedShades == 0 &&
+      if (!(selectedStyles.isEmpty &&
+          selectedSize.isEmpty &&
+          selectedShades.isEmpty &&
           fromMRP == "" &&
           toMRP == "" &&
           WSPfrom == "" &&
-          WSPto == ""))
+          WSPto == ""
+           &&
+          (fromDate == "") &&
+          (toDate == "") 
+          )){
+          
         _fetchCatalogItems();
+      }
+      if(fromDate==""){
+        print("ddd");
+        
+      }
+      print("fromDate");
+      print(fromDate);
+      print(toDate);
     }
   }
 

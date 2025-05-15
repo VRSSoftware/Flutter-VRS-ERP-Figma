@@ -72,6 +72,14 @@ class _FilterPageState extends State<FilterPage> {
       wspFromController.text = args['WSPfrom'] is String ? args['WSPfrom'] : "";
       wspToController.text = args['WSPto'] is String ? args['WSPto'] : "";
       sortBy = args['sortBy'] is String ? args['sortBy'] : "";
+      // fromDate =
+      //     args['fromDate'] is String && args['fromDate'].isNotEmpty
+      //         ? DateTime.tryParse(args['fromDate'])
+      //         : null;
+      // toDate =
+      //     args['toDate'] is String && args['toDate'].isNotEmpty
+      //         ? DateTime.tryParse(args['toDate'])
+      //         : null;
       brands = args['brands'] is List<Brand> ? args['brands'] : [];
       selectedBrands =
           args['selectedBrands'] is List<Brand> ? args['selectedBrands'] : [];
@@ -889,16 +897,3 @@ class _CustomExpansionTileState extends State<CustomExpansionTile> {
     );
   }
 }
-
-
-// logic for sort by:
-// if (sortBy != null && sortType != null) {
-//   if (sortBy == 'createdDate') {
-//     query = query.orderBy('created_date', descending: sortType == 'desc');
-//   } 
-//   else if (sortBy == 'mrp') {
-//     query = sortType == 'asc' 
-//       ? query.orderBy('mrp', ascending: true)
-//       : query.orderBy('mrp', descending: true);
-//   }
-// }
