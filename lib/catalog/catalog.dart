@@ -1029,6 +1029,7 @@ class _CatalogPageState extends State<CatalogPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Image Section
                         ClipRRect(
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(12),
@@ -1036,34 +1037,27 @@ class _CatalogPageState extends State<CatalogPage> {
                           ),
                           child: LayoutBuilder(
                             builder: (context, constraints) {
-                              final maxImageHeight = constraints.maxWidth * 1.6;
-
+                              final maxImageHeight = constraints.maxWidth * 1.2;
                               return ConstrainedBox(
                                 constraints: BoxConstraints(
                                   maxHeight: maxImageHeight,
+                                  minHeight: constraints.maxWidth,
                                 ),
-                                child: SizedBox(
-                                  height: maxImageHeight,
+                                child: Image.network(
+                                  _getImageUrl(item),
+                                  fit:
+                                      BoxFit
+                                          .contain, // Change here to BoxFit.contain
                                   width: double.infinity,
-                                  child: Center(
-                                    child: Image.network(
-                                      _getImageUrl(item),
-                                      fit: BoxFit.contain, // Prevents cropping
-                                      width: double.infinity,
-                                      errorBuilder: (
-                                        context,
-                                        error,
-                                        stackTrace,
-                                      ) {
-                                        return Container(
-                                          color: Colors.grey.shade300,
-                                          child: const Center(
-                                            child: Icon(Icons.error),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
+                                  height: double.infinity,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: Colors.grey.shade300,
+                                      child: const Center(
+                                        child: Icon(Icons.error),
+                                      ),
+                                    );
+                                  },
                                 ),
                               );
                             },
