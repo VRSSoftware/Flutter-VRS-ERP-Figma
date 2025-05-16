@@ -58,6 +58,7 @@ class _FilterPageState extends State<FilterPage> {
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (args != null) {
+
       styles = args['styles'] is List<Style> ? args['styles'] : [];
       shades = args['shades'] is List<Shade> ? args['shades'] : [];
       selectedShades =
@@ -73,6 +74,8 @@ class _FilterPageState extends State<FilterPage> {
       toMRPController.text = args['toMRP'] is String ? args['toMRP'] : "";
       wspFromController.text = args['WSPfrom'] is String ? args['WSPfrom'] : "";
       wspToController.text = args['WSPto'] is String ? args['WSPto'] : "";
+      print("sortttttttttt");
+      print(args['sortyBy']);
       sortBy = args['sortBy'] is String ? args['sortBy'] : "";
       // fromDate =
       //     args['fromDate'] is String && args['fromDate'].isNotEmpty
@@ -84,8 +87,8 @@ class _FilterPageState extends State<FilterPage> {
       //         : null;
       brands = args['brands'] is List<Brand> ? args['brands'] : [];
     
-      selectedBrands =
-          args['selectedBrands'] is List<Brand> ? args['selectedBrands'] : [];
+      // selectedBrands =
+      //     args['selectedBrands'] is List<Brand> ? args['selectedBrands'] : [];
     }
   }
 
