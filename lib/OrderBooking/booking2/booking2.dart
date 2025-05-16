@@ -99,23 +99,30 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(40.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+          
+          preferredSize: const Size.fromHeight(20.0),
+          child: Column(
             children: [
-              Text(
-                'Total: ₹${_calculateTotalPrice().toStringAsFixed(2)}',
-                style: GoogleFonts.roboto(color: Colors.white),
-              ),
-              const VerticalDivider(color: Colors.white),
-              Text(
-                'Total Item: ${catalogOrderList.length}',
-                style: GoogleFonts.roboto(color: Colors.white),
-              ),
-              const VerticalDivider(color: Colors.white, thickness: 2),
-              Text(
-                'Total Qty: ${_calculateTotalQuantity()}',
-                style: GoogleFonts.roboto(color: Colors.white),
+              Divider(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'Total: ₹${_calculateTotalPrice().toStringAsFixed(2)}',
+                    style: GoogleFonts.roboto(color: Colors.white),
+                  ),
+                  const VerticalDivider(color: Colors.white),
+                  Text(
+                    'Total Item: ${catalogOrderList.length}',
+                    style: GoogleFonts.roboto(color: Colors.white),
+                  ),
+                  const VerticalDivider(color: Colors.white, thickness: 2),
+                  Text(
+                    'Total Qty: ${_calculateTotalQuantity()}',
+                    style: GoogleFonts.roboto(color: Colors.white),
+                  ),
+                ],
               ),
             ],
           ),
@@ -251,11 +258,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             'Pending Qty: 0',
             style: GoogleFonts.roboto(),
           ),
-          trailing: Image.network(
+          trailing: Image.network( catalog.fullImagePath.contains("http") ? catalog.fullImagePath :
             '${AppConstants.BASE_URL}/images${catalog.fullImagePath}',
-            width: 50,
-            height: 50,
-            fit: BoxFit.cover,
+            width: 70,
+            height: 70,
+            fit: BoxFit.fill,
             errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
           ),
         ),
@@ -429,8 +436,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   Widget _buildSizeRow(CatalogOrderData catalogOrder, String shade, String size) {
     final matrix = catalogOrder.orderMatrix;
-    final shadeIndex = matrix.shades.indexOf(shade);
-    final sizeIndex = matrix.sizes.indexOf(size);
+    final shadeIndex = matrix.shades.indexOf(shade.trim());
+    final sizeIndex = matrix.sizes.indexOf(size.trim());
     final styleKey = catalogOrder.catalog.styleKey;
 
     String rate = '';

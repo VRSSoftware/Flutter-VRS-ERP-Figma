@@ -84,7 +84,7 @@ class _CatalogPageState extends State<CatalogPage> {
 
       if (args != null) {
         setState(() {
-          itemKey = args['itemKey']?.toString();
+          itemKey = args['itemKey']==null? null : args['itemKey']?.toString();
           itemSubGrpKey = args['itemSubGrpKey']?.toString();
           coBr = args['coBr']?.toString();
           fcYrId = args['fcYrId']?.toString();
@@ -92,11 +92,11 @@ class _CatalogPageState extends State<CatalogPage> {
         });
 
         // Fetch initial catalog items
-        if (itemSubGrpKey != null && itemKey != null && coBr != null) {
+        if (itemSubGrpKey != null &&  coBr != null) {
           _fetchCatalogItems();
         }
 
-        if (itemKey != null) {
+        if (itemSubGrpKey != null) {
           _fetchStylesByItemKey(itemKey!);
           _fetchShadesByItemKey(itemKey!);
           _fetchStylesSizeByItemKey(itemKey!);
@@ -181,7 +181,7 @@ class _CatalogPageState extends State<CatalogPage> {
 
       final result = await ApiService.fetchCatalogItem(
         itemSubGrpKey: itemSubGrpKey!,
-        itemKey: itemKey!,
+        itemKey: itemKey,
         cobr: coBr!,
         sortBy: sortBy,
         styleKey:
@@ -274,10 +274,17 @@ class _CatalogPageState extends State<CatalogPage> {
 
   Future<void> _fetchStylesSizeByItemKey(String itemKey) async {
     try {
+     if(itemKey!=null) {
       final fetchedSizes = await ApiService.fetchStylesSizeByItemKey(itemKey);
       setState(() {
         sizes = fetchedSizes;
-      });
+      });}
+      else if(itemSubGrpKey!=null){
+         final fetchedSizes = await ApiService.fetchStylesSizeByItemGrpKey(itemSubGrpKey!);
+      setState(() {
+        sizes = fetchedSizes;
+        });
+      }
     } catch (e) {
       print('Failed to load sizes: $e');
     }

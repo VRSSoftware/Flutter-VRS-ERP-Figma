@@ -223,19 +223,30 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                           _selectedCategoryName =
                                               category.itemSubGrpName;
 
-                                          if (_selectedCategoryKey == '-1') {
-                                            _items = _allItems;
-                                          } else {
-                                            _items =
-                                                _allItems
-                                                    .where(
-                                                      (item) =>
-                                                          item.itemSubGrpKey ==
-                                                          _selectedCategoryKey,
-                                                    )
-                                                    .toList();
-                                          }
+                                          // if (_selectedCategoryKey == '-1') {
+                                          //   _items = _allItems;
+                                          // } else {
+                                          //   _items =
+                                          //       _allItems
+                                          //           .where(
+                                          //             (item) =>
+                                          //                 item.itemSubGrpKey ==
+                                          //                 _selectedCategoryKey,
+                                          //           )
+                                          //           .toList();
+                                          // }
                                         });
+                                        Navigator.pushNamed(
+                                          context,
+                                          '/catalogpage',
+                                          arguments: {
+                                            'itemKey': null,
+                                            'itemSubGrpKey': _selectedCategoryKey,
+                                            'itemName': _selectedCategoryName,
+                                            'coBr': coBr,
+                                            'fcYrId': fcYrId,
+                                          },
+                                        );
                                       },
                                       style: ButtonStyle(
                                         backgroundColor:

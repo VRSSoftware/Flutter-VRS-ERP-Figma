@@ -90,12 +90,31 @@ class ApiService {
       throw Exception('Failed to load shades for itemKey: $itemKey');
     }
   }
+ 
+  static Future<List<Shade>> fetchShadesByItemGrpKey(String itemGrpKey) async {
+    if (itemGrpKey.isEmpty) {
+      throw Exception('Invalid item selected');
+    }
+
+    final response = await http.get(
+      Uri.parse('${AppConstants.BASE_URL}/shade/GetShadeByItemGrp/$itemGrpKey'),
+    );
+    // print("ShADEEEEEEEEEEEEEEEEEEE API response for${response.body}");
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      // Return a list of Shade objects
+      return data.map((json) => Shade.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load shades for itemKey: $itemGrpKey');
+    }
+  }
 
   // Fetch Style Sizes by Item Key (returning StyleSize objects)
   static Future<List<Sizes>> fetchStylesSizeByItemKey(String itemKey) async {
     if (itemKey.isEmpty) {
       throw Exception('Invalid item selected');
     }
+    
 
     final response = await http.get(
       Uri.parse(
@@ -109,6 +128,27 @@ class ApiService {
       return data.map((json) => Sizes.fromJson(json)).toList();
     } else {
       throw Exception('Failed to load style sizes for itemKey: $itemKey');
+    }
+  }
+  
+  static Future<List<Sizes>> fetchStylesSizeByItemGrpKey(String itemGrpKey) async {
+    if (itemGrpKey.isEmpty) {
+      throw Exception('Invalid item selected');
+    }
+    
+
+    final response = await http.get(
+      Uri.parse(
+        '${AppConstants.BASE_URL}/stylesize/GetStylesSizeByItemGrp/$itemGrpKey',
+      ),
+    );
+    // print("SizeeeeeeeeeeeeeeeeeAPI response for${response.body}");
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      // Return a list of StyleSize objects
+      return data.map((json) => Sizes.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load style sizes for itemKey: $itemGrpKey');
     }
   }
 
@@ -223,7 +263,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> fetchCatalogItem({
     required String itemSubGrpKey,
-    required String itemKey,
+     String? itemKey,
     required String cobr,
     String? brandKey,
     String? sortBy,
