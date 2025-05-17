@@ -14,35 +14,6 @@ import '../models/consignee.dart';
 class ApiService {
 
 
-    static Future<int> getCartItemCount({
-    required String coBrId,
-    required String userId,
-    required String fcYrId,
-    required String barcode,
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('${AppConstants.BASE_URL}/orderBooking/get-sales-order-no'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "coBrId": coBrId,
-          "userId": userId,
-          "fcYrId": fcYrId,
-          "barcode": barcode,
-        }),
-      );
-     print("count:${response.body}");
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['cartItemCount'] as int;
-      }
-      return 0;
-    } catch (e) {
-      print('Error fetching cart count: $e');
-      return 0;
-    }
-  }
-
   static Future<List<Category>> fetchCategories() async {
     final response = await http.get(
       Uri.parse('${AppConstants.BASE_URL}/itemSubGrp'),
@@ -431,37 +402,37 @@ class ApiService {
       return [];
     }
   }
+static Future<Map<String, dynamic>> getSalesOrderData({
+  required String coBrId,
+  required String userId,
+  required int fcYrId,
+  required String barcode,
+}) async {
+  try {
+    final response = await http.post(
+      Uri.parse('${AppConstants.BASE_URL}/orderBooking/get-sales-order-no'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'coBrId': coBrId,
+        'userId': userId,
+        'fcYrId': fcYrId,
+        'barcode': barcode,
+      }),
+    );
 
-  static Future<Map<String, dynamic>> fetchSalesOrderNo({
-    required String coBrId,
-    required String userId,
-    required int fcYrId,
-    required String barcode,
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('${AppConstants.BASE_URL}/orderBooking/get-sales-order-no'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'coBrId': coBrId,
-          'userId': userId,
-          'fcYrId': fcYrId,
-          'barcode': barcode,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        // Parse the JSON response into a Map and return it
-        return Map<String, dynamic>.from(jsonDecode(response.body));
-      } else {
-        print('Error fetching sales order number: ${response.statusCode}');
-        return {}; // Return an empty map on error
-      }
-    } catch (e) {
-      print('Exception in fetchSalesOrderNo: $e');
-      return {}; // Return an empty map on exception
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      print('Sales Order Data: $data');
+      return Map<String, dynamic>.from(data);
+    } else {
+      print('Error fetching sales order data: ${response.statusCode}');
+      return {};
     }
+  } catch (e) {
+    print('Exception in getSalesOrderData: $e');
+    return {};
   }
+}
 
   static Future<Map<String, dynamic>> fetchLedgers({
     required String ledCat,

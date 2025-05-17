@@ -83,21 +83,21 @@ class _OrderPageState extends State<OrderPage> {
     });
   }
 
- Future<void> _fetchCartCount() async {
-    try {
-      final count = await ApiService.getCartItemCount(
-        coBrId: '01',
-        userId: 'Admin', // Replace with actual user ID if needed
-        fcYrId: '24',
-        barcode: '',
-      );
-      setState(() {
-        _cartItemCount = count;
-      });
-    } catch (e) {
-      print('Error fetching cart count: $e');
-    }
+Future<void> _fetchCartCount() async {
+  try {
+    final data = await ApiService.getSalesOrderData(
+      coBrId: '01',
+      userId: 'Admin', // Replace with actual user ID if needed
+      fcYrId: 24,       // Note: fcYrId should be an int, not string
+      barcode: '',
+    );
+    setState(() {
+      _cartItemCount = data['cartItemCount'] ?? 0;
+    });
+  } catch (e) {
+    print('Error fetching cart count: $e');
   }
+}
 
 
   Future<void> _fetchAddedItems(String coBrId, String userId) async {

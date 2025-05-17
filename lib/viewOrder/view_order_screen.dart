@@ -115,7 +115,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   }
 
   Future<void> fetchAndPrintSalesOrderNumber() async {
-    Map<String, dynamic> salesOrderData = await ApiService.fetchSalesOrderNo(
+    Map<String, dynamic> salesOrderData = await ApiService.getSalesOrderData(
       coBrId: "01",
       userId: "Admin",
       fcYrId: 24,
