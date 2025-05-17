@@ -12,6 +12,37 @@ import '../constants/app_constants.dart';
 import '../models/consignee.dart';
 
 class ApiService {
+
+
+    static Future<int> getCartItemCount({
+    required String coBrId,
+    required String userId,
+    required String fcYrId,
+    required String barcode,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.BASE_URL}/orderBooking/get-sales-order-no'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "coBrId": coBrId,
+          "userId": userId,
+          "fcYrId": fcYrId,
+          "barcode": barcode,
+        }),
+      );
+     print("count:${response.body}");
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['cartItemCount'] as int;
+      }
+      return 0;
+    } catch (e) {
+      print('Error fetching cart count: $e');
+      return 0;
+    }
+  }
+
   static Future<List<Category>> fetchCategories() async {
     final response = await http.get(
       Uri.parse('${AppConstants.BASE_URL}/itemSubGrp'),

@@ -44,6 +44,7 @@ class _OrderPageState extends State<OrderPage> {
   List<Catalog> selectedItems = [];
   bool showSizes = true;
   bool showProduct = true;
+  int _cartItemCount = 0;
 
   @override
   void initState() {
@@ -75,8 +76,29 @@ class _OrderPageState extends State<OrderPage> {
           _fetchStylesSizeByItemKey(itemKey!);
         }
       }
+
+      if (coBr != null && fcYrId != null) {
+        _fetchCartCount();
+      }
     });
   }
+
+ Future<void> _fetchCartCount() async {
+    try {
+      final count = await ApiService.getCartItemCount(
+        coBrId: '01',
+        userId: 'Admin', // Replace with actual user ID if needed
+        fcYrId: '24',
+        barcode: '',
+      );
+      setState(() {
+        _cartItemCount = count;
+      });
+    } catch (e) {
+      print('Error fetching cart count: $e');
+    }
+  }
+
 
   Future<void> _fetchAddedItems(String coBrId, String userId) async {
     try {
@@ -238,15 +260,43 @@ class _OrderPageState extends State<OrderPage> {
           },
         ),
         actions: [
-          IconButton(
-            icon: const Icon(
-              CupertinoIcons.cart_badge_plus,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              Navigator.pushNamed(context, '/viewOrder');
-            },
+     IconButton(
+  icon: Stack(
+    children: [
+      const Icon(
+        CupertinoIcons.cart_badge_plus,
+        color: Colors.white,
+      ),
+      Positioned(
+        right: 0,
+        top: 0,
+        child: Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius: BorderRadius.circular(6),
           ),
+          constraints: const BoxConstraints(
+            minWidth: 14,
+            minHeight: 14,
+          ),
+          child: Text(
+            '$_cartItemCount',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 8,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    ],
+  ),
+  onPressed: () {
+    Navigator.pushNamed(context, '/viewOrder');
+  },
+),
+         
           IconButton(
             icon: Icon(
               viewOption == 0
@@ -1316,22 +1366,28 @@ class _OrderPageState extends State<OrderPage> {
     }
   }
 
-  void _showBookingDialog(BuildContext context, Catalog item) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        insetPadding: EdgeInsets.all(16),
-        child: CatalogBookingTable(
-          itemSubGrpKey: item.itemSubGrpKey.toString() ?? '',
-          itemKey: item.itemKey.toString() ?? '',
-          styleKey: item.styleKey.toString() ?? '',
-          onSuccess: () => setState(() {
+void _showBookingDialog(BuildContext context, Catalog item) {
+  showDialog(
+    context: context,
+    builder: (context) => Dialog(
+      insetPadding: EdgeInsets.all(16),
+      child: CatalogBookingTable(
+        itemSubGrpKey: item.itemSubGrpKey.toString() ?? '',
+        itemKey: item.itemKey.toString() ?? '',
+        styleKey: item.styleKey.toString() ?? '',
+        onSuccess: () {
+          // Update local state
+          setState(() {
             addedItems.add(item.styleCode);
-          }),
-        ),
+          });
+          // Refresh cart count from API
+          _fetchCartCount();
+        },
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildToggleRow(String title, bool value, Function(bool) onChanged) {
     return Row(
