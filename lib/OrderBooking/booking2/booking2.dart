@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:vrs_erp_figma/constants/app_constants.dart';
@@ -27,6 +28,25 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     _loadOrderDetails();
   }
 
+  Color _getColorCode(String color) {
+    switch (color.toLowerCase()) {
+      case 'red':
+        return Colors.red;
+      case 'green':
+        return Colors.green;
+      case 'blue':
+        return Colors.blue;
+      case 'yellow':
+        return Colors.yellow[800]!;
+      case 'black':
+        return Colors.black;
+      case 'white':
+        return Colors.grey;
+      default:
+        return Colors.black;
+    }
+  }
+
   Future<void> _loadOrderDetails() async {
     final List<CatalogOrderData> tempList = [];
 
@@ -50,16 +70,18 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
           final orderMatrix = OrderMatrix.fromJson(data);
-          tempList.add(CatalogOrderData(catalog: item, orderMatrix: orderMatrix));
+          tempList.add(
+            CatalogOrderData(catalog: item, orderMatrix: orderMatrix),
+          );
 
-          selectedColors2[item.styleKey] = item.shadeName
-              .split(',')
-              .map((e) => e.trim())
-              .toSet(); // ✅ default shades selected
+          selectedColors2[item.styleKey] =
+              item.shadeName.split(',').map((e) => e.trim()).toSet();
 
           quantities[item.styleKey] = {};
         } else {
-          debugPrint('Failed to fetch order details for ${item.styleKey}: ${response.statusCode}');
+          debugPrint(
+            'Failed to fetch order details for ${item.styleKey}: ${response.statusCode}',
+          );
         }
       } catch (e) {
         debugPrint('Error fetching order details for ${item.styleKey}: $e');
@@ -185,19 +207,13 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                 onPressed: () {
                   Navigator.pop(context);
                 },
-                child: Text(
-                  'BACK',
-                  style: GoogleFonts.montserrat(),
-                ),
+                child: Text('BACK', style: GoogleFonts.montserrat()),
               ),
               TextButton(
                 onPressed: () {
                   debugPrint('Quantities: $quantities');
                 },
-                child: Text(
-                  'SAVE',
-                  style: GoogleFonts.montserrat(),
-                ),
+                child: Text('SAVE', style: GoogleFonts.montserrat()),
               ),
             ],
           ),
@@ -229,7 +245,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         for (var size in quantities[styleKey]![shade]!.keys) {
           final sizeIndex = matrix.sizes.indexOf(size.trim());
           if (sizeIndex == -1) continue;
-          final rate = double.tryParse(matrix.matrix[shadeIndex][sizeIndex].split(',')[0]) ?? 0;
+          final rate =
+              double.tryParse(
+                matrix.matrix[shadeIndex][sizeIndex].split(',')[0],
+              ) ??
+              0;
           final quantity = quantities[styleKey]![shade]![size]!;
           total += rate * quantity;
         }
@@ -245,30 +265,58 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ListTile(
-          title: Text(
-            catalog.styleCode,
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.blue),
-          ),
-          subtitle: Text(
-            'Total Qty: ${_calculateCatalogQuantity(catalog.styleKey)}\n'
-            'Wip Stock: 0\n'
-            'Pending Qty: 0',
-            style: GoogleFonts.roboto(),
-          ),
-          trailing: Image.network(
-            catalog.fullImagePath.contains("http")
-                ? catalog.fullImagePath
-                : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}',
-            width: 70,
-            height: 70,
-            fit: BoxFit.fill,
-            errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8.0),
+                child: Image.network(
+                  catalog.fullImagePath.contains("http")
+                      ? catalog.fullImagePath
+                      : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}',
+                  width: 60,
+                  height: 80,
+                  fit: BoxFit.cover,
+                  errorBuilder:
+                      (context, error, stackTrace) =>
+                          const Icon(Icons.error, size: 60),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      catalog.styleCode,
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.blue,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Total Qty: ${_calculateCatalogQuantity(catalog.styleKey)}',
+                      style: GoogleFonts.roboto(fontSize: 14),
+                    ),
+                    Text(
+                      'Pending Qty: 0 | Wip Stock: 0',
+                      style: GoogleFonts.roboto(fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
+
         const SizedBox(height: 15),
         ...selectedColors.map(
-          (color) => Column(children: [_buildColorSection(catalogOrder, color)]),
+          (color) =>
+              Column(children: [_buildColorSection(catalogOrder, color)]),
         ),
         const SizedBox(height: 15),
       ],
@@ -291,10 +339,32 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(shade, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            Row(
+              children: [
+                Text(
+                  shade,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    color: _getColorCode(shade),
+                  ),
+                ),
+                const SizedBox(width: 5),
+                IconButton(
+                  icon: Icon(Icons.copy, size: 16, color: Colors.grey),
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(),
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: shade));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Copied "$shade" to clipboard')),
+                    );
+                  },
+                ),
+              ],
+            ),
             Text(
               'Quantity: ${_calculateShadeQuantity(catalogOrder.catalog.styleKey, shade)}',
               style: GoogleFonts.roboto(),
@@ -303,7 +373,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               children: [
                 Text('Price: ', style: GoogleFonts.roboto()),
                 Text(
-                  '${_calculateShadePrice(catalogOrder, shade).toStringAsFixed(2)}',
+                  '₹${_calculateShadePrice(catalogOrder, shade).toStringAsFixed(2)}',
                   style: GoogleFonts.roboto(
                     fontWeight: FontWeight.bold,
                     color: Colors.green,
@@ -313,29 +383,48 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            _buildHeader("Size", 2),
-            _buildHeader("Rate", 1),
-            _buildHeader("WIP", 1),
-            _buildHeader("Stock", 1),
-            _buildHeader("Qty", 3),
-          ],
+        const SizedBox(height: 5),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  _buildHeader("Size", 1),
+                  _buildHeader("Qty", 2),
+                  _buildHeader("Rate", 1),
+                  _buildHeader("WIP", 1),
+                  _buildHeader("Stock", 1),
+                ],
+              ),
+              Divider(height: 1, color: Colors.grey.shade300),
+              for (var size in sizes) ...[
+                _buildSizeRow(catalogOrder, shade, size),
+                Divider(height: 1, color: Colors.grey.shade300),
+              ],
+            ],
+          ),
         ),
-        for (var size in sizes) _buildSizeRow(catalogOrder, shade, size),
       ],
     );
   }
 
   Widget _buildHeader(String text, int flex) => Expanded(
-        flex: flex,
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: GoogleFonts.lora(fontWeight: FontWeight.bold),
-        ),
-      );
+    flex: flex,
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      decoration: BoxDecoration(
+        border: Border(right: BorderSide(color: Colors.grey.shade300)),
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: GoogleFonts.lora(fontWeight: FontWeight.bold, fontSize: 14),
+      ),
+    ),
+  );
 
   int _calculateShadeQuantity(String styleKey, String shade) {
     int total = 0;
@@ -354,58 +443,69 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     for (var size in quantities[styleKey]?[shade]?.keys ?? []) {
       final sizeIndex = matrix.sizes.indexOf(size.toString().trim());
       if (sizeIndex == -1) continue;
-      final rate = double.tryParse(matrix.matrix[shadeIndex][sizeIndex].split(',')[0]) ?? 0;
+      final rate =
+          double.tryParse(matrix.matrix[shadeIndex][sizeIndex].split(',')[0]) ??
+          0;
       final quantity = quantities[styleKey]![shade]![size]!;
       total += rate * quantity;
     }
     return total;
   }
 
-  Widget _buildSizeRow(CatalogOrderData catalogOrder, String shade, String size) {
+  Widget _buildSizeRow(
+    CatalogOrderData catalogOrder,
+    String shade,
+    String size,
+  ) {
     final matrix = catalogOrder.orderMatrix;
     final shadeIndex = matrix.shades.indexOf(shade.trim());
     final sizeIndex = matrix.sizes.indexOf(size.trim());
     final styleKey = catalogOrder.catalog.styleKey;
 
     String rate = '';
+    String stock = '0';
     if (shadeIndex != -1 && sizeIndex != -1) {
-      rate = matrix.matrix[shadeIndex][sizeIndex].split(',')[0];
+      final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
+      rate = matrixData[0];
+      stock = matrixData.length > 1 ? matrixData[1] : '0';
     }
 
     final quantity = _getQuantity(styleKey, shade, size);
-    final TextEditingController controller = TextEditingController(text: quantity.toString());
+    final TextEditingController controller = TextEditingController(
+      text: quantity.toString(),
+    );
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          _buildCell(size, 2),
-          _buildCell(rate, 1),
-          _buildCell("0", 1),
-          _buildCell("0", 1),
-          Expanded(
-            flex: 3,
+    return Row(
+      children: [
+        _buildCell(size, 1),
+        Expanded(
+          flex: 2,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(right: BorderSide(color: Colors.grey.shade300)),
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
                   onPressed: () {
                     _setQuantity(styleKey, shade, size, quantity - 1);
-                    controller.text = _getQuantity(styleKey, shade, size).toString();
+                    controller.text =
+                        _getQuantity(styleKey, shade, size).toString();
                   },
-                  icon: const Icon(Icons.remove),
+                  icon: const Icon(Icons.remove, size: 20),
                 ),
                 SizedBox(
-                  width: 40,
+                  width: 25,
                   child: TextField(
                     controller: controller,
                     textAlign: TextAlign.center,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
+                      border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(vertical: 8),
                     ),
-                    style: GoogleFonts.roboto(),
+                    style: GoogleFonts.roboto(fontSize: 14),
                     onChanged: (value) {
                       final newQuantity = int.tryParse(value) ?? 0;
                       _setQuantity(styleKey, shade, size, newQuantity);
@@ -415,24 +515,34 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                 IconButton(
                   onPressed: () {
                     _setQuantity(styleKey, shade, size, quantity + 1);
-                    controller.text = _getQuantity(styleKey, shade, size).toString();
+                    controller.text =
+                        _getQuantity(styleKey, shade, size).toString();
                   },
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(Icons.add, size: 20),
                 ),
               ],
             ),
           ),
-        ],
-      ),
+        ),
+        _buildCell(rate, 1),
+        _buildCell("0", 1),
+        _buildCell(stock, 1),
+      ],
     );
   }
 
   Widget _buildCell(String text, int flex) => Expanded(
-        flex: flex,
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: GoogleFonts.roboto(),
-        ),
-      );
+    flex: flex,
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      decoration: BoxDecoration(
+        border: Border(right: BorderSide(color: Colors.grey.shade300)),
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: GoogleFonts.roboto(fontSize: 14),
+      ),
+    ),
+  );
 }
