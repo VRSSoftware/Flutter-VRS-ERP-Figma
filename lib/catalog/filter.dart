@@ -87,8 +87,8 @@ class _FilterPageState extends State<FilterPage> {
       //         : null;
       brands = args['brands'] is List<Brand> ? args['brands'] : [];
     
-      // selectedBrands =
-      //     args['selectedBrands'] is List<Brand> ? args['selectedBrands'] : [];
+      selectedBrands =
+          args['selectedBrands'] is List<Brand> ? args['selectedBrands'] : [];
     }
   }
 

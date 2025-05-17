@@ -96,10 +96,16 @@ class _CatalogPageState extends State<CatalogPage> {
           _fetchCatalogItems();
         }
 
-        if (itemSubGrpKey != null) {
+        if (itemKey != null) {
           _fetchStylesByItemKey(itemKey!);
           _fetchShadesByItemKey(itemKey!);
           _fetchStylesSizeByItemKey(itemKey!);
+          _fetchBrands();
+        }
+        else if( itemSubGrpKey != null){
+          _fetchStylesByItemKey(itemSubGrpKey!);
+          _fetchShadesByItemGrpKey(itemSubGrpKey!);
+          _fetchStylesSizeByItemGrpKey(itemSubGrpKey!);
           _fetchBrands();
         }
       }
@@ -249,6 +255,16 @@ class _CatalogPageState extends State<CatalogPage> {
       });
     }
   }
+  // Future<void> _fetchStylesByItemGrpKey(String itemKey) async {
+  //   try {
+  //     final fetchedStyles = await ApiService.fetchStylesByItem(itemKey);
+  //     setState(() {
+  //       styles = fetchedStyles;
+  //     });
+  //   } catch (e) {
+  //     print('Failed to load styles: $e');
+  //   }
+  // }
 
   Future<void> _fetchStylesByItemKey(String itemKey) async {
     try {
@@ -260,7 +276,6 @@ class _CatalogPageState extends State<CatalogPage> {
       print('Failed to load styles: $e');
     }
   }
-
   Future<void> _fetchShadesByItemKey(String itemKey) async {
     try {
       final fetchedShades = await ApiService.fetchShadesByItemKey(itemKey);
@@ -271,8 +286,35 @@ class _CatalogPageState extends State<CatalogPage> {
       print('Failed to load shades: $e');
     }
   }
+  Future<void> _fetchShadesByItemGrpKey(String itemKey) async {
+    try {
+      final fetchedShades = await ApiService.fetchShadesByItemGrpKey(itemKey);
+      setState(() {
+        shades = fetchedShades;
+      });
+    } catch (e) {
+      print('Failed to load shades: $e');
+    }
+  }
 
   Future<void> _fetchStylesSizeByItemKey(String itemKey) async {
+    try {
+     if(itemKey!=null) {
+      final fetchedSizes = await ApiService.fetchStylesSizeByItemKey(itemKey);
+      setState(() {
+        sizes = fetchedSizes;
+      });}
+      else if(itemSubGrpKey!=null){
+         final fetchedSizes = await ApiService.fetchStylesSizeByItemGrpKey(itemSubGrpKey!);
+      setState(() {
+        sizes = fetchedSizes;
+        });
+      }
+    } catch (e) {
+      print('Failed to load sizes: $e');
+    }
+  }
+  Future<void> _fetchStylesSizeByItemGrpKey(String itemKey) async {
     try {
      if(itemKey!=null) {
       final fetchedSizes = await ApiService.fetchStylesSizeByItemKey(itemKey);
@@ -1524,8 +1566,8 @@ class _CatalogPageState extends State<CatalogPage> {
             'sortBy': sortBy,
             'fromDate': fromDate,
             'toDate': toDate,
-            'brands': brands,
-            'selectedBrands': selectedBrands,
+            'brands': brands.isEmpty ? [] : brands,
+           // 'selectedBrands': selectedBrands,
           },
         ),
         transitionDuration: Duration(milliseconds: 500),
@@ -1552,7 +1594,7 @@ class _CatalogPageState extends State<CatalogPage> {
         sortBy = selectedFilters['sortBy'];
         fromDate = selectedFilters['fromDate'];
         toDate = selectedFilters['toDate'];
-        selectedBrands = selectedFilters['selectedBrands'];
+        //selectedBrands = selectedFilters['selectedBrands'];
         // Reset pagination
         pageNo = 1;
         catalogItems = [];
@@ -1571,6 +1613,7 @@ class _CatalogPageState extends State<CatalogPage> {
           WSPfrom == "" &&
           WSPto == "" &&
           selectedBrands.isEmpty &&
+          sortBy == "" &&
           fromDate == "" &&
           toDate == "")) {
         _fetchCatalogItems();
