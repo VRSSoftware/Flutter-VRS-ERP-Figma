@@ -317,22 +317,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                 ),
                 const SizedBox(width: 5),
                 IconButton(
-                  icon: Icon(Icons.copy, size: 16, color: Colors.grey),
-                  padding: EdgeInsets.zero,
-                  constraints: BoxConstraints(),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: shade));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Copied "$shade" to clipboard')),
-                    );
-                  },
-                ),
-                const SizedBox(width: 5),
-                IconButton(
                   icon: Icon(Icons.copy_all_outlined, size: 16, color: Colors.grey),
                   padding: EdgeInsets.zero,
                   constraints: BoxConstraints(),
                   onPressed: () async {
+                    debugPrint('Opening ShadeSelectionDialog for shade: $shade');
                     // Show dialog and get selected shades and copyToAllStyles flag
                     final result = await showDialog<Map<String, dynamic>>(
                       context: context,
