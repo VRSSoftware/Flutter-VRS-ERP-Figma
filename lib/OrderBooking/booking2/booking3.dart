@@ -246,7 +246,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
     if (!selectedColors2.containsKey(catalog.styleKey)) {
       final shades = catalog.shadeName.split(',');
       selectedColors2[catalog.styleKey] = shades.isNotEmpty ? shades[0] : '';
-      quantities[catalog.styleKey] = shades.isNotEmpty ? {shades[0]: {}} : {};
+      quantities[catalog.styleKey] ??= {};
+      if (shades.isNotEmpty) {
+        quantities[catalog.styleKey]!.putIfAbsent(shades[0], () => {});
+      }
     }
     String selectedColor = selectedColors2[catalog.styleKey]!;
 
@@ -288,14 +291,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
             return GestureDetector(
               onTap: () {
                 setState(() {
-                  if (isSelected) {
-                    selectedColors2[catalog.styleKey] = '';
-                    quantities[catalog.styleKey]?.clear();
-                  } else {
-                    selectedColors2[catalog.styleKey] = color;
-                    quantities[catalog.styleKey]?.clear();
-                    quantities[catalog.styleKey] = {color: {}};
-                  }
+                  selectedColors2[catalog.styleKey] = color;
+                  // Ensure the shade exists in quantities without clearing others
+                  quantities[catalog.styleKey] ??= {};
+                  quantities[catalog.styleKey]!.putIfAbsent(color, () => {});
                 });
               },
               child: Container(
@@ -337,6 +336,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
 
   Widget _buildColorSection(CatalogOrderData catalogOrder, String shade) {
     final sizes = catalogOrder.orderMatrix.sizes;
+    final styleKey = catalogOrder.catalog.styleKey;
+    final allShades = catalogOrder.catalog.shadeName.split(',');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -347,10 +348,39 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
               shade,
               style: GoogleFonts.convergence(fontWeight: FontWeight.bold),
             ),
-            SizedBox(width: 5,),
+            const SizedBox(width: 5),
             GestureDetector(
-              child: Icon(Icons.copy_all_outlined),
-            )
+              onTap: () async {
+                // Show dialog and get selected shades
+                final selectedShades = await showDialog<Set<String>>(
+                  context: context,
+                  builder: (context) => ShadeSelectionDialog(
+                    shades: allShades.where((s) => s != shade).toList(),
+                  ),
+                );
+
+                // If shades are selected, copy quantities
+                if (selectedShades != null && selectedShades.isNotEmpty) {
+                  setState(() {
+                    final currentQuantities = quantities[styleKey]?[shade] ?? {};
+                    debugPrint('Copying from $shade: $currentQuantities to $selectedShades');
+                    for (var targetShade in selectedShades) {
+                      quantities[styleKey]!.putIfAbsent(targetShade, () => {});
+                      // Clear existing quantities for target shade to avoid duplicates
+                      quantities[styleKey]![targetShade]!.clear();
+                      // Copy quantities for each size
+                      currentQuantities.forEach((size, quantity) {
+                        quantities[styleKey]![targetShade]![size] = quantity;
+                      });
+                    }
+                    debugPrint('Updated quantities: ${quantities[styleKey]}');
+                  });
+                } else {
+                  debugPrint('No shades selected for copying');
+                }
+              },
+              child: const Icon(Icons.copy_all_outlined),
+            ),
           ],
         ),
         Row(
@@ -527,7 +557,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
                     style: GoogleFonts.roboto(),
                     onChanged: (value) {
                       final newQuantity = int.tryParse(value) ?? 0;
-                      _setQuantity(styleKey, shade, size , newQuantity);
+                      _setQuantity(styleKey, shade, size, newQuantity);
                     },
                   ),
                 ),
@@ -543,6 +573,70 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// Dialog to select shades for copying quantities
+class ShadeSelectionDialog extends StatefulWidget {
+  final List<String> shades;
+
+  const ShadeSelectionDialog({Key? key, required this.shades}) : super(key: key);
+
+  @override
+  _ShadeSelectionDialogState createState() => _ShadeSelectionDialogState();
+}
+
+class _ShadeSelectionDialogState extends State<ShadeSelectionDialog> {
+  final Set<String> _selectedShades = {};
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        'Select Shades to Copy Quantities',
+        style: GoogleFonts.poppins(),
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: widget.shades.map((shade) {
+            return CheckboxListTile(
+              title: Text(shade, style: GoogleFonts.roboto()),
+              value: _selectedShades.contains(shade),
+              onChanged: (bool? value) {
+                setState(() {
+                  if (value == true) {
+                    _selectedShades.add(shade);
+                  } else {
+                    _selectedShades.remove(shade);
+                  }
+                });
+              },
+            );
+          }).toList(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context); // Cancel
+          },
+          child: Text(
+            'Cancel',
+            style: GoogleFonts.montserrat(),
+          ),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context, _selectedShades); // Return selected shades
+          },
+          child: Text(
+            'OK',
+            style: GoogleFonts.montserrat(),
+          ),
+        ),
+      ],
     );
   }
 }
