@@ -7,18 +7,18 @@ import 'package:vrs_erp_figma/models/CatalogOrderData.dart';
 import 'package:vrs_erp_figma/models/OrderMatrix.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
 
-class CreateOrderScreen extends StatefulWidget {
+class CreateOrderScreen3 extends StatefulWidget {
   final List<Catalog> catalogs;
 
-  const CreateOrderScreen({Key? key, required this.catalogs}) : super(key: key);
+  const CreateOrderScreen3({Key? key, required this.catalogs}) : super(key: key);
 
   @override
-  State<CreateOrderScreen> createState() => _CreateOrderScreenState();
+  State<CreateOrderScreen3> createState() => _CreateOrderScreenState();
 }
 
-class _CreateOrderScreenState extends State<CreateOrderScreen> {
+class _CreateOrderScreenState extends State<CreateOrderScreen3> {
   List<CatalogOrderData> catalogOrderList = [];
-  Map<String, Set<String>> selectedColors2 = {};
+  Map<String, String> selectedColors2 = {};
   Map<String, Map<String, Map<String, int>>> quantities = {};
 
   @override
@@ -50,16 +50,17 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
           final orderMatrix = OrderMatrix.fromJson(data);
-          tempList.add(CatalogOrderData(catalog: item, orderMatrix: orderMatrix));
-
-          selectedColors2[item.styleKey] = item.shadeName
-              .split(',')
-              .map((e) => e.trim())
-              .toSet(); // ✅ default shades selected
-
-          quantities[item.styleKey] = {};
+          tempList.add(
+            CatalogOrderData(catalog: item, orderMatrix: orderMatrix),
+          );
+          // Set the first shade as default if available
+          final shades = item.shadeName.split(',');
+          selectedColors2[item.styleKey] = shades.isNotEmpty ? shades[0] : '';
+          quantities[item.styleKey] = shades.isNotEmpty ? {shades[0]: {}} : {};
         } else {
-          debugPrint('Failed to fetch order details for ${item.styleKey}: ${response.statusCode}');
+          debugPrint(
+            'Failed to fetch order details for ${item.styleKey}: ${response.statusCode}',
+          );
         }
       } catch (e) {
         debugPrint('Error fetching order details for ${item.styleKey}: $e');
@@ -103,9 +104,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           preferredSize: const Size.fromHeight(20.0),
           child: Column(
             children: [
-              const Divider(),
+              Divider(),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     'Total: ₹${_calculateTotalPrice().toStringAsFixed(2)}',
@@ -240,7 +242,13 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   Widget buildOrderItem(CatalogOrderData catalogOrder) {
     final catalog = catalogOrder.catalog;
-    final Set<String> selectedColors = selectedColors2[catalog.styleKey] ?? {};
+    // Initialize with first shade if not already set
+    if (!selectedColors2.containsKey(catalog.styleKey)) {
+      final shades = catalog.shadeName.split(',');
+      selectedColors2[catalog.styleKey] = shades.isNotEmpty ? shades[0] : '';
+      quantities[catalog.styleKey] = shades.isNotEmpty ? {shades[0]: {}} : {};
+    }
+    String selectedColor = selectedColors2[catalog.styleKey]!;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,7 +256,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         ListTile(
           title: Text(
             catalog.styleCode,
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.blue),
+            style: GoogleFonts.amaranth(fontWeight: FontWeight.bold, color: Colors.blue),
           ),
           subtitle: Text(
             'Total Qty: ${_calculateCatalogQuantity(catalog.styleKey)}\n'
@@ -266,10 +274,52 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
           ),
         ),
-        const SizedBox(height: 15),
-        ...selectedColors.map(
-          (color) => Column(children: [_buildColorSection(catalogOrder, color)]),
+        const SizedBox(height: 5),
+        Text(
+          'Select Shade',
+          style: GoogleFonts.lora(fontWeight: FontWeight.normal),
         ),
+        const SizedBox(height: 5),
+        Wrap(
+          spacing: 8.0,
+          runSpacing: 8.0,
+          children: catalog.shadeName.split(',').map((color) {
+            final isSelected = selectedColor == color;
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  if (isSelected) {
+                    selectedColors2[catalog.styleKey] = '';
+                    quantities[catalog.styleKey]?.clear();
+                  } else {
+                    selectedColors2[catalog.styleKey] = color;
+                    quantities[catalog.styleKey]?.clear();
+                    quantities[catalog.styleKey] = {color: {}};
+                  }
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.blue : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isSelected ? Colors.blue : Colors.black,
+                  ),
+                ),
+                child: Text(
+                  color,
+                  style: GoogleFonts.roboto(
+                    color: isSelected ? Colors.white : Colors.black,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 15),
+        if (selectedColor.isNotEmpty)
+          _buildColorSection(catalogOrder, selectedColor),
         const SizedBox(height: 15),
       ],
     );
@@ -291,7 +341,18 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(shade, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        Row(
+          children: [
+            Text(
+              shade,
+              style: GoogleFonts.convergence(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(width: 5,),
+            GestureDetector(
+              child: Icon(Icons.copy_all_outlined),
+            )
+          ],
+        ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -301,7 +362,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             ),
             Row(
               children: [
-                Text('Price: ', style: GoogleFonts.roboto()),
+                Text(
+                  'Price: ',
+                  style: GoogleFonts.roboto(),
+                ),
                 Text(
                   '${_calculateShadePrice(catalogOrder, shade).toStringAsFixed(2)}',
                   style: GoogleFonts.roboto(
@@ -316,26 +380,52 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         const SizedBox(height: 10),
         Row(
           children: [
-            _buildHeader("Size", 2),
-            _buildHeader("Rate", 1),
-            _buildHeader("WIP", 1),
-            _buildHeader("Stock", 1),
-            _buildHeader("Qty", 3),
+            Expanded(
+              flex: 2,
+              child: Text(
+                "Size",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.lora(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Expanded(
+              flex: 1,
+              child: Text(
+                "Rate",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.lora(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Expanded(
+              flex: 1,
+              child: Text(
+                "WIP",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.lora(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Expanded(
+              flex: 1,
+              child: Text(
+                "Stock",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.lora(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Expanded(
+              flex: 3,
+              child: Text(
+                "Qty",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.lora(fontWeight: FontWeight.bold),
+              ),
+            ),
           ],
         ),
         for (var size in sizes) _buildSizeRow(catalogOrder, shade, size),
       ],
     );
   }
-
-  Widget _buildHeader(String text, int flex) => Expanded(
-        flex: flex,
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: GoogleFonts.lora(fontWeight: FontWeight.bold),
-        ),
-      );
 
   int _calculateShadeQuantity(String styleKey, String shade) {
     int total = 0;
@@ -369,7 +459,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
     String rate = '';
     if (shadeIndex != -1 && sizeIndex != -1) {
-      rate = matrix.matrix[shadeIndex][sizeIndex].split(',')[0];
+      final value = matrix.matrix[shadeIndex][sizeIndex];
+      rate = value.split(',')[0];
     }
 
     final quantity = _getQuantity(styleKey, shade, size);
@@ -379,10 +470,38 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         children: [
-          _buildCell(size, 2),
-          _buildCell(rate, 1),
-          _buildCell("0", 1),
-          _buildCell("0", 1),
+          Expanded(
+            flex: 2,
+            child: Text(
+              size,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.roboto(),
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Text(
+              rate,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.roboto(),
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Text(
+              "0",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.roboto(),
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Text(
+              "0",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.roboto(),
+            ),
+          ),
           Expanded(
             flex: 3,
             child: Row(
@@ -408,7 +527,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                     style: GoogleFonts.roboto(),
                     onChanged: (value) {
                       final newQuantity = int.tryParse(value) ?? 0;
-                      _setQuantity(styleKey, shade, size, newQuantity);
+                      _setQuantity(styleKey, shade, size , newQuantity);
                     },
                   ),
                 ),
@@ -426,13 +545,4 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       ),
     );
   }
-
-  Widget _buildCell(String text, int flex) => Expanded(
-        flex: flex,
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: GoogleFonts.roboto(),
-        ),
-      );
 }
