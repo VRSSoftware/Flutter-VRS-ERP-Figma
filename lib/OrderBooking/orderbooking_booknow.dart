@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:vrs_erp_figma/OrderBooking/booking2/booking2.dart';
+import 'package:vrs_erp_figma/OrderBooking/booking2/booking3.dart';
 import 'package:vrs_erp_figma/OrderBooking/booking2/multipleorderbooking.dart';
 import 'package:vrs_erp_figma/catalog/filter.dart';
 import 'package:vrs_erp_figma/catalog/imagezoom.dart';
@@ -294,6 +295,7 @@ Future<void> _fetchCartCount() async {
   ),
   onPressed: () {
     Navigator.pushNamed(context, '/viewOrder');
+     _fetchCartCount();
   },
 ),
          
@@ -1245,32 +1247,78 @@ Future<void> _fetchCartCount() async {
           children: [
             _buildFilterButton(isLargeScreen),
             if (selectedItems.isNotEmpty)
-              TextButton(
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
+        Container(
+  decoration: BoxDecoration(
+    color: AppColors.primaryColor,
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      TextButton(
+        style: TextButton.styleFrom(
+          foregroundColor: Colors.white,
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
+        onPressed: selectedItems.isNotEmpty
+            ? () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MultiCatalogBookingPage(
+                      catalogs: selectedItems,
+                    ),
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                )
+            : null,
+        child: Text("Book Now"),
+      ),
+      // First divider
+      SizedBox(
+        height: 24,
+        child: VerticalDivider(
+          color: Colors.white,
+          thickness: 1,
+          width: 1,
+        ),
+      ),
+      IconButton(
+        icon: Icon(Icons.shopping_cart, color: Colors.white),
+        onPressed: selectedItems.isNotEmpty
+            ? () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CreateOrderScreen(
+                      catalogs: selectedItems,
+                    ),
                   ),
-                ),
-                onPressed: () {
-                  if (selectedItems.isNotEmpty) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MultiCatalogBookingPage(
-                          catalogs: selectedItems,
-                        ),
-                      ),
-                    );
-                  }
-                },
-                child: Text("Book Now"),
-              ),
+                )
+            : null,
+      ),
+      // Second divider
+      SizedBox(
+        height: 24,
+        child: VerticalDivider(
+          color: Colors.white,
+          thickness: 1,
+          width: 1,
+        ),
+      ),
+      IconButton(
+        icon: Icon(Icons.assignment, color: Colors.white),
+        onPressed: selectedItems.isNotEmpty
+            ? () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CreateOrderScreen3(
+                      catalogs: selectedItems,
+                    ),
+                  ),
+                )
+            : null,
+      ),
+    ],
+  ),
+)
           ],
         ),
     ];
@@ -1380,8 +1428,10 @@ void _showBookingDialog(BuildContext context, Catalog item) {
           setState(() {
             addedItems.add(item.styleCode);
           });
-          // Refresh cart count from API
-          _fetchCartCount();
+               _fetchCartCount().then((_) {
+            // Notify OrderBookingScreen through navigation
+            Navigator.pop(context); // Close dialog
+          });
         },
       ),
     ),

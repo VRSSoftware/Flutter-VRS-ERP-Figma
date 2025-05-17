@@ -33,11 +33,14 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
   bool _isLoadingCategories = true;
   bool _isLoadingItems = false;
   bool hasFiltered = false;
+    int _cartItemCount = 0;
 
   Set<String> _activeFilters = {'mrp', 'wsp', 'shades', 'stylecode'};
 
   void _updateFilters(Set<String> newFilters) {
     setState(() {
+
+
       _activeFilters = newFilters;
     });
   }
@@ -47,7 +50,28 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
     super.initState();
     _fetchCategories();
     fetchAllItems();
+    
+      if (coBr != null && fcYrId != null) {
+        _fetchCartCount();
+      }
   }
+
+  Future<void> _fetchCartCount() async {
+  try {
+    final data = await ApiService.getSalesOrderData(
+      coBrId: '01',
+      userId: 'Admin', // Replace with actual user ID if needed
+      fcYrId: 24,       // Note: fcYrId should be an int, not string
+      barcode: '',
+    );
+    setState(() {
+      _cartItemCount = data['cartItemCount'] ?? 0;
+    });
+  } catch (e) {
+    print('Error fetching cart count: $e');
+  }
+}
+
 
   Future<void> _fetchCategories() async {
     try {
@@ -142,18 +166,44 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
             ),
 
           // Cart Icon for both modes
-          IconButton(
-            icon: const Icon(
-              CupertinoIcons.cart_badge_plus,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              Navigator.pushNamed(context, '/viewOrder');
-              // Navigator.pushReplacement(context, 
-              // MaterialPageRoute(builder: (context) => ViewCartPage()));
-            },
+     IconButton(
+  icon: Stack(
+    children: [
+      const Icon(
+        CupertinoIcons.cart_badge_plus,
+        color: Colors.white,
+      ),
+      Positioned(
+        right: 0,
+        top: 0,
+        child: Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius: BorderRadius.circular(6),
           ),
-
+          constraints: const BoxConstraints(
+            minWidth: 14,
+            minHeight: 14,
+          ),
+          child: Text(
+            '$_cartItemCount',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 8,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    ],
+  ),
+  onPressed: () {
+    Navigator.pushNamed(context, '/viewOrder');
+       _fetchCartCount();
+  },
+),
+         
           // Always show the three-dot menu
           Builder(
             builder:
@@ -371,7 +421,7 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                               'coBr': coBr,
                               'fcYrId': fcYrId,
                             },
-                          );
+                          ).then((_) => _fetchCartCount()); 
                         },
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,

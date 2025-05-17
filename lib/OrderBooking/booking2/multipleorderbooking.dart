@@ -900,6 +900,8 @@
 //   @override
 //   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 // }
+
+
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -963,14 +965,16 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
   String coBrId = "01";
   String fcYrId = "24";
   bool stockWise = true;
-
   int maxSizes = 0;
+    bool isLoading = true; 
+  int _loadingCounter = 0;
 
   @override
   void initState() {
     super.initState();
+      _loadingCounter = widget.catalogs.length; 
     for (var catalog in widget.catalogs) {
-      isLoadingMap[catalog.styleCode] = true;
+    //  isLoadingMap[catalog.styleCode] = true;
       noteControllersMap[catalog.styleCode] = TextEditingController();
       copiedRowsMap[catalog.styleCode] = [];
       fetchCatalogData(catalog);
@@ -1051,6 +1055,10 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
             if (uniqueSizes.length > maxSizes) {
               maxSizes = uniqueSizes.length;
             }
+              _loadingCounter--;  // Add this
+  if (_loadingCounter == 0) {
+    isLoading = false;
+  }
           });
         } else {
           setState(() {
@@ -1193,8 +1201,10 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body:
-          widget.catalogs.isEmpty
+
+      body:isLoading 
+        ? const Center(child: CircularProgressIndicator())
+          :widget.catalogs.isEmpty
               ? const Center(child: Text("No items selected"))
               : SingleChildScrollView(
                 child: Column(
@@ -1212,9 +1222,7 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
   }
 
   Widget _buildItemBookingSection(BuildContext context, Catalog catalog) {
-    if (isLoadingMap[catalog.styleCode] == true) {
-      return const Center(child: CircularProgressIndicator());
-    } else if ((catalogItemsMap[catalog.styleCode] ?? []).isEmpty) {
+if ((catalogItemsMap[catalog.styleCode] ?? []).isEmpty) {
       return const Center(child: Text("Empty"));
     }
 
