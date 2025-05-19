@@ -499,6 +499,18 @@ class _OrderPageState extends State<OrderPage> {
           _buildBottomButtons(isLargeScreen),
         ],
       ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 50),
+        child: FloatingActionButton(
+          onPressed: _showFilterDialog,
+          backgroundColor: AppColors.primaryColor,
+          // shape: RoundedRectangleBorder(
+          //   borderRadius: BorderRadius.circular(0), // No curve
+          // ),
+          child: const Icon(Icons.filter_alt_outlined, color: Colors.white),
+          tooltip: 'Filter',
+        ),
+      ),
     );
   }
 
@@ -1253,9 +1265,9 @@ class _OrderPageState extends State<OrderPage> {
       child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: isLargeScreen ? 24 : 12,
-          vertical: 12,
+          vertical: 5,
         ),
-        color: Colors.white,
+        //color: Colors.white,
         child:
             isLargeScreen
                 ? Row(children: _buildButtonChildren(isLargeScreen))
@@ -1269,137 +1281,142 @@ class _OrderPageState extends State<OrderPage> {
     );
   }
 
-List<Widget> _buildButtonChildren(bool isLargeScreen) {
-  return [
-    if (isLargeScreen)
-      Expanded(child: _buildFilterButton(isLargeScreen))
-   else
-  Row(
-    children: [
-      // Filter button (40% width when actions are visible)
-      if (selectedItems.isNotEmpty)
-        Expanded(
-          flex: 2,
-          child: _buildFilterButton(isLargeScreen),
-        )
-      else
-        Expanded(
-          child: _buildFilterButton(isLargeScreen),
-        ),
+  List<Widget> _buildButtonChildren(bool isLargeScreen) {
+    final buttonColor = AppColors.primaryColor;
 
-      // Add space between filter and action buttons
-      if (selectedItems.isNotEmpty)
-        const SizedBox(width: 8),
-
-      // Action buttons container (60% width when items selected)
-      if (selectedItems.isNotEmpty)
-        Expanded(
-          flex: 3,
-          child: Container(
-            decoration: BoxDecoration(
-            //  color: AppColors.background,
-              borderRadius: BorderRadius.circular(0),
-              border: Border.all(
-                color: AppColors.primaryColor,
-                width: 1,
-              ),
-            ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.primaryColor,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                    ),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MultiCatalogBookingPage(
-                          catalogs: selectedItems,
-                        ),
-                      ),
-                    ),
-                    child: const Text("Book Now"),
-                  ),
-                  const SizedBox(
-                    height: 24,
-                    child: VerticalDivider(
-                      color: AppColors.primaryColor,
-                      thickness: 1,
-                      width: 1,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.shopping_cart,
-                        color: AppColors.primaryColor),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CreateOrderScreen(
-                          catalogs: selectedItems,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 24,
-                    child: VerticalDivider(
-                      color: AppColors.primaryColor,
-                      thickness: 1,
-                      width: 1,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.assignment,
-                        color: AppColors.primaryColor),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CreateOrderScreen3(
-                          catalogs: selectedItems,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-    
-          ),
-        ),
-    ],
-  ),
-
-  ];
-}
- 
- 
-  Widget _buildFilterButton(bool isLargeScreen) {
-    return OutlinedButton.icon(
-      onPressed: _showFilterDialog,
-      style: OutlinedButton.styleFrom(
-        side: BorderSide(color: AppColors.primaryColor),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.primaryColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
-        padding: EdgeInsets.symmetric(
-          horizontal: isLargeScreen ? 24 : 16,
-          vertical: 15,
-        ),
+    final unifiedButtonGroup = Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(0),
+        border: Border.all(color: buttonColor, width: 1),
       ),
-      icon: Icon(Icons.filter_list, size: isLargeScreen ? 24 : 20),
-      label: Text(
-        'Filter',
-        style: TextStyle(fontSize: isLargeScreen ? 16 : 14),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: buttonColor,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    bottomLeft: Radius.circular(8),
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              onPressed:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) =>
+                              MultiCatalogBookingPage(catalogs: selectedItems),
+                    ),
+                  ),
+              child: const Text("Book Now"),
+            ),
+          ),
+          Container(height: 42, width: 2, color: buttonColor),
+          Expanded(
+            child: TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: buttonColor,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              onPressed:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) =>
+                              CreateOrderScreen(catalogs: selectedItems),
+                    ),
+                  ),
+              child: const Icon(Icons.shopping_cart),
+            ),
+          ),
+          Container(height: 42, width: 2, color: buttonColor),
+          Expanded(
+            child: TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: buttonColor,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(8),
+                    bottomRight: Radius.circular(8),
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              onPressed:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) =>
+                              CreateOrderScreen3(catalogs: selectedItems),
+                    ),
+                  ),
+              child: const Icon(Icons.assignment),
+            ),
+          ),
+        ],
       ),
     );
+
+    return [
+      if (selectedItems.isNotEmpty)
+        isLargeScreen
+            ? Expanded(child: unifiedButtonGroup)
+            : unifiedButtonGroup,
+    ];
   }
+
+  // Widget _buildFilterButton(bool isLargeScreen) {
+  //   final screenWidth = MediaQuery.of(context).size.width;
+
+  //   // Responsive sizing logic
+  //   double horizontalPadding;
+  //   double verticalPadding = 15;
+  //   double iconSize;
+  //   double fontSize;
+
+  //   if (screenWidth >= 1024) {
+  //     // Large screen
+  //     horizontalPadding = 24;
+  //     iconSize = 24;
+  //     fontSize = 16;
+  //   } else if (screenWidth >= 600) {
+  //     // Medium screen
+  //     horizontalPadding = 20;
+  //     iconSize = 22;
+  //     fontSize = 15;
+  //   } else {
+  //     // Small screen
+  //     horizontalPadding = 16;
+  //     iconSize = 20;
+  //     fontSize = 14;
+  //   }
+
+  //   return OutlinedButton.icon(
+  //     onPressed: _showFilterDialog,
+  //     style: OutlinedButton.styleFrom(
+  //       side: BorderSide(color: AppColors.primaryColor),
+  //       backgroundColor: Colors.white,
+  //       foregroundColor: AppColors.primaryColor,
+  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+  //       padding: EdgeInsets.symmetric(
+  //         horizontal: horizontalPadding,
+  //         vertical: verticalPadding,
+  //       ),
+  //     ),
+  //     icon: Icon(Icons.filter_list, size: iconSize),
+  //     label: Text('Filter', style: TextStyle(fontSize: fontSize)),
+  //   );
+  // }
 
   String _getImageUrl(Catalog catalog) {
     if (catalog.fullImagePath.startsWith('http')) {
