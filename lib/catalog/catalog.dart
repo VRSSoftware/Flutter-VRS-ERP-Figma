@@ -2354,29 +2354,62 @@ class _CatalogPageState extends State<CatalogPage> {
     }
   }
 
-  void _showDownloadOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return DownloadOptionsSheet(
-          onDownload: (type, selectedOptions) {
-            _handleDownloadOption(
-              type,
-              includeDesign: selectedOptions['design'] ?? false,
-              includeShade: selectedOptions['shade'] ?? false,
-              includeRate: selectedOptions['rate'] ?? false,
-              includeWsp: selectedOptions['wsp'] ?? false,
-              includeSize: selectedOptions['size'] ?? false,
-              includeSizeMrp: selectedOptions['rate1'] ?? false,
-              includeSizeWsp: selectedOptions['wsp1'] ?? false,
-              includeProduct: selectedOptions['product'] ?? false,
-              includeRemark: selectedOptions['remark'] ?? false,
-            );
-          },
-        );
-      },
+ void _showDownloadOptions() {
+  if (selectedItems.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please select items to download')),
     );
+    return;
   }
+
+  showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) {
+      return DownloadOptionsSheet(
+        initialOptions: {
+          'design': includeDesign,
+          'shade': includeShade,
+          'rate': includeRate,
+          'wsp': includeWsp,
+          'size': includeSize,
+          'rate1': includeSizeMrp,
+          'wsp1': includeSizeWsp,
+          'product': includeProduct,
+          'remark': includeRemark,
+        },
+        onDownload: (type, selectedOptions) {
+          _handleDownloadOption(
+            type,
+            includeDesign: selectedOptions['design'] ?? includeDesign,
+            includeShade: selectedOptions['shade'] ?? includeShade,
+            includeRate: selectedOptions['rate'] ?? includeRate,
+            includeWsp: selectedOptions['wsp'] ?? includeWsp,
+            includeSize: selectedOptions['size'] ?? includeSize,
+            includeSizeMrp: selectedOptions['rate1'] ?? includeSizeMrp,
+            includeSizeWsp: selectedOptions['wsp1'] ?? includeSizeWsp,
+            includeProduct: selectedOptions['product'] ?? includeProduct,
+            includeRemark: selectedOptions['remark'] ?? includeRemark,
+          );
+        },
+        onToggleOptions: (options) {
+          setState(() {
+            includeDesign = options['design'] ?? includeDesign;
+            includeShade = options['shade'] ?? includeShade;
+            includeRate = options['rate'] ?? includeRate;
+            includeWsp = options['wsp'] ?? includeWsp;
+            includeSize = options['size'] ?? includeSize;
+            includeSizeMrp = options['rate1'] ?? includeSizeMrp;
+            includeSizeWsp = options['wsp1'] ?? includeSizeWsp;
+            includeProduct = options['product'] ?? includeProduct;
+            includeRemark = options['remark'] ?? includeRemark;
+          });
+          _saveToggleStates(); // Save updated toggle states
+        },
+      );
+    },
+  );
+}
+
 
   Widget _buildSizeToggleRow(void Function(void Function()) parentSetState) {
     return StatefulBuilder(

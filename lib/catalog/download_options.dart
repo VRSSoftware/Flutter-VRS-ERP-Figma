@@ -3,11 +3,13 @@ import 'package:vrs_erp_figma/constants/app_constants.dart';
 
 class DownloadOptionsSheet extends StatefulWidget {
   final Function(String, Map<String, bool>) onDownload;
+  final Function(Map<String, bool>)? onToggleOptions; // New callback for toggle changes
   final Map<String, bool>? initialOptions;
 
   const DownloadOptionsSheet({
     Key? key,
     required this.onDownload,
+    this.onToggleOptions,
     this.initialOptions,
   }) : super(key: key);
 
@@ -21,8 +23,7 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
   @override
   void initState() {
     super.initState();
-    // Initialize options with default values
-    options = widget.initialOptions ?? {
+    options = Map.from(widget.initialOptions ?? {
       'design': true,
       'shade': true,
       'rate': true,
@@ -32,7 +33,7 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
       'wsp1': false,
       'product': true,
       'remark': true,
-    };
+    });
   }
 
   void _toggleAllOptions(bool? value) {
@@ -42,8 +43,11 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
     });
   }
 
-  void _showOptionsBottomSheet(BuildContext context) {
-    showModalBottomSheet(
+  Future<Map<String, bool>?> _showOptionsBottomSheet(BuildContext context) async {
+    // Create a copy of options for the bottom sheet to avoid direct mutation
+    Map<String, bool> tempOptions = Map.from(options);
+
+    return await showModalBottomSheet<Map<String, bool>>(
       context: context,
       isScrollControlled: true,
       builder: (BuildContext context) {
@@ -78,12 +82,11 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
                                 height: 24,
                                 width: 24,
                                 child: Checkbox(
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  value: options.values.every((v) => v),
+                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  value: tempOptions.values.every((v) => v),
                                   onChanged: (value) {
                                     setState(() {
-                                      _toggleAllOptions(value);
+                                      tempOptions.updateAll((key, _) => value ?? false);
                                     });
                                   },
                                   activeColor: AppColors.primaryColor,
@@ -99,48 +102,50 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    _buildToggleOption('Include Design No', options['design']!, (value) {
-                      setState(() => options['design'] = value);
+                    _buildToggleOption('Include Design No', tempOptions['design']!, (value) {
+                      setState(() => tempOptions['design'] = value);
                     }),
-                    _buildToggleOption('Include Shade', options['shade']!, (value) {
-                      setState(() => options['shade'] = value);
+                    _buildToggleOption('Include Shade', tempOptions['shade']!, (value) {
+                      setState(() => tempOptions['shade'] = value);
                     }),
-                    _buildToggleOption('Include Mrp', options['rate']!, (value) {
-                      setState(() => options['rate'] = value);
+                    _buildToggleOption('Include Mrp', tempOptions['rate']!, (value) {
+                      setState(() => tempOptions['rate'] = value);
                     }),
-                    _buildToggleOption('Include Wsp', options['wsp']!, (value) {
-                      setState(() => options['wsp'] = value);
+                    _buildToggleOption('Include Wsp', tempOptions['wsp']!, (value) {
+                      setState(() => tempOptions['wsp'] = value);
                     }),
-                    _buildToggleOption('Include Size', options['size']!, (value) {
+                    _buildToggleOption('Include Size', tempOptions['size']!, (value) {
                       setState(() {
-                        options['size'] = value;
+                        tempOptions['size'] = value;
                         if (!value) {
-                          options['rate1'] = false;
-                          options['wsp1'] = false;
+                          tempOptions['rate1'] = false;
+                          tempOptions['wsp1'] = false;
                         }
                       });
                     }),
-                    _buildToggleOption('Include Size Wise Mrp', options['rate1']!, (value) {
+                    _buildToggleOption('Include Size Wise Mrp', tempOptions['rate1']!, (value) {
                       setState(() {
-                        options['rate1'] = value;
-                        if (!value) options['wsp1'] = false;
+                        tempOptions['rate1'] = value;
+                        if (!value) tempOptions['wsp1'] = false;
                       });
-                    }, disabled: !options['size']!),
-                    _buildToggleOption('Include Size wise Wsp', options['wsp1']!, (value) {
-                      setState(() => options['wsp1'] = value);
-                    }, disabled: !options['size']! || !options['rate1']!),
-                    _buildToggleOption('Include Product', options['product']!, (value) {
-                      setState(() => options['product'] = value);
+                    }, disabled: !tempOptions['size']!),
+                    _buildToggleOption('Include Size wise Wsp', tempOptions['wsp1']!, (value) {
+                      setState(() => tempOptions['wsp1'] = value);
+                    }, disabled: !tempOptions['size']! || !tempOptions['rate1']!),
+                    _buildToggleOption('Include Product', tempOptions['product']!, (value) {
+                      setState(() => tempOptions['product'] = value);
                     }),
-                    _buildToggleOption('Include Remark', options['remark']!, (value) {
-                      setState(() => options['remark'] = value);
+                    _buildToggleOption('Include Remark', tempOptions['remark']!, (value) {
+                      setState(() => tempOptions['remark'] = value);
                     }),
                     const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(
+                        onPressed: () {
+                          Navigator.pop(context, tempOptions); // Return updated options
+                        },
+                        child: const Text(
                           'Done',
                           style: TextStyle(
                             color: Colors.white,
@@ -188,7 +193,15 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.more_vert),
-                      onPressed: () => _showOptionsBottomSheet(context),
+                      onPressed: () async {
+                        final updatedOptions = await _showOptionsBottomSheet(context);
+                        if (updatedOptions != null) {
+                          setState(() {
+                            options = updatedOptions;
+                          });
+                          widget.onToggleOptions?.call(updatedOptions); // Notify parent
+                        }
+                      },
                     ),
                     IconButton(
                       icon: const Icon(Icons.close),
@@ -231,7 +244,7 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.all(12),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.grey[200],
           borderRadius: BorderRadius.circular(8),
@@ -239,7 +252,7 @@ class _DownloadOptionsSheetState extends State<DownloadOptionsSheet> {
         child: Row(
           children: [
             Icon(icon, color: AppColors.primaryColor),
-            SizedBox(width: 12),
+            const SizedBox(width: 12),
             Text(title),
           ],
         ),
