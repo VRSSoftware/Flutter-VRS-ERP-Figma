@@ -771,7 +771,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   icon: const Icon(Icons.remove, size: 20),
                 ),
                 SizedBox(
-                  width: 25,
+                  width: 22,
                   child: TextField(
                     controller: controller,
                     textAlign: TextAlign.center,
