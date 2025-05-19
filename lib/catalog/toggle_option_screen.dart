@@ -2,22 +2,57 @@ import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 
 class ToggleOptionsScreen extends StatefulWidget {
-  const ToggleOptionsScreen({Key? key}) : super(key: key);
+  final bool includeDesign;
+  final bool includeShade;
+  final bool includeRate;
+  final bool includeWsp;
+  final bool includeSize;
+  final bool includeSizeMrp;
+  final bool includeSizeWsp;
+  final bool includeProduct;
+  final bool includeRemark;
+
+  const ToggleOptionsScreen({
+    Key? key,
+    required this.includeDesign,
+    required this.includeShade,
+    required this.includeRate,
+    required this.includeWsp,
+    required this.includeSize,
+    required this.includeSizeMrp,
+    required this.includeSizeWsp,
+    required this.includeProduct,
+    required this.includeRemark,
+  }) : super(key: key);
 
   @override
   _ToggleOptionsScreenState createState() => _ToggleOptionsScreenState();
 }
 
 class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
-  bool includeDesign = true;
-  bool includeShade = true;
-  bool includeRate = true;
-  bool includeWsp = false;
-  bool includeSize = true;
-  bool includeSizeMrp = true;
-  bool includeSizeWsp = false;
-  bool includeProduct = true;
-  bool includeRemark = true;
+  late bool includeDesign;
+  late bool includeShade;
+  late bool includeRate;
+  late bool includeWsp;
+  late bool includeSize;
+  late bool includeSizeMrp;
+  late bool includeSizeWsp;
+  late bool includeProduct;
+  late bool includeRemark;
+
+  @override
+  void initState() {
+    super.initState();
+    includeDesign = widget.includeDesign;
+    includeShade = widget.includeShade;
+    includeRate = widget.includeRate;
+    includeWsp = widget.includeWsp;
+    includeSize = widget.includeSize;
+    includeSizeMrp = widget.includeSizeMrp;
+    includeSizeWsp = widget.includeSizeWsp;
+    includeProduct = widget.includeProduct;
+    includeRemark = widget.includeRemark;
+  }
 
   bool get allSelected =>
       includeDesign &&
@@ -56,7 +91,6 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header with Select All checkbox and close button
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -134,11 +168,11 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
                 ],
               ),
             ),
-            // Done button
             Container(
               padding: const EdgeInsets.only(top: 12, bottom: 8),
               child: ElevatedButton(
                 onPressed: () {
+                  // Return the updated toggle states when "Done" is pressed
                   Navigator.pop(context, {
                     'design': includeDesign,
                     'shade': includeShade,
@@ -151,7 +185,7 @@ class _ToggleOptionsScreenState extends State<ToggleOptionsScreen> {
                     'wsp1': includeSizeWsp,
                   });
                 },
-                child: Text(
+                child: const Text(
                   'Done',
                   style: TextStyle(
                     color: Colors.white,

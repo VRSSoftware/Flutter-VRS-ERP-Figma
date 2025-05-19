@@ -12,6 +12,7 @@ import 'package:installed_apps/installed_apps.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vrs_erp_figma/catalog/download_options.dart';
 import 'package:vrs_erp_figma/catalog/filter.dart';
 import 'package:vrs_erp_figma/catalog/image_zoom1.dart';
@@ -66,6 +67,17 @@ class _CatalogPageState extends State<CatalogPage> {
   List<Brand> brands = [];
   List<Brand> selectedBrands = [];
 
+
+  bool includeDesign = true;
+  bool includeShade = true;
+  bool includeRate = true;
+  bool includeWsp = false;
+  bool includeSize = true;
+  bool includeSizeMrp = true;
+  bool includeSizeWsp = false;
+  bool includeProduct = true;
+  bool includeRemark = true;
+
   // Pagination variables
   int pageNo = 1;
   bool hasMore = true;
@@ -73,26 +85,24 @@ class _CatalogPageState extends State<CatalogPage> {
   final ScrollController _scrollController = ScrollController();
   final int pageSize = 10; // Adjust based on backend API
 
-  @override
+@override
   void initState() {
     super.initState();
-    // Initialize scroll listener
+    _loadToggleStates(); // Load toggle states from shared_preferences
     _scrollController.addListener(_scrollListener);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final args =
-          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
       if (args != null) {
         setState(() {
-          itemKey = args['itemKey']==null? null : args['itemKey']?.toString();
+          itemKey = args['itemKey'] == null ? null : args['itemKey']?.toString();
           itemSubGrpKey = args['itemSubGrpKey']?.toString();
           coBr = args['coBr']?.toString();
           fcYrId = args['fcYrId']?.toString();
           itemNamee = args['itemName']?.toString();
         });
 
-        // Fetch initial catalog items
-        if (itemSubGrpKey != null &&  coBr != null) {
+        if (itemSubGrpKey != null && coBr != null) {
           _fetchCatalogItems();
         }
 
@@ -101,8 +111,7 @@ class _CatalogPageState extends State<CatalogPage> {
           _fetchShadesByItemKey(itemKey!);
           _fetchStylesSizeByItemKey(itemKey!);
           _fetchBrands();
-        }
-        else if( itemSubGrpKey != null){
+        } else if (itemSubGrpKey != null) {
           _fetchStylesByItemKey(itemSubGrpKey!);
           _fetchShadesByItemGrpKey(itemSubGrpKey!);
           _fetchStylesSizeByItemGrpKey(itemSubGrpKey!);
@@ -130,6 +139,34 @@ class _CatalogPageState extends State<CatalogPage> {
       });
       _fetchCatalogItems();
     }
+  }
+
+  Future<void> _loadToggleStates() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      includeDesign = prefs.getBool('includeDesign') ?? true;
+      includeShade = prefs.getBool('includeShade') ?? true;
+      includeRate = prefs.getBool('includeRate') ?? true;
+      includeWsp = prefs.getBool('includeWsp') ?? false;
+      includeSize = prefs.getBool('includeSize') ?? true;
+      includeSizeMrp = prefs.getBool('includeSizeMrp') ?? true;
+      includeSizeWsp = prefs.getBool('includeSizeWsp') ?? false;
+      includeProduct = prefs.getBool('includeProduct') ?? true;
+      includeRemark = prefs.getBool('includeRemark') ?? true;
+    });
+  }
+
+  Future<void> _saveToggleStates() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('includeDesign', includeDesign);
+    await prefs.setBool('includeShade', includeShade);
+    await prefs.setBool('includeRate', includeRate);
+    await prefs.setBool('includeWsp', includeWsp);
+    await prefs.setBool('includeSize', includeSize);
+    await prefs.setBool('includeSizeMrp', includeSizeMrp);
+    await prefs.setBool('includeSizeWsp', includeSizeWsp);
+    await prefs.setBool('includeProduct', includeProduct);
+    await prefs.setBool('includeRemark', includeRemark);
   }
 
   Future<void> _fetchBrands() async {
@@ -343,6 +380,7 @@ class _CatalogPageState extends State<CatalogPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Existing build method remains unchanged...
     final screenWidth = MediaQuery.of(context).size.width;
     final isLargeScreen = screenWidth > 600;
     final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
@@ -2015,81 +2053,108 @@ class _CatalogPageState extends State<CatalogPage> {
     });
   }
 
-  void _showShareOptions() {
-    if (selectedItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select items to share')),
-      );
-      return;
-    }
+ void _showShareOptions() {
+  if (selectedItems.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please select items to share')),
+    );
+    return;
+  }
 
-    bool includeDesign = true;
-    bool includeShade = true;
-    bool includeRate = true;
-    bool includeWsp = false;
-    bool includeSize = true;
-    bool includeSizeMrp = true;
-    bool includeSizeWsp = false;
-    bool includeProduct = true;
-    bool includeRemark = true;
-
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return ShareOptionsPage(
-          onWhatsAppShare: () {
-            Navigator.pop(context);
-            _shareSelectedWhatsApp(
-              shareType: 'WhatsApp',
-              includeDesign: includeDesign,
-              includeShade: includeShade,
-              includeRate: includeRate,
-              includeSize: includeSize,
-              includeProduct: includeProduct,
-              includeRemark: includeRemark,
-            );
-          },
-          onImageShare: () {
-            Navigator.pop(context);
-            _shareSelectedItems(
-              shareType: 'image',
-              includeDesign: includeDesign,
-              includeShade: includeShade,
-              includeRate: includeRate,
-              includeWsp: includeWsp,
-              includeSize: includeSize,
-              includeSizeMrp: includeSizeMrp,
-              includeSizeWsp: includeSizeWsp,
-              includeProduct: includeProduct,
-              includeRemark: includeRemark,
-            );
-          },
-          onPDFShare: () {
-            Navigator.pop(context);
-            _shareSelectedItemsPDF(
-              shareType: 'pdf',
-              includeDesign: includeDesign,
-              includeShade: includeShade,
-              includeRate: includeRate,
-              includeWsp: includeWsp,
-              includeSize: includeSize,
-              includeSizeMrp: includeSizeMrp,
-              includeSizeWsp: includeSizeWsp,
-              includeProduct: includeProduct,
-              includeRemark: includeRemark,
-            );
-          },
-          onToggleOptions: (
-            design,
-            shade,
-            rate,
-            wsp,
-            size,
-            rate1,
-            wsp1,
-            product,
-            remark,
-          ) {
+  showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) {
+      return ShareOptionsPage(
+        includeDesign: includeDesign,
+        includeShade: includeShade,
+        includeRate: includeRate,
+        includeWsp: includeWsp,
+        includeSize: includeSize,
+        includeSizeMrp: includeSizeMrp,
+        includeSizeWsp: includeSizeWsp,
+        includeProduct: includeProduct,
+        includeRemark: includeRemark,
+        onWhatsAppShare: ({
+          bool includeDesign = true,
+          bool includeShade = true,
+          bool includeRate = true,
+          bool includeSize = true,
+          bool includeProduct = true,
+          bool includeRemark = true,
+        }) {
+          Navigator.pop(context);
+          _shareSelectedWhatsApp(
+            shareType: 'WhatsApp',
+            includeDesign: includeDesign,
+            includeShade: includeShade,
+            includeRate: includeRate,
+            includeSize: includeSize,
+            includeProduct: includeProduct,
+            includeRemark: includeRemark,
+          );
+        },
+        onImageShare: ({
+          bool includeDesign = true,
+          bool includeShade = true,
+          bool includeRate = true,
+          bool includeWsp = false,
+          bool includeSize = true,
+          bool includeSizeMrp = true,
+          bool includeSizeWsp = false,
+          bool includeProduct = true,
+          bool includeRemark = true,
+        }) {
+          Navigator.pop(context);
+          _shareSelectedItems(
+            shareType: 'image',
+            includeDesign: includeDesign,
+            includeShade: includeShade,
+            includeRate: includeRate,
+            includeWsp: includeWsp,
+            includeSize: includeSize,
+            includeSizeMrp: includeSizeMrp,
+            includeSizeWsp: includeSizeWsp,
+            includeProduct: includeProduct,
+            includeRemark: includeRemark,
+          );
+        },
+        onPDFShare: ({
+          bool includeDesign = true,
+          bool includeShade = true,
+          bool includeRate = true,
+          bool includeWsp = false,
+          bool includeSize = true,
+          bool includeSizeMrp = true,
+          bool includeSizeWsp = false,
+          bool includeProduct = true,
+          bool includeRemark = true,
+        }) {
+          Navigator.pop(context);
+          _shareSelectedItemsPDF(
+            shareType: 'pdf',
+            includeDesign: includeDesign,
+            includeShade: includeShade,
+            includeRate: includeRate,
+            includeWsp: includeWsp,
+            includeSize: includeSize,
+            includeSizeMrp: includeSizeMrp,
+            includeSizeWsp: includeSizeWsp,
+            includeProduct: includeProduct,
+            includeRemark: includeRemark,
+          );
+        },
+        onToggleOptions: (
+          design,
+          shade,
+          rate,
+          wsp,
+          size,
+          rate1,
+          wsp1,
+          product,
+          remark,
+        ) {
+          setState(() {
             includeDesign = design;
             includeShade = shade;
             includeRate = rate;
@@ -2099,11 +2164,13 @@ class _CatalogPageState extends State<CatalogPage> {
             includeSizeWsp = wsp1;
             includeProduct = product;
             includeRemark = remark;
-          },
-        );
-      },
-    );
-  }
+          });
+          _saveToggleStates(); // Save updated toggle states
+        },
+      );
+    },
+  );
+}
 
   Future<void> _handleDownloadOption(
     String option, {
