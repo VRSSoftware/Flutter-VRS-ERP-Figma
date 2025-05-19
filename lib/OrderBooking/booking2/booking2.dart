@@ -21,11 +21,20 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   List<CatalogOrderData> catalogOrderList = [];
   Map<String, Set<String>> selectedColors2 = {};
   Map<String, Map<String, Map<String, int>>> quantities = {};
+  // Map to store TextEditingControllers for each styleKey, shade, and size
+  final Map<String, TextEditingController> _controllers = {};
 
   @override
   void initState() {
     super.initState();
     _loadOrderDetails();
+  }
+
+  @override
+  void dispose() {
+    // Dispose all controllers to prevent memory leaks
+    _controllers.forEach((_, controller) => controller.dispose());
+    super.dispose();
   }
 
   Color _getColorCode(String color) {
@@ -481,7 +490,17 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     }
 
     final quantity = _getQuantity(styleKey, shade, size);
-    final TextEditingController controller = TextEditingController(text: quantity.toString());
+    // Unique key for the controller
+    final controllerKey = '$styleKey-$shade-$size';
+    // Create or reuse the controller
+    final controller = _controllers.putIfAbsent(
+      controllerKey,
+      () => TextEditingController(text: quantity.toString()),
+    );
+    // Update controller text if quantity changes externally (e.g., via increment/decrement)
+    if (controller.text != quantity.toString()) {
+      controller.text = quantity.toString();
+    }
 
     return Row(
       children: [
@@ -513,8 +532,12 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                       contentPadding: EdgeInsets.symmetric(vertical: 8),
                     ),
                     style: GoogleFonts.roboto(fontSize: 14),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(4), // Max 9999
+                    ],
                     onChanged: (value) {
-                      final newQuantity = int.tryParse(value) ?? 0;
+                      final newQuantity = int.tryParse(value.isEmpty ? '0' : value) ?? 0;
                       _setQuantity(styleKey, shade, size, newQuantity);
                     },
                   ),
