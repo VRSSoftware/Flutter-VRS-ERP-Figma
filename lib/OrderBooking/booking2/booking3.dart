@@ -39,6 +39,120 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
     super.dispose();
   }
 
+    Future<void> _submitAllOrders() async {
+    List<Future> apiCalls = [];
+
+    for (var catalogOrder in catalogOrderList) {
+      final catalog = catalogOrder.catalog;
+      final matrix = catalogOrder.orderMatrix;
+      final styleKey = catalog.styleKey;
+      final styleCode = catalog.styleCode;
+      final coBrId = "01";
+      final fcYrId = "24";
+      final userId = "Admin";
+
+      final quantityMap = quantities[styleKey];
+      if (quantityMap != null) {
+        for (var shade in quantityMap.keys) {
+          final shadeIndex = matrix.shades.indexOf(shade.trim());
+          if (shadeIndex == -1) continue;
+
+          for (var size in quantityMap[shade]!.keys) {
+            final sizeIndex = matrix.sizes.indexOf(size.trim());
+            if (sizeIndex == -1) continue;
+
+            final quantity = quantityMap[shade]![size]!;
+            if (quantity > 0) {
+              final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(
+                ',',
+              );
+              final mrp = matrixData[0]; // Rate
+              final wsp =
+                  matrixData.length > 2
+                      ? matrixData[2]
+                      : matrixData[0]; // Assuming WSP is same as MRP if not provided
+
+              final payload = {
+                "userId": userId,
+                "coBrId": coBrId,
+                "fcYrId": fcYrId,
+                "data": {
+                  "designcode": styleCode,
+                  "mrp": mrp,
+                  "WSP": wsp,
+                  "size": size,
+                  "TotQty": _calculateCatalogQuantity(styleKey).toString(),
+                  "Note":
+                      "", // No note field in CreateOrderScreen, using empty string
+                  "color": shade,
+                  "Qty": quantity.toString(),
+                  "cobrid": coBrId,
+                 
+                  "user": userId.toLowerCase(),
+                  "barcode": "",
+                },
+                "typ": 0,
+              };
+
+              apiCalls.add(
+                http.post(
+                  Uri.parse(
+                    '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
+                  ),
+                  headers: {'Content-Type': 'application/json'},
+                  body: jsonEncode(payload),
+                ),
+              );
+            }
+          }
+        }
+      }
+    }
+
+    try {
+      final responses = await Future.wait(apiCalls);
+      if (responses.every((r) => r.statusCode == 200)) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder:
+                (_) => AlertDialog(
+                  title: const Text("Success"),
+                  content: const Text("All orders submitted successfully."),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.pop(context);
+                      },
+                      child: const Text("OK"),
+                    ),
+                  ],
+                ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder:
+              (_) => AlertDialog(
+                title: const Text("Error"),
+                content: Text("Failed to submit orders: $e"),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("OK"),
+                  ),
+                ],
+              ),
+        );
+      }
+    }
+  }
+
+
   Color _getColorCode(String color) {
     switch (color.toLowerCase().trim()) {
       case 'red':
@@ -240,14 +354,25 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
                 },
                 child: Text('BACK', style: GoogleFonts.montserrat()),
               ),
-              TextButton(
-                onPressed: () {
-                  debugPrint('Quantities: $quantities');
-                  _copiedShades.clear();
-                  setState(() {});
-                },
-                child: Text('SAVE', style: GoogleFonts.montserrat()),
-              ),
+          TextButton(
+  onPressed: _calculateTotalQuantity() > 0
+      ? () {
+          debugPrint('Quantities: $quantities');
+          _copiedShades.clear();
+          _submitAllOrders();
+          setState(() {});
+        }
+      : null,
+  child: Text(
+    'SAVE',
+    style: GoogleFonts.montserrat(
+      color: _calculateTotalQuantity() > 0 ? Colors.black : Colors.grey,
+    ),
+  ),
+),
+
+
+               
             ],
           ),
         ),
