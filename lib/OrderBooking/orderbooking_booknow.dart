@@ -1269,102 +1269,117 @@ class _OrderPageState extends State<OrderPage> {
     );
   }
 
-  List<Widget> _buildButtonChildren(bool isLargeScreen) {
-    return [
-      if (isLargeScreen)
-        Expanded(child: _buildFilterButton(isLargeScreen))
+List<Widget> _buildButtonChildren(bool isLargeScreen) {
+  return [
+    if (isLargeScreen)
+      Expanded(child: _buildFilterButton(isLargeScreen))
+   else
+  Row(
+    children: [
+      // Filter button (40% width when actions are visible)
+      if (selectedItems.isNotEmpty)
+        Expanded(
+          flex: 2,
+          child: _buildFilterButton(isLargeScreen),
+        )
       else
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildFilterButton(isLargeScreen),
-            if (selectedItems.isNotEmpty)
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.primaryColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextButton(
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+        Expanded(
+          child: _buildFilterButton(isLargeScreen),
+        ),
+
+      // Add space between filter and action buttons
+      if (selectedItems.isNotEmpty)
+        const SizedBox(width: 8),
+
+      // Action buttons container (60% width when items selected)
+      if (selectedItems.isNotEmpty)
+        Expanded(
+          flex: 3,
+          child: Container(
+            decoration: BoxDecoration(
+            //  color: AppColors.background,
+              borderRadius: BorderRadius.circular(0),
+              border: Border.all(
+                color: AppColors.primaryColor,
+                width: 1,
+              ),
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primaryColor,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                    ),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MultiCatalogBookingPage(
+                          catalogs: selectedItems,
                         ),
                       ),
-                      onPressed:
-                          selectedItems.isNotEmpty
-                              ? () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (context) => MultiCatalogBookingPage(
-                                        catalogs: selectedItems,
-                                      ),
-                                ),
-                              )
-                              : null,
-                      child: Text("Book Now"),
                     ),
-                    // First divider
-                    SizedBox(
-                      height: 24,
-                      child: VerticalDivider(
-                        color: Colors.white,
-                        thickness: 1,
-                        width: 1,
+                    child: const Text("Book Now"),
+                  ),
+                  const SizedBox(
+                    height: 24,
+                    child: VerticalDivider(
+                      color: AppColors.primaryColor,
+                      thickness: 1,
+                      width: 1,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.shopping_cart,
+                        color: AppColors.primaryColor),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CreateOrderScreen(
+                          catalogs: selectedItems,
+                        ),
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.shopping_cart, color: Colors.white),
-                      onPressed:
-                          selectedItems.isNotEmpty
-                              ? () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (context) => CreateOrderScreen(
-                                        catalogs: selectedItems,
-                                      ),
-                                ),
-                              )
-                              : null,
+                  ),
+                  const SizedBox(
+                    height: 24,
+                    child: VerticalDivider(
+                      color: AppColors.primaryColor,
+                      thickness: 1,
+                      width: 1,
                     ),
-                    // Second divider
-                    SizedBox(
-                      height: 24,
-                      child: VerticalDivider(
-                        color: Colors.white,
-                        thickness: 1,
-                        width: 1,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.assignment,
+                        color: AppColors.primaryColor),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CreateOrderScreen3(
+                          catalogs: selectedItems,
+                        ),
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.assignment, color: Colors.white),
-                      onPressed:
-                          selectedItems.isNotEmpty
-                              ? () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (context) => CreateOrderScreen3(
-                                        catalogs: selectedItems,
-                                      ),
-                                ),
-                              )
-                              : null,
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-          ],
+            ),
+    
+          ),
         ),
-    ];
-  }
+    ],
+  ),
 
+  ];
+}
+ 
+ 
   Widget _buildFilterButton(bool isLargeScreen) {
     return OutlinedButton.icon(
       onPressed: _showFilterDialog,
@@ -1372,10 +1387,10 @@ class _OrderPageState extends State<OrderPage> {
         side: BorderSide(color: AppColors.primaryColor),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primaryColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
         padding: EdgeInsets.symmetric(
           horizontal: isLargeScreen ? 24 : 16,
-          vertical: 12,
+          vertical: 15,
         ),
       ),
       icon: Icon(Icons.filter_list, size: isLargeScreen ? 24 : 20),
