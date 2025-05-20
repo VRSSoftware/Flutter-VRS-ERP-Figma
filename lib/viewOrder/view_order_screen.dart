@@ -1,12 +1,16 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/screens/home_screen.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
+import 'package:vrs_erp_figma/viewOrder/Pdf_viewer_screen.dart';
 import 'package:vrs_erp_figma/viewOrder/add_more_info.dart';
 import 'package:vrs_erp_figma/viewOrder/customer_master.dart';
 import 'package:vrs_erp_figma/viewOrder/style_card.dart';
@@ -269,38 +273,80 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
 
     String statusCode = await insertFinalSalesOrder(orderDataJson);
 
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Saved Order Data'),
-            content: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Order Data:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text(orderDataJson),
-                  Text(statusCode),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => HomeScreen()),
-                  );
-                },
-                child: Text('OK'),
-              ),
-            ],
-          ),
+    final salesOrderNo = _orderControllers.orderNo.text;
+
+showDialog(
+  context: context,
+  builder: (context) => AlertDialog(
+    title: Text('Order Saved'),
+    content: Text('Order ${_orderControllers.orderNo.text} saved successfully'),
+    actions: [
+      TextButton(
+        onPressed: () async {
+          Navigator.pop(context); // Close dialog
+          await _callSecondApi(_orderControllers.orderNo.text);
+          // No need to navigate to HomeScreen here anymore
+        },
+        child: Text('View PDF'),
+      ),
+      TextButton(
+        onPressed: () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomeScreen()),
+          );
+        },
+        child: Text('Done'),
+      ),
+    ],
+  ),
+);
+  
+  }
+
+Future<void> _callSecondApi(String salesOrderNo) async {
+  try {
+    // Extract numeric part from salesOrderNo (e.g., "SO10" -> "10")
+    final docId = salesOrderNo.replaceAll(RegExp(r'[^0-9]'), '');
+
+    // Using Dio for better file download support
+    final dio = Dio();
+    final response = await dio.post(
+      'http://pdferp.uniretailsoftware.com/api/values/order',
+      data: {"doc_id": docId},
+      options: Options(responseType: ResponseType.bytes),
+    );
+
+    if (response.statusCode == 200) {
+      // Get temporary directory
+      final dir = await getTemporaryDirectory();
+      final filePath = '${dir.path}/order_$docId.pdf';
+      final file = File(filePath);
+      
+      // Write PDF bytes to file
+      await file.writeAsBytes(response.data);
+      
+      // Show PDF viewer
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PdfViewerScreen(filePath: filePath),
+        ),
+      );
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load PDF: ${response.statusCode}')),
+      );
+    }
+  } catch (e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: ${e.toString()}')),
     );
   }
+}
 
   void _updateTotals() {
     int totalQty = 0;
