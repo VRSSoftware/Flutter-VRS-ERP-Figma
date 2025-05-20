@@ -29,10 +29,10 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         progressIndicatorTheme: ProgressIndicatorThemeData(color: Colors.blue),
         checkboxTheme: CheckboxThemeData(
-          checkColor: MaterialStateProperty.all(Colors.white),
-          overlayColor: MaterialStateProperty.all(Colors.blue),
-          fillColor: MaterialStateProperty.resolveWith<Color>((states) {
-            if (states.contains(MaterialState.selected)) {
+          checkColor: WidgetStateProperty.all(Colors.white),
+          overlayColor: WidgetStateProperty.all(Colors.blue),
+          fillColor: WidgetStateProperty.resolveWith<Color>((states) {
+            if (states.contains(WidgetState.selected)) {
               return Colors.blue; // your desired background color when checked
             }
             return Colors.grey.shade300; // color when unchecked
