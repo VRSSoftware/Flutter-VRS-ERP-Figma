@@ -807,7 +807,7 @@ Widget buildOrderItem(CatalogOrderData catalogOrder) {
                   _buildHeader("Size", 1),
                   _buildHeader("Qty", 2),
                   _buildHeader("Rate", 1),
-                  _buildHeader("WIP", 1),
+                  _buildHeader("WSP", 1),
                   _buildHeader("Stock", 1),
                 ],
               ),
@@ -882,10 +882,12 @@ Widget buildOrderItem(CatalogOrderData catalogOrder) {
 
     String rate = '';
     String stock = '0';
+    String wsp = '0';
     if (shadeIndex != -1 && sizeIndex != -1) {
       final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
       rate = matrixData[0];
-      stock = matrixData.length > 1 ? matrixData[1] : '0';
+      stock = matrixData.length > 1 ? matrixData[2] : '0';
+      wsp = matrixData.length > 1 ? matrixData[1] : '0';
     } else {
       debugPrint('Invalid shade or size: shade=$shade, size=$size');
     }
@@ -955,7 +957,7 @@ Widget buildOrderItem(CatalogOrderData catalogOrder) {
           ),
         ),
         _buildCell(rate, 1),
-        _buildCell("0", 1),
+        _buildCell(wsp, 1),
         _buildCell(stock, 1),
       ],
     );

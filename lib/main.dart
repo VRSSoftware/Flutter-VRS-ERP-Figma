@@ -9,7 +9,7 @@ import 'package:vrs_erp_figma/screens/home_screen.dart';
 import 'package:vrs_erp_figma/screens/login_screen.dart';
 import 'package:vrs_erp_figma/screens/splash_screen.dart';
 import 'package:vrs_erp_figma/viewOrder/view_order.dart';
-import 'package:vrs_erp_figma/viewOrder/view_order_screen.dart'; 
+import 'package:vrs_erp_figma/viewOrder/view_order_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -23,15 +23,21 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'VRS ERP',
-        theme: ThemeData(
+      theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
         // primarySwatch: AppColors.primaryColor
         primarySwatch: Colors.blue,
-                progressIndicatorTheme: ProgressIndicatorThemeData(
-          color: Colors.blue,
-        ),
+        progressIndicatorTheme: ProgressIndicatorThemeData(color: Colors.blue),
         checkboxTheme: CheckboxThemeData(
-          fillColor: MaterialStateProperty.all(Colors.blue),
+          checkColor: MaterialStateProperty.all(Colors.white),
+          overlayColor: MaterialStateProperty.all(Colors.blue),
+          fillColor: MaterialStateProperty.resolveWith<Color>((states) {
+            if (states.contains(MaterialState.selected)) {
+              return Colors.blue; // your desired background color when checked
+            }
+            return Colors.grey.shade300; // color when unchecked
+          }),
+          // fillColor: MaterialStateProperty.all(Colors.blue),
         ),
       ),
       routes: {
@@ -39,11 +45,11 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginScreen(),
         '/home': (context) => HomeScreen(),
         '/catalog': (context) => CatalogScreen(),
-        '/catalogpage':(context) =>CatalogPage(),
-        '/orderbooking':(context)=>OrderBookingScreen(),
-        '/orderpage':(context)=>OrderPage(),
-        '/viewOrder':(context)=>ViewOrderScreen(),
-        '/viewOrders':(context)=>ViewOrderScreens()
+        '/catalogpage': (context) => CatalogPage(),
+        '/orderbooking': (context) => OrderBookingScreen(),
+        '/orderpage': (context) => OrderPage(),
+        '/viewOrder': (context) => ViewOrderScreen(),
+        '/viewOrders': (context) => ViewOrderScreens(),
       },
 
       home: HomeScreen(),
