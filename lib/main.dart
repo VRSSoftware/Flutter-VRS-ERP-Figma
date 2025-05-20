@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/OrderBooking/order_booking.dart';
 import 'package:vrs_erp_figma/OrderBooking/orderbooking_booknow.dart';
 import 'package:vrs_erp_figma/catalog/catalog.dart';
+import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/screens/catalog_screen.dart';
 
 import 'package:vrs_erp_figma/screens/home_screen.dart';
@@ -24,6 +25,14 @@ class MyApp extends StatelessWidget {
       title: 'VRS ERP',
         theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
+        // primarySwatch: AppColors.primaryColor
+        primarySwatch: Colors.blue,
+                progressIndicatorTheme: ProgressIndicatorThemeData(
+          color: Colors.blue,
+        ),
+        checkboxTheme: CheckboxThemeData(
+          fillColor: MaterialStateProperty.all(Colors.blue),
+        ),
       ),
       routes: {
         '/splash': (context) => SplashScreen(),
