@@ -21,7 +21,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   List<CatalogOrderData> catalogOrderList = [];
   Map<String, Set<String>> selectedColors2 = {};
   Map<String, Map<String, Map<String, int>>> quantities = {};
-  // Map to store TextEditingControllers for each styleKey, shade, and size
+  bool isLoading = true;
   final Map<String, TextEditingController> _controllers = {};
 
   @override
@@ -57,6 +57,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   }
 
   Future<void> _loadOrderDetails() async {
+      setState(() {
+      isLoading = true;
+    });
     final List<CatalogOrderData> tempList = [];
 
     for (var item in widget.catalogs) {
@@ -100,8 +103,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       }
     }
 
-    setState(() {
+  setState(() {
       catalogOrderList = tempList;
+      isLoading = false;
     });
   }
 
@@ -274,7 +278,54 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
+      body:     isLoading
+              ? Stack(
+                children: [
+                  Container(color: Colors.black.withOpacity(0.2)),
+                  Center(
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(3.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 8,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Please Wait...',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: AppColors.primaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              )
+              : SingleChildScrollView(
         padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
