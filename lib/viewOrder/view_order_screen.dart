@@ -302,7 +302,7 @@ showDialog(
   ),
 );
   
-  }
+}
 
 Future<void> _callSecondApi(String salesOrderNo) async {
   try {
@@ -312,7 +312,7 @@ Future<void> _callSecondApi(String salesOrderNo) async {
     // Using Dio for better file download support
     final dio = Dio();
     final response = await dio.post(
-      'http://pdferp.uniretailsoftware.com/api/values/order',
+      '${AppConstants.Pdf_url}/api/values/order',
       data: {"doc_id": docId},
       options: Options(responseType: ResponseType.bytes),
     );
