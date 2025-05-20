@@ -30,6 +30,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   List<PytTermDisc> paymentTerms = [];
   List<Item> _bookingTypes = [];
   bool isLoading = true;
+  bool isFetchingPartyData = false;
 
   @override
   void initState() {
@@ -318,7 +319,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     setState(() {});
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -326,12 +327,23 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       appBar: _buildAppBar(),
       body: Stack(
         children: [
-          _buildMainContent(),
-          _NavigationControls(
-            showForm: _showForm,
-            onBack: () => setState(() => _showForm = false),
-            onNext: () => setState(() => _showForm = true),
+          // Main content
+          Column(
+            children: [
+              Expanded(
+                child: _buildMainContent(),
+              ),
+              // Navigation controls at the bottom
+              _NavigationControls(
+                showForm: _showForm,
+                onBack: () => setState(() => _showForm = false),
+                onNext: () => setState(() => _showForm = true),
+              ),
+            ],
           ),
+          // Full-screen loader overlay
+          if (isFetchingPartyData || !_styleManager.isOrderItemsLoaded)
+            buildCustomLoader(),
         ],
       ),
     );
@@ -356,43 +368,46 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
           padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
-            child:
-                _showForm
-                    ? _OrderForm(
-                      controllers: _orderControllers,
-                      dropdownData: _dropdownData,
-                      constraints: constraints,
-                      onPartySelected: _handlePartySelection,
-                      updateTotals: _updateTotals,
-                      saveOrder: _saveOrderLocally,
-                      additionalInfo: _additionalInfo,
-                      consignees: consignees,
-                      paymentTerms: paymentTerms,
-                      bookingTypes: _bookingTypes,
-                      onAdditionalInfoUpdated: (newInfo) {
-                        setState(() {
-                          _additionalInfo = newInfo;
-                        });
-                      },
-                    )
-                    : _StyleCardsView(
-                      styleManager: _styleManager,
-                      updateTotals: _updateTotals,
-                      getColor: _getColorCode,
-                      onUpdate: () async {
-                        await _styleManager.refreshOrderItems();
-                        _updateTotals();
-                      },
-                    ),
+            child: _showForm
+                ? _OrderForm(
+                    controllers: _orderControllers,
+                    dropdownData: _dropdownData,
+                    constraints: constraints,
+                    onPartySelected: _handlePartySelection,
+                    updateTotals: _updateTotals,
+                    saveOrder: _saveOrderLocally,
+                    additionalInfo: _additionalInfo,
+                    consignees: consignees,
+                    paymentTerms: paymentTerms,
+                    bookingTypes: _bookingTypes,
+                    onAdditionalInfoUpdated: (newInfo) {
+                      setState(() {
+                        _additionalInfo = newInfo;
+                      });
+                    },
+                    isFetchingPartyData: isFetchingPartyData,
+                    setFetchingPartyData: _setFetchingPartyData,
+                  )
+                : _StyleCardsView(
+                    styleManager: _styleManager,
+                    updateTotals: _updateTotals,
+                    getColor: _getColorCode,
+                    onUpdate: () async {
+                      await _styleManager.refreshOrderItems();
+                      _updateTotals();
+                    },
+                  ),
           ),
         );
       },
     );
   }
-
-  void _handlePartySelection(String? val, String? key) async {
+void _handlePartySelection(String? val, String? key) async {
     if (key == null) return;
-    _orderControllers.selectedPartyKey = key;
+    setState(() {
+      isFetchingPartyData = true; // Start loading
+      _orderControllers.selectedPartyKey = key;
+    });
     try {
       await fetchAndMapConsignees(key: key, CoBrId: '01');
 
@@ -415,15 +430,25 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
           _dropdownData.transporterList,
         );
         _orderControllers.comm.text = commission;
+        isFetchingPartyData = false; // Stop loading
       });
     } catch (e) {
       print('Error fetching party details: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to load party details')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load party details')),
+      );
+      setState(() {
+        isFetchingPartyData = false; // Stop loading on error
+      });
     }
   }
 
+  void _setFetchingPartyData(bool value) {
+    setState(() {
+      isFetchingPartyData = value;
+    });
+  }
+ 
   Color _getColorCode(String color) {
     switch (color.toLowerCase()) {
       case 'red':
@@ -764,37 +789,36 @@ class _StyleCardsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!styleManager.isOrderItemsLoaded) {
-      return const Center(child: CircularProgressIndicator());
-    } else if (styleManager.groupedItems.isEmpty) {
+    if (styleManager.groupedItems.isEmpty) {
       return const Center(
         child: Text(
           'No item added',
           style: TextStyle(fontSize: 18, color: Colors.grey),
         ),
       );
-    } else {
-      return Column(
-        children:
-            styleManager.groupedItems.entries
-                .map(
-                  (entry) => StyleCard(
-                    styleCode: entry.key,
-                    items: entry.value,
-                    controllers: styleManager.controllers[entry.key]!,
-                    onRemove: () {
-                      styleManager.removedStyles.add(entry.key);
-                      styleManager.controllers.remove(entry.key);
-                      updateTotals();
-                    },
-                    updateTotals: updateTotals,
-                    getColor: getColor,
-                    onUpdate: onUpdate,
-                  ),
-                )
-                .toList(),
-      );
     }
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: styleManager.groupedItems.entries
+            .map(
+              (entry) => StyleCard(
+                styleCode: entry.key,
+                items: entry.value,
+                controllers: styleManager.controllers[entry.key]!,
+                onRemove: () {
+                  styleManager.removedStyles.add(entry.key);
+                  styleManager.controllers.remove(entry.key);
+                  updateTotals();
+                },
+                updateTotals: updateTotals,
+                getColor: getColor,
+                onUpdate: onUpdate,
+              ),
+            )
+            .toList(),
+      ),
+    );
   }
 }
 
@@ -810,6 +834,8 @@ class _OrderForm extends StatelessWidget {
   final List<PytTermDisc> paymentTerms;
   final List<Item> bookingTypes;
   final Function(Map<String, dynamic>) onAdditionalInfoUpdated;
+  final bool isFetchingPartyData;
+  final Function(bool) setFetchingPartyData;
 
   const _OrderForm({
     required this.controllers,
@@ -823,143 +849,158 @@ class _OrderForm extends StatelessWidget {
     required this.paymentTerms,
     required this.bookingTypes,
     required this.onAdditionalInfoUpdated,
+    required this.isFetchingPartyData,
+    required this.setFetchingPartyData,
   });
 
   @override
   Widget build(BuildContext context) {
     final isWideScreen = constraints.maxWidth > 600;
-    return Column(
-      children: [
-        _buildResponsiveRow(
-          isWideScreen,
-          buildTextField(
-            context,
-            "Order No",
-            controllers.orderNo,
-            isText: true,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _buildResponsiveRow(
+            isWideScreen,
+            buildTextField(
+              context,
+              "Order No",
+              controllers.orderNo,
+              isText: true,
+            ),
+            buildTextField(
+              context,
+              "Select Date",
+              controllers.date,
+              isDate: true,
+              onTap: () => _selectDate(context, controllers.date),
+            ),
           ),
-          buildTextField(
-            context,
-            "Select Date",
-            controllers.date,
-            isDate: true,
-            onTap: () => _selectDate(context, controllers.date),
-          ),
-        ),
-        _buildPartyDropdownRow(context),
-        _buildDropdown("Broker", "B", controllers.selectedBroker, (
-          val,
-          key,
-        ) async {
-          controllers.selectedBrokerKey = key;
-          if (key != null) {
-            final commission = await dropdownData.fetchCommissionPercentage(
-              key,
-            );
-            controllers.comm.text = commission;
-          }
-        }),
-        buildTextField(context, "Comm (%)", controllers.comm),
-        _buildDropdown(
-          "Transporter",
-          "T",
-          controllers.selectedTransporter,
-          (val, key) => controllers.selectedTransporterKey = key,
-        ),
-        _buildResponsiveRow(
-          isWideScreen,
-          buildTextField(
-            context,
-            "Delivery Days",
-            controllers.deliveryDays,
-            readOnly: true,
-          ),
-          buildTextField(
-            context,
-            "Delivery Date",
-            controllers.deliveryDate,
-            isDate: true,
-            onTap: () async {
-              final today = DateTime.now();
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: today,
-                firstDate: today,
-                lastDate: DateTime(2100),
-              );
-              if (picked != null) {
-                final difference = picked.difference(today).inDays;
-                controllers.deliveryDate.text = _OrderControllers.formatDate(
-                  picked,
-                );
-                controllers.deliveryDays.text = difference.toString();
+          _buildPartyDropdownRow(context),
+          _buildDropdown(
+            "Broker",
+            "B",
+            controllers.selectedBroker,
+            (val, key) async {
+              controllers.selectedBrokerKey = key;
+              if (key != null) {
+                setFetchingPartyData(true);
+                try {
+                  final commission =
+                      await dropdownData.fetchCommissionPercentage(key);
+                  controllers.comm.text = commission;
+                } catch (e) {
+                  print('Error fetching commission: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to load commission')),
+                  );
+                } finally {
+                  setFetchingPartyData(false);
+                }
               }
             },
           ),
-        ),
-        buildFullField(context, "Remark", controllers.remark, true),
-        _buildResponsiveRow(
-          isWideScreen,
-          buildTextField(
-            context,
-            "Total Item",
-            controllers.totalItem,
-            readOnly: true,
+          buildTextField(context, "Comm (%)", controllers.comm),
+          _buildDropdown(
+            "Transporter",
+            "T",
+            controllers.selectedTransporter,
+            (val, key) => controllers.selectedTransporterKey = key,
           ),
-          buildTextField(
-            context,
-            "Total Quantity",
-            controllers.totalQty,
-            readOnly: true,
-          ),
-        ),
-        if (additionalInfo.isNotEmpty) ...[
-          const SizedBox(height: 20),
-          const Text(
-            'Additional Information',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primaryColor,
+          _buildResponsiveRow(
+            isWideScreen,
+            buildTextField(
+              context,
+              "Delivery Days",
+              controllers.deliveryDays,
+              readOnly: true,
+            ),
+            buildTextField(
+              context,
+              "Delivery Date",
+              controllers.deliveryDate,
+              isDate: true,
+              onTap: () async {
+                final today = DateTime.now();
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: today,
+                  firstDate: today,
+                  lastDate: DateTime(2100),
+                );
+                if (picked != null) {
+                  final difference = picked.difference(today).inDays;
+                  controllers.deliveryDate.text =
+                      _OrderControllers.formatDate(picked);
+                  controllers.deliveryDays.text = difference.toString();
+                }
+              },
             ),
           ),
-          const SizedBox(height: 10),
-          Card(
-            elevation: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (additionalInfo['refno'] != null)
-                    _buildInfoRow('Reference No:', additionalInfo['refno']),
-                  if (additionalInfo['duedate'] != null)
-                    _buildInfoRow('Due Date:', additionalInfo['duedate']),
-                  if (additionalInfo['paymentterms'] != null)
-                    _buildInfoRow(
-                      'Payment Terms:',
-                      additionalInfo['paymentterms'],
-                    ),
-                  if (additionalInfo['salesman'] != null)
-                    _buildInfoRow('Sales Person:', additionalInfo['salesman']),
-                  if (additionalInfo['paymentdays'] != null)
-                    _buildInfoRow(
-                      'Credit Period:',
-                      '${additionalInfo['paymentdays']} days',
-                    ),
-                  if (additionalInfo['bookingtype'] != null)
-                    _buildInfoRow(
-                      'Booking Type:',
-                      additionalInfo['bookingtype'],
-                    ),
-                ],
+          buildFullField(context, "Remark", controllers.remark, true),
+          _buildResponsiveRow(
+            isWideScreen,
+            buildTextField(
+              context,
+              "Total Item",
+              controllers.totalItem,
+              readOnly: true,
+            ),
+            buildTextField(
+              context,
+              "Total Quantity",
+              controllers.totalQty,
+              readOnly: true,
+            ),
+          ),
+          if (additionalInfo.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            const Text(
+              'Additional Information',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryColor,
               ),
             ),
-          ),
+            const SizedBox(height: 10),
+            Card(
+              elevation: 3,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (additionalInfo['refno'] != null)
+                      _buildInfoRow('Reference No:', additionalInfo['refno']),
+                    if (additionalInfo['duedate'] != null)
+                      _buildInfoRow('Due Date:', additionalInfo['duedate']),
+                    if (additionalInfo['paymentterms'] != null)
+                      _buildInfoRow(
+                        'Payment Terms:',
+                        additionalInfo['paymentterms'],
+                      ),
+                    if (additionalInfo['salesman'] != null)
+                      _buildInfoRow('Sales Person:', additionalInfo['salesman']),
+                    if (additionalInfo['paymentdays'] != null)
+                      _buildInfoRow(
+                        'Credit Period:',
+                        '${additionalInfo['paymentdays']} days',
+                      ),
+                    if (additionalInfo['bookingtype'] != null)
+                      _buildInfoRow(
+                        'Booking Type:',
+                        additionalInfo['bookingtype'],
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 20),
+          _buildActionButtons(context),
         ],
-        const SizedBox(height: 20),
-        _buildActionButtons(context),
-      ],
+      ),
     );
   }
 
@@ -1015,7 +1056,7 @@ class _OrderForm extends StatelessWidget {
     );
   }
 
-  Widget _buildDropdown(
+ Widget _buildDropdown(
     String label,
     String ledCat,
     String? selectedValue,
@@ -1055,7 +1096,6 @@ class _OrderForm extends StatelessWidget {
       ),
     );
   }
-
   List<Map<String, String>> _getLedgerList(String ledCat) {
     switch (ledCat) {
       case 'w':
@@ -1207,5 +1247,56 @@ Widget buildFullField(
   return Padding(
     padding: const EdgeInsets.only(top: 12),
     child: buildTextField(context, label, controller, isText: isText),
+  );
+}
+Widget buildCustomLoader() {
+  return Positioned.fill(
+    child: Stack(
+      children: [
+        // Semi-transparent background for shadow effect
+        Container(
+          color: Colors.black.withOpacity(0.15), // Shadow effect for full screen
+        ),
+        // Centered loader
+        Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(3.5),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26, // Darker shadow for contrast
+                  blurRadius: 8,
+                  offset: Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Please Wait...',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: AppColors.primaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
   );
 }
