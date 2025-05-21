@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -39,6 +38,119 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
     super.dispose();
   }
 
+  Future<void> _loadOrderDetails() async {
+    setState(() {
+      isLoading = true;
+    });
+    final List<CatalogOrderData> tempList = [];
+
+    for (var item in widget.catalogs) {
+      final payload = {
+        "itemSubGrpKey": item.itemSubGrpKey,
+        "itemKey": item.itemKey,
+        "styleKey": item.styleKey,
+        "userId": "Admin",
+        "coBrId": "01",
+        "fcYrId": "24",
+      };
+
+      try {
+        final response = await http.post(
+          Uri.parse('${AppConstants.BASE_URL}/catalog/GetOrderDetails2'),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(payload),
+        );
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final orderMatrix = OrderMatrix.fromJson(data);
+          tempList.add(
+            CatalogOrderData(catalog: item, orderMatrix: orderMatrix),
+          );
+          final shades =
+              item.shadeName.split(',').map((s) => s.trim()).toList();
+          selectedColors2[item.styleKey] = shades.isNotEmpty ? shades[0] : '';
+          quantities[item.styleKey] = shades.isNotEmpty ? {shades[0]: {}} : {};
+        } else {
+          debugPrint(
+            'Failed to fetch order details for ${item.styleKey}: ${response.statusCode}',
+          );
+        }
+      } catch (e) {
+        debugPrint('Error fetching order details for ${item.styleKey}: $e');
+      }
+    }
+
+    setState(() {
+      catalogOrderList = tempList;
+      isLoading = false;
+    });
+  }
+
+  int _getQuantity(String styleKey, String shade, String size) {
+    return quantities[styleKey]?[shade.trim()]?[size] ?? 0;
+  }
+
+  void _setQuantity(String styleKey, String shade, String size, int value) {
+    setState(() {
+      quantities.putIfAbsent(styleKey, () => {});
+      quantities[styleKey]!.putIfAbsent(shade.trim(), () => {});
+      quantities[styleKey]![shade.trim()]![size] = value.clamp(0, 99999);
+    });
+  }
+
+  void _deleteStyle(String styleKey) {
+    setState(() {
+      catalogOrderList.removeWhere(
+        (order) => order.catalog.styleKey == styleKey,
+      );
+      selectedColors2.remove(styleKey);
+      quantities.remove(styleKey);
+      _controllers.removeWhere((key, _) => key.contains('$styleKey-'));
+      _copiedShades.removeWhere((key) => key.startsWith('$styleKey:'));
+    });
+  }
+
+  void _copyStyleQuantities(
+    String sourceStyleKey,
+    String sourceShade,
+    Map<String, Set<String>> targetStyles,
+  ) {
+    final sourceQuantities = quantities[sourceStyleKey]?[sourceShade] ?? {};
+
+    setState(() {
+      for (var targetStyleKey in targetStyles.keys) {
+        final targetCatalogOrder = catalogOrderList.firstWhere(
+          (order) => order.catalog.styleKey == targetStyleKey,
+        );
+        final validSizes = targetCatalogOrder.orderMatrix.sizes;
+        final targetShades =
+            targetStyles[targetStyleKey] ??
+            targetCatalogOrder.catalog.shadeName
+                .split(',')
+                .map((s) => s.trim())
+                .toSet();
+
+        quantities[targetStyleKey] ??= {};
+        for (var targetShade in targetShades) {
+          quantities[targetStyleKey]!.putIfAbsent(targetShade, () => {});
+          quantities[targetStyleKey]![targetShade]!.clear();
+
+          sourceQuantities.forEach((size, quantity) {
+            if (validSizes.contains(size)) {
+              quantities[targetStyleKey]![targetShade]![size] = quantity;
+              final controllerKey = '$targetStyleKey-$targetShade-$size';
+              if (_controllers.containsKey(controllerKey)) {
+                _controllers[controllerKey]!.text = quantity.toString();
+              }
+              _copiedShades.add('$targetStyleKey:$targetShade');
+            }
+          });
+        }
+      }
+    });
+  }
+
   Future<void> _submitAllOrders() async {
     List<Future> apiCalls = [];
 
@@ -66,11 +178,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
               final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(
                 ',',
               );
-              final mrp = matrixData[0]; // Rate
-              final wsp =
-                  matrixData.length > 2
-                      ? matrixData[2]
-                      : matrixData[0]; // Assuming WSP is same as MRP if not provided
+              final mrp = matrixData[0];
+              final wsp = matrixData.length > 2 ? matrixData[2] : matrixData[0];
 
               final payload = {
                 "userId": userId,
@@ -82,12 +191,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
                   "WSP": wsp,
                   "size": size,
                   "TotQty": _calculateCatalogQuantity(styleKey).toString(),
-                  "Note":
-                      "", // No note field in CreateOrderScreen, using empty string
+                  "Note": "",
                   "color": shade,
                   "Qty": quantity.toString(),
                   "cobrid": coBrId,
-
                   "user": userId.toLowerCase(),
                   "barcode": "",
                 },
@@ -169,67 +276,6 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
       default:
         return Colors.black;
     }
-  }
-
-  Future<void> _loadOrderDetails() async {
-    setState(() {
-      isLoading = true;
-    });
-    final List<CatalogOrderData> tempList = [];
-
-    for (var item in widget.catalogs) {
-      final payload = {
-        "itemSubGrpKey": item.itemSubGrpKey,
-        "itemKey": item.itemKey,
-        "styleKey": item.styleKey,
-        "userId": "Admin",
-        "coBrId": "01",
-        "fcYrId": "24",
-      };
-
-      try {
-        final response = await http.post(
-          Uri.parse('${AppConstants.BASE_URL}/catalog/GetOrderDetails2'),
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode(payload),
-        );
-
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          final orderMatrix = OrderMatrix.fromJson(data);
-          tempList.add(
-            CatalogOrderData(catalog: item, orderMatrix: orderMatrix),
-          );
-          final shades =
-              item.shadeName.split(',').map((s) => s.trim()).toList();
-          selectedColors2[item.styleKey] = shades.isNotEmpty ? shades[0] : '';
-          quantities[item.styleKey] = shades.isNotEmpty ? {shades[0]: {}} : {};
-        } else {
-          debugPrint(
-            'Failed to fetch order details for ${item.styleKey}: ${response.statusCode}',
-          );
-        }
-      } catch (e) {
-        debugPrint('Error fetching order details for ${item.styleKey}: $e');
-      }
-    }
-
-    setState(() {
-      catalogOrderList = tempList;
-      isLoading = false;
-    });
-  }
-
-  int _getQuantity(String styleKey, String shade, String size) {
-    return quantities[styleKey]?[shade.trim()]?[size] ?? 0;
-  }
-
-  void _setQuantity(String styleKey, String shade, String size, int value) {
-    setState(() {
-      quantities.putIfAbsent(styleKey, () => {});
-      quantities[styleKey]!.putIfAbsent(shade.trim(), () => {});
-      quantities[styleKey]![shade.trim()]![size] = value.clamp(0, 99999);
-    });
   }
 
   @override
@@ -406,7 +452,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
           continue;
         }
         for (var size in quantities[styleKey]![shade]!.keys) {
-          final sizeIndex = matrix.sizes.indexOf(size.toString().trim());
+          final sizeIndex = matrix.sizes.indexOf(size.trim());
           if (sizeIndex == -1) {
             debugPrint('Size not found: $size');
             continue;
@@ -436,7 +482,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
             continue;
           }
           for (var size in quantities[styleKey]![shade]!.keys) {
-            final sizeIndex = matrix.sizes.indexOf(size.toString().trim());
+            final sizeIndex = matrix.sizes.indexOf(size.trim());
             if (sizeIndex == -1) {
               debugPrint('Size not found: $size');
               continue;
@@ -455,232 +501,237 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
     return total;
   }
 
-Widget buildOrderItem(CatalogOrderData catalogOrder) {
-  final catalog = catalogOrder.catalog;
-  if (!selectedColors2.containsKey(catalog.styleKey)) {
-    final shades = catalog.shadeName.split(',').map((s) => s.trim()).toList();
-    selectedColors2[catalog.styleKey] = shades.isNotEmpty ? shades[0] : '';
-    quantities[catalog.styleKey] ??= {};
-    if (shades.isNotEmpty) {
-      quantities[catalog.styleKey]!.putIfAbsent(shades[0], () => {});
+  Widget buildOrderItem(CatalogOrderData catalogOrder) {
+    final catalog = catalogOrder.catalog;
+    if (!selectedColors2.containsKey(catalog.styleKey)) {
+      final shades = catalog.shadeName.split(',').map((s) => s.trim()).toList();
+      selectedColors2[catalog.styleKey] = shades.isNotEmpty ? shades[0] : '';
+      quantities[catalog.styleKey] ??= {};
+      if (shades.isNotEmpty) {
+        quantities[catalog.styleKey]!.putIfAbsent(shades[0], () => {});
+      }
     }
-  }
-  String selectedColor = selectedColors2[catalog.styleKey]!;
+    String selectedColor = selectedColors2[catalog.styleKey]!;
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8.0),
-              child: Image.network(
-                catalog.fullImagePath.contains("http")
-                    ? catalog.fullImagePath
-                    : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}',
-                width: 60,
-                height: 80,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    const Icon(Icons.error, size: 60),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          catalog.styleCode,
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.blue,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Total Qty: ${_calculateCatalogQuantity(catalog.styleKey)}',
-                          style: GoogleFonts.roboto(fontSize: 14),
-                        ),
-                        Text(
-                          'Total Price: ₹${_calculateCatalogPrice(catalog.styleKey).toStringAsFixed(2)}',
-                          style: GoogleFonts.roboto(
-                            fontSize: 14,
-                            color: Colors.green,
-                          ),
-                        ),
-                        Text(
-                          'Pending Qty: 0 | Wip Stock: 0',
-                          style: GoogleFonts.roboto(fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.copy_all_outlined,
-                      size: 20,
-                      color: Colors.grey,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 20,
-                      minHeight: 20,
-                    ),
-                    onPressed: () async {
-                      setState(() {
-                        _copiedShades.add('${catalog.styleKey}:$selectedColor');
-                      });
-
-                      final result = await showDialog<Map<String, dynamic>>(
-                        context: context,
-                        builder: (context) => ShadeSelectionDialog(
-                          shades: catalog.shadeName
-                              .split(',')
-                              .map((s) => s.trim())
-                              .toList(),
-                          sourceShade: selectedColor,
-                          dialogType: 'styleCopy',
-                        ),
-                      );
-
-                      if (result != null) {
-                        final selectedShades = result['selectedShades'] as Set<String>;
-                        setState(() {
-                          final currentQuantities =
-                              quantities[catalog.styleKey]?[selectedColor] ?? {};
-                          if (selectedShades.isNotEmpty) {
-                            for (var targetCatalogOrder in catalogOrderList) {
-                              if (targetCatalogOrder.catalog.styleKey != catalog.styleKey) {
-                                final targetStyleKey = targetCatalogOrder.catalog.styleKey;
-                                final targetShades = targetCatalogOrder.catalog.shadeName
-                                    .split(',')
-                                    .map((s) => s.trim())
-                                    .toList();
-                                final validSizes = targetCatalogOrder.orderMatrix.sizes;
-
-                                quantities[targetStyleKey] ??= {};
-                                for (var targetShade in targetShades) {
-                                  if (selectedShades.contains(targetShade)) {
-                                    quantities[targetStyleKey]!.putIfAbsent(
-                                      targetShade,
-                                      () => {},
-                                    );
-                                    quantities[targetStyleKey]![targetShade]!.clear();
-                                    currentQuantities.forEach((size, quantity) {
-                                      if (validSizes.contains(size)) {
-                                        quantities[targetStyleKey]![targetShade]![size] =
-                                            quantity;
-                                      }
-                                    });
-                                    _copiedShades.add('$targetStyleKey:$targetShade');
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        });
-                      } else {
-                        setState(() {
-                          _copiedShades.remove('${catalog.styleKey}:$selectedColor');
-                        });
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      const SizedBox(height: 5),
-      Text(
-        'Select Shade',
-        style: GoogleFonts.lora(fontWeight: FontWeight.normal),
-      ),
-      const SizedBox(height: 5),
-      Wrap(
-        spacing: 8.0,
-        runSpacing: 8.0,
-        children: catalog.shadeName.split(',').map((color) {
-          final trimmedColor = color.trim();
-          final isSelected = selectedColor == trimmedColor;
-          final isCopySelected = _copiedShades.contains(
-            '${catalog.styleKey}:$trimmedColor',
-          );
-
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                selectedColors2[catalog.styleKey] = trimmedColor;
-                quantities[catalog.styleKey] ??= {};
-                quantities[catalog.styleKey]!.putIfAbsent(
-                  trimmedColor,
-                  () => {},
-                );
-              });
-            },
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected ? Colors.blue : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isSelected ? Colors.blue : Colors.black,
-                    ),
-                  ),
-                  child: Text(
-                    trimmedColor,
-                    style: GoogleFonts.roboto(
-                      color: isSelected ? Colors.white : Colors.black,
-                    ),
-                  ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8.0),
+                child: Image.network(
+                  catalog.fullImagePath.contains("http")
+                      ? catalog.fullImagePath
+                      : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}',
+                  width: 60,
+                  height: 80,
+                  fit: BoxFit.cover,
+                  errorBuilder:
+                      (context, error, stackTrace) =>
+                          const Icon(Icons.error, size: 60),
                 ),
-                if (isCopySelected)
-                  Positioned(
-                    top: -8,
-                    right: -8,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.green,
-                        border: Border.all(color: Colors.white, width: 1),
-                      ),
-                      child: Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 16,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  catalog.styleCode,
+                                  style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.copy,
+                                      size: 16,
+                                      color: Colors.grey,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    onPressed: () async {
+                                      setState(() {
+                                        _copiedShades.add(
+                                          '${catalog.styleKey}:$selectedColor',
+                                        );
+                                      });
+
+                                      final result = await showDialog<
+                                        Map<String, Set<String>>
+                                      >(
+                                        context: context,
+                                        builder:
+                                            (context) => CopyToStylesDialog(
+                                              catalogOrders:
+                                                  catalogOrderList
+                                                      .where(
+                                                        (order) =>
+                                                            order
+                                                                .catalog
+                                                                .styleKey !=
+                                                            catalog.styleKey,
+                                                      )
+                                                      .toList(),
+                                              sourceStyleKey: catalog.styleKey,
+                                              sourceStyleCode:
+                                                  catalog.styleCode,
+                                              sourceShade: selectedColor,
+                                            ),
+                                      );
+
+                                      if (result != null && result.isNotEmpty) {
+                                        _copyStyleQuantities(
+                                          catalog.styleKey,
+                                          selectedColor,
+                                          result,
+                                        );
+                                      } else {
+                                        setState(() {
+                                          _copiedShades.remove(
+                                            '${catalog.styleKey}:$selectedColor',
+                                          );
+                                        });
+                                      }
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      size: 16,
+                                      color: Colors.red,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    onPressed: () {
+                                      _deleteStyle(catalog.styleKey);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Total Qty: ${_calculateCatalogQuantity(catalog.styleKey)}',
+                            style: GoogleFonts.roboto(fontSize: 14),
+                          ),
+                          Text(
+                            'Total Price: ₹${_calculateCatalogPrice(catalog.styleKey).toStringAsFixed(2)}',
+                            style: GoogleFonts.roboto(
+                              fontSize: 14,
+                              color: Colors.green,
+                            ),
+                          ),
+                          Text(
+                            'Pending Qty: 0 | Wip Stock: 0',
+                            style: GoogleFonts.roboto(fontSize: 14),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-      const SizedBox(height: 15),
-      if (selectedColor.isNotEmpty)
-        _buildColorSection(catalogOrder, selectedColor),
-      const SizedBox(height: 15),
-    ],
-  );
-}
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 5),
+        Text(
+          'Select Shade',
+          style: GoogleFonts.lora(fontWeight: FontWeight.normal),
+        ),
+        const SizedBox(height: 5),
+        Wrap(
+          spacing: 8.0,
+          runSpacing: 8.0,
+          children:
+              catalog.shadeName.split(',').map((color) {
+                final trimmedColor = color.trim();
+                final isSelected = selectedColor == trimmedColor;
+                final isCopySelected = _copiedShades.contains(
+                  '${catalog.styleKey}:$trimmedColor',
+                );
 
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      selectedColors2[catalog.styleKey] = trimmedColor;
+                      quantities[catalog.styleKey] ??= {};
+                      quantities[catalog.styleKey]!.putIfAbsent(
+                        trimmedColor,
+                        () => {},
+                      );
+                    });
+                  },
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected ? Colors.blue : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isSelected ? Colors.blue : Colors.black,
+                          ),
+                        ),
+                        child: Text(
+                          trimmedColor,
+                          style: GoogleFonts.roboto(
+                            color: isSelected ? Colors.white : Colors.black,
+                          ),
+                        ),
+                      ),
+                      if (isCopySelected)
+                        Positioned(
+                          top: -8,
+                          right: -8,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.green,
+                              border: Border.all(color: Colors.white, width: 1),
+                            ),
+                            child: Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              }).toList(),
+        ),
+        const SizedBox(height: 15),
+        if (selectedColor.isNotEmpty)
+          _buildColorSection(catalogOrder, selectedColor),
+        const SizedBox(height: 15),
+      ],
+    );
+  }
 
   int _calculateCatalogQuantity(String styleKey) {
     int total = 0;
@@ -758,8 +809,14 @@ Widget buildOrderItem(CatalogOrderData catalogOrder) {
                             currentQuantities.forEach((size, quantity) {
                               quantities[styleKey]![targetShade]![size] =
                                   quantity;
+                              final controllerKey =
+                                  '$styleKey-$targetShade-$size';
+                              if (_controllers.containsKey(controllerKey)) {
+                                _controllers[controllerKey]!.text =
+                                    quantity.toString();
+                              }
+                              _copiedShades.add('$styleKey:$targetShade');
                             });
-                            _copiedShades.add('$styleKey:$targetShade');
                           }
                         }
 
@@ -877,7 +934,7 @@ Widget buildOrderItem(CatalogOrderData catalogOrder) {
   ) {
     final matrix = catalogOrder.orderMatrix;
     final shadeIndex = matrix.shades.indexOf(shade.trim());
-    final sizeIndex = matrix.sizes.indexOf(size.toString().trim());
+    final sizeIndex = matrix.sizes.indexOf(size.trim());
     final styleKey = catalogOrder.catalog.styleKey;
 
     String rate = '';
@@ -1003,7 +1060,7 @@ class _ShadeSelectionDialogState extends State<ShadeSelectionDialog> {
     super.initState();
     _selectedShades =
         widget.dialogType == 'styleCopy'
-            ? Set.from(widget.shades.map((s) => s.trim()))
+            ? widget.shades.map((s) => s.trim()).toSet()
             : {widget.sourceShade.trim()};
   }
 
@@ -1012,15 +1069,21 @@ class _ShadeSelectionDialogState extends State<ShadeSelectionDialog> {
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       title: Text(
-        widget.dialogType == 'styleCopy'
-            ? 'Copy Size Qty to Other Styles'
-            : 'Copy Quantities',
+        widget.dialogType == 'styleCopy' ? 'Select Shades' : 'Copy Quantities',
         style: GoogleFonts.poppins(),
       ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (widget.dialogType == 'styleCopy')
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Text(
+                  'Copying from: ${widget.sourceShade}',
+                  style: GoogleFonts.roboto(fontWeight: FontWeight.bold),
+                ),
+              ),
             ...widget.shades.map((shade) {
               final trimmedShade = shade.trim();
               final isSourceShade = trimmedShade == widget.sourceShade.trim();
@@ -1069,4 +1132,187 @@ class _ShadeSelectionDialogState extends State<ShadeSelectionDialog> {
       ],
     );
   }
+}
+
+class CopyToStylesDialog extends StatefulWidget {
+  final List<CatalogOrderData> catalogOrders;
+  final String sourceStyleKey;
+  final String sourceStyleCode;
+  final String sourceShade;
+
+  const CopyToStylesDialog({
+    Key? key,
+    required this.catalogOrders,
+    required this.sourceStyleKey,
+    required this.sourceStyleCode,
+    required this.sourceShade,
+  }) : super(key: key);
+
+  @override
+  _CopyToStylesDialogState createState() => _CopyToStylesDialogState();
+}
+
+class _CopyToStylesDialogState extends State<CopyToStylesDialog> {
+  final Map<String, Set<String>> _selectedShadesPerStyle = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize with all shades selected by default for each style
+    for (var order in widget.catalogOrders) {
+      _selectedShadesPerStyle[order.catalog.styleKey] =
+          order.catalog.shadeName.split(',').map((s) => s.trim()).toSet();
+    }
+  }
+
+  Future<void> _showShadeSelectionDialog(
+    String styleKey,
+    List<String> shades,
+  ) async {
+    final result = await showDialog<Set<String>>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text('Select Shades for $styleKey'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children:
+                    shades.map((shade) {
+                      return CheckboxListTile(
+                        title: Text(shade),
+                        value:
+                            _selectedShadesPerStyle[styleKey]?.contains(
+                              shade,
+                            ) ??
+                            false,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            if (value == true) {
+                              _selectedShadesPerStyle[styleKey]?.add(shade);
+                            } else {
+                              _selectedShadesPerStyle[styleKey]?.remove(shade);
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancel'),
+              ),
+              TextButton(
+                onPressed:
+                    () => Navigator.pop(
+                      context,
+                      _selectedShadesPerStyle[styleKey],
+                    ),
+                child: Text('OK'),
+              ),
+            ],
+          ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _selectedShadesPerStyle[styleKey] = result;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      title: Text('Copy Qty to Other Styles', style: GoogleFonts.poppins()),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Text(
+                'Copying from: ${widget.sourceStyleCode} (${widget.sourceShade})',
+                style: GoogleFonts.roboto(fontWeight: FontWeight.bold),
+              ),
+            ),
+            const Divider(),
+            ...widget.catalogOrders.map((order) {
+              final styleKey = order.catalog.styleKey;
+              final styleCode = order.catalog.styleCode;
+              final shades =
+                  order.catalog.shadeName
+                      .split(',')
+                      .map((s) => s.trim())
+                      .toList();
+
+              return ListTile(
+                title: Text(styleCode, style: GoogleFonts.roboto()),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.more_vert),
+                      onPressed:
+                          () => _showShadeSelectionDialog(styleKey, shades),
+                    ),
+                    Checkbox(
+                      value:
+                          _selectedShadesPerStyle.containsKey(styleKey) &&
+                          _selectedShadesPerStyle[styleKey]!.isNotEmpty,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          if (value == true) {
+                            _selectedShadesPerStyle[styleKey] = shades.toSet();
+                          } else {
+                            _selectedShadesPerStyle.remove(styleKey);
+                          }
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Cancel', style: GoogleFonts.montserrat()),
+        ),
+        TextButton(
+          onPressed: () {
+            // If no shades were explicitly selected, use all shades by default
+            final result = <String, Set<String>>{};
+            for (var order in widget.catalogOrders) {
+              final styleKey = order.catalog.styleKey;
+              if (_selectedShadesPerStyle.containsKey(styleKey) &&
+                  _selectedShadesPerStyle[styleKey]!.isNotEmpty) {
+                result[styleKey] = _selectedShadesPerStyle[styleKey]!;
+              }
+            }
+            Navigator.pop(context, result);
+          },
+          child: Text('OK', style: GoogleFonts.montserrat()),
+        ),
+      ],
+    );
+  }
+}
+
+// Add this extension to Catalog to store temporary shade selections
+extension CatalogExtension on Catalog {
+  static final _temporarySelectedShades = <String, Set<String>?>{};
+
+  Set<String>? get temporarySelectedShades =>
+      _temporarySelectedShades[styleKey];
+
+  set temporarySelectedShades(Set<String>? value) =>
+      _temporarySelectedShades[styleKey] = value;
 }
