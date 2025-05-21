@@ -1,3 +1,13 @@
+
+
+
+
+
+
+
+
+
+
 import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
@@ -34,15 +44,23 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   List<PytTermDisc> paymentTerms = [];
   List<Item> _bookingTypes = [];
   bool isLoading = true;
+  bool barcodeMode = false;
 
-  @override
+@override
   void initState() {
     super.initState();
-    _initializeData();
-    _setInitialDates();
-    fetchAndPrintSalesOrderNumber();
-    _styleManager.updateTotalsCallback = _updateTotals;
-    _loadBookingTypes();
+    // Retrieve barcode argument
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      if (args != null && args.containsKey('barcode')) {
+        barcodeMode = args['barcode'] as bool;
+      }
+      _initializeData();
+      _setInitialDates();
+      fetchAndPrintSalesOrderNumber();
+      _styleManager.updateTotalsCallback = _updateTotals;
+      _loadBookingTypes();
+    });
   }
 
   Future<void> _loadBookingTypes() async {
@@ -184,9 +202,9 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     _orderControllers.deliveryDays.text = '0';
   }
 
-  Future<void> _initializeData() async {
+Future<void> _initializeData() async {
     await Future.wait([
-      _styleManager.fetchOrderItems(),
+      _styleManager.fetchOrderItems(barcode: barcodeMode), // Pass barcode mode
       _dropdownData.loadAllDropdownData(),
       fetchPaymentTerms(),
     ]);
@@ -426,7 +444,7 @@ Future<void> _callSecondApi(String salesOrderNo) async {
                       updateTotals: _updateTotals,
                       getColor: _getColorCode,
                       onUpdate: () async {
-                        await _styleManager.refreshOrderItems();
+                        await _styleManager.refreshOrderItems(barcode: barcodeMode);
                         _updateTotals();
                       },
                     ),
@@ -635,45 +653,42 @@ class _StyleManager {
     }
     return map;
   }
+Future<void> fetchOrderItems({required bool barcode}) async {
+  final response = await http.post(
+    Uri.parse('${AppConstants.BASE_URL}/orderBooking/GetViewOrder'),
+    headers: {'Content-Type': 'application/json'},
+    body: json.encode({
+      "coBrId": "01",
+      "userId": "Admin",
+      "fcYrId": "24",
+      "barcode": barcode ? "true" : "false", // Use the passed barcode value
+    }),
+  );
 
-  Future<void> fetchOrderItems() async {
-    final response = await http.post(
-      Uri.parse('${AppConstants.BASE_URL}/orderBooking/GetViewOrder'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        "coBrId": "01",
-        "userId": "Admin",
-        "fcYrId": "24",
-        "barcode": "false",
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      _orderItems = json.decode(response.body);
-      _initializeControllers();
-      isOrderItemsLoaded = true;
-    }
+  if (response.statusCode == 200) {
+    _orderItems = json.decode(response.body);
+    _initializeControllers();
+    isOrderItemsLoaded = true;
   }
+}
+Future<void> refreshOrderItems({required bool barcode}) async {
+  final response = await http.post(
+    Uri.parse('${AppConstants.BASE_URL}/orderBooking/GetViewOrder'),
+    headers: {'Content-Type': 'application/json'},
+    body: json.encode({
+      "coBrId": "01",
+      "userId": "Admin",
+      "fcYrId": "24",
+      "barcode": barcode ? "true" : "false",
+    }),
+  );
 
-  Future<void> refreshOrderItems() async {
-    final response = await http.post(
-      Uri.parse('${AppConstants.BASE_URL}/orderBooking/GetViewOrder'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        "coBrId": "01",
-        "userId": "Admin",
-        "fcYrId": "24",
-        "barcode": "false",
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      final newItems = json.decode(response.body);
-      _orderItems = newItems;
-      _updateControllers();
-    }
+  if (response.statusCode == 200) {
+    final newItems = json.decode(response.body);
+    _orderItems = newItems;
+    _updateControllers();
   }
-
+}
   void _initializeControllers() {
     controllers.clear();
     for (final entry in groupedItems.entries) {

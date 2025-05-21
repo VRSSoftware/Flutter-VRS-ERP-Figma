@@ -33,14 +33,12 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
   bool _isLoadingCategories = true;
   bool _isLoadingItems = false;
   bool hasFiltered = false;
-    int _cartItemCount = 0;
+  int _cartItemCount = 0;
 
   Set<String> _activeFilters = {'mrp', 'wsp', 'shades', 'stylecode'};
 
   void _updateFilters(Set<String> newFilters) {
     setState(() {
-
-
       _activeFilters = newFilters;
     });
   }
@@ -50,19 +48,19 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
     super.initState();
     _fetchCategories();
     fetchAllItems();
-    
-      if (coBr != null && fcYrId != null) {
-        _fetchCartCount();
-      }
+
+    if (coBr != null && fcYrId != null) {
+      _fetchCartCount();
+    }
   }
 
-  Future<void> _fetchCartCount() async {
+Future<void> _fetchCartCount() async {
   try {
     final data = await ApiService.getSalesOrderData(
       coBrId: '01',
       userId: 'Admin', // Replace with actual user ID if needed
-      fcYrId: 24,       // Note: fcYrId should be an int, not string
-      barcode: '',
+      fcYrId: 24, // Note: fcYrId should be an int, not string
+      barcode: showBarcodeWidget ? 'true' : 'false', // Set barcode based on checkbox
     );
     setState(() {
       _cartItemCount = data['cartItemCount'] ?? 0;
@@ -71,7 +69,6 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
     print('Error fetching cart count: $e');
   }
 }
-
 
   Future<void> _fetchCategories() async {
     try {
@@ -166,13 +163,10 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
             ),
 
           // Cart Icon for both modes
-     IconButton(
+        IconButton(
   icon: Stack(
     children: [
-      const Icon(
-        CupertinoIcons.cart_badge_plus,
-        color: Colors.white,
-      ),
+      const Icon(CupertinoIcons.cart_badge_plus, color: Colors.white),
       Positioned(
         right: 0,
         top: 0,
@@ -188,10 +182,7 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
           ),
           child: Text(
             '$_cartItemCount',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 8,
-            ),
+            style: const TextStyle(color: Colors.white, fontSize: 8),
             textAlign: TextAlign.center,
           ),
         ),
@@ -199,11 +190,13 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
     ],
   ),
   onPressed: () {
-    Navigator.pushNamed(context, '/viewOrder');
-       _fetchCartCount();
+    Navigator.pushNamed(
+      context,
+      '/viewOrder',
+      arguments: {'barcode': showBarcodeWidget}, // Pass barcode state
+    ).then((_) => _fetchCartCount());
   },
 ),
-         
           // Always show the three-dot menu
           Builder(
             builder:
@@ -269,7 +262,7 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                                 hasFiltered = true;
                               });
                             },
-                           // activeFilters: _activeFilters,
+                            // activeFilters: _activeFilters,
                           ),
                         ),
 
@@ -421,7 +414,7 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                               'coBr': coBr,
                               'fcYrId': fcYrId,
                             },
-                          ).then((_) => _fetchCartCount()); 
+                          ).then((_) => _fetchCartCount());
                         },
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
@@ -442,3 +435,6 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
     );
   }
 }
+
+
+
