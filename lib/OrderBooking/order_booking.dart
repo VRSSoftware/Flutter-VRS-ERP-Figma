@@ -269,7 +269,7 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                                 hasFiltered = true;
                               });
                             },
-                            activeFilters: _activeFilters,
+                           // activeFilters: _activeFilters,
                           ),
                         ),
 

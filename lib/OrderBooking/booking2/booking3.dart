@@ -620,8 +620,42 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
                                     ),
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
+                                    // onPressed: () {
+                                    //   _deleteStyle(catalog.styleKey);
+                                    // },
                                     onPressed: () {
-                                      _deleteStyle(catalog.styleKey);
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            title: Text('Confirm Delete'),
+                                            content: Text(
+                                              'Are you sure you want to delete "${catalog.styleCode}"?',
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                child: Text('Cancel'),
+                                                onPressed: () {
+                                                  Navigator.of(
+                                                    context,
+                                                  ).pop(); // Close the dialog
+                                                },
+                                              ),
+                                              TextButton(
+                                                child: Text('Delete'),
+                                                onPressed: () {
+                                                  Navigator.of(
+                                                    context,
+                                                  ).pop(); // Close the dialog
+                                                  _deleteStyle(
+                                                    catalog.styleKey,
+                                                  ); // Perform delete
+                                                },
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
                                     },
                                   ),
                                 ],
@@ -761,7 +795,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
                   shade,
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.bold,
-                    color: _getColorCode(shade),
+                    color: _getColorCode(shade.trim()),
                   ),
                 ),
                 const SizedBox(width: 5),
@@ -774,32 +808,86 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   onPressed: () async {
-                    setState(() {
-                      _copiedShades.add('$styleKey:$shade');
-                    });
+                    // Create a temporary set for dialog state, including the source shade
+                    Set<String> tempCopiedShades = Set.from(
+                      _copiedShades
+                          .where((s) => s.startsWith('$styleKey:'))
+                          .map((s) => s.split(':')[1]),
+                    )..add(shade);
 
-                    final result = await showDialog<Map<String, dynamic>>(
+                    final result = await showDialog<Set<String>>(
                       context: context,
                       builder:
-                          (context) => ShadeSelectionDialog(
-                            shades: allShades,
-                            sourceShade: shade,
-                            dialogType: 'shadeCopy',
+                          (dialogContext) => AlertDialog(
+                            title: const Text('Copy to Shades'),
+                            content: StatefulBuilder(
+                              builder: (
+                                BuildContext context,
+                                StateSetter setDialogState,
+                              ) {
+                                return SingleChildScrollView(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children:
+                                        allShades.map((s) {
+                                          return CheckboxListTile(
+                                            title: Text(s),
+                                            value: tempCopiedShades.contains(s),
+                                            onChanged:
+                                                s == shade
+                                                    ? null // Disable the source shade checkbox
+                                                    : (bool? value) {
+                                                      setDialogState(() {
+                                                        if (value == true) {
+                                                          tempCopiedShades.add(
+                                                            s,
+                                                          );
+                                                        } else {
+                                                          tempCopiedShades
+                                                              .remove(s);
+                                                        }
+                                                      });
+                                                    },
+                                            enabled:
+                                                s !=
+                                                shade, // Disable interaction for source shade
+                                            controlAffinity:
+                                                ListTileControlAffinity.leading,
+                                          );
+                                        }).toList(),
+                                  ),
+                                );
+                              },
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context, tempCopiedShades);
+                                },
+                                child: const Text('OK'),
+                              ),
+                            ],
                           ),
                     );
 
                     if (result != null) {
-                      final selectedShades =
-                          result['selectedShades'] as Set<String>;
-
                       setState(() {
+                        // Clear existing copied shades for this style
+                        _copiedShades.removeWhere(
+                          (s) => s.startsWith('$styleKey:'),
+                        );
+                        // Add selected shades
+                        for (var s in result) {
+                          _copiedShades.add('$styleKey:$s');
+                        }
+                        // Copy quantities to selected shades
                         final currentQuantities =
                             quantities[styleKey]?[shade] ?? {};
-                        debugPrint(
-                          'Copying from $shade (style: $styleKey): $currentQuantities',
-                        );
-
-                        for (var targetShade in selectedShades) {
+                        for (var targetShade in result) {
                           if (targetShade != shade) {
                             quantities[styleKey]!.putIfAbsent(
                               targetShade,
@@ -815,20 +903,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
                                 _controllers[controllerKey]!.text =
                                     quantity.toString();
                               }
-                              _copiedShades.add('$styleKey:$targetShade');
                             });
                           }
                         }
-
-                        debugPrint(
-                          'Copied to shades $selectedShades in style $styleKey: ${quantities[styleKey]}',
-                        );
                       });
-                    } else {
-                      setState(() {
-                        _copiedShades.remove('$styleKey:$shade');
-                      });
-                      debugPrint('Dialog cancelled');
                     }
                   },
                 ),
@@ -1036,104 +1114,6 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
   );
 }
 
-class ShadeSelectionDialog extends StatefulWidget {
-  final List<String> shades;
-  final String sourceShade;
-  final String dialogType; // 'shadeCopy' or 'styleCopy'
-
-  const ShadeSelectionDialog({
-    Key? key,
-    required this.shades,
-    required this.sourceShade,
-    required this.dialogType,
-  }) : super(key: key);
-
-  @override
-  _ShadeSelectionDialogState createState() => _ShadeSelectionDialogState();
-}
-
-class _ShadeSelectionDialogState extends State<ShadeSelectionDialog> {
-  late Set<String> _selectedShades;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedShades =
-        widget.dialogType == 'styleCopy'
-            ? widget.shades.map((s) => s.trim()).toSet()
-            : {widget.sourceShade.trim()};
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      title: Text(
-        widget.dialogType == 'styleCopy' ? 'Select Shades' : 'Copy Quantities',
-        style: GoogleFonts.poppins(),
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (widget.dialogType == 'styleCopy')
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: Text(
-                  'Copying from: ${widget.sourceShade}',
-                  style: GoogleFonts.roboto(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ...widget.shades.map((shade) {
-              final trimmedShade = shade.trim();
-              final isSourceShade = trimmedShade == widget.sourceShade.trim();
-              return CheckboxListTile(
-                title: Text(trimmedShade, style: GoogleFonts.roboto()),
-                value: _selectedShades.contains(trimmedShade),
-                onChanged:
-                    isSourceShade && widget.dialogType == 'styleCopy'
-                        ? null
-                        : (bool? value) {
-                          setState(() {
-                            if (value == true) {
-                              _selectedShades.add(trimmedShade);
-                            } else {
-                              _selectedShades.remove(trimmedShade);
-                            }
-                          });
-                        },
-                activeColor: isSourceShade ? Colors.grey : null,
-                checkColor: isSourceShade ? Colors.white : null,
-              );
-            }).toList(),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text('Cancel', style: GoogleFonts.montserrat()),
-        ),
-        TextButton(
-          onPressed: () {
-            final resultShades =
-                widget.dialogType == 'styleCopy'
-                    ? _selectedShades.difference({widget.sourceShade.trim()})
-                    : _selectedShades;
-            Navigator.pop(context, {
-              'selectedShades': resultShades,
-              'copyToOtherStyles': widget.dialogType == 'styleCopy',
-            });
-          },
-          child: Text('OK', style: GoogleFonts.montserrat()),
-        ),
-      ],
-    );
-  }
-}
-
 class CopyToStylesDialog extends StatefulWidget {
   final List<CatalogOrderData> catalogOrders;
   final String sourceStyleKey;
@@ -1169,48 +1149,48 @@ class _CopyToStylesDialogState extends State<CopyToStylesDialog> {
     String styleKey,
     List<String> shades,
   ) async {
+    final tempSelectedShades = Set<String>.from(
+      _selectedShadesPerStyle[styleKey] ?? {},
+    );
+
     final result = await showDialog<Set<String>>(
       context: context,
       builder:
           (context) => AlertDialog(
             title: Text('Select Shades for $styleKey'),
             content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children:
-                    shades.map((shade) {
-                      return CheckboxListTile(
-                        title: Text(shade),
-                        value:
-                            _selectedShadesPerStyle[styleKey]?.contains(
-                              shade,
-                            ) ??
-                            false,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            if (value == true) {
-                              _selectedShadesPerStyle[styleKey]?.add(shade);
-                            } else {
-                              _selectedShadesPerStyle[styleKey]?.remove(shade);
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
+              child: StatefulBuilder(
+                builder: (context, setDialogState) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children:
+                        shades.map((shade) {
+                          return CheckboxListTile(
+                            title: Text(shade),
+                            value: tempSelectedShades.contains(shade),
+                            onChanged: (bool? value) {
+                              setDialogState(() {
+                                if (value == true) {
+                                  tempSelectedShades.add(shade);
+                                } else {
+                                  tempSelectedShades.remove(shade);
+                                }
+                              });
+                            },
+                          );
+                        }).toList(),
+                  );
+                },
               ),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('Cancel'),
+                child: const Text('Cancel'),
               ),
               TextButton(
-                onPressed:
-                    () => Navigator.pop(
-                      context,
-                      _selectedShadesPerStyle[styleKey],
-                    ),
-                child: Text('OK'),
+                onPressed: () => Navigator.pop(context, tempSelectedShades),
+                child: const Text('OK'),
               ),
             ],
           ),
@@ -1252,24 +1232,29 @@ class _CopyToStylesDialogState extends State<CopyToStylesDialog> {
 
               return ListTile(
                 title: Text(styleCode, style: GoogleFonts.roboto()),
+                subtitle: Text(
+                  _selectedShadesPerStyle[styleKey]?.join(', ') ??
+                      'No shades selected',
+                  style: GoogleFonts.roboto(fontSize: 12, color: Colors.grey),
+                ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: Icon(Icons.more_vert),
+                      icon: const Icon(Icons.edit),
                       onPressed:
                           () => _showShadeSelectionDialog(styleKey, shades),
                     ),
                     Checkbox(
                       value:
-                          _selectedShadesPerStyle.containsKey(styleKey) &&
-                          _selectedShadesPerStyle[styleKey]!.isNotEmpty,
+                          _selectedShadesPerStyle[styleKey]?.isNotEmpty ??
+                          false,
                       onChanged: (bool? value) {
                         setState(() {
                           if (value == true) {
                             _selectedShadesPerStyle[styleKey] = shades.toSet();
                           } else {
-                            _selectedShadesPerStyle.remove(styleKey);
+                            _selectedShadesPerStyle[styleKey] = {};
                           }
                         });
                       },
@@ -1288,15 +1273,10 @@ class _CopyToStylesDialogState extends State<CopyToStylesDialog> {
         ),
         TextButton(
           onPressed: () {
-            // If no shades were explicitly selected, use all shades by default
-            final result = <String, Set<String>>{};
-            for (var order in widget.catalogOrders) {
-              final styleKey = order.catalog.styleKey;
-              if (_selectedShadesPerStyle.containsKey(styleKey) &&
-                  _selectedShadesPerStyle[styleKey]!.isNotEmpty) {
-                result[styleKey] = _selectedShadesPerStyle[styleKey]!;
-              }
-            }
+            // Filter out styles with no selected shades
+            final result = Map<String, Set<String>>.from(
+              _selectedShadesPerStyle,
+            )..removeWhere((key, value) => value.isEmpty);
             Navigator.pop(context, result);
           },
           child: Text('OK', style: GoogleFonts.montserrat()),
@@ -1304,15 +1284,4 @@ class _CopyToStylesDialogState extends State<CopyToStylesDialog> {
       ],
     );
   }
-}
-
-// Add this extension to Catalog to store temporary shade selections
-extension CatalogExtension on Catalog {
-  static final _temporarySelectedShades = <String, Set<String>?>{};
-
-  Set<String>? get temporarySelectedShades =>
-      _temporarySelectedShades[styleKey];
-
-  set temporarySelectedShades(Set<String>? value) =>
-      _temporarySelectedShades[styleKey] = value;
 }

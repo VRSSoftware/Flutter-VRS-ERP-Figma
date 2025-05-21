@@ -3,29 +3,54 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:vrs_erp_figma/constants/app_constants.dart';
-import 'package:vrs_erp_figma/models/CatalogItem.dart';
 
+class CatalogItem {
+  final String styleCode;
+  final String shadeName;
+  final String sizeName;
+  final int clQty;
+  final double mrp;
+  final double wsp;
 
+  CatalogItem({
+    required this.styleCode,
+    required this.shadeName,
+    required this.sizeName,
+    required this.clQty,
+    required this.mrp,
+    required this.wsp,
+  });
 
-class CatalogBookingTable extends StatefulWidget {
-  final String itemSubGrpKey;
-  final String itemKey;
-  final String styleKey;
+  factory CatalogItem.fromJson(Map<String, dynamic> json) {
+    return CatalogItem(
+      styleCode: json['styleCode']?.toString() ?? '',
+      shadeName: json['shadeName']?.toString() ?? '',
+      sizeName: json['sizeName']?.toString() ?? '',
+      clQty: int.tryParse(json['clqty']?.toString() ?? '0') ?? 0,
+      mrp: double.tryParse(json['mrp']?.toString() ?? '0') ?? 0,
+      wsp: double.tryParse(json['wsp']?.toString() ?? '0') ?? 0,
+    );
+  }
+}
+
+class CatalogBookingTableBarcode extends StatefulWidget {
+  final String barcode;
+
   final VoidCallback onSuccess;
 
-  const CatalogBookingTable({
+  const CatalogBookingTableBarcode({
     super.key,
-    required this.itemSubGrpKey,
-    required this.itemKey,
-    required this.styleKey,
+    required this.barcode,
+
     required this.onSuccess,
   });
 
   @override
-  State<CatalogBookingTable> createState() => _CatalogBookingTableState();
+  State<CatalogBookingTableBarcode> createState() =>
+      _CatalogBookingTableState();
 }
 
-class _CatalogBookingTableState extends State<CatalogBookingTable> {
+class _CatalogBookingTableState extends State<CatalogBookingTableBarcode> {
   List<CatalogItem> catalogItems = [];
   List<String> sizes = [];
   List<String> colors = [];
@@ -35,6 +60,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
   late Map<String, double> sizeWspMap;
 
   String itemSubGrpKey = '';
+  String barcode = '';
   String itemKey = '';
   String styleKey = '';
   String userId = "Admin";
@@ -58,28 +84,19 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
   @override
   void initState() {
     super.initState();
-    itemSubGrpKey = widget.itemSubGrpKey;
-    itemKey = widget.itemKey;
-    styleKey = widget.styleKey;
+    barcode = widget.barcode;
     fetchCatalogData();
   }
 
   Future<void> fetchCatalogData() async {
-    final String apiUrl = '${AppConstants.BASE_URL}/catalog/GetOrderDetails';
+    final String apiUrl =
+        '${AppConstants.BASE_URL}/orderBooking/GetBarcodeDetails';
 
     final Map<String, dynamic> requestBody = {
-      "itemSubGrpKey": itemSubGrpKey,
-      "itemKey": itemKey,
-      "styleKey": styleKey,
-      "userId": userId,
-      "coBrId": coBrId,
-      "fcYrId": fcYrId,
-      "stockWise": stockWise,
-      "brandKey": null,
-      "shadeKey": null,
-      "styleSizeId": null,
-      "fromMRP": null,
-      "toMRP": null,
+      "coBrId": "01",
+      "userId": "Admin",
+      "fcYrId": "24",
+      "barcode": barcode,
     };
 
     final response = await http.post(

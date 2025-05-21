@@ -6,15 +6,16 @@ import 'package:vrs_erp_figma/OrderBooking/barcode_scanner.dart';
 import 'package:vrs_erp_figma/OrderBooking/orderbookingcard.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
+import 'package:vrs_erp_figma/widget/bookOnBarcode.dart';
 
 class BarcodeWiseWidget extends StatefulWidget {
   final ValueChanged<String> onFilterPressed;
-  final Set<String> activeFilters;
+  // final Set<String> activeFilters;
 
   const BarcodeWiseWidget({
     super.key,
     required this.onFilterPressed,
-    required this.activeFilters,
+    // required this.activeFilters,
   });
 
   @override
@@ -24,7 +25,7 @@ class BarcodeWiseWidget extends StatefulWidget {
 class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
   final TextEditingController _barcodeController = TextEditingController();
   List<Map<String, dynamic>> _barcodeResults = [];
-List<String> addedItems = [];
+  List<String> addedItems = [];
   Map<String, bool> _filters = {
     'WSP': true,
     'Sizes': true,
@@ -37,7 +38,6 @@ List<String> addedItems = [];
     _barcodeController.dispose();
     super.dispose();
   }
-
 
   void _showFilterPopup(BuildContext context) {
     showDialog(
@@ -88,36 +88,38 @@ List<String> addedItems = [];
     }
   }
 
-Future<void> _searchBarcode() async {
-  final barcode = _barcodeController.text.trim();
-  if (barcode.isEmpty) return;
+  Future<void> _searchBarcode() async {
+    final barcode = _barcodeController.text.trim();
+    if (barcode.isEmpty) return;
 
-  FocusScope.of(context).unfocus(); // 👈 This removes the cursor
+    FocusScope.of(context).unfocus(); // 👈 This removes the cursor
 
-  try {
-    final result = await ApiService.getBarcodeDetails(barcode);
-    debugPrint("Barcode Result: $result");
+    try {
+      final result = await ApiService.getBarcodeDetails(barcode);
+      debugPrint("Barcode Result: $result");
 
-    if (result is List && result.isNotEmpty) {
-      setState(() {
-        _barcodeResults = List<Map<String, dynamic>>.from(result);
-      });
-      widget.onFilterPressed(barcode);
-    } else {
-      setState(() {
-        _barcodeResults = [];
-      });
+      if (result is List && result.isNotEmpty) {
+        setState(() {
+          _barcodeResults = List<Map<String, dynamic>>.from(result);
+        });
+        widget.onFilterPressed(barcode);
+      } else {
+        setState(() {
+          _barcodeResults = [];
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No data found for this barcode')),
+        );
+      }
+    } catch (e) {
+      debugPrint("Error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No data found for this barcode')),
+        const SnackBar(content: Text('Failed to fetch barcode details')),
       );
     }
-  } catch (e) {
-    debugPrint("Error: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to fetch barcode details')),
-    );
   }
-}
+
+  void _searchBarcode2() {}
 
   @override
   Widget build(BuildContext context) {
@@ -171,26 +173,31 @@ Future<void> _searchBarcode() async {
               borderRadius: BorderRadius.circular(12),
             ),
           ),
-          onPressed: _searchBarcode,
+          // onPressed: _searchBarcode2,
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder:
+                  (context) => Dialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: CatalogBookingTableBarcode(
+                        barcode: _barcodeController.text.trim(),
+                        onSuccess: () {
+                          Navigator.pop(context); // Close dialog on success
+                          // Optionally refresh parent data or show snackbar
+                        },
+                      ),
+                    ),
+                  ),
+            );
+          },
           child: const Text("Search", style: TextStyle(color: Colors.white)),
         ),
         const SizedBox(height: 12),
-        if (_barcodeResults.isNotEmpty)
-          Column(
-            children:
-                _barcodeResults.map((item) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: BarcodeItemCard(
-                      catalogItem: item,
-                      activeFilters: widget.activeFilters,
-                       onSuccess: () => setState(() {
-    addedItems.add(item['styleCode']?.toString() ?? '');
-  }),
-                    ),
-                  );
-                }).toList(),
-          ),
       ],
     );
   }
