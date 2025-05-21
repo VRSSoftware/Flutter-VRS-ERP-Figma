@@ -695,9 +695,10 @@ class _CatalogBookingTableState extends State<CatalogBookingTableBarcode> {
               "Qty": qty,
               "cobrid": coBrId,
               "user": userId.toLowerCase(),
-              "barcode": "",
+              "barcode": barcode.trim(),
             },
             "typ": 0,
+            "barcode" : "true"
           };
 
           apiCalls.add(

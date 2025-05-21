@@ -60,7 +60,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
       final categories = await ApiService.fetchCategories();
       setState(() {
         _categories = [
-          Category(itemSubGrpKey: '-1', itemSubGrpName: "ALL"),
+          //Category(itemSubGrpKey: '-1', itemSubGrpName: "ALL"),
           ...categories,
         ];
         _isLoadingCategories = false;
@@ -218,10 +218,10 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                     child: OutlinedButton(
                                       onPressed: () {
                                         setState(() {
-                                          _selectedCategoryKey =
-                                              category.itemSubGrpKey;
-                                          _selectedCategoryName =
-                                              category.itemSubGrpName;
+                                          // _selectedCategoryKey =
+                                          //     category.itemSubGrpKey;
+                                          // _selectedCategoryName =
+                                          //     category.itemSubGrpName;
 
                                           // if (_selectedCategoryKey == '-1') {
                                           //   _items = _allItems;
@@ -241,8 +241,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                           '/catalogpage',
                                           arguments: {
                                             'itemKey': null,
-                                            'itemSubGrpKey': _selectedCategoryKey,
-                                            'itemName': _selectedCategoryName,
+                                            'itemSubGrpKey': category.itemSubGrpKey,
+                                            'itemName': category.itemSubGrpName,
                                             'coBr': coBr,
                                             'fcYrId': fcYrId,
                                           },
