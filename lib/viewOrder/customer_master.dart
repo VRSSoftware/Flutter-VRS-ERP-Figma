@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
@@ -60,83 +61,154 @@ class _CustomerMasterDialogState extends State<CustomerMasterDialog> {
         paymentTerms = List<KeyName>.from(results[5]['result']);
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load dropdowns: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to load dropdowns: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    double dialogWidth = MediaQuery.of(context).size.width * 0.8;
-    if (dialogWidth > 600) dialogWidth = 600;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        double dialogWidth = constraints.maxWidth * 0.9;
+        if (dialogWidth > 600) dialogWidth = 600;
 
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      child: Container(
-        width: dialogWidth,
-        padding: EdgeInsets.all(12),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text("Customer Master", 
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                SizedBox(height: 16),
-                buildTextField("Party Name", partyNameController),
-                buildTextField("Contact Person", contactPersonController),
-                buildTextField("Whatsapp No", whatsappController, 
-                    keyboardType: TextInputType.phone, 
-                    validator: (val) => val?.length != 10 ? "Enter 10 digit number" : null),
-                buildDropdown("Sales Type", salesTypes, selectedSalesType, 
-                    (val) => setState(() => selectedSalesType = val)),
-                buildTextField("GST No", gstController, 
-                    validator: (val) => val!.length > 15 ? "Max 15 characters" : null),
-                buildTextField("Address", addressController, maxLines: 3),
-                buildDropdown("Station", stations, selectedStation, 
-                    (val) => setState(() => selectedStation = val)),
-                buildDropdown("Broker", brokers, selectedBroker, 
-                    (val) => setState(() => selectedBroker = val)),
-                buildDropdown("Transporter", transporters, selectedTransporter, 
-                    (val) => setState(() => selectedTransporter = val)),
-                buildDropdown("SalesPerson", salesPersons, selectedSalesPerson, 
-                    (val) => setState(() => selectedSalesPerson = val)),
-                buildDropdown("Payment Terms", paymentTerms, selectedPaymentTerms, 
-                    (val) => setState(() => selectedPaymentTerms = val)),
-                buildTextField("Credit Days", creditDaysController, 
-                    keyboardType: TextInputType.number),
-                SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: dialogWidth, minWidth: 300),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(16),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    ElevatedButton(
-                      onPressed: onSave,
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue),
-                      child: Text("Save"),
+                    Text(
+                      "Customer Master",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    SizedBox(width: 10),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red),
-                      child: Text("Close"),
+                    SizedBox(height: 16),
+                    buildTextField("Party Name", partyNameController),
+                    buildTextField("Contact Person", contactPersonController),
+                    buildTextField(
+                      "Whatsapp No",
+                      whatsappController,
+                      keyboardType: TextInputType.phone,
+                      validator: (val) {
+                        if (val == null || val.isEmpty)
+                          return "Please enter WhatsApp number";
+                        if (val.length != 10)
+                          return "Enter exactly 10 digit number";
+                        return null;
+                      },
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(10),
+                      ],
+                    ),
+                    buildDropdown(
+                      "Sales Type",
+                      salesTypes,
+                      selectedSalesType,
+                      (val) => setState(() => selectedSalesType = val),
+                    ),
+                    buildTextField(
+                      "GST No",
+                      gstController,
+                      validator:
+                          (val) =>
+                              val!.length > 15 ? "Max 15 characters" : null,
+                    ),
+                    buildTextField("Address", addressController, maxLines: 3),
+                    buildDropdown(
+                      "Station",
+                      stations,
+                      selectedStation,
+                      (val) => setState(() => selectedStation = val),
+                    ),
+                    buildDropdown(
+                      "Broker",
+                      brokers,
+                      selectedBroker,
+                      (val) => setState(() => selectedBroker = val),
+                    ),
+                    buildDropdown(
+                      "Transporter",
+                      transporters,
+                      selectedTransporter,
+                      (val) => setState(() => selectedTransporter = val),
+                    ),
+                    buildDropdown(
+                      "SalesPerson",
+                      salesPersons,
+                      selectedSalesPerson,
+                      (val) => setState(() => selectedSalesPerson = val),
+                    ),
+                    buildDropdown(
+                      "Payment Terms",
+                      paymentTerms,
+                      selectedPaymentTerms,
+                      (val) => setState(() => selectedPaymentTerms = val),
+                    ),
+                    buildTextField(
+                      "Credit Days",
+                      creditDaysController,
+                      keyboardType: TextInputType.number,
+                    ),
+                    SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: ElevatedButton(
+                            onPressed: onSave,
+                            style: ElevatedButton.styleFrom(
+                            //  backgroundColor: Colors.blue,
+                            ),
+                            child: Text(
+                              "Save",
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 50),
+                        Flexible(
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: ElevatedButton.styleFrom(
+                             // backgroundColor: Colors.red,
+                            ),
+                            child: Text(
+                              "Close",
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget buildTextField(String label, TextEditingController controller, 
-      {int maxLines = 1, TextInputType? keyboardType, 
-      String? Function(String?)? validator}) {
+  Widget buildTextField(
+    String label,
+    TextEditingController controller, {
+    int maxLines = 1,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+    List<TextInputFormatter>? inputFormatters,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
@@ -144,28 +216,42 @@ class _CustomerMasterDialogState extends State<CustomerMasterDialog> {
         maxLines: maxLines,
         keyboardType: keyboardType,
         validator: validator,
+        inputFormatters: inputFormatters,
         decoration: InputDecoration(
-            labelText: label, 
-            border: OutlineInputBorder()),
+          labelText: label,
+          border: OutlineInputBorder(),
+        ),
       ),
     );
   }
 
-  Widget buildDropdown(String label, List<KeyName> items, KeyName? selected, 
-      Function(KeyName?) onChanged) {
+  Widget buildDropdown(
+    String label,
+    List<KeyName> items,
+    KeyName? selected,
+    Function(KeyName?) onChanged,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<KeyName>(
+        isExpanded: true, // 🔥 This is critical to avoid overflow!
         value: selected,
         decoration: InputDecoration(
-            labelText: label, 
-            border: OutlineInputBorder()),
-        items: items
-            .map((item) => DropdownMenuItem<KeyName>(
-                  value: item,
-                  child: Text(item.name),
-                ))
-            .toList(),
+          labelText: label,
+          border: OutlineInputBorder(),
+        ),
+        items:
+            items
+                .map(
+                  (item) => DropdownMenuItem<KeyName>(
+                    value: item,
+                    child: Text(
+                      item.name,
+                      overflow: TextOverflow.ellipsis, // clip long names
+                    ),
+                  ),
+                )
+                .toList(),
         onChanged: onChanged,
         validator: (val) => val == null ? "Select $label" : null,
       ),
@@ -220,25 +306,42 @@ class _CustomerMasterDialogState extends State<CustomerMasterDialog> {
         Navigator.pop(context);
 
         if (response.statusCode == 200) {
-          // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Customer created successfully')),
+          // Show success alert
+          showDialog(
+            context: context,
+            builder:
+                (context) => AlertDialog(
+                  title: Text("Success"),
+                  content: Text("Customer added successfully!"),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Close alert dialog
+                        Navigator.of(
+                          context,
+                        ).pop(true); // Close CustomerMasterDialog
+                      },
+                      child: Text("OK"),
+                    ),
+                  ],
+                ),
           );
-          Navigator.pop(context, true); // Close dialog with success
         } else {
           // Show error message
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to create customer: ${response.body}')),
+            SnackBar(
+              content: Text('Failed to create customer: ${response.body}'),
+            ),
           );
         }
       } catch (e) {
-        // Close loading indicator
+        // Close loading indicator if open
         if (Navigator.canPop(context)) Navigator.pop(context);
-        
+
         // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
       }
     }
   }
