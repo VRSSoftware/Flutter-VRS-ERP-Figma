@@ -8,7 +8,7 @@ import 'package:vrs_erp_figma/models/category.dart';
 import 'package:vrs_erp_figma/models/item.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
-import 'package:vrs_erp_figma/widget/barcodewidget.dart';
+import 'package:vrs_erp_figma/OrderBooking/barcode/barcodewidget.dart';
 import 'package:vrs_erp_figma/widget/bottom_navbar.dart';
 import 'package:vrs_erp_figma/widget/filterdailogwidget.dart';
 

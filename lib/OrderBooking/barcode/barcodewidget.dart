@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:http/http.dart' as http;
-import 'package:vrs_erp_figma/OrderBooking/barcode_scanner.dart';
-import 'package:vrs_erp_figma/OrderBooking/orderbookingcard.dart';
+import 'package:vrs_erp_figma/OrderBooking/barcode/barcode_scanner.dart';
+
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
-import 'package:vrs_erp_figma/widget/bookOnBarcode.dart';
+import 'package:vrs_erp_figma/OrderBooking/barcode/bookOnBarcode.dart';
 
 class BarcodeWiseWidget extends StatefulWidget {
   final ValueChanged<String> onFilterPressed;
