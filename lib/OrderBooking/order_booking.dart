@@ -238,7 +238,9 @@ Future<void> _fetchCartCount() async {
                               onChanged: (value) {
                                 setState(() {
                                   showBarcodeWidget = value ?? false;
+                                  _fetchCartCount();
                                 });
+
                               },
                             ),
                             const Text(
