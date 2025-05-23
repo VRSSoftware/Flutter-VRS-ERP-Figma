@@ -398,6 +398,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     return Column(
       children: [
         Row(
+          
           children: [
             Expanded(
               child: TextButton(
@@ -457,49 +458,72 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     );
   }
 
-  Widget _buildBottomButtons() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: [
-          TextButton(
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => HomeScreen()),
-              );
-            },
-            child: Text('Cancel', style: TextStyle(color: Colors.red)),
+Widget _buildBottomButtons() {
+  return Padding(
+    padding: const EdgeInsets.all(1.0),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Cancel Button (always shown)
+        TextButton(
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => HomeScreen()),
+            );
+          },
+          child: Text(
+            'CANCEL',
+            style: TextStyle(color: Colors.red),
           ),
-          Spacer(),
-          if (_activeTab == ActiveTab.transaction)
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _activeTab = ActiveTab.customerDetails;
-                  _showForm = true;
-                });
-              },
-              child: Text('Next'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryColor,
-                foregroundColor: Colors.white,
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          ),
+        ),
+        // Next or Back Button
+        TextButton(
+          onPressed: () {
+            if (_activeTab == ActiveTab.transaction) {
+              setState(() {
+                _activeTab = ActiveTab.customerDetails;
+                _showForm = true;
+              });
+            } else {
+              setState(() {
+                _activeTab = ActiveTab.transaction;
+                _showForm = false;
+              });
+            }
+          },
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_activeTab == ActiveTab.customerDetails)
+                Icon(
+                  Icons.arrow_back_ios,
+                  color: Colors.blue,
+                  size: 16,
+                ),
+              Text(
+                _activeTab == ActiveTab.transaction ? 'NEXT' : 'BACK',
+                style: TextStyle(color: Colors.blue),
               ),
-            )
-          else
-            ElevatedButton(
-              onPressed: _saveOrderLocally,
-              child: Text('Save'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryColor,
-                foregroundColor: Colors.white,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
+              if (_activeTab == ActiveTab.transaction)
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.blue,
+                  size: 16,
+                ),
+            ],
+          ),
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          ),
+        ),
+      ],
+    ),
+  );
+}
   AppBar _buildAppBar() {
     return AppBar(
       title: const Text('View Order', style: TextStyle(color: Colors.white)),
@@ -927,7 +951,7 @@ class _OrderForm extends StatelessWidget {
   final _DropdownData dropdownData;
   final Function(String?, String?) onPartySelected;
   final VoidCallback updateTotals;
-  final Future<void> Function() saveOrder; // Add this line
+  final Future<void> Function() saveOrder;
   final Map<String, dynamic> additionalInfo;
   final List<Consignee> consignees;
   final List<PytTermDisc> paymentTerms;
@@ -939,7 +963,7 @@ class _OrderForm extends StatelessWidget {
     required this.dropdownData,
     required this.onPartySelected,
     required this.updateTotals,
-    required this.saveOrder, // Add this parameter
+    required this.saveOrder,
     required this.additionalInfo,
     required this.consignees,
     required this.paymentTerms,
@@ -1079,7 +1103,63 @@ class _OrderForm extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 20),
-        _buildAddMoreInfoButton(context),
+        // Add More Info and Save buttons in the same row
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () async {
+                  final salesPersonList = dropdownData.salesPersonList;
+                  final partyLedKey = controllers.selectedPartyKey;
+                  final result = await showDialog(
+                    context: context,
+                    builder: (context) => AddMoreInfoDialog(
+                      salesPersonList: salesPersonList,
+                      partyLedKey: partyLedKey,
+                      pytTermDiscKey: controllers.pytTermDiscKey,
+                      salesPersonKey: controllers.salesPersonKey,
+                      creditPeriod: controllers.creditPeriod,
+                      salesLedKey: controllers.salesLedKey,
+                      ledgerName: controllers.ledgerName,
+                      additionalInfo: additionalInfo,
+                      consignees: consignees,
+                      paymentTerms: paymentTerms,
+                      bookingTypes: bookingTypes,
+                      onValueChanged: (newInfo) {
+                        onAdditionalInfoUpdated(newInfo);
+                      },
+                    ),
+                  );
+                  if (result != null) {
+                    onAdditionalInfoUpdated(result);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                  minimumSize: Size(double.infinity, 50),
+                ),
+                child: const Text(
+                  'Add More Info',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: saveOrder,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                  minimumSize: Size(double.infinity, 50),
+                ),
+                child: const Text(
+                  'Save',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
