@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:provider/provider.dart';
 
 import 'package:vrs_erp_figma/OrderBooking/orderbooking_drawer.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/models/CartModel.dart';
 import 'package:vrs_erp_figma/models/category.dart';
 import 'package:vrs_erp_figma/models/item.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
@@ -33,7 +35,7 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
   bool _isLoadingCategories = true;
   bool _isLoadingItems = false;
   bool hasFiltered = false;
-  int _cartItemCount = 0;
+  // int _cartItemCount = 0;
 
   Set<String> _activeFilters = {'mrp', 'wsp', 'shades', 'stylecode'};
 
@@ -54,24 +56,22 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
     }
   }
 
-  Future<void> _fetchCartCount() async {
-    try {
-      final data = await ApiService.getSalesOrderData(
-        coBrId: '01',
-        userId: 'Admin', // Replace with actual user ID if needed
-        fcYrId: 24, // Note: fcYrId should be an int, not string
-        barcode:
-            showBarcodeWidget
-                ? 'true'
-                : 'false', // Set barcode based on checkbox
-      );
-      setState(() {
-        _cartItemCount = data['cartItemCount'] ?? 0;
-      });
-    } catch (e) {
-      print('Error fetching cart count: $e');
-    }
+ // Replace the existing _fetchCartCount method
+Future<void> _fetchCartCount() async {
+  try {
+    final data = await ApiService.getSalesOrderData(
+      coBrId: '01',
+      userId: 'Admin',
+      fcYrId: 24,
+      barcode: showBarcodeWidget ? 'true' : 'false',
+    );
+    
+    final cartModel = Provider.of<CartModel>(context, listen: false);
+    cartModel.updateCount(data['cartItemCount'] ?? 0);
+  } catch (e) {
+    print('Error fetching cart count: $e');
   }
+}
 
   Future<void> _fetchCategories() async {
     try {
@@ -102,6 +102,8 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cartModel = Provider.of<CartModel>(context);
+
     return Scaffold(
       backgroundColor: Colors.white,
       drawer: DrawerScreen(),
@@ -184,7 +186,7 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                       minHeight: 14,
                     ),
                     child: Text(
-                      '$_cartItemCount',
+                     '${cartModel.count}',
                       style: const TextStyle(color: Colors.white, fontSize: 8),
                       textAlign: TextAlign.center,
                     ),
@@ -198,6 +200,7 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                 '/viewOrder',
                 arguments: {'barcode': showBarcodeWidget}, // Pass barcode state
               ).then((_) => _fetchCartCount());
+
             },
           ),
           // Always show the three-dot menu

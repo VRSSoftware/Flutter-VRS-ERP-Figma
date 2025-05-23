@@ -4,12 +4,14 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:vrs_erp_figma/OrderBooking/booking2/booking2.dart';
 import 'package:vrs_erp_figma/OrderBooking/booking2/booking3.dart';
 import 'package:vrs_erp_figma/OrderBooking/booking2/multipleorderbooking.dart';
 import 'package:vrs_erp_figma/catalog/filter.dart';
 import 'package:vrs_erp_figma/catalog/imagezoom.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/models/CartModel.dart';
 import 'package:vrs_erp_figma/models/brand.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
 import 'package:vrs_erp_figma/models/shade.dart';
@@ -47,7 +49,7 @@ class _OrderPageState extends State<OrderPage> {
   List<Catalog> selectedItems = [];
   bool showSizes = true;
   bool showProduct = true;
-  int _cartItemCount = 0;
+  // int _cartItemCount = 0;
   List<Brand> brands = [];
   int pageNo = 1;
   bool hasMore = true;
@@ -193,21 +195,22 @@ class _OrderPageState extends State<OrderPage> {
     debugPrint(selectedItems.length.toString());
   }
 
-  Future<void> _fetchCartCount() async {
-    try {
-      final data = await ApiService.getSalesOrderData(
-        coBrId: '01',
-        userId: 'Admin',
-        fcYrId: 24,
-        barcode: '',
-      );
-      setState(() {
-        _cartItemCount = data['cartItemCount'] ?? 0;
-      });
-    } catch (e) {
-      print('Error fetching cart count: $e');
-    }
+ // In both OrderPage (_OrderPageState) and OrderBookingScreen (_OrderBookingScreenState)
+Future<void> _fetchCartCount() async {
+  try {
+    final data = await ApiService.getSalesOrderData(
+      coBrId: '01',
+      userId: 'Admin',
+      fcYrId: 24,
+      barcode:'',
+    );
+    
+    final cartModel = Provider.of<CartModel>(context, listen: false);
+    cartModel.updateCount(data['cartItemCount'] ?? 0);
+  } catch (e) {
+    print('Error fetching cart count: $e');
   }
+}
 
   Future<void> _fetchAddedItems(String coBrId, String userId) async {
     try {
@@ -371,7 +374,7 @@ class _OrderPageState extends State<OrderPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isLargeScreen = screenWidth > 600;
     final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
-
+   final cartModel = Provider.of<CartModel>(context);
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -406,7 +409,7 @@ class _OrderPageState extends State<OrderPage> {
                       minHeight: 14,
                     ),
                     child: Text(
-                      '$_cartItemCount',
+                     '${cartModel.count}',
                       style: const TextStyle(color: Colors.white, fontSize: 8),
                       textAlign: TextAlign.center,
                     ),
@@ -1372,12 +1375,15 @@ class _OrderPageState extends State<OrderPage> {
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MultiCatalogBookingPage(catalogs: selectedItems),
-                ),
-              ),
+            onPressed: () => Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) => MultiCatalogBookingPage(
+      catalogs: selectedItems,
+      onSuccess: _fetchCartCount, // Pass callback here
+    ),
+  ),
+),
               child: const Text("Book Now"),
             ),
           ),
@@ -1392,7 +1398,7 @@ class _OrderPageState extends State<OrderPage> {
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CreateOrderScreen(catalogs: selectedItems),
+                  builder: (context) => CreateOrderScreen(catalogs: selectedItems,    onSuccess: _fetchCartCount,),
                 ),
               ),
               child: const Icon(Icons.shopping_cart),
@@ -1415,7 +1421,7 @@ class _OrderPageState extends State<OrderPage> {
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CreateOrderScreen3(catalogs: selectedItems),
+                  builder: (context) => CreateOrderScreen3(catalogs: selectedItems, onSuccess: _fetchCartCount, ),
                 ),
               ),
               child: const Icon(Icons.assignment),

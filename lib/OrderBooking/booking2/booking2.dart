@@ -10,8 +10,8 @@ import 'package:vrs_erp_figma/models/catalog.dart';
 
 class CreateOrderScreen extends StatefulWidget {
   final List<Catalog> catalogs;
-
-  const CreateOrderScreen({Key? key, required this.catalogs}) : super(key: key);
+  final VoidCallback onSuccess; 
+  const CreateOrderScreen({Key? key, required this.catalogs,required this.onSuccess,}) : super(key: key);
 
   @override
   State<CreateOrderScreen> createState() => _CreateOrderScreenState();
@@ -273,6 +273,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     try {
       final responses = await Future.wait(apiCalls);
       if (responses.every((r) => r.statusCode == 200)) {
+         widget.onSuccess(); 
         if (mounted) {
           showDialog(
             context: context,

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:vrs_erp_figma/OrderBooking/order_booking.dart';
 import 'package:vrs_erp_figma/OrderBooking/orderbooking_booknow.dart';
 import 'package:vrs_erp_figma/catalog/catalog.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/models/CartModel.dart';
 import 'package:vrs_erp_figma/screens/catalog_screen.dart';
 
 import 'package:vrs_erp_figma/screens/home_screen.dart';
@@ -12,9 +14,15 @@ import 'package:vrs_erp_figma/viewOrder/view_order.dart';
 import 'package:vrs_erp_figma/viewOrder/view_order_screen.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => CartModel()),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

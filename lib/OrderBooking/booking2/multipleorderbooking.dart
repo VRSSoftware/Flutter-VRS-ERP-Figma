@@ -37,8 +37,9 @@ class CatalogItem {
 
 class MultiCatalogBookingPage extends StatefulWidget {
   final List<Catalog> catalogs;
+    final VoidCallback onSuccess; // Add this line
 
-  const MultiCatalogBookingPage({super.key, required this.catalogs});
+  const MultiCatalogBookingPage({super.key, required this.catalogs,   required this.onSuccess, });
 
   @override
   State<MultiCatalogBookingPage> createState() =>
@@ -983,6 +984,7 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
 
   Future<void> _submitAllOrders() async {
     List<Future> apiCalls = [];
+    
 
     for (var catalog in widget.catalogs) {
       final controllers = controllersMap[catalog.styleCode];
@@ -1041,6 +1043,7 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
     try {
       final responses = await Future.wait(apiCalls);
       if (responses.every((r) => r.statusCode == 200)) {
+          widget.onSuccess(); 
         if (mounted) {
           showDialog(
             context: context,
@@ -1078,6 +1081,7 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
       }
     }
   }
+
 }
 
 class _TableHeaderCell extends StatelessWidget {
