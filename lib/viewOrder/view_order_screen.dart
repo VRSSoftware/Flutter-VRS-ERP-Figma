@@ -296,10 +296,18 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: () async {
+                onPressed: () {
                   Navigator.pop(context); // Close dialog
-                  await _callSecondApi(_orderControllers.orderNo.text);
-                  // No need to navigate to HomeScreen here anymore
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => PdfViewerScreen(
+                            orderNo: _orderControllers.orderNo.text,
+                            whatsappNo: _orderControllers.whatsAppMobileNo,
+                          ),
+                    ),
+                  );
                 },
                 child: Text('View PDF'),
               ),
@@ -317,49 +325,6 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     );
   }
 
-  Future<void> _callSecondApi(String salesOrderNo) async {
-    try {
-      // Extract numeric part from salesOrderNo (e.g., "SO10" -> "10")
-      final docId = salesOrderNo.replaceAll(RegExp(r'[^0-9]'), '');
-
-      // Using Dio for better file download support
-      final dio = Dio();
-      final response = await dio.post(
-        '${AppConstants.Pdf_url}/api/values/order',
-        data: {"doc_id": docId},
-        options: Options(responseType: ResponseType.bytes),
-      );
-
-      if (response.statusCode == 200) {
-        // Get temporary directory
-        final dir = await getTemporaryDirectory();
-        final filePath = '${dir.path}/order_$docId.pdf';
-        final file = File(filePath);
-
-        // Write PDF bytes to file
-        await file.writeAsBytes(response.data);
-
-        // Show PDF viewer
-        if (!mounted) return;
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PdfViewerScreen(filePath: filePath),
-          ),
-        );
-      } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load PDF: ${response.statusCode}')),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
-    }
-  }
 
   void _updateTotals() {
     int totalQty = 0;
@@ -383,32 +348,33 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       backgroundColor: Colors.white,
       drawer: DrawerScreen(),
       appBar: _buildAppBar(),
-   body: Column(
-      children: [
-        _buildTabBar(),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Form(
-              key: _formKey,
-              child: _showForm
-                  ? _OrderForm(
-                      controllers: _orderControllers,
-                      dropdownData: _dropdownData,
-                      onPartySelected: _handlePartySelection,
-                      updateTotals: _updateTotals,
-                      saveOrder: _saveOrderLocally, // Add this parameter
-                      additionalInfo: _additionalInfo,
-                      consignees: consignees,
-                      paymentTerms: paymentTerms,
-                      bookingTypes: _bookingTypes,
-                      onAdditionalInfoUpdated: (newInfo) {
-                        setState(() {
-                          _additionalInfo = newInfo;
-                        });
-                      },
-                    )
-                  : _StyleCardsView(
+      body: Column(
+        children: [
+          _buildTabBar(),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: _formKey,
+                child:
+                    _showForm
+                        ? _OrderForm(
+                          controllers: _orderControllers,
+                          dropdownData: _dropdownData,
+                          onPartySelected: _handlePartySelection,
+                          updateTotals: _updateTotals,
+                          saveOrder: _saveOrderLocally, // Add this parameter
+                          additionalInfo: _additionalInfo,
+                          consignees: consignees,
+                          paymentTerms: paymentTerms,
+                          bookingTypes: _bookingTypes,
+                          onAdditionalInfoUpdated: (newInfo) {
+                            setState(() {
+                              _additionalInfo = newInfo;
+                            });
+                          },
+                        )
+                        : _StyleCardsView(
                           styleManager: _styleManager,
                           updateTotals: _updateTotals,
                           getColor: _getColorCode,
@@ -546,7 +512,6 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     );
   }
 
-
   void _handlePartySelection(String? val, String? key) async {
     if (key == null) return;
     _orderControllers.selectedPartyKey = key;
@@ -563,6 +528,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       _orderControllers.salesPersonKey = details['salesPersonKey'];
       _orderControllers.creditPeriod = details['creditPeriod'];
       _orderControllers.selectedTransporterKey = details['trspKey'];
+      _orderControllers.whatsAppMobileNo = details['whatsAppMobileNo'];
 
       final commission = await _dropdownData.fetchCommissionPercentage(key);
       setState(() {
@@ -607,6 +573,7 @@ class _OrderControllers {
   int? creditPeriod;
   String? salesLedKey;
   String? ledgerName;
+  String? whatsAppMobileNo;
 
   final orderNo = TextEditingController();
   final date = TextEditingController();
@@ -980,7 +947,6 @@ class _OrderForm extends StatelessWidget {
     required this.onAdditionalInfoUpdated,
   });
 
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -1280,18 +1246,22 @@ class _OrderForm extends StatelessWidget {
     }
   }
 
-Widget _buildResponsiveRow(BuildContext context, Widget first, Widget second) {
-  final isWideScreen = MediaQuery.of(context).size.width > 600;
-  return isWideScreen
-      ? Row(
+  Widget _buildResponsiveRow(
+    BuildContext context,
+    Widget first,
+    Widget second,
+  ) {
+    final isWideScreen = MediaQuery.of(context).size.width > 600;
+    return isWideScreen
+        ? Row(
           children: [
             Expanded(child: first),
             const SizedBox(width: 10),
             Expanded(child: second),
           ],
         )
-      : Column(children: [first, second]);
-}
+        : Column(children: [first, second]);
+  }
 
   Widget _buildActionButtons(BuildContext context) {
     return Row(
@@ -1363,9 +1333,7 @@ Widget buildTextField(
     child: TextFormField(
       controller: controller,
       readOnly: readOnly || isDate,
-      keyboardType: isText 
-          ? TextInputType.text
-          : TextInputType.number,
+      keyboardType: isText ? TextInputType.text : TextInputType.number,
       onTap: onTap ?? (isDate ? () => _selectDate(context, controller) : null),
       decoration: InputDecoration(
         labelText: label,
@@ -1374,7 +1342,6 @@ Widget buildTextField(
     ),
   );
 }
-
 
 Future<void> _selectDate(
   BuildContext context,
@@ -1407,5 +1374,3 @@ Widget buildFullField(
     ),
   );
 }
-
-
