@@ -18,6 +18,8 @@ import 'package:vrs_erp_figma/models/consignee.dart';
 import 'package:vrs_erp_figma/models/PytTermDisc.dart';
 import 'package:vrs_erp_figma/models/item.dart';
 
+enum ActiveTab { transaction, customerDetails }
+
 class ViewOrderScreen extends StatefulWidget {
   @override
   _ViewOrderScreenState createState() => _ViewOrderScreenState();
@@ -35,13 +37,14 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   List<Item> _bookingTypes = [];
   bool isLoading = true;
   bool barcodeMode = false;
+  ActiveTab _activeTab = ActiveTab.transaction;
 
-@override
+  @override
   void initState() {
     super.initState();
-    // Retrieve barcode argument
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       if (args != null && args.containsKey('barcode')) {
         barcodeMode = args['barcode'] as bool;
       }
@@ -192,7 +195,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     _orderControllers.deliveryDays.text = '0';
   }
 
-Future<void> _initializeData() async {
+  Future<void> _initializeData() async {
     await Future.wait([
       _styleManager.fetchOrderItems(barcode: barcodeMode), // Pass barcode mode
       _dropdownData.loadAllDropdownData(),
@@ -283,112 +286,80 @@ Future<void> _initializeData() async {
 
     final salesOrderNo = _orderControllers.orderNo.text;
 
-// showDialog(
-//   context: context,
-//   builder: (context) => AlertDialog(
-//     title: Text('Order Saved'),
-//     content: Text('Order ${_orderControllers.orderNo.text} saved successfully'),
-//     actions: [
-//       TextButton(
-//         onPressed: () async {
-//           Navigator.pop(context); // Close dialog
-//           await _callSecondApi(_orderControllers.orderNo.text);
-//           // No need to navigate to HomeScreen here anymore
-//         },
-//         child: Text('View PDF'),
-//       ),
-//       TextButton(
-//         onPressed: () {
-//           Navigator.pushReplacement(
-//             context,
-//             MaterialPageRoute(builder: (context) => HomeScreen()),
-//           );
-//         },
-//         child: Text('Done'),
-//       ),
-//     ],
-//   ),
-// );
-showDialog(
-  context: context,
-  builder: (context) => AlertDialog(
-    title: Text('Order Saved'),
-    content: Text('Order ${_orderControllers.orderNo.text} saved successfully'),
-    actions: [
-      TextButton(
-        onPressed: () {
-          Navigator.pop(context); // Close dialog
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PdfViewerScreen(
-                orderNo: _orderControllers.orderNo.text,
-                whatsappNo: _orderControllers.whatsAppMobileNo,
-              ),
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text('Order Saved'),
+            content: Text(
+              'Order ${_orderControllers.orderNo.text} saved successfully',
             ),
-          );
-        },
-        child: Text('View PDF'),
-      ),
-      TextButton(
-        onPressed: () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => HomeScreen()),
-          );
-        },
-        child: Text('Done'),
-      ),
-    ],
-  ),
-);
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context); // Close dialog
+                  await _callSecondApi(_orderControllers.orderNo.text);
+                  // No need to navigate to HomeScreen here anymore
+                },
+                child: Text('View PDF'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => HomeScreen()),
+                  );
+                },
+                child: Text('Done'),
+              ),
+            ],
+          ),
+    );
+  }
 
-  
-}
+  Future<void> _callSecondApi(String salesOrderNo) async {
+    try {
+      // Extract numeric part from salesOrderNo (e.g., "SO10" -> "10")
+      final docId = salesOrderNo.replaceAll(RegExp(r'[^0-9]'), '');
 
-// Future<void> _callSecondApi(String salesOrderNo) async {
-//   try {
-//     // Extract numeric part from salesOrderNo (e.g., "SO10" -> "10")
-//     final docId = salesOrderNo.replaceAll(RegExp(r'[^0-9]'), '');
+      // Using Dio for better file download support
+      final dio = Dio();
+      final response = await dio.post(
+        '${AppConstants.Pdf_url}/api/values/order',
+        data: {"doc_id": docId},
+        options: Options(responseType: ResponseType.bytes),
+      );
 
-//     // Using Dio for better file download support
-//     final dio = Dio();
-//     final response = await dio.post(
-//       '${AppConstants.Pdf_url}/api/values/order',
-//       data: {"doc_id": docId},
-//       options: Options(responseType: ResponseType.bytes),
-//     );
+      if (response.statusCode == 200) {
+        // Get temporary directory
+        final dir = await getTemporaryDirectory();
+        final filePath = '${dir.path}/order_$docId.pdf';
+        final file = File(filePath);
 
-//     if (response.statusCode == 200) {
-//       // Get temporary directory
-//       final dir = await getTemporaryDirectory();
-//       final filePath = '${dir.path}/order_$docId.pdf';
-//       final file = File(filePath);
-      
-//       // Write PDF bytes to file
-//       await file.writeAsBytes(response.data);
-      
-//       // Show PDF viewer
-//       if (!mounted) return;
-//       Navigator.push(
-//         context,
-//         MaterialPageRoute(
-//           builder: (context) => PdfViewerScreen(filePath: filePath),
-//         ),
-//       );
-//     } else {
-//       if (!mounted) return;
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(content: Text('Failed to load PDF: ${response.statusCode}')),
-//       );
-//     }
-//   } catch (e) {
-//     if (!mounted) return;
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       SnackBar(content: Text('Error: ${e.toString()}')),
-//     );
-//   }
-// }
+        // Write PDF bytes to file
+        await file.writeAsBytes(response.data);
+
+        // Show PDF viewer
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PdfViewerScreen(filePath: filePath),
+          ),
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load PDF: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+    }
+  }
 
   void _updateTotals() {
     int totalQty = 0;
@@ -412,14 +383,152 @@ showDialog(
       backgroundColor: Colors.white,
       drawer: DrawerScreen(),
       appBar: _buildAppBar(),
-      body: Stack(
-        children: [
-          _buildMainContent(),
-          _NavigationControls(
-            showForm: _showForm,
-            onBack: () => setState(() => _showForm = false),
-            onNext: () => setState(() => _showForm = true),
+   body: Column(
+      children: [
+        _buildTabBar(),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: _showForm
+                  ? _OrderForm(
+                      controllers: _orderControllers,
+                      dropdownData: _dropdownData,
+                      onPartySelected: _handlePartySelection,
+                      updateTotals: _updateTotals,
+                      saveOrder: _saveOrderLocally, // Add this parameter
+                      additionalInfo: _additionalInfo,
+                      consignees: consignees,
+                      paymentTerms: paymentTerms,
+                      bookingTypes: _bookingTypes,
+                      onAdditionalInfoUpdated: (newInfo) {
+                        setState(() {
+                          _additionalInfo = newInfo;
+                        });
+                      },
+                    )
+                  : _StyleCardsView(
+                          styleManager: _styleManager,
+                          updateTotals: _updateTotals,
+                          getColor: _getColorCode,
+                          onUpdate: () async {
+                            await _styleManager.refreshOrderItems(
+                              barcode: barcodeMode,
+                            );
+                            _updateTotals();
+                          },
+                        ),
+              ),
+            ),
           ),
+          _buildBottomButtons(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabBar() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextButton(
+                onPressed: () {
+                  setState(() {
+                    _activeTab = ActiveTab.transaction;
+                    _showForm = false;
+                  });
+                },
+                child: Text('Transaction'),
+                style: TextButton.styleFrom(
+                  foregroundColor:
+                      _activeTab == ActiveTab.transaction
+                          ? AppColors.primaryColor
+                          : Colors.grey,
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+            Expanded(
+              child: TextButton(
+                onPressed: () {
+                  setState(() {
+                    _activeTab = ActiveTab.customerDetails;
+                    _showForm = true;
+                  });
+                },
+                child: Text('Customer Details'),
+                style: TextButton.styleFrom(
+                  foregroundColor:
+                      _activeTab == ActiveTab.customerDetails
+                          ? AppColors.primaryColor
+                          : Colors.grey,
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+          ],
+        ),
+        Container(
+          height: 2,
+          color: Colors.grey[300],
+          child: AnimatedAlign(
+            duration: Duration(milliseconds: 300),
+            alignment:
+                _activeTab == ActiveTab.transaction
+                    ? Alignment.centerLeft
+                    : Alignment.centerRight,
+            child: Container(
+              width: MediaQuery.of(context).size.width / 2,
+              height: 2,
+              color: AppColors.primaryColor,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomButtons() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        children: [
+          TextButton(
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => HomeScreen()),
+              );
+            },
+            child: Text('Cancel', style: TextStyle(color: Colors.red)),
+          ),
+          Spacer(),
+          if (_activeTab == ActiveTab.transaction)
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _activeTab = ActiveTab.customerDetails;
+                  _showForm = true;
+                });
+              },
+              child: Text('Next'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                foregroundColor: Colors.white,
+              ),
+            )
+          else
+            ElevatedButton(
+              onPressed: _saveOrderLocally,
+              child: Text('Save'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                foregroundColor: Colors.white,
+              ),
+            ),
         ],
       ),
     );
@@ -437,46 +546,6 @@ showDialog(
     );
   }
 
-  Widget _buildMainContent() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child:
-                _showForm
-                    ? _OrderForm(
-                      controllers: _orderControllers,
-                      dropdownData: _dropdownData,
-                      constraints: constraints,
-                      onPartySelected: _handlePartySelection,
-                      updateTotals: _updateTotals,
-                      saveOrder: _saveOrderLocally,
-                      additionalInfo: _additionalInfo,
-                      consignees: consignees,
-                      paymentTerms: paymentTerms,
-                      bookingTypes: _bookingTypes,
-                      onAdditionalInfoUpdated: (newInfo) {
-                        setState(() {
-                          _additionalInfo = newInfo;
-                        });
-                      },
-                    )
-                    : _StyleCardsView(
-                      styleManager: _styleManager,
-                      updateTotals: _updateTotals,
-                      getColor: _getColorCode,
-                      onUpdate: () async {
-                        await _styleManager.refreshOrderItems(barcode: barcodeMode);
-                        _updateTotals();
-                      },
-                    ),
-          ),
-        );
-      },
-    );
-  }
 
   void _handlePartySelection(String? val, String? key) async {
     if (key == null) return;
@@ -494,9 +563,7 @@ showDialog(
       _orderControllers.salesPersonKey = details['salesPersonKey'];
       _orderControllers.creditPeriod = details['creditPeriod'];
       _orderControllers.selectedTransporterKey = details['trspKey'];
-      _orderControllers.whatsAppMobileNo = details['whatsAppMobileNo'];
 
-      print(details['whatsAppMobileNo']);
       final commission = await _dropdownData.fetchCommissionPercentage(key);
       setState(() {
         _orderControllers.updateFromPartyDetails(
@@ -540,7 +607,6 @@ class _OrderControllers {
   int? creditPeriod;
   String? salesLedKey;
   String? ledgerName;
-  String? whatsAppMobileNo;
 
   final orderNo = TextEditingController();
   final date = TextEditingController();
@@ -680,42 +746,45 @@ class _StyleManager {
     }
     return map;
   }
-Future<void> fetchOrderItems({required bool barcode}) async {
-  final response = await http.post(
-    Uri.parse('${AppConstants.BASE_URL}/orderBooking/GetViewOrder'),
-    headers: {'Content-Type': 'application/json'},
-    body: json.encode({
-      "coBrId": "01",
-      "userId": "Admin",
-      "fcYrId": "24",
-      "barcode": barcode ? "true" : "false", // Use the passed barcode value
-    }),
-  );
 
-  if (response.statusCode == 200) {
-    _orderItems = json.decode(response.body);
-    _initializeControllers();
-    isOrderItemsLoaded = true;
-  }
-}
-Future<void> refreshOrderItems({required bool barcode}) async {
-  final response = await http.post(
-    Uri.parse('${AppConstants.BASE_URL}/orderBooking/GetViewOrder'),
-    headers: {'Content-Type': 'application/json'},
-    body: json.encode({
-      "coBrId": "01",
-      "userId": "Admin",
-      "fcYrId": "24",
-      "barcode": barcode ? "true" : "false",
-    }),
-  );
+  Future<void> fetchOrderItems({required bool barcode}) async {
+    final response = await http.post(
+      Uri.parse('${AppConstants.BASE_URL}/orderBooking/GetViewOrder'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        "coBrId": "01",
+        "userId": "Admin",
+        "fcYrId": "24",
+        "barcode": barcode ? "true" : "false", // Use the passed barcode value
+      }),
+    );
 
-  if (response.statusCode == 200) {
-    final newItems = json.decode(response.body);
-    _orderItems = newItems;
-    _updateControllers();
+    if (response.statusCode == 200) {
+      _orderItems = json.decode(response.body);
+      _initializeControllers();
+      isOrderItemsLoaded = true;
+    }
   }
-}
+
+  Future<void> refreshOrderItems({required bool barcode}) async {
+    final response = await http.post(
+      Uri.parse('${AppConstants.BASE_URL}/orderBooking/GetViewOrder'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        "coBrId": "01",
+        "userId": "Admin",
+        "fcYrId": "24",
+        "barcode": barcode ? "true" : "false",
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final newItems = json.decode(response.body);
+      _orderItems = newItems;
+      _updateControllers();
+    }
+  }
+
   void _initializeControllers() {
     controllers.clear();
     for (final entry in groupedItems.entries) {
@@ -889,10 +958,9 @@ class _StyleCardsView extends StatelessWidget {
 class _OrderForm extends StatelessWidget {
   final _OrderControllers controllers;
   final _DropdownData dropdownData;
-  final BoxConstraints constraints;
   final Function(String?, String?) onPartySelected;
   final VoidCallback updateTotals;
-  final Future<void> Function() saveOrder;
+  final Future<void> Function() saveOrder; // Add this line
   final Map<String, dynamic> additionalInfo;
   final List<Consignee> consignees;
   final List<PytTermDisc> paymentTerms;
@@ -902,10 +970,9 @@ class _OrderForm extends StatelessWidget {
   const _OrderForm({
     required this.controllers,
     required this.dropdownData,
-    required this.constraints,
     required this.onPartySelected,
     required this.updateTotals,
-    required this.saveOrder,
+    required this.saveOrder, // Add this parameter
     required this.additionalInfo,
     required this.consignees,
     required this.paymentTerms,
@@ -913,13 +980,13 @@ class _OrderForm extends StatelessWidget {
     required this.onAdditionalInfoUpdated,
   });
 
+
   @override
   Widget build(BuildContext context) {
-    final isWideScreen = constraints.maxWidth > 600;
     return Column(
       children: [
         _buildResponsiveRow(
-          isWideScreen,
+          context,
           buildTextField(
             context,
             "Order No",
@@ -955,7 +1022,7 @@ class _OrderForm extends StatelessWidget {
           (val, key) => controllers.selectedTransporterKey = key,
         ),
         _buildResponsiveRow(
-          isWideScreen,
+          context,
           buildTextField(
             context,
             "Delivery Days",
@@ -987,7 +1054,7 @@ class _OrderForm extends StatelessWidget {
         ),
         buildFullField(context, "Remark", controllers.remark, true),
         _buildResponsiveRow(
-          isWideScreen,
+          context,
           buildTextField(
             context,
             "Total Item",
@@ -1046,8 +1113,45 @@ class _OrderForm extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 20),
-        _buildActionButtons(context),
+        _buildAddMoreInfoButton(context),
       ],
+    );
+  }
+
+  Widget _buildAddMoreInfoButton(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () async {
+        final salesPersonList = dropdownData.salesPersonList;
+        final partyLedKey = controllers.selectedPartyKey;
+        final result = await showDialog(
+          context: context,
+          builder:
+              (context) => AddMoreInfoDialog(
+                salesPersonList: salesPersonList,
+                partyLedKey: partyLedKey,
+                pytTermDiscKey: controllers.pytTermDiscKey,
+                salesPersonKey: controllers.salesPersonKey,
+                creditPeriod: controllers.creditPeriod,
+                salesLedKey: controllers.salesLedKey,
+                ledgerName: controllers.ledgerName,
+                additionalInfo: additionalInfo,
+                consignees: consignees,
+                paymentTerms: paymentTerms,
+                bookingTypes: bookingTypes,
+                onValueChanged: (newInfo) {
+                  onAdditionalInfoUpdated(newInfo);
+                },
+              ),
+        );
+        if (result != null) {
+          onAdditionalInfoUpdated(result);
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primaryColor,
+        minimumSize: Size(double.infinity, 50),
+      ),
+      child: const Text('Add More Info', style: TextStyle(color: Colors.white)),
     );
   }
 
@@ -1176,17 +1280,18 @@ class _OrderForm extends StatelessWidget {
     }
   }
 
-  Widget _buildResponsiveRow(bool isWideScreen, Widget first, Widget second) {
-    return isWideScreen
-        ? Row(
+Widget _buildResponsiveRow(BuildContext context, Widget first, Widget second) {
+  final isWideScreen = MediaQuery.of(context).size.width > 600;
+  return isWideScreen
+      ? Row(
           children: [
             Expanded(child: first),
             const SizedBox(width: 10),
             Expanded(child: second),
           ],
         )
-        : Column(children: [first, second]);
-  }
+      : Column(children: [first, second]);
+}
 
   Widget _buildActionButtons(BuildContext context) {
     return Row(
@@ -1251,17 +1356,16 @@ Widget buildTextField(
   bool isDate = false,
   bool readOnly = false,
   VoidCallback? onTap,
-  bool? isText = false,
+  bool isText = false, // Change from bool? to bool with default value
 }) {
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 8),
     child: TextFormField(
       controller: controller,
       readOnly: readOnly || isDate,
-      keyboardType:
-          isText == true
-              ? TextInputType.text
-              : TextInputType.numberWithOptions(signed: false, decimal: true),
+      keyboardType: isText 
+          ? TextInputType.text
+          : TextInputType.number,
       onTap: onTap ?? (isDate ? () => _selectDate(context, controller) : null),
       decoration: InputDecoration(
         labelText: label,
@@ -1270,6 +1374,7 @@ Widget buildTextField(
     ),
   );
 }
+
 
 Future<void> _selectDate(
   BuildContext context,
@@ -1294,6 +1399,13 @@ Widget buildFullField(
 ) {
   return Padding(
     padding: const EdgeInsets.only(top: 12),
-    child: buildTextField(context, label, controller, isText: isText),
+    child: buildTextField(
+      context,
+      label,
+      controller,
+      isText: isText ?? false, // Handle null case
+    ),
   );
 }
+
+
