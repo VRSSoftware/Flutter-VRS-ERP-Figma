@@ -325,7 +325,6 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     );
   }
 
-
   void _updateTotals() {
     int totalQty = 0;
     _styleManager.controllers.forEach((style, shades) {
@@ -398,7 +397,6 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     return Column(
       children: [
         Row(
-          
           children: [
             Expanded(
               child: TextButton(
@@ -458,72 +456,62 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     );
   }
 
-Widget _buildBottomButtons() {
-  return Padding(
-    padding: const EdgeInsets.all(1.0),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // Cancel Button (always shown)
-        TextButton(
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => HomeScreen()),
-            );
-          },
-          child: Text(
-            'CANCEL',
-            style: TextStyle(color: Colors.red),
+  Widget _buildBottomButtons() {
+    return Padding(
+      padding: const EdgeInsets.all(1.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Cancel Button (always shown)
+          TextButton(
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => HomeScreen()),
+              );
+            },
+            child: Text('CANCEL', style: TextStyle(color: Colors.red)),
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            ),
           ),
-          style: TextButton.styleFrom(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-          ),
-        ),
-        // Next or Back Button
-        TextButton(
-          onPressed: () {
-            if (_activeTab == ActiveTab.transaction) {
-              setState(() {
-                _activeTab = ActiveTab.customerDetails;
-                _showForm = true;
-              });
-            } else {
-              setState(() {
-                _activeTab = ActiveTab.transaction;
-                _showForm = false;
-              });
-            }
-          },
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_activeTab == ActiveTab.customerDetails)
-                Icon(
-                  Icons.arrow_back_ios,
-                  color: Colors.blue,
-                  size: 16,
+          // Next or Back Button
+          TextButton(
+            onPressed: () {
+              if (_activeTab == ActiveTab.transaction) {
+                setState(() {
+                  _activeTab = ActiveTab.customerDetails;
+                  _showForm = true;
+                });
+              } else {
+                setState(() {
+                  _activeTab = ActiveTab.transaction;
+                  _showForm = false;
+                });
+              }
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_activeTab == ActiveTab.customerDetails)
+                  Icon(Icons.arrow_back_ios, color: Colors.blue, size: 16),
+                Text(
+                  _activeTab == ActiveTab.transaction ? 'NEXT' : 'BACK',
+                  style: TextStyle(color: Colors.blue),
                 ),
-              Text(
-                _activeTab == ActiveTab.transaction ? 'NEXT' : 'BACK',
-                style: TextStyle(color: Colors.blue),
-              ),
-              if (_activeTab == ActiveTab.transaction)
-                Icon(
-                  Icons.arrow_forward_ios,
-                  color: Colors.blue,
-                  size: 16,
-                ),
-            ],
+                if (_activeTab == ActiveTab.transaction)
+                  Icon(Icons.arrow_forward_ios, color: Colors.blue, size: 16),
+              ],
+            ),
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            ),
           ),
-          style: TextButton.styleFrom(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-          ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
+
   AppBar _buildAppBar() {
     return AppBar(
       title: const Text('View Order', style: TextStyle(color: Colors.white)),
@@ -1113,22 +1101,23 @@ class _OrderForm extends StatelessWidget {
                   final partyLedKey = controllers.selectedPartyKey;
                   final result = await showDialog(
                     context: context,
-                    builder: (context) => AddMoreInfoDialog(
-                      salesPersonList: salesPersonList,
-                      partyLedKey: partyLedKey,
-                      pytTermDiscKey: controllers.pytTermDiscKey,
-                      salesPersonKey: controllers.salesPersonKey,
-                      creditPeriod: controllers.creditPeriod,
-                      salesLedKey: controllers.salesLedKey,
-                      ledgerName: controllers.ledgerName,
-                      additionalInfo: additionalInfo,
-                      consignees: consignees,
-                      paymentTerms: paymentTerms,
-                      bookingTypes: bookingTypes,
-                      onValueChanged: (newInfo) {
-                        onAdditionalInfoUpdated(newInfo);
-                      },
-                    ),
+                    builder:
+                        (context) => AddMoreInfoDialog(
+                          salesPersonList: salesPersonList,
+                          partyLedKey: partyLedKey,
+                          pytTermDiscKey: controllers.pytTermDiscKey,
+                          salesPersonKey: controllers.salesPersonKey,
+                          creditPeriod: controllers.creditPeriod,
+                          salesLedKey: controllers.salesLedKey,
+                          ledgerName: controllers.ledgerName,
+                          additionalInfo: additionalInfo,
+                          consignees: consignees,
+                          paymentTerms: paymentTerms,
+                          bookingTypes: bookingTypes,
+                          onValueChanged: (newInfo) {
+                            onAdditionalInfoUpdated(newInfo);
+                          },
+                        ),
                   );
                   if (result != null) {
                     onAdditionalInfoUpdated(result);
