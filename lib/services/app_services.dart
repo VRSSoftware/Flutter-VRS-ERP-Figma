@@ -73,6 +73,22 @@ class ApiService {
       throw Exception('Failed to load styles for itemKey: $itemKey');
     }
   }
+  static Future<List<Style>> fetchStylesByItemGrpKey(String itemGrpKey) async {
+    if (itemGrpKey.isEmpty) {
+      throw Exception('Invalid category selected');
+    }
+    final response = await http.get(
+      Uri.parse('${AppConstants.BASE_URL}/style/getByItemGrpKey/$itemGrpKey'),
+    );
+    // print("Style API response for $itemKey: ${response.body}");
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((json) => Style.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load styles for itemGrpKey: $itemGrpKey');
+    }
+  }
 
   // Fetch Shades by Item Key (returning Shade objects)
   static Future<List<Shade>> fetchShadesByItemKey(String itemKey) async {

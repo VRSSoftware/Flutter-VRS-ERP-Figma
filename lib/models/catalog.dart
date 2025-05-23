@@ -25,6 +25,7 @@ class Catalog {
   final String onlySizes;
   final String sizeWithWsp;
   final String createdDate;
+  final int total;
 
 
   Catalog({
@@ -44,6 +45,7 @@ class Catalog {
     required this.wsp,
     required this.onlyMRP,
     required this.clqty,
+    required this.total,
     required this.fullImagePath,
     required this.remark,
     required this.imageId,
@@ -74,6 +76,7 @@ class Catalog {
       wsp: (json['wsp'] ?? 0).toDouble(),
       onlyMRP: (json['onlyMRP'] ?? 0).toDouble(),
       clqty: json['clqty'] ?? 0,
+      total: json['total'] ?? 0,
       fullImagePath: json['fullImagePath'] ?? '/NoImage.jpg',
       remark: json['remark'] ?? '',
       imageId: json['imageId'] ?? '',
@@ -104,7 +107,7 @@ class Catalog {
       'mrp': mrp,
       'wsp': wsp,
       'onlyMRP': onlyMRP,
-      'clqty': clqty,
+      'total': total,
       'fullImagePath': fullImagePath,
       'remark': remark,
       'imageId': imageId,

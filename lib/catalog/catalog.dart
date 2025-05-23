@@ -77,9 +77,10 @@ class _CatalogPageState extends State<CatalogPage> {
   bool includeSizeWsp = false;
   bool includeProduct = true;
   bool includeRemark = true;
+  int total = 0;
 
   // Pagination variables
-  int pageNo = 1;
+  int pageNo = 20;
   bool hasMore = true;
   bool isLoadingMore = false;
   final ScrollController _scrollController = ScrollController();
@@ -112,7 +113,7 @@ class _CatalogPageState extends State<CatalogPage> {
           _fetchStylesSizeByItemKey(itemKey!);
           _fetchBrands();
         } else if (itemSubGrpKey != null) {
-          _fetchStylesByItemKey(itemSubGrpKey!);
+          _fetchStylesByItemGrpKey(itemSubGrpKey!);
           _fetchShadesByItemGrpKey(itemSubGrpKey!);
           _fetchStylesSizeByItemGrpKey(itemSubGrpKey!);
           _fetchBrands();
@@ -132,6 +133,16 @@ class _CatalogPageState extends State<CatalogPage> {
             _scrollController.position.maxScrollExtent - 200 &&
         !isLoadingMore &&
         hasMore) {
+          if(catalogItems.length<=total){
+            setState(() {
+              hasMore=true;
+            });
+          }
+          else{
+            setState(() {
+              hasMore=false;
+            });
+          }
       // Fetch next page when user scrolls near the bottom
       setState(() {
         isLoadingMore = true;
@@ -283,10 +294,14 @@ class _CatalogPageState extends State<CatalogPage> {
         isLoading = false;
         isLoadingMore = false;
         hasMore = fetchedHasMore;
+        if(catalogItems.isNotEmpty){
+          total = catalogItems[0].total;
+        }
       });
     } catch (e) {
       debugPrint('Failed to load catalog items: $e');
       setState(() {
+        
         isLoading = false;
         isLoadingMore = false;
       });
@@ -306,6 +321,16 @@ class _CatalogPageState extends State<CatalogPage> {
   Future<void> _fetchStylesByItemKey(String itemKey) async {
     try {
       final fetchedStyles = await ApiService.fetchStylesByItemKey(itemKey);
+      setState(() {
+        styles = fetchedStyles;
+      });
+    } catch (e) {
+      print('Failed to load styles: $e');
+    }
+  }
+  Future<void> _fetchStylesByItemGrpKey(String itemGrpKey) async {
+    try {
+      final fetchedStyles = await ApiService.fetchStylesByItemGrpKey(itemGrpKey);
       setState(() {
         styles = fetchedStyles;
       });
