@@ -1,13 +1,3 @@
-
-
-
-
-
-
-
-
-
-
 import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
@@ -293,6 +283,32 @@ Future<void> _initializeData() async {
 
     final salesOrderNo = _orderControllers.orderNo.text;
 
+// showDialog(
+//   context: context,
+//   builder: (context) => AlertDialog(
+//     title: Text('Order Saved'),
+//     content: Text('Order ${_orderControllers.orderNo.text} saved successfully'),
+//     actions: [
+//       TextButton(
+//         onPressed: () async {
+//           Navigator.pop(context); // Close dialog
+//           await _callSecondApi(_orderControllers.orderNo.text);
+//           // No need to navigate to HomeScreen here anymore
+//         },
+//         child: Text('View PDF'),
+//       ),
+//       TextButton(
+//         onPressed: () {
+//           Navigator.pushReplacement(
+//             context,
+//             MaterialPageRoute(builder: (context) => HomeScreen()),
+//           );
+//         },
+//         child: Text('Done'),
+//       ),
+//     ],
+//   ),
+// );
 showDialog(
   context: context,
   builder: (context) => AlertDialog(
@@ -300,10 +316,17 @@ showDialog(
     content: Text('Order ${_orderControllers.orderNo.text} saved successfully'),
     actions: [
       TextButton(
-        onPressed: () async {
+        onPressed: () {
           Navigator.pop(context); // Close dialog
-          await _callSecondApi(_orderControllers.orderNo.text);
-          // No need to navigate to HomeScreen here anymore
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PdfViewerScreen(
+                orderNo: _orderControllers.orderNo.text,
+                whatsappNo: _orderControllers.whatsAppMobileNo,
+              ),
+            ),
+          );
         },
         child: Text('View PDF'),
       ),
@@ -319,52 +342,53 @@ showDialog(
     ],
   ),
 );
+
   
 }
 
-Future<void> _callSecondApi(String salesOrderNo) async {
-  try {
-    // Extract numeric part from salesOrderNo (e.g., "SO10" -> "10")
-    final docId = salesOrderNo.replaceAll(RegExp(r'[^0-9]'), '');
+// Future<void> _callSecondApi(String salesOrderNo) async {
+//   try {
+//     // Extract numeric part from salesOrderNo (e.g., "SO10" -> "10")
+//     final docId = salesOrderNo.replaceAll(RegExp(r'[^0-9]'), '');
 
-    // Using Dio for better file download support
-    final dio = Dio();
-    final response = await dio.post(
-      '${AppConstants.Pdf_url}/api/values/order',
-      data: {"doc_id": docId},
-      options: Options(responseType: ResponseType.bytes),
-    );
+//     // Using Dio for better file download support
+//     final dio = Dio();
+//     final response = await dio.post(
+//       '${AppConstants.Pdf_url}/api/values/order',
+//       data: {"doc_id": docId},
+//       options: Options(responseType: ResponseType.bytes),
+//     );
 
-    if (response.statusCode == 200) {
-      // Get temporary directory
-      final dir = await getTemporaryDirectory();
-      final filePath = '${dir.path}/order_$docId.pdf';
-      final file = File(filePath);
+//     if (response.statusCode == 200) {
+//       // Get temporary directory
+//       final dir = await getTemporaryDirectory();
+//       final filePath = '${dir.path}/order_$docId.pdf';
+//       final file = File(filePath);
       
-      // Write PDF bytes to file
-      await file.writeAsBytes(response.data);
+//       // Write PDF bytes to file
+//       await file.writeAsBytes(response.data);
       
-      // Show PDF viewer
-      if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PdfViewerScreen(filePath: filePath),
-        ),
-      );
-    } else {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load PDF: ${response.statusCode}')),
-      );
-    }
-  } catch (e) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error: ${e.toString()}')),
-    );
-  }
-}
+//       // Show PDF viewer
+//       if (!mounted) return;
+//       Navigator.push(
+//         context,
+//         MaterialPageRoute(
+//           builder: (context) => PdfViewerScreen(filePath: filePath),
+//         ),
+//       );
+//     } else {
+//       if (!mounted) return;
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(content: Text('Failed to load PDF: ${response.statusCode}')),
+//       );
+//     }
+//   } catch (e) {
+//     if (!mounted) return;
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       SnackBar(content: Text('Error: ${e.toString()}')),
+//     );
+//   }
+// }
 
   void _updateTotals() {
     int totalQty = 0;
@@ -470,7 +494,9 @@ Future<void> _callSecondApi(String salesOrderNo) async {
       _orderControllers.salesPersonKey = details['salesPersonKey'];
       _orderControllers.creditPeriod = details['creditPeriod'];
       _orderControllers.selectedTransporterKey = details['trspKey'];
+      _orderControllers.whatsAppMobileNo = details['whatsAppMobileNo'];
 
+      print(details['whatsAppMobileNo']);
       final commission = await _dropdownData.fetchCommissionPercentage(key);
       setState(() {
         _orderControllers.updateFromPartyDetails(
@@ -514,6 +540,7 @@ class _OrderControllers {
   int? creditPeriod;
   String? salesLedKey;
   String? ledgerName;
+  String? whatsAppMobileNo;
 
   final orderNo = TextEditingController();
   final date = TextEditingController();

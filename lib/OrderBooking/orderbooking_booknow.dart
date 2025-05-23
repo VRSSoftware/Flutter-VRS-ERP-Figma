@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
@@ -9,6 +10,7 @@ import 'package:vrs_erp_figma/OrderBooking/booking2/multipleorderbooking.dart';
 import 'package:vrs_erp_figma/catalog/filter.dart';
 import 'package:vrs_erp_figma/catalog/imagezoom.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/models/brand.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
 import 'package:vrs_erp_figma/models/shade.dart';
 import 'package:vrs_erp_figma/models/size.dart';
@@ -20,6 +22,7 @@ class OrderPage extends StatefulWidget {
   @override
   _OrderPageState createState() => _OrderPageState();
 }
+
 class _OrderPageState extends State<OrderPage> {
   int viewOption = 0;
   List<Style> selectedStyles = [];
@@ -45,10 +48,23 @@ class _OrderPageState extends State<OrderPage> {
   bool showSizes = true;
   bool showProduct = true;
   int _cartItemCount = 0;
+  List<Brand> brands = [];
+  int pageNo = 1;
+  bool hasMore = true;
+  bool isLoadingMore = false;
+  bool hasError = false; // New: Track error state
+  String? errorMessage; // New: Store error message
+  final ScrollController _scrollController = ScrollController();
+  Timer? _debounce; // New: Debounce timer for scroll events
+  final int pageSize = 10; // Adjust based on backend API
+  String fromDate = "";
+  String toDate = "";
+  List<Brand> selectedBrands = [];
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_scrollListener);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final args =
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
@@ -64,9 +80,10 @@ class _OrderPageState extends State<OrderPage> {
 
         if (coBr != null && fcYrId != null) {
           _fetchAddedItems(coBr!, fcYrId!);
+          _fetchCartCount();
         }
 
-        if (itemSubGrpKey != null && itemKey != null && coBr != null) {
+        if (itemSubGrpKey != null && coBr != null) {
           _fetchCatalogItems();
         }
 
@@ -74,50 +91,114 @@ class _OrderPageState extends State<OrderPage> {
           _fetchStylesByItemKey(itemKey!);
           _fetchShadesByItemKey(itemKey!);
           _fetchStylesSizeByItemKey(itemKey!);
+          _fetchBrands();
+        } else if (itemSubGrpKey != null) {
+          _fetchStylesByItemKey(itemSubGrpKey!);
+          _fetchShadesByItemGrpKey(itemSubGrpKey!);
+          _fetchStylesSizeByItemGrpKey(itemSubGrpKey!);
+          _fetchBrands();
         }
-      }
-
-      if (coBr != null && fcYrId != null) {
-        _fetchCartCount();
       }
     });
   }
 
-void _toggleItemSelection(Catalog item) {
-  setState(() {
-    if (addedItems.contains(item.styleCode)) {
-      // Show dialog if item is already added
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Notice'),
-          content: Text('Item already booked.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('OK'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      // Toggle selection only for non-added items
-      if (selectedItems.contains(item)) {
-        selectedItems.remove(item);
-      } else {
-        selectedItems.add(item);
-      }
+  void _scrollListener() {
+    if (_debounce?.isActive ?? false) return;
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200 &&
+        !isLoadingMore &&
+        hasMore &&
+        !hasError) {
+      _debounce = Timer(Duration(milliseconds: 300), () {
+        setState(() {
+          isLoadingMore = true;
+          pageNo++;
+        });
+        _fetchCatalogItems();
+      });
     }
-  });
-  debugPrint(selectedItems.length.toString());
-}
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchStylesSizeByItemGrpKey(String itemKey) async {
+    try {
+      if (itemKey != null) {
+        final fetchedSizes = await ApiService.fetchStylesSizeByItemKey(itemKey);
+        setState(() {
+          sizes = fetchedSizes;
+        });
+      } else if (itemSubGrpKey != null) {
+        final fetchedSizes = await ApiService.fetchStylesSizeByItemGrpKey(
+          itemSubGrpKey!,
+        );
+        setState(() {
+          sizes = fetchedSizes;
+        });
+      }
+    } catch (e) {
+      print('Failed to load sizes: $e');
+    }
+  }
+
+  Future<void> _fetchShadesByItemGrpKey(String itemKey) async {
+    try {
+      final fetchedShades = await ApiService.fetchShadesByItemGrpKey(itemKey);
+      setState(() {
+        shades = fetchedShades;
+      });
+    } catch (e) {
+      print('Failed to load shades: $e');
+    }
+  }
+
+  Future<void> _fetchBrands() async {
+    try {
+      brands = await ApiService.fetchBrands();
+      setState(() {});
+    } catch (e) {
+      print('Failed to load brands: $e');
+    }
+  }
+
+  void _toggleItemSelection(Catalog item) {
+    setState(() {
+      if (addedItems.contains(item.styleCode)) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Notice'),
+            content: Text('Item already booked.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('OK'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        if (selectedItems.contains(item)) {
+          selectedItems.remove(item);
+        } else {
+          selectedItems.add(item);
+        }
+      }
+    });
+    debugPrint(selectedItems.length.toString());
+  }
 
   Future<void> _fetchCartCount() async {
     try {
       final data = await ApiService.getSalesOrderData(
         coBrId: '01',
-        userId: 'Admin', // Replace with actual user ID if needed
-        fcYrId: 24, // Note: fcYrId should be an int, not string
+        userId: 'Admin',
+        fcYrId: 24,
         barcode: '',
       );
       setState(() {
@@ -145,40 +226,50 @@ void _toggleItemSelection(Catalog item) {
     }
   }
 
+  List<Catalog> _getFilteredItems() {
+    return catalogItems;
+  }
+
   Future<void> _fetchCatalogItems() async {
     try {
-      setState(() {
-        catalogItems = [];
-        isLoading = true;
-      });
-
-      final result = await ApiService.fetchCatalogItem(
-        itemSubGrpKey: itemSubGrpKey!,
-        itemKey: itemKey!,
-        cobr: coBr!,
-        sortBy: sortBy,
-        styleKey:
-            selectedStyles.length == 1 ? selectedStyles[0].styleKey : null,
-        shadeKey:
-            selectedShades.isEmpty
-                ? null
-                : selectedShades.map((s) => s.shadeKey).join(','),
-        sizeKey:
-            selectedSize.isEmpty
-                ? null
-                : selectedSize.map((s) => s.itemSizeKey).join(','),
-        fromMRP: fromMRP == "" ? null : fromMRP,
-        toMRP: toMRP == "" ? null : toMRP,
-      );
-
-      int status = result["statusCode"];
-      if (status == 200) {
+      if (pageNo == 1) {
         setState(() {
-          isLoading = false;
+          isLoading = true;
+          hasError = false;
+          errorMessage = null;
+          catalogItems.clear(); // Clear items only on first page or refresh
+        });
+      } else {
+        setState(() {
+          isLoadingMore = true;
         });
       }
 
-      final items = result["catalogs"];
+      final result = await ApiService.fetchCatalogItem(
+        itemSubGrpKey: itemSubGrpKey!,
+        itemKey: itemKey,
+        cobr: coBr!,
+        sortBy: sortBy,
+        styleKey: selectedStyles.length == 1 ? selectedStyles[0].styleKey : null,
+        shadeKey: selectedShades.isEmpty
+            ? null
+            : selectedShades.map((s) => s.shadeKey).join(','),
+        sizeKey: selectedSize.isEmpty
+            ? null
+            : selectedSize.map((s) => s.itemSizeKey).join(','),
+        fromMRP: fromMRP.isEmpty ? null : fromMRP,
+        toMRP: toMRP.isEmpty ? null : toMRP,
+        fromDate: fromDate.isEmpty ? null : fromDate,
+        toDate: toDate.isEmpty ? null : toDate,
+        brandKey: selectedBrands.isEmpty ? null : selectedBrands[0].brandKey,
+        pageNo: pageNo,
+        //pageSize: pageSize,
+      );
+
+      int status = result["statusCode"];
+      final items = result["catalogs"] as List<Catalog>;
+
+      bool fetchedHasMore = items.length >= pageSize;
 
       double? wspFrom = double.tryParse(WSPfrom);
       double? wspTo = double.tryParse(WSPto);
@@ -186,42 +277,52 @@ void _toggleItemSelection(Catalog item) {
       List<Catalog> wspFilteredCatalogs = items;
 
       if (wspFrom != null && wspTo != null) {
-        wspFilteredCatalogs =
-            wspFilteredCatalogs
-                .where(
-                  (catalog) => catalog.wsp >= wspFrom && catalog.wsp <= wspTo,
-                )
-                .toList();
+        wspFilteredCatalogs = wspFilteredCatalogs
+            .where((catalog) => catalog.wsp >= wspFrom && catalog.wsp <= wspTo)
+            .toList();
       } else if (wspFrom != null) {
         wspFilteredCatalogs =
-            wspFilteredCatalogs
-                .where((catalog) => catalog.wsp >= wspFrom)
-                .toList();
+            wspFilteredCatalogs.where((catalog) => catalog.wsp >= wspFrom).toList();
       } else if (wspTo != null) {
         wspFilteredCatalogs =
-            wspFilteredCatalogs
-                .where((catalog) => catalog.wsp <= wspTo)
-                .toList();
+            wspFilteredCatalogs.where((catalog) => catalog.wsp <= wspTo).toList();
       }
 
       if (selectedStyles.isNotEmpty) {
         final selectedStyleKeys =
             selectedStyles.map((style) => style.styleKey).toSet();
-
-        wspFilteredCatalogs =
-            wspFilteredCatalogs
-                .where(
-                  (catalog) => selectedStyleKeys.contains(catalog.styleKey),
-                )
-                .toList();
+        wspFilteredCatalogs = wspFilteredCatalogs
+            .where((catalog) => selectedStyleKeys.contains(catalog.styleKey))
+            .toList();
       }
 
       setState(() {
-        catalogItems = wspFilteredCatalogs;
+        catalogItems.addAll(wspFilteredCatalogs);
+        isLoading = false;
+        isLoadingMore = false;
+        hasMore = fetchedHasMore;
+        hasError = false;
+        errorMessage = null;
       });
     } catch (e) {
-      debugPrint('Failed to load catalog items: $e');
+      setState(() {
+        isLoading = false;
+        isLoadingMore = false;
+        hasError = true;
+        errorMessage = e.toString();
+      });
+      print('Failed to load catalog items: $e');
     }
+  }
+
+  Future<void> _onRefresh() async {
+    setState(() {
+      pageNo = 1;
+      hasMore = true;
+      catalogItems.clear();
+      selectedItems.clear();
+    });
+    await _fetchCatalogItems();
   }
 
   Future<void> _fetchStylesByItemKey(String itemKey) async {
@@ -256,29 +357,28 @@ void _toggleItemSelection(Catalog item) {
       print('Failed to load sizes: $e');
     }
   }
-
-  // void _toggleItemSelection(Catalog item) {
-  //   setState(() {
-  //     if (selectedItems.contains(item)) {
-  //       selectedItems.remove(item);
-  //     } else {
-  //       selectedItems.add(item);
-  //     }
-  //   });
-  //   debugPrint(selectedItems.length.toString());
-  // }
+    String toTitleCase(String text) {
+    if (text.isEmpty) return text;
+    return text
+        .toLowerCase()
+        .split(' ')
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
+  }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isLargeScreen = screenWidth > 600;
-    final isPortrait =
-        MediaQuery.of(context).orientation == Orientation.portrait;
+    final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('Order Book', style: TextStyle(color: Colors.white)),
+        title:Text(
+          toTitleCase(itemNamee ?? ''),
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: AppColors.primaryColor,
         elevation: 1,
         leading: IconButton(
@@ -319,14 +419,13 @@ void _toggleItemSelection(Catalog item) {
               _fetchCartCount();
             },
           ),
-
           IconButton(
             icon: Icon(
               viewOption == 0
                   ? Icons.grid_on
                   : viewOption == 1
-                  ? Icons.view_list
-                  : Icons.expand,
+                      ? Icons.view_list
+                      : Icons.expand,
               color: Colors.white,
             ),
             onPressed: () {
@@ -336,192 +435,204 @@ void _toggleItemSelection(Catalog item) {
             },
           ),
           Builder(
-            builder:
-                (context) => IconButton(
-                  icon: Icon(Icons.more_vert, color: Colors.white),
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return Dialog(
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            side: BorderSide(
-                              color: Colors.grey.shade300,
-                              width: 1,
-                            ),
-                          ),
-                          child: Padding(
-                            padding: EdgeInsets.all(
-                              MediaQuery.of(context).size.width > 600
-                                  ? 24.0
-                                  : 16.0,
-                            ),
-                            child: StatefulBuilder(
-                              builder: (context, setStateDialog) {
-                                return SingleChildScrollView(
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(
-                                      maxWidth:
-                                          MediaQuery.of(context).size.width >
-                                                  600
-                                              ? 600
-                                              : 440,
-                                      minWidth: 320,
+            builder: (context) => IconButton(
+              icon: Icon(Icons.more_vert, color: Colors.white),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return Dialog(
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: BorderSide(
+                          color: Colors.grey.shade300,
+                          width: 1,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(
+                          MediaQuery.of(context).size.width > 600 ? 24.0 : 16.0,
+                        ),
+                        child: StatefulBuilder(
+                          builder: (context, setStateDialog) {
+                            return SingleChildScrollView(
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth:
+                                      MediaQuery.of(context).size.width > 600
+                                          ? 600
+                                          : 440,
+                                  minWidth: 320,
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Options",
+                                      style: TextStyle(
+                                        fontSize:
+                                            MediaQuery.of(context).size.width >
+                                                    600
+                                                ? 22
+                                                : 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "Options",
-                                          style: TextStyle(
-                                            fontSize:
-                                                MediaQuery.of(
-                                                          context,
-                                                        ).size.width >
-                                                        600
-                                                    ? 22
-                                                    : 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 20),
-                                        LayoutBuilder(
-                                          builder: (context, constraints) {
-                                            final isWide =
-                                                constraints.maxWidth > 400;
-                                            return isWide
-                                                ? Row(
-                                                  children: [
-                                                    Expanded(
-                                                      child: Column(
-                                                        children: [
-                                                          _buildToggleRow(
-                                                            "Show Product",
-                                                            showProduct,
-                                                            (val) {
-                                                              showProduct = val;
-                                                              setStateDialog(
-                                                                () {},
-                                                              );
-                                                            },
-                                                          ),
-                                                        ],
-                                                      ),
+                                    const SizedBox(height: 20),
+                                    LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final isWide = constraints.maxWidth > 400;
+                                        return isWide
+                                            ? Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Column(
+                                                      children: [
+                                                        _buildToggleRow(
+                                                          "Show Product",
+                                                          showProduct,
+                                                          (val) {
+                                                            showProduct = val;
+                                                            setStateDialog(() {});
+                                                          },
+                                                        ),
+                                                      ],
                                                     ),
-                                                    const SizedBox(width: 16),
-                                                    Expanded(
-                                                      child: Column(
-                                                        children: [
-                                                          _buildToggleRow(
-                                                            "Show Size",
-                                                            showSizes,
-                                                            (val) {
-                                                              showSizes = val;
-                                                              setStateDialog(
-                                                                () {},
-                                                              );
-                                                            },
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ],
-                                                )
-                                                : Column(
-                                                  children: [
-                                                    _buildToggleRow(
-                                                      "Show Size",
-                                                      showSizes,
-                                                      (val) {
-                                                        showSizes = val;
-                                                        setStateDialog(() {});
-                                                      },
-                                                    ),
-                                                    _buildToggleRow(
-                                                      "Show Product",
-                                                      showProduct,
-                                                      (val) {
-                                                        showProduct = val;
-                                                        setStateDialog(() {});
-                                                      },
-                                                    ),
-                                                  ],
-                                                );
-                                          },
-                                        ),
-                                        const SizedBox(height: 20),
-                                        Align(
-                                          alignment: Alignment.centerRight,
-                                          child: TextButton(
-                                            onPressed:
-                                                () =>
-                                                    Navigator.of(context).pop(),
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 16.0,
                                                   ),
-                                              child: Text(
-                                                "Close",
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      MediaQuery.of(
-                                                                context,
-                                                              ).size.width >
-                                                              600
-                                                          ? 18
-                                                          : 16,
-                                                ),
-                                              ),
+                                                  const SizedBox(width: 16),
+                                                  Expanded(
+                                                    child: Column(
+                                                      children: [
+                                                        _buildToggleRow(
+                                                          "Show Size",
+                                                          showSizes,
+                                                          (val) {
+                                                            showSizes = val;
+                                                            setStateDialog(() {});
+                                                          },
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              )
+                                            : Column(
+                                                children: [
+                                                  _buildToggleRow(
+                                                    "Show Size",
+                                                    showSizes,
+                                                    (val) {
+                                                      showSizes = val;
+                                                      setStateDialog(() {});
+                                                    },
+                                                  ),
+                                                  _buildToggleRow(
+                                                    "Show Product",
+                                                    showProduct,
+                                                    (val) {
+                                                      showProduct = val;
+                                                      setStateDialog(() {});
+                                                    },
+                                                  ),
+                                                ],
+                                              );
+                                      },
+                                    ),
+                                    const SizedBox(height: 20),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: TextButton(
+                                        onPressed: () => Navigator.of(context).pop(),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16.0,
+                                          ),
+                                          child: Text(
+                                            "Close",
+                                            style: TextStyle(
+                                              fontSize:
+                                                  MediaQuery.of(context)
+                                                              .size
+                                                              .width >
+                                                          600
+                                                      ? 18
+                                                      : 16,
                                             ),
                                           ),
                                         ),
-                                      ],
+                                      ),
                                     ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     );
                   },
-                ),
+                );
+              },
+            ),
           ),
         ],
       ),
       body: Column(
         children: [
           Expanded(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: isLargeScreen ? 16.0 : 8.0,
-                vertical: 8.0,
+            child: RefreshIndicator(
+              onRefresh: _onRefresh,
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isLargeScreen ? 16.0 : 8.0,
+                  vertical: 8.0,
+                ),
+                child: isLoading
+                    ? Center(child: CircularProgressIndicator())
+                    : hasError
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  errorMessage ?? "Failed to load items",
+                                  style: TextStyle(color: Colors.red),
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      hasError = false;
+                                      pageNo = 1;
+                                      catalogItems.clear();
+                                    });
+                                    _fetchCatalogItems();
+                                  },
+                                  child: Text("Retry"),
+                                ),
+                              ],
+                            ),
+                          )
+                        : catalogItems.isEmpty
+                            ? Center(child: Text("No Item Available"))
+                            : LayoutBuilder(
+                                builder: (context, constraints) {
+                                  if (viewOption == 0) {
+                                    return _buildGridView(
+                                      constraints,
+                                      isLargeScreen,
+                                      isPortrait,
+                                    );
+                                  } else if (viewOption == 1) {
+                                    return _buildListView(constraints, isLargeScreen);
+                                  }
+                                  return _buildExpandedView(isLargeScreen);
+                                },
+                              ),
               ),
-              child:
-                  isLoading
-                      ? Center(child: CircularProgressIndicator())
-                      : catalogItems.isEmpty
-                      ? Center(child: Text("No Item Available"))
-                      : LayoutBuilder(
-                        builder: (context, constraints) {
-                          if (viewOption == 0) {
-                            return _buildGridView(
-                              constraints,
-                              isLargeScreen,
-                              isPortrait,
-                            );
-                          } else if (viewOption == 1) {
-                            return _buildListView(constraints, isLargeScreen);
-                          }
-                          return _buildExpandedView(isLargeScreen);
-                        },
-                      ),
             ),
           ),
           _buildBottomButtons(isLargeScreen),
@@ -532,9 +643,6 @@ void _toggleItemSelection(Catalog item) {
         child: FloatingActionButton(
           onPressed: _showFilterDialog,
           backgroundColor: AppColors.primaryColor,
-          // shape: RoundedRectangleBorder(
-          //   borderRadius: BorderRadius.circular(0), // No curve
-          // ),
           child: const Icon(Icons.filter_alt_outlined, color: Colors.white),
           tooltip: 'Filter',
         ),
@@ -547,26 +655,29 @@ void _toggleItemSelection(Catalog item) {
     bool isLargeScreen,
     bool isPortrait,
   ) {
+    final filteredItems = _getFilteredItems();
     final crossAxisCount =
-        isPortrait
-            ? (isLargeScreen ? 3 : 2)
-            : (constraints.maxWidth ~/ 300).clamp(3, 4);
+        isPortrait ? (isLargeScreen ? 3 : 2) : (constraints.maxWidth ~/ 300).clamp(3, 4);
 
     return GridView.builder(
+      controller: _scrollController,
       padding: const EdgeInsets.all(8.0),
       shrinkWrap: true,
       physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: catalogItems.length,
+      itemCount: filteredItems.length + (isLoadingMore ? 1 : 0),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
-        crossAxisSpacing: isLargeScreen ? 14.0 : 8.0,
+        //crossAxisSpacing: isLargeScreen Boc? 14.0 : 8.0,
         mainAxisSpacing: isLargeScreen ? 1.0 : 8.0,
         childAspectRatio: _getChildAspectRatio(constraints, isLargeScreen),
       ),
       itemBuilder: (context, index) {
+        if (index == filteredItems.length && isLoadingMore) {
+          return Center(child: CircularProgressIndicator());
+        }
         final item = catalogItems[index];
         return GestureDetector(
-          onDoubleTap: () => _openImageZoom(context, item),
+          //onDoubleTap: () => _openImageZoom(context, item),
           onTap: () => _toggleItemSelection(item),
           child: _buildItemCard(item, isLargeScreen, addedItems),
         );
@@ -580,210 +691,413 @@ void _toggleItemSelection(Catalog item) {
     return 0.42;
   }
 
+  Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
+    final filteredItems = _getFilteredItems();
+    return ListView.builder(
+      controller: _scrollController,
+      itemCount: filteredItems.length + (isLoadingMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == filteredItems.length && isLoadingMore) {
+          return Center(child: CircularProgressIndicator());
+        }
+        final item = catalogItems[index];
+        final isSelected = selectedItems.contains(item);
+        return GestureDetector(
+          //onDoubleTap: () => _openImageZoom(context, item),
+          onTap: () => _toggleItemSelection(item),
+          child: Container(
+            margin: EdgeInsets.symmetric(vertical: 8),
+            child: Card(
+              elevation: isSelected ? 8 : 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(0),
+              ),
+              color: isSelected ? Colors.blue.shade50 : Colors.white,
+              child: Stack(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.all(isLargeScreen ? 12.0 : 8.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Flexible(
+                          flex: 2,
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(0),
+                              topRight: Radius.circular(0),
+                            ),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final maxImageHeight = constraints.maxWidth * 1.2;
+                                return ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxHeight: maxImageHeight,
+                                  ),
+                                  child: SizedBox(
+                                    height: maxImageHeight,
+                                    width: double.infinity,
+                                    child: Center(
+                                      child: Image.network(
+                                        _getImageUrl(item),
+                                        fit: BoxFit.contain,
+                                        width: double.infinity,
+                                        errorBuilder: (
+                                          context,
+                                          error,
+                                          stackTrace,
+                                        ) {
+                                          return Container(
+                                            color: Colors.grey.shade300,
+                                            child: const Center(
+                                              child: Icon(Icons.error),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: isLargeScreen ? 16 : 8),
+                        Flexible(
+                          flex: 3,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.all(
+                                  isLargeScreen ? 16 : 12,
+                                ),
+                                child: Table(
+                                  columnWidths: const {
+                                    0: IntrinsicColumnWidth(),
+                                    1: FixedColumnWidth(8),
+                                    2: FlexColumnWidth(),
+                                  },
+                                  defaultVerticalAlignment:
+                                      TableCellVerticalAlignment.middle,
+                                  children: [
+                                    TableRow(
+                                      children: [
+                                        _buildLabelText('Design'),
+                                        const Text(':'),
+                                        SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: Text(
+                                            item.styleCodeWithcount,
+                                            style: TextStyle(
+                                              color: Colors.red,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: isLargeScreen ? 20 : 16,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    _buildSpacerRow(),
+                                    TableRow(
+                                      children: [
+                                        _buildLabelText('MRP'),
+                                        const Text(':'),
+                                        Text(
+                                          item.mrp.toStringAsFixed(2),
+                                          style: _valueTextStyle(isLargeScreen),
+                                        ),
+                                      ],
+                                    ),
+                                    _buildSpacerRow(),
+                                    if (showSizes && item.sizeName.isNotEmpty)
+                                      TableRow(
+                                        children: [
+                                          _buildLabelText('Size'),
+                                          const Text(':'),
+                                          SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            child: Text(
+                                              item.sizeWithMrp,
+                                              style: _valueTextStyle(
+                                                isLargeScreen,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    if (showSizes && item.sizeName.isNotEmpty)
+                                      _buildSpacerRow(),
+                                    if (showProduct)
+                                      TableRow(
+                                        children: [
+                                          _buildLabelText('Product'),
+                                          const Text(':'),
+                                          SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            child: Text(
+                                              item.itemName,
+                                              style: _valueTextStyle(
+                                                isLargeScreen,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              if (addedItems.contains(item.styleCode) ||
+                                  selectedItems.isEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8.0,
+                                    vertical: 6.0,
+                                  ),
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      style: ButtonStyle(
+                                        backgroundColor:
+                                            MaterialStateProperty.all(
+                                              addedItems.contains(
+                                                    item.styleCode,
+                                                  )
+                                                  ? Colors.green
+                                                  : AppColors.primaryColor,
+                                            ),
+                                        shape: MaterialStateProperty.all(
+                                          RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              0,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      onPressed:
+                                          addedItems.contains(item.styleCode)
+                                              ? null
+                                              : () => _showBookingDialog(
+                                                    context,
+                                                    item,
+                                                  ),
+                                      child: Text(
+                                        addedItems.contains(item.styleCode)
+                                            ? 'Added'
+                                            : 'BOOK NOW',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: isLargeScreen ? 14 : 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isSelected)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.check_circle,
+                          color: AppColors.primaryColor,
+                          size: isLargeScreen ? 24 : 20,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
-Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
-  return ListView.builder(
-    itemCount: catalogItems.length,
-    itemBuilder: (context, index) {
-      final item = catalogItems[index];
-      final isSelected = selectedItems.contains(item);
-      return GestureDetector(
-        onDoubleTap: () => _openImageZoom(context, item),
-        onTap: () => _toggleItemSelection(item),
-        child: Container(
-          margin: EdgeInsets.symmetric(vertical: 8),
+  Widget _buildExpandedView(bool isLargeScreen) {
+    final filteredItems = _getFilteredItems();
+    return ListView.builder(
+      controller: _scrollController,
+      itemCount: filteredItems.length + (isLoadingMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == filteredItems.length && isLoadingMore) {
+          return Center(child: CircularProgressIndicator());
+        }
+        final item = catalogItems[index];
+        final isSelected = selectedItems.contains(item);
+        return GestureDetector(
+          //onDoubleTap: () => _openImageZoom(context, item),
+          onTap: () => _toggleItemSelection(item),
           child: Card(
             elevation: isSelected ? 8 : 4,
+            margin: EdgeInsets.symmetric(
+              vertical: 8,
+              horizontal: isLargeScreen ? 16 : 8,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(0),
             ),
             color: isSelected ? Colors.blue.shade50 : Colors.white,
             child: Stack(
               children: [
-                Padding(
-                  padding: EdgeInsets.all(isLargeScreen ? 12.0 : 8.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Flexible(
-                        flex: 2,
-                        child: ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(0),
-                            topRight: Radius.circular(0),
-                          ),
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              final maxImageHeight = constraints.maxWidth * 1.2;
-                              return ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxHeight: maxImageHeight,
-                                ),
-                                child: SizedBox(
-                                  height: maxImageHeight,
-                                  width: double.infinity,
-                                  child: Center(
-                                    child: Image.network(
-                                      _getImageUrl(item),
-                                      fit: BoxFit.contain,
-                                      width: double.infinity,
-                                      errorBuilder: (
-                                        context,
-                                        error,
-                                        stackTrace,
-                                      ) {
-                                        return Container(
-                                          color: Colors.grey.shade300,
-                                          child: const Center(
-                                            child: Icon(Icons.error),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(0),
+                        topRight: Radius.circular(0),
                       ),
-                      SizedBox(width: isLargeScreen ? 16 : 8),
-                      Flexible(
-                        flex: 3,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.all(
-                                isLargeScreen ? 16 : 12,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final maxImageHeight = constraints.maxWidth * 1.2;
+                          return ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxHeight: maxImageHeight,
+                              minHeight: constraints.maxWidth,
+                            ),
+                            child: Image.network(
+                              _getImageUrl(item),
+                              fit: BoxFit.contain,
+                              width: double.infinity,
+                              height: double.infinity,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Colors.grey.shade300,
+                                  child: const Center(child: Icon(Icons.error)),
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
+                      child: Table(
+                        columnWidths: const {
+                          0: IntrinsicColumnWidth(),
+                          1: FixedColumnWidth(8),
+                          2: FlexColumnWidth(),
+                        },
+                        defaultVerticalAlignment:
+                            TableCellVerticalAlignment.middle,
+                        children: [
+                          TableRow(
+                            children: [
+                              _buildLabelText('Design'),
+                              const Text(':'),
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Text(
+                                  item.styleCodeWithcount,
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: isLargeScreen ? 20 : 16,
+                                  ),
+                                ),
                               ),
-                              child: Table(
-                                columnWidths: const {
-                                  0: IntrinsicColumnWidth(),
-                                  1: FixedColumnWidth(8),
-                                  2: FlexColumnWidth(),
-                                },
-                                defaultVerticalAlignment:
-                                    TableCellVerticalAlignment.middle,
-                                children: [
-                                  TableRow(
-                                    children: [
-                                      _buildLabelText('Design'),
-                                      const Text(':'),
-                                      SingleChildScrollView(
-                                        scrollDirection: Axis.horizontal,
-                                        child: Text(
-                                          item.styleCodeWithcount,
-                                          style: TextStyle(
-                                            color: Colors.red,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: isLargeScreen ? 20 : 16,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                            ],
+                          ),
+                          _buildSpacerRow(),
+                          TableRow(
+                            children: [
+                              _buildLabelText('MRP'),
+                              const Text(':'),
+                              Text(
+                                item.mrp.toStringAsFixed(2),
+                                style: _valueTextStyle(isLargeScreen),
+                              ),
+                            ],
+                          ),
+                          _buildSpacerRow(),
+                          if (showSizes && item.sizeName.isNotEmpty)
+                            TableRow(
+                              children: [
+                                _buildLabelText('Size'),
+                                const Text(':'),
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Text(
+                                    item.sizeWithMrp,
+                                    style: _valueTextStyle(isLargeScreen),
                                   ),
-                                  _buildSpacerRow(),
-                                  TableRow(
-                                    children: [
-                                      _buildLabelText('MRP'),
-                                      const Text(':'),
-                                      Text(
-                                        item.mrp.toStringAsFixed(2),
-                                        style: _valueTextStyle(isLargeScreen),
-                                      ),
-                                    ],
+                                ),
+                              ],
+                            ),
+                          if (showSizes && item.sizeName.isNotEmpty)
+                            _buildSpacerRow(),
+                          if (showProduct)
+                            TableRow(
+                              children: [
+                                _buildLabelText('Product'),
+                                const Text(':'),
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Text(
+                                    item.itemName,
+                                    style: _valueTextStyle(isLargeScreen),
                                   ),
-                                  _buildSpacerRow(),
-                                  if (showSizes && item.sizeName.isNotEmpty)
-                                    TableRow(
-                                      children: [
-                                        _buildLabelText('Size'),
-                                        const Text(':'),
-                                        SingleChildScrollView(
-                                          scrollDirection: Axis.horizontal,
-                                          child: Text(
-                                            item.sizeWithMrp,
-                                            style: _valueTextStyle(
-                                              isLargeScreen,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  if (showSizes && item.sizeName.isNotEmpty)
-                                    _buildSpacerRow(),
-                                  if (showProduct)
-                                    TableRow(
-                                      children: [
-                                        _buildLabelText('Product'),
-                                        const Text(':'),
-                                        SingleChildScrollView(
-                                          scrollDirection: Axis.horizontal,
-                                          child: Text(
-                                            item.itemName,
-                                            style: _valueTextStyle(
-                                              isLargeScreen,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                ],
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (addedItems.contains(item.styleCode) ||
+                        selectedItems.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8.0,
+                          vertical: 6.0,
+                        ),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ButtonStyle(
+                              backgroundColor: MaterialStateProperty.all(
+                                addedItems.contains(item.styleCode)
+                                    ? Colors.green
+                                    : AppColors.primaryColor,
+                              ),
+                              shape: MaterialStateProperty.all(
+                                RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(0),
+                                ),
                               ),
                             ),
-                            // Show "Added" button if item is added, or "Book Now" if no items are selected and item is not added
-                            if (addedItems.contains(item.styleCode) ||
-                                selectedItems.isEmpty)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8.0,
-                                  vertical: 6.0,
-                                ),
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    style: ButtonStyle(
-                                      backgroundColor:
-                                          MaterialStateProperty.all(
-                                            addedItems.contains(item.styleCode)
-                                                ? Colors.green
-                                                : AppColors.primaryColor,
-                                          ),
-                                      shape: MaterialStateProperty.all(
-                                        RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            0,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    onPressed:
-                                        addedItems.contains(item.styleCode)
-                                            ? null
-                                            : () => _showBookingDialog(
-                                                  context,
-                                                  item,
-                                                ),
-                                    child: Text(
-                                      addedItems.contains(item.styleCode)
-                                          ? 'Added'
-                                          : 'BOOK NOW',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: isLargeScreen ? 14 : 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                            onPressed:
+                                addedItems.contains(item.styleCode)
+                                    ? null
+                                    : () => _showBookingDialog(context, item),
+                            child: Text(
+                              addedItems.contains(item.styleCode)
+                                  ? 'Added'
+                                  : 'BOOK NOW',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: isLargeScreen ? 14 : 12,
+                                fontWeight: FontWeight.bold,
                               ),
-                          ],
+                            ),
+                          ),
                         ),
                       ),
-                    ],
-                  ),
+                  ],
                 ),
                 if (isSelected)
                   Positioned(
@@ -805,212 +1119,18 @@ Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
               ],
             ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
-Widget _buildExpandedView(bool isLargeScreen) {
-  return ListView.builder(
-    itemCount: catalogItems.length,
-    itemBuilder: (context, index) {
-      final item = catalogItems[index];
-      final isSelected = selectedItems.contains(item);
-      return GestureDetector(
-        onDoubleTap: () => _openImageZoom(context, item),
-        onTap: () => _toggleItemSelection(item),
-        child: Card(
-          elevation: isSelected ? 8 : 4,
-          margin: EdgeInsets.symmetric(
-            vertical: 8,
-            horizontal: isLargeScreen ? 16 : 8,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(0),
-          ),
-          color: isSelected ? Colors.blue.shade50 : Colors.white,
-          child: Stack(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(0),
-                      topRight: Radius.circular(0),
-                    ),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final maxImageHeight = constraints.maxWidth * 1.2;
-                        return ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxHeight: maxImageHeight,
-                            minHeight: constraints.maxWidth,
-                          ),
-                          child: Image.network(
-                            _getImageUrl(item),
-                            fit: BoxFit.contain,
-                            width: double.infinity,
-                            height: double.infinity,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: Colors.grey.shade300,
-                                child: const Center(child: Icon(Icons.error)),
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
-                    child: Table(
-                      columnWidths: const {
-                        0: IntrinsicColumnWidth(),
-                        1: FixedColumnWidth(8),
-                        2: FlexColumnWidth(),
-                      },
-                      defaultVerticalAlignment:
-                          TableCellVerticalAlignment.middle,
-                      children: [
-                        TableRow(
-                          children: [
-                            _buildLabelText('Design'),
-                            const Text(':'),
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Text(
-                                item.styleCodeWithcount,
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: isLargeScreen ? 20 : 16,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        _buildSpacerRow(),
-                        TableRow(
-                          children: [
-                            _buildLabelText('MRP'),
-                            const Text(':'),
-                            Text(
-                              item.mrp.toStringAsFixed(2),
-                              style: _valueTextStyle(isLargeScreen),
-                            ),
-                          ],
-                        ),
-                        _buildSpacerRow(),
-                        if (showSizes && item.sizeName.isNotEmpty)
-                          TableRow(
-                            children: [
-                              _buildLabelText('Size'),
-                              const Text(':'),
-                              SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Text(
-                                  item.sizeWithMrp,
-                                  style: _valueTextStyle(isLargeScreen),
-                                ),
-                              ),
-                            ],
-                          ),
-                        if (showSizes && item.sizeName.isNotEmpty)
-                          _buildSpacerRow(),
-                        if (showProduct)
-                          TableRow(
-                            children: [
-                              _buildLabelText('Product'),
-                              const Text(':'),
-                              SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Text(
-                                  item.itemName,
-                                  style: _valueTextStyle(isLargeScreen),
-                                ),
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
-                  ),
-                  // Show "Added" button if item is added, or "Book Now" if no items are selected and item is not added
-                  if (addedItems.contains(item.styleCode) || selectedItems.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8.0,
-                        vertical: 6.0,
-                      ),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.all(
-                              addedItems.contains(item.styleCode)
-                                  ? Colors.green
-                                  : AppColors.primaryColor,
-                            ),
-                            shape: MaterialStateProperty.all(
-                              RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(0),
-                              ),
-                            ),
-                          ),
-                          onPressed: addedItems.contains(item.styleCode)
-                              ? null
-                              : () => _showBookingDialog(context, item),
-                          child: Text(
-                            addedItems.contains(item.styleCode)
-                                ? 'Added'
-                                : 'BOOK NOW',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: isLargeScreen ? 14 : 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              if (isSelected)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.check_circle,
-                      color: AppColors.primaryColor,
-                      size: isLargeScreen ? 24 : 20,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
-}
-Widget _buildItemCard(
-  Catalog item,
-  bool isLargeScreen,
-  List<String> addedItems,
-) {
-  final isSelected = selectedItems.contains(item);
-  return GestureDetector(
-    onDoubleTap: () => _openImageZoom(context, item),
-    onTap: () => _toggleItemSelection(item),
-    child: Card(
+  Widget _buildItemCard(
+    Catalog item,
+    bool isLargeScreen,
+    List<String> addedItems,
+  ) {
+    final isSelected = selectedItems.contains(item);
+    return Card(
       elevation: isSelected ? 8 : 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
       color: isSelected ? Colors.blue.shade50 : Colors.white,
@@ -1123,7 +1243,6 @@ Widget _buildItemCard(
                   ],
                 ),
               ),
-              // Show "Added" button if item is added, or "Book Now" if no items are selected and item is not added
               if (addedItems.contains(item.styleCode) || selectedItems.isEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(
@@ -1180,10 +1299,9 @@ Widget _buildItemCard(
             ),
         ],
       ),
-    ),
-  );
-}
- 
+    );
+  }
+
   Widget _buildLabelText(String label) {
     return Padding(
       padding: const EdgeInsets.only(right: 5),
@@ -1211,85 +1329,6 @@ Widget _buildItemCard(
     );
   }
 
-  Widget _buildDetailTextRow(String label1, String value1, bool isLargeScreen) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(
-                text: '$label1: ',
-                style: TextStyle(
-                  fontSize: isLargeScreen ? 16 : 14,
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              TextSpan(
-                text: value1,
-                style: TextStyle(
-                  fontSize: isLargeScreen ? 16 : 14,
-                  color: Colors.grey.shade700,
-                  fontWeight: FontWeight.normal,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetailText(
-    String label,
-    String value,
-    bool isLargeScreen, {
-    bool isValuePrimaryColor = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(
-                text: '$label: ',
-                style: TextStyle(
-                  fontSize: isLargeScreen ? 16 : 14,
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              TextSpan(
-                text: value,
-                style: TextStyle(
-                  fontSize: isLargeScreen ? 16 : 14,
-                  color:
-                      isValuePrimaryColor
-                          ? AppColors.primaryColor
-                          : Colors.black,
-                  fontWeight: FontWeight.normal,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _openImageZoom(BuildContext context, Catalog item) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ImageZoomScreen(imageUrl: _getImageUrl(item)),
-      ),
-    );
-  }
-
   Widget _buildBottomButtons(bool isLargeScreen) {
     return SafeArea(
       child: Container(
@@ -1297,16 +1336,14 @@ Widget _buildItemCard(
           horizontal: isLargeScreen ? 24 : 12,
           vertical: 5,
         ),
-        //color: Colors.white,
-        child:
-            isLargeScreen
-                ? Row(children: _buildButtonChildren(isLargeScreen))
-                : Wrap(
-                  alignment: WrapAlignment.spaceEvenly,
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _buildButtonChildren(isLargeScreen),
-                ),
+        child: isLargeScreen
+            ? Row(children: _buildButtonChildren(isLargeScreen))
+            : Wrap(
+                alignment: WrapAlignment.spaceEvenly,
+                spacing: 8,
+                runSpacing: 8,
+                children: _buildButtonChildren(isLargeScreen),
+              ),
       ),
     );
   }
@@ -1335,15 +1372,12 @@ Widget _buildItemCard(
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              onPressed:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) =>
-                              MultiCatalogBookingPage(catalogs: selectedItems),
-                    ),
-                  ),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MultiCatalogBookingPage(catalogs: selectedItems),
+                ),
+              ),
               child: const Text("Book Now"),
             ),
           ),
@@ -1355,15 +1389,12 @@ Widget _buildItemCard(
                 foregroundColor: buttonColor,
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              onPressed:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) =>
-                              CreateOrderScreen(catalogs: selectedItems),
-                    ),
-                  ),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CreateOrderScreen(catalogs: selectedItems),
+                ),
+              ),
               child: const Icon(Icons.shopping_cart),
             ),
           ),
@@ -1381,15 +1412,12 @@ Widget _buildItemCard(
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              onPressed:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) =>
-                              CreateOrderScreen3(catalogs: selectedItems),
-                    ),
-                  ),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CreateOrderScreen3(catalogs: selectedItems),
+                ),
+              ),
               child: const Icon(Icons.assignment),
             ),
           ),
@@ -1399,54 +1427,9 @@ Widget _buildItemCard(
 
     return [
       if (selectedItems.isNotEmpty)
-        isLargeScreen
-            ? Expanded(child: unifiedButtonGroup)
-            : unifiedButtonGroup,
+        isLargeScreen ? Expanded(child: unifiedButtonGroup) : unifiedButtonGroup,
     ];
   }
-
-  // Widget _buildFilterButton(bool isLargeScreen) {
-  //   final screenWidth = MediaQuery.of(context).size.width;
-
-  //   // Responsive sizing logic
-  //   double horizontalPadding;
-  //   double verticalPadding = 15;
-  //   double iconSize;
-  //   double fontSize;
-
-  //   if (screenWidth >= 1024) {
-  //     // Large screen
-  //     horizontalPadding = 24;
-  //     iconSize = 24;
-  //     fontSize = 16;
-  //   } else if (screenWidth >= 600) {
-  //     // Medium screen
-  //     horizontalPadding = 20;
-  //     iconSize = 22;
-  //     fontSize = 15;
-  //   } else {
-  //     // Small screen
-  //     horizontalPadding = 16;
-  //     iconSize = 20;
-  //     fontSize = 14;
-  //   }
-
-  //   return OutlinedButton.icon(
-  //     onPressed: _showFilterDialog,
-  //     style: OutlinedButton.styleFrom(
-  //       side: BorderSide(color: AppColors.primaryColor),
-  //       backgroundColor: Colors.white,
-  //       foregroundColor: AppColors.primaryColor,
-  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-  //       padding: EdgeInsets.symmetric(
-  //         horizontal: horizontalPadding,
-  //         vertical: verticalPadding,
-  //       ),
-  //     ),
-  //     icon: Icon(Icons.filter_list, size: iconSize),
-  //     label: Text('Filter', style: TextStyle(fontSize: fontSize)),
-  //   );
-  // }
 
   String _getImageUrl(Catalog catalog) {
     if (catalog.fullImagePath.startsWith('http')) {
@@ -1478,6 +1461,9 @@ Widget _buildItemCard(
             'WSPfrom': WSPfrom,
             'WSPto': WSPto,
             'sortBy': sortBy,
+            'fromDate': fromDate,
+            'toDate': toDate,
+            'brands': brands.isEmpty ? [] : brands,
           },
         ),
         transitionDuration: Duration(milliseconds: 500),
@@ -1502,43 +1488,36 @@ Widget _buildItemCard(
         WSPfrom = selectedFilters['WSPfrom'];
         WSPto = selectedFilters['WSPto'];
         sortBy = selectedFilters['sortBy'];
+        fromDate = selectedFilters['fromDate'];
+        toDate = selectedFilters['toDate'];
+        pageNo = 1;
+        hasMore = true;
+        catalogItems.clear();
+        selectedItems.clear();
       });
-      print("aaaaaaaa  ${selectedFilters['styles']}");
-      print("aaaaaaaa  ${selectedFilters['WSPfrom']}");
-      print("aaaaaaaa  ${selectedFilters['WSPto']}");
-      if (!(selectedStyles.isEmpty &&
-          selectedSize.isEmpty &&
-          selectedShades.isEmpty &&
-          fromMRP == "" &&
-          toMRP == "" &&
-          WSPfrom == "" &&
-          WSPto == ""))
-        _fetchCatalogItems();
+      _fetchCatalogItems();
     }
   }
 
   void _showBookingDialog(BuildContext context, Catalog item) {
     showDialog(
       context: context,
-      builder:
-          (context) => Dialog(
-            insetPadding: EdgeInsets.all(16),
-            child: CatalogBookingTable(
-              itemSubGrpKey: item.itemSubGrpKey.toString() ?? '',
-              itemKey: item.itemKey.toString() ?? '',
-              styleKey: item.styleKey.toString() ?? '',
-              onSuccess: () {
-                // Update local state
-                setState(() {
-                  addedItems.add(item.styleCode);
-                });
-                _fetchCartCount().then((_) {
-                  // Notify OrderBookingScreen through navigation
-                  Navigator.pop(context); // Close dialog
-                });
-              },
-            ),
-          ),
+      builder: (context) => Dialog(
+        insetPadding: EdgeInsets.all(16),
+        child: CatalogBookingTable(
+          itemSubGrpKey: item.itemSubGrpKey.toString() ?? '',
+          itemKey: item.itemKey.toString() ?? '',
+          styleKey: item.styleKey.toString() ?? '',
+          onSuccess: () {
+            setState(() {
+              addedItems.add(item.styleCode);
+            });
+            _fetchCartCount().then((_) {
+              Navigator.pop(context);
+            });
+          },
+        ),
+      ),
     );
   }
 

@@ -54,21 +54,24 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
     }
   }
 
-Future<void> _fetchCartCount() async {
-  try {
-    final data = await ApiService.getSalesOrderData(
-      coBrId: '01',
-      userId: 'Admin', // Replace with actual user ID if needed
-      fcYrId: 24, // Note: fcYrId should be an int, not string
-      barcode: showBarcodeWidget ? 'true' : 'false', // Set barcode based on checkbox
-    );
-    setState(() {
-      _cartItemCount = data['cartItemCount'] ?? 0;
-    });
-  } catch (e) {
-    print('Error fetching cart count: $e');
+  Future<void> _fetchCartCount() async {
+    try {
+      final data = await ApiService.getSalesOrderData(
+        coBrId: '01',
+        userId: 'Admin', // Replace with actual user ID if needed
+        fcYrId: 24, // Note: fcYrId should be an int, not string
+        barcode:
+            showBarcodeWidget
+                ? 'true'
+                : 'false', // Set barcode based on checkbox
+      );
+      setState(() {
+        _cartItemCount = data['cartItemCount'] ?? 0;
+      });
+    } catch (e) {
+      print('Error fetching cart count: $e');
+    }
   }
-}
 
   Future<void> _fetchCategories() async {
     try {
@@ -87,7 +90,7 @@ Future<void> _fetchCartCount() async {
       final categories = await ApiService.fetchCategories();
       setState(() {
         _categories = [
-          Category(itemSubGrpKey: '-1', itemSubGrpName: "ALL"),
+        //  Category(itemSubGrpKey: '-1', itemSubGrpName: "ALL"),
           ...categories,
         ];
         _isLoadingCategories = false;
@@ -163,40 +166,40 @@ Future<void> _fetchCartCount() async {
             ),
 
           // Cart Icon for both modes
-        IconButton(
-  icon: Stack(
-    children: [
-      const Icon(CupertinoIcons.cart_badge_plus, color: Colors.white),
-      Positioned(
-        right: 0,
-        top: 0,
-        child: Container(
-          padding: const EdgeInsets.all(2),
-          decoration: BoxDecoration(
-            color: Colors.red,
-            borderRadius: BorderRadius.circular(6),
+          IconButton(
+            icon: Stack(
+              children: [
+                const Icon(CupertinoIcons.cart_badge_plus, color: Colors.white),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 14,
+                      minHeight: 14,
+                    ),
+                    child: Text(
+                      '$_cartItemCount',
+                      style: const TextStyle(color: Colors.white, fontSize: 8),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                '/viewOrder',
+                arguments: {'barcode': showBarcodeWidget}, // Pass barcode state
+              ).then((_) => _fetchCartCount());
+            },
           ),
-          constraints: const BoxConstraints(
-            minWidth: 14,
-            minHeight: 14,
-          ),
-          child: Text(
-            '$_cartItemCount',
-            style: const TextStyle(color: Colors.white, fontSize: 8),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ),
-    ],
-  ),
-  onPressed: () {
-    Navigator.pushNamed(
-      context,
-      '/viewOrder',
-      arguments: {'barcode': showBarcodeWidget}, // Pass barcode state
-    ).then((_) => _fetchCartCount());
-  },
-),
           // Always show the three-dot menu
           Builder(
             builder:
@@ -240,7 +243,6 @@ Future<void> _fetchCartCount() async {
                                   showBarcodeWidget = value ?? false;
                                   _fetchCartCount();
                                 });
-
                               },
                             ),
                             const Text(
@@ -294,24 +296,37 @@ Future<void> _fetchCartCount() async {
                                       child: OutlinedButton(
                                         onPressed: () {
                                           setState(() {
-                                            _selectedCategoryKey =
-                                                category.itemSubGrpKey;
-                                            _selectedCategoryName =
-                                                category.itemSubGrpName;
+                                            // _selectedCategoryKey =
+                                            //     category.itemSubGrpKey;
+                                            // _selectedCategoryName =
+                                            //     category.itemSubGrpName;
 
-                                            if (_selectedCategoryKey == '-1') {
-                                              _items = _allItems;
-                                            } else {
-                                              _items =
-                                                  _allItems
-                                                      .where(
-                                                        (item) =>
-                                                            item.itemSubGrpKey ==
-                                                            _selectedCategoryKey,
-                                                      )
-                                                      .toList();
-                                            }
+                                            // if (_selectedCategoryKey == '-1') {
+                                            //   _items = _allItems;
+                                            // } else {
+                                            //   _items =
+                                            //       _allItems
+                                            //           .where(
+                                            //             (item) =>
+                                            //                 item.itemSubGrpKey ==
+                                            //                 _selectedCategoryKey,
+                                            //           )
+                                            //           .toList();
+                                            // }
                                           });
+                                          Navigator.pushNamed(
+                                            context,
+                                            '/orderpage',
+                                            arguments: {
+                                              'itemKey': null,
+                                              'itemSubGrpKey':
+                                                  category.itemSubGrpKey,
+                                              'itemName':
+                                                  category.itemSubGrpName,
+                                              'coBr': coBr,
+                                              'fcYrId': fcYrId,
+                                            },
+                                          );
                                         },
                                         style: ButtonStyle(
                                           backgroundColor:
@@ -437,6 +452,3 @@ Future<void> _fetchCartCount() async {
     );
   }
 }
-
-
-
