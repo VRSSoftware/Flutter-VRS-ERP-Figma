@@ -851,25 +851,24 @@ Future<void> _fetchCartCount() async {
                                   ],
                                 ),
                               ),
-                              if (addedItems.contains(item.styleCode) ||
-                                  selectedItems.isEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8.0,
-                                    vertical: 6.0,
-                                  ),
-                                  child: SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      style: ButtonStyle(
-                                        backgroundColor:
-                                            MaterialStateProperty.all(
-                                              addedItems.contains(
-                                                    item.styleCode,
-                                                  )
-                                                  ? Colors.green
-                                                  : AppColors.primaryColor,
-                                            ),
+                           if (addedItems.contains(item.styleCode) || 
+    Provider.of<CartModel>(context).addedItems.contains(item.styleCode) ||
+    selectedItems.isEmpty)
+  Padding(
+    padding: const EdgeInsets.symmetric(
+      horizontal: 8.0,
+      vertical: 6.0,
+    ),
+    child: SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ButtonStyle(
+          backgroundColor: MaterialStateProperty.all(
+            (addedItems.contains(item.styleCode) ||
+            Provider.of<CartModel>(context).addedItems.contains(item.styleCode))
+                ? Colors.green
+                : AppColors.primaryColor,
+          ),
                                         shape: MaterialStateProperty.all(
                                           RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(
@@ -1061,22 +1060,24 @@ Future<void> _fetchCartCount() async {
                         ],
                       ),
                     ),
-                    if (addedItems.contains(item.styleCode) ||
-                        selectedItems.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8.0,
-                          vertical: 6.0,
-                        ),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all(
-                                addedItems.contains(item.styleCode)
-                                    ? Colors.green
-                                    : AppColors.primaryColor,
-                              ),
+              if (addedItems.contains(item.styleCode) || 
+    Provider.of<CartModel>(context).addedItems.contains(item.styleCode) ||
+    selectedItems.isEmpty)
+  Padding(
+    padding: const EdgeInsets.symmetric(
+      horizontal: 8.0,
+      vertical: 6.0,
+    ),
+    child: SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ButtonStyle(
+          backgroundColor: MaterialStateProperty.all(
+            (addedItems.contains(item.styleCode) ||
+            Provider.of<CartModel>(context).addedItems.contains(item.styleCode))
+                ? Colors.green
+                : AppColors.primaryColor,
+          ),
                               shape: MaterialStateProperty.all(
                                 RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(0),
@@ -1246,21 +1247,24 @@ Future<void> _fetchCartCount() async {
                   ],
                 ),
               ),
-              if (addedItems.contains(item.styleCode) || selectedItems.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8.0,
-                    vertical: 6.0,
-                  ),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(
-                          addedItems.contains(item.styleCode)
-                              ? Colors.green
-                              : AppColors.primaryColor,
-                        ),
+           if (addedItems.contains(item.styleCode) || 
+    Provider.of<CartModel>(context).addedItems.contains(item.styleCode) ||
+    selectedItems.isEmpty)
+  Padding(
+    padding: const EdgeInsets.symmetric(
+      horizontal: 8.0,
+      vertical: 6.0,
+    ),
+    child: SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ButtonStyle(
+          backgroundColor: MaterialStateProperty.all(
+            (addedItems.contains(item.styleCode) ||
+            Provider.of<CartModel>(context).addedItems.contains(item.styleCode))
+                ? Colors.green
+                : AppColors.primaryColor,
+          ),
                         shape: MaterialStateProperty.all(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(0),
@@ -1380,7 +1384,12 @@ Future<void> _fetchCartCount() async {
   MaterialPageRoute(
     builder: (context) => MultiCatalogBookingPage(
       catalogs: selectedItems,
-      onSuccess: _fetchCartCount, // Pass callback here
+        onSuccess: () {
+        _fetchCartCount();
+        _fetchAddedItems(coBr!, fcYrId!);
+        // Add provider update
+        Provider.of<CartModel>(context, listen: false).refreshAddedItems();
+      },
     ),
   ),
 ),
@@ -1398,7 +1407,12 @@ Future<void> _fetchCartCount() async {
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CreateOrderScreen(catalogs: selectedItems,    onSuccess: _fetchCartCount,),
+                  builder: (context) => CreateOrderScreen(catalogs: selectedItems,       onSuccess: () {
+        _fetchCartCount();
+        _fetchAddedItems(coBr!, fcYrId!);
+        // Add provider update
+        Provider.of<CartModel>(context, listen: false).refreshAddedItems();
+      },),
                 ),
               ),
               child: const Icon(Icons.shopping_cart),
@@ -1421,7 +1435,12 @@ Future<void> _fetchCartCount() async {
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CreateOrderScreen3(catalogs: selectedItems, onSuccess: _fetchCartCount, ),
+                  builder: (context) => CreateOrderScreen3(catalogs: selectedItems,       onSuccess: () {
+        _fetchCartCount();
+        _fetchAddedItems(coBr!, fcYrId!);
+        // Add provider update
+        Provider.of<CartModel>(context, listen: false).refreshAddedItems();
+      }, ),
                 ),
               ),
               child: const Icon(Icons.assignment),

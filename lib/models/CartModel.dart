@@ -5,6 +5,12 @@ class CartModel extends ChangeNotifier {
 
   int get count => _count;
 
+   Set<String> _addedItems = {};
+
+  Set<String> get addedItems => _addedItems;
+
+
+
   void updateCount(int newCount) {
     _count = newCount;
     notifyListeners();
@@ -20,8 +26,18 @@ class CartModel extends ChangeNotifier {
     notifyListeners();
   }
 
+
   void reset() {
     _count = 0;
+    notifyListeners();
+  }
+
+    void refreshAddedItems() {
+    notifyListeners();
+  }
+
+    void addItems(Set<String> newItems) {
+    _addedItems = _addedItems.union(newItems);
     notifyListeners();
   }
 }

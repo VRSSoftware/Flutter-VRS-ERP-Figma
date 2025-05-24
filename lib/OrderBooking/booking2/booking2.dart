@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/models/CartModel.dart';
 import 'package:vrs_erp_figma/models/CatalogOrderData.dart';
 import 'package:vrs_erp_figma/models/OrderMatrix.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
@@ -209,6 +211,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   Future<void> _submitAllOrders() async {
     List<Future> apiCalls = [];
+      Set<String> processedStyles = {};
 
     for (var catalogOrder in catalogOrderList) {
       final catalog = catalogOrder.catalog;
@@ -273,6 +276,12 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     try {
       final responses = await Future.wait(apiCalls);
       if (responses.every((r) => r.statusCode == 200)) {
+              processedStyles = widget.catalogs.map((c) => c.styleCode).toSet();
+      
+      // Update provider
+      Provider.of<CartModel>(context, listen: false)
+        ..addItems(processedStyles)
+        ..updateCount(Provider.of<CartModel>(context, listen: false).count + processedStyles.length);
          widget.onSuccess(); 
         if (mounted) {
           showDialog(

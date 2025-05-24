@@ -3,7 +3,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/models/CartModel.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
 
 class CatalogItem {
@@ -984,8 +986,7 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
 
   Future<void> _submitAllOrders() async {
     List<Future> apiCalls = [];
-    
-
+      Set<String> processedStyles = {}; 
     for (var catalog in widget.catalogs) {
       final controllers = controllersMap[catalog.styleCode];
       final noteController = noteControllersMap[catalog.styleCode];
@@ -1043,6 +1044,12 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
     try {
       final responses = await Future.wait(apiCalls);
       if (responses.every((r) => r.statusCode == 200)) {
+             processedStyles = widget.catalogs.map((c) => c.styleCode).toSet();
+      
+      // Update provider
+      Provider.of<CartModel>(context, listen: false)
+        ..addItems(processedStyles)
+        ..updateCount(Provider.of<CartModel>(context, listen: false).count + processedStyles.length);
           widget.onSuccess(); 
         if (mounted) {
           showDialog(
