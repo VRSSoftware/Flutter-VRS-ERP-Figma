@@ -209,118 +209,127 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     });
   }
 
-  Future<void> _submitAllOrders() async {
-    List<Future> apiCalls = [];
-      Set<String> processedStyles = {};
+Future<void> _submitAllOrders() async {
+  List<Future<http.Response>> apiCalls = [];
+  List<String> apiCallStyles = [];
 
-    for (var catalogOrder in catalogOrderList) {
-      final catalog = catalogOrder.catalog;
-      final matrix = catalogOrder.orderMatrix;
-      final styleKey = catalog.styleKey;
-      final styleCode = catalog.styleCode;
-      final coBrId = "01";
-      final fcYrId = "24";
-      final userId = "Admin";
+  for (var catalogOrder in catalogOrderList) {
+    final catalog = catalogOrder.catalog;
+    final matrix = catalogOrder.orderMatrix;
+    final styleCode = catalog.styleCode;
 
-      final quantityMap = quantities[styleKey];
-      if (quantityMap != null) {
-        for (var shade in quantityMap.keys) {
-          final shadeIndex = matrix.shades.indexOf(shade.trim());
-          if (shadeIndex == -1) continue;
+    final quantityMap = quantities[catalog.styleKey];
+    if (quantityMap != null) {
+      for (var shade in quantityMap.keys) {
+        final shadeIndex = matrix.shades.indexOf(shade.trim());
+        if (shadeIndex == -1) continue;
 
-          for (var size in quantityMap[shade]!.keys) {
-            final sizeIndex = matrix.sizes.indexOf(size.trim());
-            if (sizeIndex == -1) continue;
+        for (var size in quantityMap[shade]!.keys) {
+          final sizeIndex = matrix.sizes.indexOf(size.trim());
+          if (sizeIndex == -1) continue;
 
-            final quantity = quantityMap[shade]![size]!;
-            if (quantity > 0) {
-              final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
-              final mrp = matrixData[0];
-              final wsp = matrixData.length > 2 ? matrixData[2] : matrixData[0];
+          final quantity = quantityMap[shade]![size]!;
+          if (quantity > 0) {
+            final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
+            final payload = {
+              "userId": "Admin",
+              "coBrId": "01",
+              "fcYrId": "24",
+              "data": {
+                "designcode": styleCode,
+                "mrp": matrixData[0],
+                "WSP": matrixData.length > 2 ? matrixData[2] : matrixData[0],
+                "size": size,
+                "TotQty": _calculateCatalogQuantity(catalog.styleKey).toString(),
+                "Note": "",
+                "color": shade,
+                "Qty": quantity.toString(),
+                "cobrid": "01",
+                "user": "admin",
+                "barcode": "",
+              },
+              "typ": 0,
+            };
 
-              final payload = {
-                "userId": userId,
-                "coBrId": coBrId,
-                "fcYrId": fcYrId,
-                "data": {
-                  "designcode": styleCode,
-                  "mrp": mrp,
-                  "WSP": wsp,
-                  "size": size,
-                  "TotQty": _calculateCatalogQuantity(styleKey).toString(),
-                  "Note": "",
-                  "color": shade,
-                  "Qty": quantity.toString(),
-                  "cobrid": coBrId,
-                  "user": userId.toLowerCase(),
-                  "barcode": "",
-                },
-                "typ": 0,
-              };
-
-              apiCalls.add(
-                http.post(
-                  Uri.parse(
-                    '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
-                  ),
-                  headers: {'Content-Type': 'application/json'},
-                  body: jsonEncode(payload),
-                ),
-              );
-            }
+            apiCalls.add(
+              http.post(
+                Uri.parse('${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails'),
+                headers: {'Content-Type': 'application/json'},
+                body: jsonEncode(payload),
+              ),
+            );
+            apiCallStyles.add(styleCode);
           }
         }
       }
     }
+  }
 
-    try {
-      final responses = await Future.wait(apiCalls);
-      if (responses.every((r) => r.statusCode == 200)) {
-              processedStyles = widget.catalogs.map((c) => c.styleCode).toSet();
+  try {
+    final responses = await Future.wait(apiCalls);
+    final successfulStyles = <String>{};
+    
+    for (int i = 0; i < responses.length; i++) {
+      if (responses[i].statusCode == 200) {
+        successfulStyles.add(apiCallStyles[i]);
+      }
+    }
+
+    if (successfulStyles.isNotEmpty) {
+      final cartModel = Provider.of<CartModel>(context, listen: false);
+      cartModel.addItems(successfulStyles);
+      cartModel.updateCount(cartModel.count + successfulStyles.length);
       
-      // Update provider
-      Provider.of<CartModel>(context, listen: false)
-        ..addItems(processedStyles)
-        ..updateCount(Provider.of<CartModel>(context, listen: false).count + processedStyles.length);
-         widget.onSuccess(); 
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-              title: const Text("Success"),
-              content: const Text("All orders submitted successfully."),
-              actions: [
-                TextButton(
-                  onPressed: () {
+      widget.onSuccess();
+
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("Partial Success"),
+          content: Text("Successfully submitted ${successfulStyles.length} items"),
+          actions: [
+            TextButton(
+              onPressed: () {
                     Navigator.pop(context);
                     Navigator.pop(context);
                   },
-                  child: const Text("OK"),
-                ),
-              ],
+              child: const Text("OK"),
             ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text("Error"),
-            content: Text("Failed to submit orders: $e"),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("OK"),
-              ),
-            ],
-          ),
-        );
-      }
+          ],
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("Error"),
+          content: const Text("No items were successfully submitted"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
     }
+  } catch (e) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Error"),
+        content: Text("Failed to submit orders: $e"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
   }
-
+}
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
