@@ -430,6 +430,7 @@ Future<void> _fetchCartCount() async {
                             '/orderpage',
                             arguments: {
                               'itemKey': item.itemKey,
+                              'itemName': item.itemName,
                               'itemSubGrpKey': item.itemSubGrpKey,
                               'coBr': coBr,
                               'fcYrId': fcYrId,

@@ -95,13 +95,24 @@ class _OrderPageState extends State<OrderPage> {
           _fetchStylesSizeByItemKey(itemKey!);
           _fetchBrands();
         } else if (itemSubGrpKey != null) {
-          _fetchStylesByItemKey(itemSubGrpKey!);
+          _fetchStylesByItemGrpKey(itemSubGrpKey!);
           _fetchShadesByItemGrpKey(itemSubGrpKey!);
           _fetchStylesSizeByItemGrpKey(itemSubGrpKey!);
           _fetchBrands();
         }
       }
     });
+  }
+
+  Future<void> _fetchStylesByItemGrpKey(String itemGrpKey) async {
+    try {
+      final fetchedStyles = await ApiService.fetchStylesByItemGrpKey(itemGrpKey);
+      setState(() {
+        styles = fetchedStyles;
+      });
+    } catch (e) {
+      print('Failed to load styles: $e');
+    }
   }
 
   void _scrollListener() {
