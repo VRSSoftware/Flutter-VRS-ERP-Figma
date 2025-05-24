@@ -1046,51 +1046,7 @@ class _OrderForm extends StatelessWidget {
             readOnly: true,
           ),
         ),
-        if (additionalInfo.isNotEmpty) ...[
-          const SizedBox(height: 20),
-          const Text(
-            'Additional Information',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primaryColor,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Card(
-            elevation: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (additionalInfo['refno'] != null)
-                    _buildInfoRow('Reference No:', additionalInfo['refno']),
-                  if (additionalInfo['duedate'] != null)
-                    _buildInfoRow('Due Date:', additionalInfo['duedate']),
-                  if (additionalInfo['paymentterms'] != null)
-                    _buildInfoRow(
-                      'Payment Terms:',
-                      additionalInfo['paymentterms'],
-                    ),
-                  if (additionalInfo['salesman'] != null)
-                    _buildInfoRow('Sales Person:', additionalInfo['salesman']),
-                  if (additionalInfo['paymentdays'] != null)
-                    _buildInfoRow(
-                      'Credit Period:',
-                      '${additionalInfo['paymentdays']} days',
-                    ),
-                  if (additionalInfo['bookingtype'] != null)
-                    _buildInfoRow(
-                      'Booking Type:',
-                      additionalInfo['bookingtype'],
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ],
-        const SizedBox(height: 20),
+        
         // Add More Info and Save buttons in the same row
         Row(
           children: [
