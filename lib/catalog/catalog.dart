@@ -67,7 +67,6 @@ class _CatalogPageState extends State<CatalogPage> {
   List<Brand> brands = [];
   List<Brand> selectedBrands = [];
 
-
   bool includeDesign = true;
   bool includeShade = true;
   bool includeRate = true;
@@ -86,17 +85,19 @@ class _CatalogPageState extends State<CatalogPage> {
   final ScrollController _scrollController = ScrollController();
   final int pageSize = 10; // Adjust based on backend API
 
-@override
+  @override
   void initState() {
     super.initState();
     _loadToggleStates(); // Load toggle states from shared_preferences
     _scrollController.addListener(_scrollListener);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
       if (args != null) {
         setState(() {
-          itemKey = args['itemKey'] == null ? null : args['itemKey']?.toString();
+          itemKey =
+              args['itemKey'] == null ? null : args['itemKey']?.toString();
           itemSubGrpKey = args['itemSubGrpKey']?.toString();
           coBr = args['coBr']?.toString();
           fcYrId = args['fcYrId']?.toString();
@@ -133,16 +134,15 @@ class _CatalogPageState extends State<CatalogPage> {
             _scrollController.position.maxScrollExtent - 200 &&
         !isLoadingMore &&
         hasMore) {
-          if(catalogItems.length<=total){
-            setState(() {
-              hasMore=true;
-            });
-          }
-          else{
-            setState(() {
-              hasMore=false;
-            });
-          }
+      if (catalogItems.length <= total) {
+        setState(() {
+          hasMore = true;
+        });
+      } else {
+        setState(() {
+          hasMore = false;
+        });
+      }
       // Fetch next page when user scrolls near the bottom
       setState(() {
         isLoadingMore = true;
@@ -268,25 +268,33 @@ class _CatalogPageState extends State<CatalogPage> {
       List<Catalog> wspFilteredCatalogs = items;
 
       if (wspFrom != null && wspTo != null) {
-        wspFilteredCatalogs = wspFilteredCatalogs
-            .where((catalog) => catalog.wsp >= wspFrom && catalog.wsp <= wspTo)
-            .toList();
+        wspFilteredCatalogs =
+            wspFilteredCatalogs
+                .where(
+                  (catalog) => catalog.wsp >= wspFrom && catalog.wsp <= wspTo,
+                )
+                .toList();
       } else if (wspFrom != null) {
-        wspFilteredCatalogs = wspFilteredCatalogs
-            .where((catalog) => catalog.wsp >= wspFrom)
-            .toList();
+        wspFilteredCatalogs =
+            wspFilteredCatalogs
+                .where((catalog) => catalog.wsp >= wspFrom)
+                .toList();
       } else if (wspTo != null) {
-        wspFilteredCatalogs = wspFilteredCatalogs
-            .where((catalog) => catalog.wsp <= wspTo)
-            .toList();
+        wspFilteredCatalogs =
+            wspFilteredCatalogs
+                .where((catalog) => catalog.wsp <= wspTo)
+                .toList();
       }
 
       if (selectedStyles.isNotEmpty) {
         final selectedStyleKeys =
             selectedStyles.map((style) => style.styleKey).toSet();
-        wspFilteredCatalogs = wspFilteredCatalogs
-            .where((catalog) => selectedStyleKeys.contains(catalog.styleKey))
-            .toList();
+        wspFilteredCatalogs =
+            wspFilteredCatalogs
+                .where(
+                  (catalog) => selectedStyleKeys.contains(catalog.styleKey),
+                )
+                .toList();
       }
 
       setState(() {
@@ -294,14 +302,13 @@ class _CatalogPageState extends State<CatalogPage> {
         isLoading = false;
         isLoadingMore = false;
         hasMore = fetchedHasMore;
-        if(catalogItems.isNotEmpty){
+        if (catalogItems.isNotEmpty) {
           total = catalogItems[0].total;
         }
       });
     } catch (e) {
       debugPrint('Failed to load catalog items: $e');
       setState(() {
-        
         isLoading = false;
         isLoadingMore = false;
       });
@@ -328,9 +335,12 @@ class _CatalogPageState extends State<CatalogPage> {
       print('Failed to load styles: $e');
     }
   }
+
   Future<void> _fetchStylesByItemGrpKey(String itemGrpKey) async {
     try {
-      final fetchedStyles = await ApiService.fetchStylesByItemGrpKey(itemGrpKey);
+      final fetchedStyles = await ApiService.fetchStylesByItemGrpKey(
+        itemGrpKey,
+      );
       setState(() {
         styles = fetchedStyles;
       });
@@ -338,6 +348,7 @@ class _CatalogPageState extends State<CatalogPage> {
       print('Failed to load styles: $e');
     }
   }
+
   Future<void> _fetchShadesByItemKey(String itemKey) async {
     try {
       final fetchedShades = await ApiService.fetchShadesByItemKey(itemKey);
@@ -348,6 +359,7 @@ class _CatalogPageState extends State<CatalogPage> {
       print('Failed to load shades: $e');
     }
   }
+
   Future<void> _fetchShadesByItemGrpKey(String itemKey) async {
     try {
       final fetchedShades = await ApiService.fetchShadesByItemGrpKey(itemKey);
@@ -361,32 +373,37 @@ class _CatalogPageState extends State<CatalogPage> {
 
   Future<void> _fetchStylesSizeByItemKey(String itemKey) async {
     try {
-     if(itemKey!=null) {
-      final fetchedSizes = await ApiService.fetchStylesSizeByItemKey(itemKey);
-      setState(() {
-        sizes = fetchedSizes;
-      });}
-      else if(itemSubGrpKey!=null){
-         final fetchedSizes = await ApiService.fetchStylesSizeByItemGrpKey(itemSubGrpKey!);
-      setState(() {
-        sizes = fetchedSizes;
+      if (itemKey != null) {
+        final fetchedSizes = await ApiService.fetchStylesSizeByItemKey(itemKey);
+        setState(() {
+          sizes = fetchedSizes;
+        });
+      } else if (itemSubGrpKey != null) {
+        final fetchedSizes = await ApiService.fetchStylesSizeByItemGrpKey(
+          itemSubGrpKey!,
+        );
+        setState(() {
+          sizes = fetchedSizes;
         });
       }
     } catch (e) {
       print('Failed to load sizes: $e');
     }
   }
+
   Future<void> _fetchStylesSizeByItemGrpKey(String itemKey) async {
     try {
-     if(itemKey!=null) {
-      final fetchedSizes = await ApiService.fetchStylesSizeByItemKey(itemKey);
-      setState(() {
-        sizes = fetchedSizes;
-      });}
-      else if(itemSubGrpKey!=null){
-         final fetchedSizes = await ApiService.fetchStylesSizeByItemGrpKey(itemSubGrpKey!);
-      setState(() {
-        sizes = fetchedSizes;
+      if (itemKey != null) {
+        final fetchedSizes = await ApiService.fetchStylesSizeByItemKey(itemKey);
+        setState(() {
+          sizes = fetchedSizes;
+        });
+      } else if (itemSubGrpKey != null) {
+        final fetchedSizes = await ApiService.fetchStylesSizeByItemGrpKey(
+          itemSubGrpKey!,
+        );
+        setState(() {
+          sizes = fetchedSizes;
         });
       }
     } catch (e) {
@@ -408,7 +425,8 @@ class _CatalogPageState extends State<CatalogPage> {
     // Existing build method remains unchanged...
     final screenWidth = MediaQuery.of(context).size.width;
     final isLargeScreen = screenWidth > 600;
-    final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+    final isPortrait =
+        MediaQuery.of(context).orientation == Orientation.portrait;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -439,8 +457,8 @@ class _CatalogPageState extends State<CatalogPage> {
               viewOption == 0
                   ? CupertinoIcons.list_bullet_below_rectangle
                   : viewOption == 1
-                      ? CupertinoIcons.rectangle_expand_vertical
-                      : CupertinoIcons.square_grid_2x2_fill,
+                  ? CupertinoIcons.rectangle_expand_vertical
+                  : CupertinoIcons.square_grid_2x2_fill,
               color: Colors.white,
             ),
             onPressed: () {
@@ -450,199 +468,222 @@ class _CatalogPageState extends State<CatalogPage> {
             },
           ),
           Builder(
-            builder: (context) => IconButton(
-              icon: Icon(Icons.more_vert, color: Colors.white),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return Dialog(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: BorderSide(
-                          color: Colors.grey.shade300,
-                          width: 1,
-                        ),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.all(
-                          MediaQuery.of(context).size.width > 600 ? 24.0 : 16.0,
-                        ),
-                        child: StatefulBuilder(
-                          builder: (context, setStateDialog) {
-                            return SingleChildScrollView(
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxWidth:
-                                      MediaQuery.of(context).size.width > 600
-                                          ? 600
-                                          : 440,
-                                  minWidth: 320,
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Options",
-                                      style: TextStyle(
-                                        fontSize:
-                                            MediaQuery.of(context).size.width >
-                                                    600
-                                                ? 22
-                                                : 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+            builder:
+                (context) => IconButton(
+                  icon: Icon(Icons.more_vert, color: Colors.white),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return Dialog(
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: BorderSide(
+                              color: Colors.grey.shade300,
+                              width: 1,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.all(
+                              MediaQuery.of(context).size.width > 600
+                                  ? 24.0
+                                  : 16.0,
+                            ),
+                            child: StatefulBuilder(
+                              builder: (context, setStateDialog) {
+                                return SingleChildScrollView(
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxWidth:
+                                          MediaQuery.of(context).size.width >
+                                                  600
+                                              ? 600
+                                              : 440,
+                                      minWidth: 320,
                                     ),
-                                    const SizedBox(height: 20),
-                                    LayoutBuilder(
-                                      builder: (context, constraints) {
-                                        final isWide = constraints.maxWidth > 400;
-                                        return isWide
-                                            ? Row(
-                                                children: [
-                                                  Expanded(
-                                                    child: Column(
-                                                      children: [
-                                                        _buildToggleRow(
-                                                          "Show MRP",
-                                                          showMRP,
-                                                          (val) {
-                                                            showMRP = val;
-                                                            setStateDialog(() {});
-                                                          },
-                                                        ),
-                                                        _buildToggleRow(
-                                                          "Show WSP",
-                                                          showWSP,
-                                                          (val) {
-                                                            showWSP = val;
-                                                            setStateDialog(() {});
-                                                          },
-                                                        ),
-                                                        _buildToggleRow(
-                                                          "Show Product",
-                                                          showProduct,
-                                                          (val) {
-                                                            showProduct = val;
-                                                            setStateDialog(() {});
-                                                          },
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 16),
-                                                  Expanded(
-                                                    child: Column(
-                                                      children: [
-                                                        _buildSizeToggleRow(
-                                                          setState,
-                                                        ),
-                                                        _buildToggleRow(
-                                                          "Show Shades",
-                                                          showShades,
-                                                          (val) {
-                                                            showShades = val;
-                                                            setStateDialog(() {});
-                                                          },
-                                                        ),
-                                                        _buildToggleRow(
-                                                          "Show Remark",
-                                                          showRemark,
-                                                          (val) {
-                                                            showRemark = val;
-                                                            setStateDialog(() {});
-                                                          },
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
-                                              )
-                                            : Column(
-                                                children: [
-                                                  _buildToggleRow(
-                                                    "Show MRP",
-                                                    showMRP,
-                                                    (val) {
-                                                      showMRP = val;
-                                                      setStateDialog(() {});
-                                                    },
-                                                  ),
-                                                  _buildToggleRow(
-                                                    "Show WSP",
-                                                    showWSP,
-                                                    (val) {
-                                                      showWSP = val;
-                                                      setStateDialog(() {});
-                                                    },
-                                                  ),
-                                                  _buildSizeToggleRow(setState),
-                                                  _buildToggleRow(
-                                                    "Show Shades",
-                                                    showShades,
-                                                    (val) {
-                                                      showShades = val;
-                                                      setStateDialog(() {});
-                                                    },
-                                                  ),
-                                                  _buildToggleRow(
-                                                    "Show Product",
-                                                    showProduct,
-                                                    (val) {
-                                                      showProduct = val;
-                                                      setStateDialog(() {});
-                                                    },
-                                                  ),
-                                                  _buildToggleRow(
-                                                    "Show Remark",
-                                                    showRemark,
-                                                    (val) {
-                                                      showRemark = val;
-                                                      setStateDialog(() {});
-                                                    },
-                                                  ),
-                                                ],
-                                              );
-                                      },
-                                    ),
-                                    const SizedBox(height: 20),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(),
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16.0,
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Options",
+                                          style: TextStyle(
+                                            fontSize:
+                                                MediaQuery.of(
+                                                          context,
+                                                        ).size.width >
+                                                        600
+                                                    ? 22
+                                                    : 18,
+                                            fontWeight: FontWeight.bold,
                                           ),
-                                          child: Text(
-                                            "Close",
-                                            style: TextStyle(
-                                              fontSize: MediaQuery.of(context)
-                                                          .size
-                                                          .width >
-                                                      600
-                                                  ? 18
-                                                  : 16,
+                                        ),
+                                        const SizedBox(height: 20),
+                                        LayoutBuilder(
+                                          builder: (context, constraints) {
+                                            final isWide =
+                                                constraints.maxWidth > 400;
+                                            return isWide
+                                                ? Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Column(
+                                                        children: [
+                                                          _buildToggleRow(
+                                                            "Show MRP",
+                                                            showMRP,
+                                                            (val) {
+                                                              showMRP = val;
+                                                              setStateDialog(
+                                                                () {},
+                                                              );
+                                                            },
+                                                          ),
+                                                          _buildToggleRow(
+                                                            "Show WSP",
+                                                            showWSP,
+                                                            (val) {
+                                                              showWSP = val;
+                                                              setStateDialog(
+                                                                () {},
+                                                              );
+                                                            },
+                                                          ),
+                                                          _buildToggleRow(
+                                                            "Show Product",
+                                                            showProduct,
+                                                            (val) {
+                                                              showProduct = val;
+                                                              setStateDialog(
+                                                                () {},
+                                                              );
+                                                            },
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 16),
+                                                    Expanded(
+                                                      child: Column(
+                                                        children: [
+                                                          _buildSizeToggleRow(
+                                                            setState,
+                                                          ),
+                                                          _buildToggleRow(
+                                                            "Show Shades",
+                                                            showShades,
+                                                            (val) {
+                                                              showShades = val;
+                                                              setStateDialog(
+                                                                () {},
+                                                              );
+                                                            },
+                                                          ),
+                                                          _buildToggleRow(
+                                                            "Show Remark",
+                                                            showRemark,
+                                                            (val) {
+                                                              showRemark = val;
+                                                              setStateDialog(
+                                                                () {},
+                                                              );
+                                                            },
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                )
+                                                : Column(
+                                                  children: [
+                                                    _buildToggleRow(
+                                                      "Show MRP",
+                                                      showMRP,
+                                                      (val) {
+                                                        showMRP = val;
+                                                        setStateDialog(() {});
+                                                      },
+                                                    ),
+                                                    _buildToggleRow(
+                                                      "Show WSP",
+                                                      showWSP,
+                                                      (val) {
+                                                        showWSP = val;
+                                                        setStateDialog(() {});
+                                                      },
+                                                    ),
+                                                    _buildSizeToggleRow(
+                                                      setState,
+                                                    ),
+                                                    _buildToggleRow(
+                                                      "Show Shades",
+                                                      showShades,
+                                                      (val) {
+                                                        showShades = val;
+                                                        setStateDialog(() {});
+                                                      },
+                                                    ),
+                                                    _buildToggleRow(
+                                                      "Show Product",
+                                                      showProduct,
+                                                      (val) {
+                                                        showProduct = val;
+                                                        setStateDialog(() {});
+                                                      },
+                                                    ),
+                                                    _buildToggleRow(
+                                                      "Show Remark",
+                                                      showRemark,
+                                                      (val) {
+                                                        showRemark = val;
+                                                        setStateDialog(() {});
+                                                      },
+                                                    ),
+                                                  ],
+                                                );
+                                          },
+                                        ),
+                                        const SizedBox(height: 20),
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: TextButton(
+                                            onPressed:
+                                                () =>
+                                                    Navigator.of(context).pop(),
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 16.0,
+                                                  ),
+                                              child: Text(
+                                                "Close",
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      MediaQuery.of(
+                                                                context,
+                                                              ).size.width >
+                                                              600
+                                                          ? 18
+                                                          : 16,
+                                                ),
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
           ),
         ],
       ),
@@ -654,24 +695,25 @@ class _CatalogPageState extends State<CatalogPage> {
                 horizontal: isLargeScreen ? 16.0 : 8.0,
                 vertical: 8.0,
               ),
-              child: isLoading
-                  ? Center(child: CircularProgressIndicator())
-                  : catalogItems.isEmpty
+              child:
+                  isLoading
+                      ? Center(child: CircularProgressIndicator())
+                      : catalogItems.isEmpty
                       ? Center(child: Text("No Item Available"))
                       : LayoutBuilder(
-                          builder: (context, constraints) {
-                            if (viewOption == 0) {
-                              return _buildListView(constraints, isLargeScreen);
-                            } else if (viewOption == 1) {
-                              return _buildExpandedView(isLargeScreen);
-                            }
-                            return _buildGridView(
-                              constraints,
-                              isLargeScreen,
-                              isPortrait,
-                            );
-                          },
-                        ),
+                        builder: (context, constraints) {
+                          if (viewOption == 0) {
+                            return _buildListView(constraints, isLargeScreen);
+                          } else if (viewOption == 1) {
+                            return _buildExpandedView(isLargeScreen);
+                          }
+                          return _buildGridView(
+                            constraints,
+                            isLargeScreen,
+                            isPortrait,
+                          );
+                        },
+                      ),
             ),
           ),
         ],
@@ -700,7 +742,9 @@ class _CatalogPageState extends State<CatalogPage> {
   ) {
     final filteredItems = _getFilteredItems();
     final crossAxisCount =
-        isPortrait ? (isLargeScreen ? 3 : 2) : (constraints.maxWidth ~/ 300).clamp(3, 4);
+        isPortrait
+            ? (isLargeScreen ? 3 : 2)
+            : (constraints.maxWidth ~/ 300).clamp(3, 4);
 
     return GridView.builder(
       controller: _scrollController,
@@ -745,9 +789,14 @@ class _CatalogPageState extends State<CatalogPage> {
         }
         final item = filteredItems[index];
         bool isSelected = selectedItems.contains(item);
-        List<String> shades = item.shadeName != null && item.shadeName.isNotEmpty
-            ? item.shadeName.split(',').map((shade) => shade.trim()).toList().cast<String>()
-            : [];
+        List<String> shades =
+            item.shadeName != null && item.shadeName.isNotEmpty
+                ? item.shadeName
+                    .split(',')
+                    .map((shade) => shade.trim())
+                    .toList()
+                    .cast<String>()
+                : [];
 
         return GestureDetector(
           onDoubleTap: () {
@@ -806,7 +855,8 @@ class _CatalogPageState extends State<CatalogPage> {
                             ),
                             child: LayoutBuilder(
                               builder: (context, constraints) {
-                                final maxImageHeight = constraints.maxWidth * 1.2;
+                                final maxImageHeight =
+                                    constraints.maxWidth * 1.2;
                                 return ConstrainedBox(
                                   constraints: BoxConstraints(
                                     maxHeight: maxImageHeight,
@@ -819,10 +869,16 @@ class _CatalogPageState extends State<CatalogPage> {
                                         _getImageUrl(item),
                                         fit: BoxFit.contain,
                                         width: double.infinity,
-                                        errorBuilder: (context, error, stackTrace) {
+                                        errorBuilder: (
+                                          context,
+                                          error,
+                                          stackTrace,
+                                        ) {
                                           return Container(
                                             color: Colors.grey.shade300,
-                                            child: const Center(child: Icon(Icons.error)),
+                                            child: const Center(
+                                              child: Icon(Icons.error),
+                                            ),
                                           );
                                         },
                                       ),
@@ -841,14 +897,17 @@ class _CatalogPageState extends State<CatalogPage> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Padding(
-                                padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
+                                padding: EdgeInsets.all(
+                                  isLargeScreen ? 16 : 12,
+                                ),
                                 child: Table(
                                   columnWidths: const {
                                     0: IntrinsicColumnWidth(),
                                     1: FixedColumnWidth(8),
                                     2: FlexColumnWidth(),
                                   },
-                                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                                  defaultVerticalAlignment:
+                                      TableCellVerticalAlignment.middle,
                                   children: [
                                     TableRow(
                                       children: [
@@ -941,7 +1000,8 @@ class _CatalogPageState extends State<CatalogPage> {
                                           SingleChildScrollView(
                                             scrollDirection: Axis.horizontal,
                                             child: Text(
-                                              item.remark?.trim().isNotEmpty == true
+                                              item.remark?.trim().isNotEmpty ==
+                                                      true
                                                   ? item.remark!
                                                   : '--',
                                               style: _valueTextStyle(),
@@ -1067,7 +1127,8 @@ class _CatalogPageState extends State<CatalogPage> {
                           1: FixedColumnWidth(8),
                           2: FlexColumnWidth(),
                         },
-                        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                        defaultVerticalAlignment:
+                            TableCellVerticalAlignment.middle,
                         children: [
                           TableRow(
                             children: [
@@ -1162,14 +1223,13 @@ class _CatalogPageState extends State<CatalogPage> {
                                   padding: const EdgeInsets.only(right: 5),
                                   child: Text(
                                     'Product',
-                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                                 const Text(':'),
-                                Text(
-                                  item.itemName,
-                                  style: _valueTextStyle(),
-                                ),
+                                Text(item.itemName, style: _valueTextStyle()),
                               ],
                             ),
                           if (showProduct) _buildSpacerRow(),
@@ -1287,17 +1347,18 @@ class _CatalogPageState extends State<CatalogPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ImageZoomScreen1(
-          imageUrl: _getImageUrl(item),
-          item: item,
-          showShades: showShades,
-          showMRP: showMRP,
-          showWSP: showWSP,
-          showSizes: showSizes,
-          showProduct: showProduct,
-          showRemark: showRemark,
-          isLargeScreen: isLargeScreen,
-        ),
+        builder:
+            (context) => ImageZoomScreen1(
+              imageUrl: _getImageUrl(item),
+              item: item,
+              showShades: showShades,
+              showMRP: showMRP,
+              showWSP: showWSP,
+              showSizes: showSizes,
+              showProduct: showProduct,
+              showRemark: showRemark,
+              isLargeScreen: isLargeScreen,
+            ),
       ),
     );
   }
@@ -1313,7 +1374,8 @@ class _CatalogPageState extends State<CatalogPage> {
 
   Widget _buildItemCard(Catalog item, bool isLargeScreen) {
     bool isSelected = selectedItems.contains(item);
-    List<String> shades = item.shadeName.split(',').map((s) => s.trim()).toList();
+    List<String> shades =
+        item.shadeName.split(',').map((s) => s.trim()).toList();
 
     return GestureDetector(
       onDoubleTap: () {
@@ -1461,7 +1523,8 @@ class _CatalogPageState extends State<CatalogPage> {
                             ),
                           ],
                         ),
-                      if (item.sizeName.isNotEmpty && showSizes) _buildSpacerRow(),
+                      if (item.sizeName.isNotEmpty && showSizes)
+                        _buildSpacerRow(),
                       if (showProduct)
                         TableRow(
                           children: [
@@ -1529,14 +1592,15 @@ class _CatalogPageState extends State<CatalogPage> {
           vertical: 12,
         ),
         color: Colors.white,
-        child: isLargeScreen
-            ? Row(children: _buildButtonChildren(isLargeScreen))
-            : Wrap(
-                alignment: WrapAlignment.spaceEvenly,
-                spacing: 8,
-                runSpacing: 8,
-                children: _buildButtonChildren(isLargeScreen),
-              ),
+        child:
+            isLargeScreen
+                ? Row(children: _buildButtonChildren(isLargeScreen))
+                : Wrap(
+                  alignment: WrapAlignment.spaceEvenly,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _buildButtonChildren(isLargeScreen),
+                ),
       ),
     );
   }
@@ -1630,7 +1694,7 @@ class _CatalogPageState extends State<CatalogPage> {
             'fromDate': fromDate,
             'toDate': toDate,
             'brands': brands.isEmpty ? [] : brands,
-           // 'selectedBrands': selectedBrands,
+            // 'selectedBrands': selectedBrands,
           },
         ),
         transitionDuration: Duration(milliseconds: 500),
@@ -1725,28 +1789,29 @@ class _CatalogPageState extends State<CatalogPage> {
         "company": "VRS Software",
         "createdBy": "admin",
         "mobile": "",
-        "catalogItems": selectedItems.map((item) {
-          Map<String, dynamic> catalogItem = {
-            'fullImagePath': item.fullImagePath,
-          };
-          if (includeDesign) catalogItem['design'] = item.styleCode;
-          if (includeShade) catalogItem['shade'] = item.shadeName;
-          if (includeRate) catalogItem['rate'] = item.mrp;
-          if (includeWsp) catalogItem['wsp'] = item.wsp;
-          if (includeSize) {
-            if (includeSizeMrp && includeSizeWsp) {
-              catalogItem['sizeDetailsWithoutWSp'] =
-                  item.sizeDetailsWithoutWSp ?? '';
-            } else if (!includeSizeMrp && !includeSizeWsp) {
-              catalogItem['onlySizes'] = item.onlySizes ?? '';
-            } else {
-              catalogItem['sizeWithMrp'] = item.sizeWithMrp ?? '';
-            }
-          }
-          if (includeProduct) catalogItem['product'] = item.itemName;
-          if (includeRemark) catalogItem['remark'] = item.remark;
-          return catalogItem;
-        }).toList(),
+        "catalogItems":
+            selectedItems.map((item) {
+              Map<String, dynamic> catalogItem = {
+                'fullImagePath': item.fullImagePath,
+              };
+              if (includeDesign) catalogItem['design'] = item.styleCode;
+              if (includeShade) catalogItem['shade'] = item.shadeName;
+              if (includeRate) catalogItem['rate'] = item.mrp;
+              if (includeWsp) catalogItem['wsp'] = item.wsp;
+              if (includeSize) {
+                if (includeSizeMrp && includeSizeWsp) {
+                  catalogItem['sizeDetailsWithoutWSp'] =
+                      item.sizeDetailsWithoutWSp ?? '';
+                } else if (!includeSizeMrp && !includeSizeWsp) {
+                  catalogItem['onlySizes'] = item.onlySizes ?? '';
+                } else {
+                  catalogItem['sizeWithMrp'] = item.sizeWithMrp ?? '';
+                }
+              }
+              if (includeProduct) catalogItem['product'] = item.itemName;
+              if (includeRemark) catalogItem['remark'] = item.remark;
+              return catalogItem;
+            }).toList(),
       };
 
       final response = await http.post(
@@ -1800,10 +1865,11 @@ class _CatalogPageState extends State<CatalogPage> {
 
       if (mobileNo.isNotEmpty) {
         for (var item in selectedItems) {
-          String url = item.fullImagePath.contains("http://") ||
-                  item.fullImagePath.contains("https://")
-              ? item.fullImagePath
-              : '${AppConstants.BASE_URL}/images${item.fullImagePath}';
+          String url =
+              item.fullImagePath.contains("http://") ||
+                      item.fullImagePath.contains("https://")
+                  ? item.fullImagePath
+                  : '${AppConstants.BASE_URL}/images${item.fullImagePath}';
           final response = await http.get(Uri.parse(url));
 
           if (response.statusCode == 200) {
@@ -2078,124 +2144,199 @@ class _CatalogPageState extends State<CatalogPage> {
     });
   }
 
- void _showShareOptions() {
-  if (selectedItems.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please select items to share')),
-    );
-    return;
-  }
-
-  showModalBottomSheet(
-    context: context,
-    builder: (BuildContext context) {
-      return ShareOptionsPage(
-        includeDesign: includeDesign,
-        includeShade: includeShade,
-        includeRate: includeRate,
-        includeWsp: includeWsp,
-        includeSize: includeSize,
-        includeSizeMrp: includeSizeMrp,
-        includeSizeWsp: includeSizeWsp,
-        includeProduct: includeProduct,
-        includeRemark: includeRemark,
-        onWhatsAppShare: ({
-          bool includeDesign = true,
-          bool includeShade = true,
-          bool includeRate = true,
-          bool includeSize = true,
-          bool includeProduct = true,
-          bool includeRemark = true,
-        }) {
-          Navigator.pop(context);
-          _shareSelectedWhatsApp(
-            shareType: 'WhatsApp',
-            includeDesign: includeDesign,
-            includeShade: includeShade,
-            includeRate: includeRate,
-            includeSize: includeSize,
-            includeProduct: includeProduct,
-            includeRemark: includeRemark,
-          );
-        },
-        onImageShare: ({
-          bool includeDesign = true,
-          bool includeShade = true,
-          bool includeRate = true,
-          bool includeWsp = false,
-          bool includeSize = true,
-          bool includeSizeMrp = true,
-          bool includeSizeWsp = false,
-          bool includeProduct = true,
-          bool includeRemark = true,
-        }) {
-          Navigator.pop(context);
-          _shareSelectedItems(
-            shareType: 'image',
-            includeDesign: includeDesign,
-            includeShade: includeShade,
-            includeRate: includeRate,
-            includeWsp: includeWsp,
-            includeSize: includeSize,
-            includeSizeMrp: includeSizeMrp,
-            includeSizeWsp: includeSizeWsp,
-            includeProduct: includeProduct,
-            includeRemark: includeRemark,
-          );
-        },
-        onPDFShare: ({
-          bool includeDesign = true,
-          bool includeShade = true,
-          bool includeRate = true,
-          bool includeWsp = false,
-          bool includeSize = true,
-          bool includeSizeMrp = true,
-          bool includeSizeWsp = false,
-          bool includeProduct = true,
-          bool includeRemark = true,
-        }) {
-          Navigator.pop(context);
-          _shareSelectedItemsPDF(
-            shareType: 'pdf',
-            includeDesign: includeDesign,
-            includeShade: includeShade,
-            includeRate: includeRate,
-            includeWsp: includeWsp,
-            includeSize: includeSize,
-            includeSizeMrp: includeSizeMrp,
-            includeSizeWsp: includeSizeWsp,
-            includeProduct: includeProduct,
-            includeRemark: includeRemark,
-          );
-        },
-        onToggleOptions: (
-          design,
-          shade,
-          rate,
-          wsp,
-          size,
-          rate1,
-          wsp1,
-          product,
-          remark,
-        ) {
-          setState(() {
-            includeDesign = design;
-            includeShade = shade;
-            includeRate = rate;
-            includeWsp = wsp;
-            includeSize = size;
-            includeSizeMrp = rate1;
-            includeSizeWsp = wsp1;
-            includeProduct = product;
-            includeRemark = remark;
-          });
-          _saveToggleStates(); // Save updated toggle states
-        },
+  void _showShareOptions() {
+    if (selectedItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select items to share')),
       );
-    },
-  );
-}
+      return;
+    }
+    Future<void> _shareAsLink() async {
+      try {
+        // Concatenate styleKey values with commas
+        final styleKeys = selectedItems.map((item) => item.styleKey).join(',');
+        // Encode in Base64
+        final encodedStyleKeys = base64Encode(utf8.encode(styleKeys));
+        // Construct the shareable URL
+        final shareUrl = '${AppConstants.BASE_URL}/share/$encodedStyleKeys';
+
+        // Show dialog with share link and QR code
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              title: const Text('Share as Link'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Share this link or scan the QR code:',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 10),
+                    SelectableText(
+                      shareUrl,
+                      style: TextStyle(fontSize: 14, color: Colors.blue),
+                    ),
+                    const SizedBox(height: 20),
+                    // QrImageView(
+                    //   data: shareUrl,
+                    //   version: QrVersions.auto,
+                    //   size: 200.0,
+                    //   gapless: false,
+                    //   errorStateBuilder: (cxt, err) {
+                    //     return const Text('Error generating QR code');
+                    //   },
+                    // ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    await Share.share(shareUrl, subject: 'Catalog Share Link');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Link shared successfully')),
+                    );
+                  },
+                  child: const Text('Share Link'),
+                ),
+              ],
+            );
+          },
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to share link: ${e.toString()}')),
+        );
+      }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        final styleKeys = selectedItems.map((item) => item.styleKey).join(',');
+        final encodedStyleKeys = base64Encode(utf8.encode(styleKeys));
+        final shareUrl = '${AppConstants.BASE_URL}/share/$encodedStyleKeys';
+        return ShareOptionsPage(
+          includeDesign: includeDesign,
+          includeShade: includeShade,
+          includeRate: includeRate,
+          includeWsp: includeWsp,
+          includeSize: includeSize,
+          includeSizeMrp: includeSizeMrp,
+          includeSizeWsp: includeSizeWsp,
+          includeProduct: includeProduct,
+          includeRemark: includeRemark,
+          onWhatsAppShare: ({
+            bool includeDesign = true,
+            bool includeShade = true,
+            bool includeRate = true,
+            bool includeSize = true,
+            bool includeProduct = true,
+            bool includeRemark = true,
+          }) {
+            Navigator.pop(context);
+            _shareSelectedWhatsApp(
+              shareType: 'WhatsApp',
+              includeDesign: includeDesign,
+              includeShade: includeShade,
+              includeRate: includeRate,
+              includeSize: includeSize,
+              includeProduct: includeProduct,
+              includeRemark: includeRemark,
+            );
+          },
+          onLinkShare: () {
+            _shareAsLink();
+          } ,
+          onImageShare: ({
+            bool includeDesign = true,
+            bool includeShade = true,
+            bool includeRate = true,
+            bool includeWsp = false,
+            bool includeSize = true,
+            bool includeSizeMrp = true,
+            bool includeSizeWsp = false,
+            bool includeProduct = true,
+            bool includeRemark = true,
+          }) {
+            Navigator.pop(context);
+            _shareSelectedItems(
+              shareType: 'image',
+              includeDesign: includeDesign,
+              includeShade: includeShade,
+              includeRate: includeRate,
+              includeWsp: includeWsp,
+              includeSize: includeSize,
+              includeSizeMrp: includeSizeMrp,
+              includeSizeWsp: includeSizeWsp,
+              includeProduct: includeProduct,
+              includeRemark: includeRemark,
+            );
+          },
+          onPDFShare: ({
+            bool includeDesign = true,
+            bool includeShade = true,
+            bool includeRate = true,
+            bool includeWsp = false,
+            bool includeSize = true,
+            bool includeSizeMrp = true,
+            bool includeSizeWsp = false,
+            bool includeProduct = true,
+            bool includeRemark = true,
+          }) {
+            Navigator.pop(context);
+            _shareSelectedItemsPDF(
+              shareType: 'pdf',
+              includeDesign: includeDesign,
+              includeShade: includeShade,
+              includeRate: includeRate,
+              includeWsp: includeWsp,
+              includeSize: includeSize,
+              includeSizeMrp: includeSizeMrp,
+              includeSizeWsp: includeSizeWsp,
+              includeProduct: includeProduct,
+              includeRemark: includeRemark,
+            );
+          },
+          onToggleOptions: (
+            design,
+            shade,
+            rate,
+            wsp,
+            size,
+            rate1,
+            wsp1,
+            product,
+            remark,
+          ) {
+            setState(() {
+              includeDesign = design;
+              includeShade = shade;
+              includeRate = rate;
+              includeWsp = wsp;
+              includeSize = size;
+              includeSizeMrp = rate1;
+              includeSizeWsp = wsp1;
+              includeProduct = product;
+              includeRemark = remark;
+            });
+            _saveToggleStates(); // Save updated toggle states
+          },
+        );
+      },
+    );
+  }
 
   Future<void> _handleDownloadOption(
     String option, {
@@ -2361,13 +2502,17 @@ class _CatalogPageState extends State<CatalogPage> {
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('$successCount images downloaded to Downloads folder'),
+              content: Text(
+                '$successCount images downloaded to Downloads folder',
+              ),
             ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to generate images: ${response.statusCode}'),
+              content: Text(
+                'Failed to generate images: ${response.statusCode}',
+              ),
             ),
           );
         }
@@ -2379,62 +2524,61 @@ class _CatalogPageState extends State<CatalogPage> {
     }
   }
 
- void _showDownloadOptions() {
-  if (selectedItems.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please select items to download')),
-    );
-    return;
-  }
-
-  showModalBottomSheet(
-    context: context,
-    builder: (BuildContext context) {
-      return DownloadOptionsSheet(
-        initialOptions: {
-          'design': includeDesign,
-          'shade': includeShade,
-          'rate': includeRate,
-          'wsp': includeWsp,
-          'size': includeSize,
-          'rate1': includeSizeMrp,
-          'wsp1': includeSizeWsp,
-          'product': includeProduct,
-          'remark': includeRemark,
-        },
-        onDownload: (type, selectedOptions) {
-          _handleDownloadOption(
-            type,
-            includeDesign: selectedOptions['design'] ?? includeDesign,
-            includeShade: selectedOptions['shade'] ?? includeShade,
-            includeRate: selectedOptions['rate'] ?? includeRate,
-            includeWsp: selectedOptions['wsp'] ?? includeWsp,
-            includeSize: selectedOptions['size'] ?? includeSize,
-            includeSizeMrp: selectedOptions['rate1'] ?? includeSizeMrp,
-            includeSizeWsp: selectedOptions['wsp1'] ?? includeSizeWsp,
-            includeProduct: selectedOptions['product'] ?? includeProduct,
-            includeRemark: selectedOptions['remark'] ?? includeRemark,
-          );
-        },
-        onToggleOptions: (options) {
-          setState(() {
-            includeDesign = options['design'] ?? includeDesign;
-            includeShade = options['shade'] ?? includeShade;
-            includeRate = options['rate'] ?? includeRate;
-            includeWsp = options['wsp'] ?? includeWsp;
-            includeSize = options['size'] ?? includeSize;
-            includeSizeMrp = options['rate1'] ?? includeSizeMrp;
-            includeSizeWsp = options['wsp1'] ?? includeSizeWsp;
-            includeProduct = options['product'] ?? includeProduct;
-            includeRemark = options['remark'] ?? includeRemark;
-          });
-          _saveToggleStates(); // Save updated toggle states
-        },
+  void _showDownloadOptions() {
+    if (selectedItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select items to download')),
       );
-    },
-  );
-}
+      return;
+    }
 
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return DownloadOptionsSheet(
+          initialOptions: {
+            'design': includeDesign,
+            'shade': includeShade,
+            'rate': includeRate,
+            'wsp': includeWsp,
+            'size': includeSize,
+            'rate1': includeSizeMrp,
+            'wsp1': includeSizeWsp,
+            'product': includeProduct,
+            'remark': includeRemark,
+          },
+          onDownload: (type, selectedOptions) {
+            _handleDownloadOption(
+              type,
+              includeDesign: selectedOptions['design'] ?? includeDesign,
+              includeShade: selectedOptions['shade'] ?? includeShade,
+              includeRate: selectedOptions['rate'] ?? includeRate,
+              includeWsp: selectedOptions['wsp'] ?? includeWsp,
+              includeSize: selectedOptions['size'] ?? includeSize,
+              includeSizeMrp: selectedOptions['rate1'] ?? includeSizeMrp,
+              includeSizeWsp: selectedOptions['wsp1'] ?? includeSizeWsp,
+              includeProduct: selectedOptions['product'] ?? includeProduct,
+              includeRemark: selectedOptions['remark'] ?? includeRemark,
+            );
+          },
+          onToggleOptions: (options) {
+            setState(() {
+              includeDesign = options['design'] ?? includeDesign;
+              includeShade = options['shade'] ?? includeShade;
+              includeRate = options['rate'] ?? includeRate;
+              includeWsp = options['wsp'] ?? includeWsp;
+              includeSize = options['size'] ?? includeSize;
+              includeSizeMrp = options['rate1'] ?? includeSizeMrp;
+              includeSizeWsp = options['wsp1'] ?? includeSizeWsp;
+              includeProduct = options['product'] ?? includeProduct;
+              includeRemark = options['remark'] ?? includeRemark;
+            });
+            _saveToggleStates(); // Save updated toggle states
+          },
+        );
+      },
+    );
+  }
 
   Widget _buildSizeToggleRow(void Function(void Function()) parentSetState) {
     return StatefulBuilder(
@@ -2447,8 +2591,7 @@ class _CatalogPageState extends State<CatalogPage> {
               Row(
                 children: [
                   Text('Show Sizes', style: TextStyle(fontSize: 16)),
-                  if (showMRP && showWSP && showSizes)
-                    Row(),
+                  if (showMRP && showWSP && showSizes) Row(),
                 ],
               ),
               Switch(
@@ -2469,10 +2612,7 @@ class _CatalogPageState extends State<CatalogPage> {
   Widget _buildToggleRow(String title, bool value, Function(bool) onChanged) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(title),
-        Switch(value: value, onChanged: onChanged),
-      ],
+      children: [Text(title), Switch(value: value, onChanged: onChanged)],
     );
   }
 }
