@@ -736,6 +736,7 @@ class _DiagonalLinePainter extends CustomPainter {
     canvas.drawLine(Offset.zero, Offset(size.width, size.height), paint);
   }
 
+
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
