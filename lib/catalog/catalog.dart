@@ -2152,7 +2152,7 @@ class _CatalogPageState extends State<CatalogPage> {
       );
       return;
     }
-    Future<void> _shareAsLink() async {
+    void _shareAsLink()  {
       try {
         // Concatenate styleKey values with commas
         final styleKeys = selectedItems.map((item) => item.styleKey).join(',');
@@ -2194,12 +2194,12 @@ class _CatalogPageState extends State<CatalogPage> {
                   child: const Text('Close'),
                 ),
                 TextButton(
-                  onPressed: () async {
-                    await Clipboard.setData(ClipboardData(text: shareUrl));
-                    Navigator.pop(context); // Optional: close dialog after copy
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Link copied to clipboard')),
-                    );
+                  onPressed: ()  {
+                    // ScaffoldMessenger.of(context).showSnackBar(
+                    //   const SnackBar(content: Text('Link copied to clipboard')),
+                    // );
+                     Clipboard.setData(ClipboardData(text: shareUrl));
+                    // Navigator.pop(context); // Optional: close dialog after copy
                   },
                   child: const Text('Copy Link'),
                 ),

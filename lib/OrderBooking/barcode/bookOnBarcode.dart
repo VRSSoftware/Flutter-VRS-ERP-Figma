@@ -727,7 +727,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTableBarcode> {
                   actions: [
                     TextButton(
                       onPressed: () {
-                        Navigator.pop(context);
+                       // Navigator.pop(context);
                         Navigator.pop(context);
                         widget.onSuccess();
                       },
