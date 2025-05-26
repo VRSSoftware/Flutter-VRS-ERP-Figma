@@ -5,6 +5,7 @@ import 'package:vrs_erp_figma/OrderBooking/orderbooking_booknow.dart';
 import 'package:vrs_erp_figma/catalog/catalog.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/CartModel.dart';
+import 'package:vrs_erp_figma/register/register.dart';
 import 'package:vrs_erp_figma/screens/catalog_screen.dart';
 
 import 'package:vrs_erp_figma/screens/home_screen.dart';
@@ -58,6 +59,7 @@ class MyApp extends StatelessWidget {
         '/orderpage': (context) => OrderPage(),
         '/viewOrder': (context) => ViewOrderScreen(),
         '/viewOrders': (context) => ViewOrderScreens(),
+        '/registerOrders': (context) => RegisterPage(),
       },
 
       home: HomeScreen(),

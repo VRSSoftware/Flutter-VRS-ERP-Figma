@@ -54,6 +54,7 @@ dependencies:
   auto_size_text: ^3.0.0
   getwidget: ^2.0.4
   qr_flutter: ^4.1.0
+  marquee: ^2.2.3
   # installed_apps: ^1.6.0
   google_fonts: ^4.0.4
  # android_intent_plus: ^4.0.2

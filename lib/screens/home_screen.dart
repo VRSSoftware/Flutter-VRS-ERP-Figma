@@ -79,7 +79,7 @@ class HomeScreen extends StatelessWidget {
         _buildFeatureButton(
           'assets/images/catalog.png',
           'Order Register',
-          () => Navigator.pushNamed(context, '/orderRegister'),
+          () => Navigator.pushNamed(context, '/registerOrders'),
           buttonWidth,
         ),
       ],

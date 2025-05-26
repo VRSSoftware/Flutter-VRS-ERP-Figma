@@ -39,7 +39,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
         return 'Order Booking';
       case '/catalog':
         return 'Catalog';
-      case '/orderRegister':
+      case '/registerOrders':
         return 'Order Register';
       default:
         return null;
@@ -90,7 +90,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
       case 'Catalog':
         return '/catalog';
       case 'Order Register':
-        return '/orderRegister';
+        return '/registerOrders';
       default:
         return '/home';
     }

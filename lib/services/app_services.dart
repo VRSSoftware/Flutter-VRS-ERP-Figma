@@ -5,6 +5,7 @@ import 'package:vrs_erp_figma/models/catalog.dart';
 import 'package:vrs_erp_figma/models/category.dart';
 import 'package:vrs_erp_figma/models/item.dart';
 import 'package:vrs_erp_figma/models/keyName.dart';
+import 'package:vrs_erp_figma/models/registerModel.dart';
 import 'package:vrs_erp_figma/models/shade.dart';
 import 'package:vrs_erp_figma/models/size.dart';
 import 'package:vrs_erp_figma/models/style.dart';
@@ -483,6 +484,50 @@ static Future<Map<String, dynamic>> getSalesOrderData({
     } catch (e) {
       print('Exception in fetchLedgers: $e');
       return {'statusCode': 500, 'result': <KeyName>[]};
+    }
+  }
+
+  static Future<List<RegisterOrder>> fetchOrderRegister({
+    required String fromDate,
+    required String toDate,
+    String? custKey,
+    required String coBrId,
+    String? salesPerson,
+    String? status,
+    String? dlvFromDate,
+    String? dlvToDate,
+    required String userName,
+    String? lastSavedOrderId,
+  }) async {
+    try {
+      final url = Uri.parse('${AppConstants.BASE_URL}/orderBooking/getOrderRegister');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'fromDate': fromDate,
+          'toDate': toDate,
+          'custKey': custKey,
+          'coBrId': coBrId,
+          'salesPerson': salesPerson,
+          'status': status,
+          'dlvFromDate': dlvFromDate,
+          'dlvToDate': dlvToDate,
+          'userName': userName,
+          'lastsavedorderid': lastSavedOrderId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => RegisterOrder.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load order register: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching order register: $e');
     }
   }
 
