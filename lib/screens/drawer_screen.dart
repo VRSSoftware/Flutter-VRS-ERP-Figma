@@ -15,6 +15,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
     'Home': 'assets/images/home.png',
     'Order Booking': 'assets/images/orderbooking.png',
     'Catalog': 'assets/images/catalog.png',
+    'Order Register':'assets/images/catalog.png'
   };
 
   @override
@@ -38,6 +39,8 @@ class _DrawerScreenState extends State<DrawerScreen> {
         return 'Order Booking';
       case '/catalog':
         return 'Catalog';
+      case '/orderRegister':
+        return 'Order Register';
       default:
         return null;
     }
@@ -86,6 +89,8 @@ class _DrawerScreenState extends State<DrawerScreen> {
         return '/orderbooking';
       case 'Catalog':
         return '/catalog';
+      case 'Order Register':
+        return '/orderRegister';
       default:
         return '/home';
     }

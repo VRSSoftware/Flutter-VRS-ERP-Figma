@@ -10,7 +10,7 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       drawer: DrawerScreen(),
       appBar: AppBar(
-        title: Text('Dashboard', style: TextStyle(color: AppColors.white)),
+        title: Text('Home', style: TextStyle(color: AppColors.white)),
         backgroundColor: AppColors.primaryColor,
         elevation: 1,
         leading: Builder(
@@ -48,6 +48,7 @@ class HomeScreen extends StatelessWidget {
           if (index == 0) return;
           if (index == 1) Navigator.pushNamed(context, '/catalog');
           if (index == 2) Navigator.pushNamed(context, '/orderbooking');
+          if (index == 3) Navigator.pushNamed(context, '/orderRegister');
           // Add others similarly...
         },
       ),
@@ -73,6 +74,12 @@ class HomeScreen extends StatelessWidget {
           'assets/images/catalog.png',
           'Catalog',
           () => Navigator.pushNamed(context, '/catalog'),
+          buttonWidth,
+        ),
+        _buildFeatureButton(
+          'assets/images/catalog.png',
+          'Order Register',
+          () => Navigator.pushNamed(context, '/orderRegister'),
           buttonWidth,
         ),
       ],
