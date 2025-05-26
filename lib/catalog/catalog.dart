@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 // import 'package:installed_apps/installed_apps.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vrs_erp_figma/catalog/download_options.dart';
@@ -2174,25 +2175,16 @@ class _CatalogPageState extends State<CatalogPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
+                    const Text(
                       'Share this link or scan the QR code:',
                       style: TextStyle(fontSize: 16),
                     ),
                     const SizedBox(height: 10),
                     SelectableText(
                       shareUrl,
-                      style: TextStyle(fontSize: 14, color: Colors.blue),
+                      style: const TextStyle(fontSize: 14, color: Colors.blue),
                     ),
-                    const SizedBox(height: 20),
-                    // QrImageView(
-                    //   data: shareUrl,
-                    //   version: QrVersions.auto,
-                    //   size: 200.0,
-                    //   gapless: false,
-                    //   errorStateBuilder: (cxt, err) {
-                    //     return const Text('Error generating QR code');
-                    //   },
-                    // ),
+                    const SizedBox(height: 10),
                   ],
                 ),
               ),
@@ -2203,7 +2195,20 @@ class _CatalogPageState extends State<CatalogPage> {
                 ),
                 TextButton(
                   onPressed: () async {
+                    await Clipboard.setData(ClipboardData(text: shareUrl));
+                    Navigator.pop(context); // Optional: close dialog after copy
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Link copied to clipboard')),
+                    );
+                  },
+                  child: const Text('Copy Link'),
+                ),
+                TextButton(
+                  onPressed: () async {
                     await Share.share(shareUrl, subject: 'Catalog Share Link');
+                    Navigator.pop(
+                      context,
+                    ); // Optional: close dialog after share
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Link shared successfully')),
                     );
@@ -2258,7 +2263,7 @@ class _CatalogPageState extends State<CatalogPage> {
           },
           onLinkShare: () {
             _shareAsLink();
-          } ,
+          },
           onImageShare: ({
             bool includeDesign = true,
             bool includeShade = true,
