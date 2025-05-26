@@ -32,30 +32,25 @@ class _StyleCardState extends State<StyleCard> {
   final TextEditingController noteController = TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-@override
-Widget build(BuildContext context) {
-  final firstItem = widget.items.first;
-  return Card(
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.zero,
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          _buildHeaderSection(firstItem),
-          const SizedBox(height: 16),
-          _buildPriceTable(context),
-          _buildActionButtons(context),
-        ],
+  Widget build(BuildContext context) {
+    final firstItem = widget.items.first;
+    return Card(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.zero,
       ),
-    ),
-  );
-}
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildHeaderSection(firstItem),
+            const SizedBox(height: 16),
+            _buildPriceTable(context),
+            _buildActionButtons(context),
+          ],
+        ),
+      ),
+    );
+  }
 
   void _openImageZoom(BuildContext context, String imageUrl) {
     Navigator.push(
@@ -99,25 +94,22 @@ Widget build(BuildContext context) {
     );
   }
 
-Widget _buildItemImage(String imagePath) {
-  return GestureDetector(
-    onDoubleTap: () => _openImageZoom(context, imagePath),
-    child: Container(
-      constraints: const BoxConstraints(
-        maxWidth: 100, // Maximum width you want the image to occupy
+  Widget _buildItemImage(String imagePath) {
+    return GestureDetector(
+      onDoubleTap: () => _openImageZoom(context, imagePath),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 100),
+        child: Image.network(
+          _getImageUrl(imagePath),
+          fit: BoxFit.contain,
+          loadingBuilder: (context, child, loadingProgress) =>
+              loadingProgress == null ? child : const Center(child: CircularProgressIndicator()),
+          errorBuilder: (context, error, stackTrace) => const _ImageErrorWidget(),
+        ),
       ),
-      child: Image.network(
-        _getImageUrl(imagePath),
-        fit: BoxFit.contain,
-        loadingBuilder: (context, child, loadingProgress) =>
-            loadingProgress == null
-                ? child
-                : const Center(child: CircularProgressIndicator()),
-        errorBuilder: (context, error, stackTrace) => const _ImageErrorWidget(),
-      ),
-    ),
-  );
-}
+    );
+  }
+
   String _getImageUrl(String fullImagePath) =>
       fullImagePath.startsWith('http')
           ? fullImagePath
@@ -130,10 +122,7 @@ Widget _buildItemImage(String imagePath) {
         text: TextSpan(
           style: TextStyle(fontSize: 14, color: Colors.grey[800]),
           children: [
-            TextSpan(
-              text: '$label ',
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
+            TextSpan(text: '$label ', style: const TextStyle(fontWeight: FontWeight.w600)),
             TextSpan(text: value),
           ],
         ),
@@ -149,9 +138,7 @@ Widget _buildItemImage(String imagePath) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minWidth: MediaQuery.of(context).size.width - 64,
-        ),
+        constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width - 64),
         child: Table(
           border: TableBorder.all(color: Colors.grey.shade300, width: 1),
           columnWidths: _buildColumnWidths(sortedSizes),
@@ -179,37 +166,29 @@ Widget _buildItemImage(String imagePath) {
   }
 
   List<String> _getSortedShades(List<dynamic> items) =>
-      items.map((e) => e['shadeName']?.toString() ?? '').toSet().toList()
-        ..sort();
+      items.map((e) => e['shadeName']?.toString() ?? '').toSet().toList()..sort();
 
   Map<int, TableColumnWidth> _buildColumnWidths(List<String> sizes) => {
-    0: const FixedColumnWidth(100),
-    for (var i = 0; i < sizes.length; i++) i + 1: const FixedColumnWidth(80),
-  };
+        0: const FixedColumnWidth(100),
+        for (var i = 0; i < sizes.length; i++) i + 1: const FixedColumnWidth(80),
+      };
 
-  TableRow _buildTableRow(
-    String label,
-    List<String> sizes,
-    Map<String, Map<String, num>> details,
-    String key,
-  ) {
+  TableRow _buildTableRow(String label, List<String> sizes, Map<String, Map<String, num>> details, String key) {
     return TableRow(
       children: [
         TableCell(
           verticalAlignment: TableCellVerticalAlignment.middle,
           child: Padding(padding: const EdgeInsets.all(8), child: Text(label)),
         ),
-        ...sizes.map(
-          (size) => TableCell(
-            verticalAlignment: TableCellVerticalAlignment.middle,
-            child: Center(
-              child: Text(
-                '${details[size]?[key]?.toStringAsFixed(0) ?? '0'}',
-                textAlign: TextAlign.center,
+        ...sizes.map((size) => TableCell(
+              verticalAlignment: TableCellVerticalAlignment.middle,
+              child: Center(
+                child: Text(
+                  '${details[size]?[key]?.toStringAsFixed(0) ?? '0'}',
+                  textAlign: TextAlign.center,
+                ),
               ),
-            ),
-          ),
-        ),
+            )),
       ],
     );
   }
@@ -222,18 +201,16 @@ Widget _buildItemImage(String imagePath) {
           verticalAlignment: TableCellVerticalAlignment.middle,
           child: _TableHeaderCell(),
         ),
-        ...sizes.map(
-          (size) => TableCell(
-            verticalAlignment: TableCellVerticalAlignment.middle,
-            child: Center(
-              child: Text(
-                size,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontWeight: FontWeight.bold),
+        ...sizes.map((size) => TableCell(
+              verticalAlignment: TableCellVerticalAlignment.middle,
+              child: Center(
+                child: Text(
+                  size,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
-            ),
-          ),
-        ),
+            )),
       ],
     );
   }
@@ -249,102 +226,87 @@ Widget _buildItemImage(String imagePath) {
                 const SizedBox(width: 8),
                 Text(
                   shade,
-                  style: TextStyle(
-                    color: widget.getColor(shade),
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(color: widget.getColor(shade), fontWeight: FontWeight.bold),
                 ),
               ],
             ),
           ),
         ),
-        ...sizes.map(
-          (size) => Padding(
-            padding: const EdgeInsets.all(4),
-            child: TextField(
-              controller: widget.controllers[shade]?[size],
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              onChanged: (_) => widget.updateTotals(),
-              decoration: const InputDecoration(
-                contentPadding: EdgeInsets.symmetric(vertical: 8),
-                hintText: '0',
-                hintStyle: TextStyle(color: Colors.grey),
-                border: InputBorder.none,
+        ...sizes.map((size) => Padding(
+              padding: const EdgeInsets.all(4),
+              child: TextField(
+                controller: widget.controllers[shade]?[size],
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                onChanged: (_) => widget.updateTotals(),
+                decoration: const InputDecoration(
+                  contentPadding: EdgeInsets.symmetric(vertical: 8),
+                  hintText: '0',
+                  hintStyle: TextStyle(color: Colors.grey),
+                  border: InputBorder.none,
+                ),
               ),
-            ),
-          ),
-        ),
+            )),
       ],
     );
   }
 
-Widget _buildActionButtons(BuildContext context) {
-  int styleTotalQty = 0;
-  widget.controllers.forEach((shade, sizes) {
-    sizes.forEach((size, controller) {
-      styleTotalQty += int.tryParse(controller.text) ?? 0;
+  Widget _buildActionButtons(BuildContext context) {
+    int styleTotalQty = 0;
+    widget.controllers.forEach((shade, sizes) {
+      sizes.forEach((size, controller) {
+        styleTotalQty += int.tryParse(controller.text) ?? 0;
+      });
     });
-  });
 
-  return Padding(
-    padding: const EdgeInsets.only(top: 14),
-    child: LayoutBuilder(
-      builder: (context, constraints) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: noteController,
-              decoration: InputDecoration(
-                labelText: 'Note',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(0),
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: noteController,
+            decoration: InputDecoration(
+              labelText: 'Note',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(0)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            readOnly: true,
+            decoration: InputDecoration(
+              labelText: 'Style Total Quantity',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(0)),
+            ),
+            controller: TextEditingController(text: styleTotalQty.toString())
+              ..selection = TextSelection.collapsed(offset: styleTotalQty.toString().length),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildActionButton(
+                  label: 'Update',
+                  icon: Icons.update,
+                  color: AppColors.primaryColor,
+                  onPressed: () => _submitUpdate(context),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              readOnly: true,
-              decoration: InputDecoration(
-                labelText: 'Style Total Quantity',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(0),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildActionButton(
+                  label: 'Remove',
+                  icon: Icons.delete,
+                  color: Colors.grey,
+                  onPressed: () => _submitDelete(context),
                 ),
               ),
-              controller: TextEditingController(text: styleTotalQty.toString())
-                ..selection = TextSelection.collapsed(
-                  offset: styleTotalQty.toString().length,
-                ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildActionButton(
-                    label: 'Update',
-                    icon: Icons.update,
-                    color: AppColors.primaryColor,
-                    onPressed: () => _submitUpdate(context),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildActionButton(
-                    label: 'Remove',
-                    icon: Icons.delete,
-                    color: Colors.grey,
-                    onPressed: () => _submitDelete(context),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        );
-      },
-    ),
-  );
-}
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildActionButton({
     required String label,
@@ -358,9 +320,7 @@ Widget _buildActionButtons(BuildContext context) {
         label: Text(label, style: TextStyle(color: color)),
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: color),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(vertical: 16),
         ),
         onPressed: onPressed,
@@ -369,13 +329,22 @@ Widget _buildActionButtons(BuildContext context) {
   }
 
   Future<void> _submitDelete(BuildContext context) async {
-    List<Future> apiCalls = [];
-    final sizeDetails = _getSizeDetails(widget.items);
-    int totalQty = 0;
-    List<String> updatedData = [];
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Confirm Deletion"),
+          content: const Text("Are you sure you want to delete this item?"),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
+            TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Delete", style: TextStyle(color: Colors.red))),
+          ],
+        );
+      },
+    );
 
-    debugPrint('Submitting update for styleCode: ${widget.styleCode}');
-    //updatedData.add('Shade: $shade, Size: $size, Qty: $qty');
+    if (confirmed != true) return;
+
     final payload = {
       "userId": "Admin",
       "coBrId": "01",
@@ -385,7 +354,7 @@ Widget _buildActionButtons(BuildContext context) {
         "mrp": '0',
         "WSP": '0',
         "size": '',
-        "TotQty": totalQty.toString(),
+        "TotQty": '0',
         "Note": noteController.text,
         "color": "",
         "Qty": " ",
@@ -396,79 +365,34 @@ Widget _buildActionButtons(BuildContext context) {
       "typ": 2,
     };
 
-    apiCalls.add(
-      http.post(
-        Uri.parse(
-          '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
-        ),
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
-      ),
-    );
-
-    if (apiCalls.isEmpty) {
-      showDialog(
-        context: context,
-        builder:
-            (_) => AlertDialog(
-              title: const Text("No Updates"),
-              content: const Text("No quantities have been updated."),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("OK"),
-                ),
-              ],
-            ),
       );
-      return;
-    }
 
-    if (noteController.text.isNotEmpty) {
-      updatedData.add('Note: ${noteController.text}');
-    }
-
-    try {
-      final responses = await Future.wait(apiCalls);
-      if (responses.every((r) => r.statusCode == 200)) {
-        debugPrint('Update successful for styleCode: ${widget.styleCode}');
-        widget.onUpdate(); // Trigger refresh without removing card
+      if (response.statusCode == 200) {
+        widget.onRemove();
       } else {
-        debugPrint(
-          'Update failed for some items: ${responses.map((r) => r.statusCode).toList()}',
-        );
-        showDialog(
-          context: context,
-          builder:
-              (_) => AlertDialog(
-                title: const Text("Error"),
-                content: const Text("Failed to update some order details."),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text("OK"),
-                  ),
-                ],
-              ),
-        );
+        _showErrorDialog(context, "Failed to delete item.");
       }
     } catch (e) {
-      debugPrint('Error during update: $e');
-      showDialog(
-        context: context,
-        builder:
-            (_) => AlertDialog(
-              title: const Text("Error"),
-              content: Text("Failed to submit update: $e"),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("OK"),
-                ),
-              ],
-            ),
-      );
+      _showErrorDialog(context, "Error: $e");
     }
+  }
+
+  void _showErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Error"),
+        content: Text(message),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
+        ],
+      ),
+    );
   }
 
   Future<void> _submitUpdate(BuildContext context) async {
@@ -662,6 +586,7 @@ Widget _buildActionButtons(BuildContext context) {
       );
     }
   }
+
 }
 
 class _ImageErrorWidget extends StatelessWidget {
@@ -675,10 +600,7 @@ class _ImageErrorWidget extends StatelessWidget {
         children: [
           Icon(Icons.image_not_supported, size: 40),
           SizedBox(height: 8),
-          Text(
-            'Image not available',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
+          Text('Image not available', style: TextStyle(fontSize: 12, color: Colors.grey)),
         ],
       ),
     );
@@ -699,24 +621,12 @@ class _TableHeaderCell extends StatelessWidget {
             Positioned(
               left: 12,
               top: 20,
-              child: Text(
-                'Shade',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
-                ),
-              ),
+              child: Text('Shade', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
             ),
             Positioned(
               right: 14,
               bottom: 20,
-              child: Text(
-                'Size',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red,
-                ),
-              ),
+              child: Text('Size', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
             ),
           ],
         ),
@@ -728,14 +638,12 @@ class _TableHeaderCell extends StatelessWidget {
 class _DiagonalLinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = Colors.grey.shade400
-          ..strokeWidth = 1
-          ..style = PaintingStyle.stroke;
+    final paint = Paint()
+      ..color = Colors.grey.shade400
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
     canvas.drawLine(Offset.zero, Offset(size.width, size.height), paint);
   }
-
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
