@@ -26,7 +26,10 @@ class _RegisterPageState extends State<RegisterPage> {
   List<KeyName> salespersonList = [];
   bool isLoadingLedgers = true;
   bool isLoadingSalesperson = true;
-  Map<String, bool> checkedOrders = {}; // Map to track checkbox state by orderNo
+  Map<String, bool> checkedOrders = {};
+  String? selectedOrderStatus;
+  DateTime? deliveryFromDate;
+  DateTime? deliveryToDate;
 
   @override
   void initState() {
@@ -46,12 +49,20 @@ class _RegisterPageState extends State<RegisterPage> {
     });
 
     try {
-      final fetchedLedgersResponse = await ApiService.fetchLedgers(ledCat: 'w', coBrId: '01');
-      final fetchedSalespersonResponse = await ApiService.fetchLedgers(ledCat: 's', coBrId: '01');
+      final fetchedLedgersResponse = await ApiService.fetchLedgers(
+        ledCat: 'w',
+        coBrId: '01',
+      );
+      final fetchedSalespersonResponse = await ApiService.fetchLedgers(
+        ledCat: 's',
+        coBrId: '01',
+      );
 
       setState(() {
         ledgerList = List<KeyName>.from(fetchedLedgersResponse['result'] ?? []);
-        salespersonList = List<KeyName>.from(fetchedSalespersonResponse['result'] ?? []);
+        salespersonList = List<KeyName>.from(
+          fetchedSalespersonResponse['result'] ?? [],
+        );
         isLoadingLedgers = false;
         isLoadingSalesperson = false;
       });
@@ -77,9 +88,10 @@ class _RegisterPageState extends State<RegisterPage> {
         custKey: selectedLedger?.key,
         coBrId: '01',
         salesPerson: selectedSalesperson?.key,
-        status: null,
-        dlvFromDate: null,
-        dlvToDate: null,
+        status: selectedOrderStatus,
+        dlvFromDate:
+            deliveryFromDate == null ? null : deliveryFromDate.toString(),
+        dlvToDate: deliveryToDate == null ? null : deliveryToDate.toString(),
         userName: 'Admin',
         lastSavedOrderId: null,
       );
@@ -91,18 +103,24 @@ class _RegisterPageState extends State<RegisterPage> {
       setState(() {
         isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching orders: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error fetching orders: $e')));
     }
   }
 
   double _calculateTotalAmount() {
-    return registerOrderList.fold(0.0, (sum, registerOrder) => sum + registerOrder.amount);
+    return registerOrderList.fold(
+      0.0,
+      (sum, registerOrder) => sum + registerOrder.amount,
+    );
   }
 
   int _calculateTotalQuantity() {
-    return registerOrderList.fold(0, (sum, registerOrder) => sum + registerOrder.quantity);
+    return registerOrderList.fold(
+      0,
+      (sum, registerOrder) => sum + registerOrder.quantity,
+    );
   }
 
   void _submitRegisterOrders() {
@@ -168,7 +186,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     switch (value) {
                       case 'checkbox':
                         setState(() {
-                          checkedOrders[registerOrder.orderNo] = !checkedOrders[registerOrder.orderNo]!;
+                          checkedOrders[registerOrder.orderNo] =
+                              !checkedOrders[registerOrder.orderNo]!;
                         });
                         break;
                       case 'whatsapp':
@@ -182,59 +201,86 @@ class _RegisterPageState extends State<RegisterPage> {
                         break;
                     }
                   },
-                  itemBuilder: (BuildContext context) => [
-                    PopupMenuItem<String>(
-                      value: 'checkbox',
-                      child: Row(
-                        children: [
-                          Checkbox(
-                            value: checkedOrders[registerOrder.orderNo],
-                            onChanged: (bool? value) {
-                              setState(() {
-                                checkedOrders[registerOrder.orderNo] = value ?? false;
-                              });
-                              Navigator.pop(context);
-                            },
-                            activeColor: AppColors.primaryColor,
-                            checkColor: Colors.white,
-                            side: BorderSide(color: AppColors.primaryColor),
+                  itemBuilder:
+                      (BuildContext context) => [
+                        PopupMenuItem<String>(
+                          value: 'checkbox',
+                          child: Row(
+                            children: [
+                              Checkbox(
+                                value: checkedOrders[registerOrder.orderNo],
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    checkedOrders[registerOrder.orderNo] =
+                                        value ?? false;
+                                  });
+                                  //  Navigator.pop(context);
+                                  setState(() {});
+                                },
+                                activeColor: AppColors.primaryColor,
+                                checkColor: Colors.white,
+                                side: BorderSide(color: AppColors.primaryColor),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'with image',
+                                style: GoogleFonts.poppins(fontSize: 14),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Text('with image', style: GoogleFonts.poppins(fontSize: 14)),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'whatsapp',
-                      child: Row(
-                        children: [
-                          Icon(Icons.message, color: Colors.green, size: 20),
-                          const SizedBox(width: 8),
-                          Text('WhatsApp', style: GoogleFonts.poppins(fontSize: 14)),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'download',
-                      child: Row(
-                        children: [
-                          Icon(Icons.download, color: Colors.blue, size: 20),
-                          const SizedBox(width: 8),
-                          Text('Download', style: GoogleFonts.poppins(fontSize: 14)),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'view',
-                      child: Row(
-                        children: [
-                          Icon(Icons.visibility, color: Colors.purple, size: 20),
-                          const SizedBox(width: 8),
-                          Text('View', style: GoogleFonts.poppins(fontSize: 14)),
-                        ],
-                      ),
-                    ),
-                  ],
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'whatsapp',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.message,
+                                color: Colors.green,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'WhatsApp',
+                                style: GoogleFonts.poppins(fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'download',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.download,
+                                color: Colors.blue,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Download',
+                                style: GoogleFonts.poppins(fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'view',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.visibility,
+                                color: Colors.purple,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'View',
+                                style: GoogleFonts.poppins(fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                   offset: const Offset(0, 40),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -271,18 +317,25 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: registerOrder.deliveryType == 'Approved'
-                        ? Colors.green.withOpacity(0.2)
-                        : Colors.red.withOpacity(0.2),
+                    color:
+                        registerOrder.deliveryType == 'Approved'
+                            ? Colors.green.withOpacity(0.2)
+                            : Colors.red.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     registerOrder.deliveryType,
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: registerOrder.deliveryType == 'Approved' ? Colors.green : Colors.red,
+                      color:
+                          registerOrder.deliveryType == 'Approved'
+                              ? Colors.green
+                              : Colors.red,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -411,7 +464,11 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Future<void> _selectDate(BuildContext context, TextEditingController controller, DateTime? initialDate) async {
+  Future<void> _selectDate(
+    BuildContext context,
+    TextEditingController controller,
+    DateTime? initialDate,
+  ) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate ?? DateTime.now(),
@@ -432,7 +489,11 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  Widget _buildDateInput(TextEditingController controller, String label, DateTime? date) {
+  Widget _buildDateInput(
+    TextEditingController controller,
+    String label,
+    DateTime? date,
+  ) {
     return TextField(
       controller: controller,
       readOnly: true,
@@ -453,7 +514,10 @@ class _RegisterPageState extends State<RegisterPage> {
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: AppColors.primaryColor),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
       ),
     );
   }
@@ -502,77 +566,86 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ),
       ),
-      body: isLoading
-          ? Stack(
-              children: [
-                Container(color: Colors.black.withOpacity(0.2)),
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(3.5),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 8,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'Loading...',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2.5),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      body:
+          isLoading
+              ? Stack(
                 children: [
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildDateInput(fromDateController, 'From Date', fromDate),
+                  Container(color: Colors.black.withOpacity(0.2)),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _buildDateInput(toDateController, 'To Date', toDate),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(3.5),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 8,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  const Divider(),
-                  ...registerOrderList.map(
-                    (order) => Column(
-                      children: [
-                        buildOrderItem(order),
-                        const Divider(),
-                      ],
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Loading...',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
+              )
+              : SingleChildScrollView(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildDateInput(
+                            fromDateController,
+                            'From Date',
+                            fromDate,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _buildDateInput(
+                            toDateController,
+                            'To Date',
+                            toDate,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    const Divider(),
+                    ...registerOrderList.map(
+                      (order) => Column(
+                        children: [buildOrderItem(order), const Divider()],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
       bottomNavigationBar: BottomAppBar(
         height: 60,
         child: Padding(
@@ -585,11 +658,17 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Text('BACK', style: GoogleFonts.montserrat()),
               ),
               TextButton(
-                onPressed: _calculateTotalQuantity() > 0 ? _submitRegisterOrders : null,
+                onPressed:
+                    _calculateTotalQuantity() > 0
+                        ? _submitRegisterOrders
+                        : null,
                 child: Text(
                   'SUBMIT',
                   style: GoogleFonts.montserrat(
-                    color: _calculateTotalQuantity() > 0 ? Colors.black : Colors.grey,
+                    color:
+                        _calculateTotalQuantity() > 0
+                            ? Colors.black
+                            : Colors.grey,
                   ),
                 ),
               ),
@@ -602,20 +681,85 @@ class _RegisterPageState extends State<RegisterPage> {
         child: FloatingActionButton(
           backgroundColor: Colors.blue,
           onPressed: () async {
-            final result = await Navigator.push(
+            await Navigator.push(
               context,
               PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => RegisterFilterPage(),
+                pageBuilder:
+                    (
+                      context,
+                      animation,
+                      secondaryAnimation,
+                    ) => RegisterFilterPage(
+                      ledgerList: ledgerList,
+                      salespersonList: salespersonList,
+                      onApplyFilters: ({
+                        KeyName? selectedLedger,
+                        KeyName? selectedSalesperson,
+                        DateTime? fromDate,
+                        DateTime? toDate,
+                        DateTime? deliveryFromDate,
+                        DateTime? deliveryToDate,
+                        String? selectedOrderStatus,
+                        String? selectedDateRange,
+                      }) {
+                        debugPrint(
+                          'Selected Ledger: ${selectedLedger?.name ?? 'None'}',
+                        );
+                        debugPrint(
+                          'Selected Salesperson: ${selectedSalesperson?.name ?? 'None'}',
+                        );
+                        debugPrint(
+                          'From Date: ${fromDate != null ? DateFormat('dd-MM-yyyy').format(fromDate) : 'Not selected'}',
+                        );
+                        debugPrint(
+                          'To Date: ${toDate != null ? DateFormat('dd-MM-yyyy').format(toDate) : 'Not selected'}',
+                        );
+                        debugPrint(
+                          'Delivery From Date: ${deliveryFromDate != null ? DateFormat('dd-MM-yyyy').format(deliveryFromDate) : 'Not selected'}',
+                        );
+                        debugPrint(
+                          'Delivery To Date: ${deliveryToDate != null ? DateFormat('dd-MM-yyyy').format(deliveryToDate) : 'Not selected'}',
+                        );
+                        debugPrint(
+                          'Order Status: ${selectedOrderStatus ?? 'Not selected'}',
+                        );
+                        debugPrint(
+                          'Date Range: ${selectedDateRange ?? 'Not selected'}',
+                        );
+                        setState(() {
+                          this.selectedLedger = selectedLedger;
+                          this.selectedSalesperson = selectedSalesperson;
+                          this.fromDate = fromDate;
+                          this.toDate = toDate;
+                          this.deliveryFromDate = deliveryFromDate;
+                          this.deliveryToDate = deliveryToDate;
+                          this.selectedOrderStatus = selectedOrderStatus;
+                          //this.selectedDateRange = selectedDateRange;
+                        });
+                        fetchOrders();
+                      },
+                    ),
                 settings: RouteSettings(
                   arguments: {
                     'ledgerList': ledgerList,
                     'salespersonList': salespersonList,
                     'selectedLedger': selectedLedger,
                     'selectedSalesperson': selectedSalesperson,
+                    'fromDate': fromDate,
+                    'toDate': toDate,
+                    'deliveryFromDate': deliveryFromDate,
+                    'deliveryToDate': deliveryToDate,
+                    'selectedOrderStatus': selectedOrderStatus,
+                    //'selectedDateRange': selectedDateRange,
                   },
                 ),
-                transitionDuration: Duration(milliseconds: 500),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                transitionDuration: const Duration(milliseconds: 500),
+                transitionsBuilder: (
+                  context,
+                  animation,
+                  secondaryAnimation,
+                  child,
+                ) {
                   return ScaleTransition(
                     scale: animation,
                     alignment: Alignment.bottomRight,
@@ -624,14 +768,52 @@ class _RegisterPageState extends State<RegisterPage> {
                 },
               ),
             );
-            if (result != null) {
-              setState(() {
-                selectedLedger = result['ledger'];
-                selectedSalesperson = result['salesperson'];
-              });
-              fetchOrders();
-            }
           },
+          // onPressed: () async {
+          //   final result = await Navigator.push(
+          //     context,
+          //     PageRouteBuilder(
+          //       pageBuilder:
+          //           (context, animation, secondaryAnimation) =>
+          //               RegisterFilterPage(),
+          //       settings: RouteSettings(
+          //         arguments: {
+          //           'ledgerList': ledgerList,
+          //           'salespersonList': salespersonList,
+          //           'selectedLedger': selectedLedger,
+          //           'selectedSalesperson': selectedSalesperson,
+          //           'fromDate': fromDate,
+          //           'toDate': toDate,
+          //           'deliveryFromDate': deliveryFromDate,
+          //           'deliveryToDate': deliveryToDate,
+          //           'selectedOrderStatus': selectedOrderStatus,
+          //         },
+          //       ),
+          //       transitionDuration: Duration(milliseconds: 500),
+          //       transitionsBuilder: (
+          //         context,
+          //         animation,
+          //         secondaryAnimation,
+          //         child,
+          //       ) {
+          //         return ScaleTransition(
+          //           scale: animation,
+          //           alignment: Alignment.bottomRight,
+          //           child: FadeTransition(opacity: animation, child: child),
+          //         );
+          //       },
+          //     ),
+          //   );
+          //   if (result != null) {
+          //     print(result['ledger']);
+          //     print(result['salesperson']);
+          //     setState(() {
+          //       selectedLedger = result['selectedLedger'];
+          //       selectedSalesperson = result['selectedSalesperson'];
+          //     });
+          //     fetchOrders();
+          //   }
+          // },
           child: const Icon(Icons.filter_list, color: Colors.white),
           tooltip: 'Filter Orders',
         ),

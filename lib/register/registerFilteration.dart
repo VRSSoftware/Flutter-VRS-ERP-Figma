@@ -1,287 +1,412 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:dropdown_search/dropdown_search.dart';
-import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/keyName.dart';
-import 'package:vrs_erp_figma/services/app_services.dart';
-import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 
 class RegisterFilterPage extends StatefulWidget {
+  final List<KeyName> ledgerList;
+  final List<KeyName> salespersonList;
+  final Function({
+    KeyName? selectedLedger,
+    KeyName? selectedSalesperson,
+    DateTime? fromDate,
+    DateTime? toDate,
+    DateTime? deliveryFromDate,
+    DateTime? deliveryToDate,
+    String? selectedOrderStatus,
+    String? selectedDateRange,
+  }) onApplyFilters;
+
+  const RegisterFilterPage({
+    Key? key,
+    required this.ledgerList,
+    required this.salespersonList,
+    required this.onApplyFilters,
+  }) : super(key: key);
+
   @override
-  State<RegisterFilterPage> createState() => _FilterPageState();
+  State<RegisterFilterPage> createState() => _RegisterFilterPageState();
 }
-class _FilterPageState extends State<RegisterFilterPage> {
+
+class _RegisterFilterPageState extends State<RegisterFilterPage> {
   List<KeyName> ledgerList = [];
   List<KeyName> salespersonList = [];
+
   KeyName? selectedLedger;
   KeyName? selectedSalesperson;
-  bool isLedgerExpanded = true;
-  bool isSalespersonExpanded = true;
 
+  String? selectedOrderStatus;
+  DateTime? fromDate;
+  DateTime? toDate;
+  DateTime? deliveryFromDate;
+  DateTime? deliveryToDate;
+  String? selectedDateRange;
 
-@override
-  void initState() {
-    super.initState();
-    // Retrieve arguments passed from RegisterPage
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-      if (args != null) {
-        setState(() {
-          ledgerList = args['ledgerList'] ?? [];
-          salespersonList = args['salespersonList'] ?? [];
-          selectedLedger = args['selectedLedger'];
-          selectedSalesperson = args['selectedSalesperson'];
-        });
-      }
+  final List<String> dateRangeOptions = [
+    'Today',
+    'Yesterday',
+    'This Week',
+    'Last Week',
+    'This Month',
+    'Last Month',
+    'Custom',
+  ];
+
+  final List<String> orderStatusOptions = [
+    'All',
+    'Draft',
+    'Approved',
+    'Dispatched',
+    'Cancelled',
+  ];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+    if (args != null) {
+      ledgerList = List<KeyName>.from(args['ledgerList'] ?? widget.ledgerList);
+      salespersonList = List<KeyName>.from(args['salespersonList'] ?? widget.salespersonList);
+    } else {
+      ledgerList = widget.ledgerList;
+      salespersonList = widget.salespersonList;
+    }
+  }
+
+  Future<void> _pickDate(
+    BuildContext context,
+    bool isFromDate,
+    bool isDeliveryDate,
+  ) async {
+    final initialDate = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: isFromDate
+          ? (isDeliveryDate
+              ? deliveryFromDate ?? initialDate
+              : fromDate ?? initialDate)
+          : (isDeliveryDate
+              ? deliveryToDate ?? initialDate
+              : toDate ?? initialDate),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null) {
+      setState(() {
+        if (isDeliveryDate) {
+          if (isFromDate) {
+            deliveryFromDate = picked;
+            // Ensure deliveryToDate is not before deliveryFromDate
+            if (deliveryToDate != null && deliveryToDate!.isBefore(picked)) {
+              deliveryToDate = picked;
+            }
+          } else {
+            deliveryToDate = picked;
+          }
+        } else {
+          if (isFromDate) {
+            fromDate = picked;
+            // Ensure toDate is not before fromDate
+            if (toDate != null && toDate!.isBefore(picked)) {
+              toDate = picked;
+            }
+          } else {
+            toDate = picked;
+          }
+        }
+        // If a date is manually picked, set range to Custom
+        selectedDateRange = 'Custom';
+      });
+    }
+  }
+
+  void _setDateRange(String range) {
+    final now = DateTime.now();
+    DateTime start, end;
+    switch (range) {
+      case 'Today':
+        start = end = now;
+        break;
+      case 'Yesterday':
+        start = end = now.subtract(Duration(days: 1));
+        break;
+      case 'This Week':
+        start = now.subtract(Duration(days: now.weekday - 1));
+        end = start.add(Duration(days: 6));
+        break;
+      case 'Last Week':
+        end = now.subtract(Duration(days: now.weekday));
+        start = end.subtract(Duration(days: 6));
+        break;
+      case 'This Month':
+        start = DateTime(now.year, now.month, 1);
+        end = DateTime(now.year, now.month + 1, 0);
+        break;
+      case 'Last Month':
+        start = DateTime(now.year, now.month - 1, 1);
+        end = DateTime(now.year, now.month, 0);
+        break;
+      default:
+        return;
+    }
+    setState(() {
+      fromDate = start;
+      toDate = end;
+      selectedDateRange = range;
     });
   }
 
-
-  // Common ExpansionTile Widget
-Widget _buildExpansionTile({
-    required String title,
-    required List<Widget> children,
-    bool initiallyExpanded = true,
-    ValueChanged<bool>? onExpansionChanged,
-  }) {
-    return CustomExpansionTile(
-      title: title,
-      initiallyExpanded: initiallyExpanded,
-      onExpansionChanged: onExpansionChanged,
-      children: children,
-    );
+  String _formatDate(DateTime? date) {
+    return date != null ? DateFormat('dd-MM-yyyy').format(date) : '';
   }
-@override
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      drawer: DrawerScreen(),
-      appBar: AppBar(
-        title: Text('Filter Orders', style: TextStyle(color: Colors.white)),
-        backgroundColor: AppColors.primaryColor,
-        elevation: 1,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      appBar: AppBar(title: const Text('Filter Orders')),
       body: Stack(
         children: [
           SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Ledger Section
-                _buildExpansionTile(
-                  title: 'Select Ledger',
-                  initiallyExpanded: isLedgerExpanded,
-                  onExpansionChanged: (expanded) => setState(() => isLedgerExpanded = expanded),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(labelText: 'Select Date Range'),
+                  value: selectedDateRange,
+                  items: dateRangeOptions
+                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedDateRange = value;
+                      if (value != 'Custom') _setDateRange(value!);
+                    });
+                  },
+                ),
+                const SizedBox(height: 10),
+
+                Row(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      child: DropdownSearch<KeyName>(
-                        items: ledgerList,
-                        selectedItem: selectedLedger,
-                        itemAsString: (KeyName? u) => u?.name ?? '',
-                        onChanged: (KeyName? value) {
-                          setState(() {
-                            selectedLedger = value;
-                          });
-                        },
-                        popupProps: PopupPropsMultiSelection.menu(
-                          showSearchBox: true,
-                          searchFieldProps: TextFieldProps(
-                            decoration: InputDecoration(
-                              hintText: 'Search ledger',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: AppColors.primaryColor),
-                              ),
-                            ),
-                          ),
+                    Expanded(
+                      child: TextFormField(
+                        readOnly: true,
+                        decoration: const InputDecoration(labelText: 'From Date'),
+                        controller: TextEditingController(
+                          text: _formatDate(fromDate),
                         ),
-                        dropdownBuilder: (context, selectedItem) => Text(
-                          selectedItem == null ? 'Select ledger' : selectedItem.name,
+                        onTap: () => _pickDate(context, true, false),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextFormField(
+                        readOnly: true,
+                        decoration: const InputDecoration(labelText: 'To Date'),
+                        controller: TextEditingController(
+                          text: _formatDate(toDate),
                         ),
-                        dropdownDecoratorProps: DropDownDecoratorProps(
-                          dropdownSearchDecoration: InputDecoration(
-                            labelText: 'Select Ledger',
-                            labelStyle: TextStyle(color: Color(0xFF87898A)),
-                            floatingLabelStyle: TextStyle(color: AppColors.primaryColor),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: AppColors.secondaryColor),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: AppColors.primaryColor),
-                            ),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          ),
-                        ),
+                        onTap: () => _pickDate(context, false, false),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 16),
 
-                // Salesperson Section
-                _buildExpansionTile(
-                  title: 'Select Salesperson',
-                  initiallyExpanded: isSalespersonExpanded,
-                  onExpansionChanged: (expanded) => setState(() => isSalespersonExpanded = expanded),
+                const SizedBox(height: 16),
+                Row(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      child: DropdownSearch<KeyName>(
-                        items: salespersonList,
-                        selectedItem: selectedSalesperson,
-                        itemAsString: (KeyName? u) => u?.name ?? '',
-                        onChanged: (KeyName? value) {
-                          setState(() {
-                            selectedSalesperson = value;
-                          });
-                        },
-                        popupProps: PopupPropsMultiSelection.menu(
-                          showSearchBox: true,
-                          searchFieldProps: TextFieldProps(
-                            decoration: InputDecoration(
-                              hintText: 'Search salesperson',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: AppColors.primaryColor),
-                              ),
-                            ),
-                          ),
+                    Expanded(
+                      child: TextFormField(
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Delivery From Date',
                         ),
-                        dropdownBuilder: (context, selectedItem) => Text(
-                          selectedItem == null ? 'Select salesperson' : selectedItem.name,
+                        controller: TextEditingController(
+                          text: _formatDate(deliveryFromDate),
                         ),
-                        dropdownDecoratorProps: DropDownDecoratorProps(
-                          dropdownSearchDecoration: InputDecoration(
-                            labelText: 'Select Salesperson',
-                            labelStyle: TextStyle(color: Color(0xFF87898A)),
-                            floatingLabelStyle: TextStyle(color: AppColors.primaryColor),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: AppColors.secondaryColor),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: AppColors.primaryColor),
-                            ),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          ),
+                        onTap: () => _pickDate(context, true, true),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextFormField(
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Delivery To Date',
                         ),
+                        controller: TextEditingController(
+                          text: _formatDate(deliveryToDate),
+                        ),
+                        onTap: () => _pickDate(context, false, true),
                       ),
                     ),
                   ],
+                ),
+
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(labelText: 'Order Status'),
+                  value: orderStatusOptions.contains(selectedOrderStatus) ? selectedOrderStatus : null,
+                  items: orderStatusOptions
+                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                      .toList(),
+                  onChanged: (value) {
+                    debugPrint("Selected status value: $value");
+                    setState(() {
+                      selectedOrderStatus = value;
+                    });
+                    debugPrint("Updated selectedOrderStatus: $selectedOrderStatus");
+                  },
+                  hint: const Text('Select Order Status'),
+                ),
+
+                const SizedBox(height: 16),
+                DropdownSearch<KeyName>(
+                  items: ledgerList,
+                  selectedItem: selectedLedger,
+                  itemAsString: (KeyName? u) => u?.name ?? '',
+                  onChanged: (value) => setState(() => selectedLedger = value),
+                  popupProps: const PopupProps.menu(showSearchBox: true),
+                  dropdownDecoratorProps: const DropDownDecoratorProps(
+                    dropdownSearchDecoration: InputDecoration(
+                      labelText: 'Select Party',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+                DropdownSearch<KeyName>(
+                  items: salespersonList,
+                  selectedItem: selectedSalesperson,
+                  itemAsString: (KeyName? u) => u?.name ?? '',
+                  onChanged: (value) => setState(() => selectedSalesperson = value),
+                  popupProps: const PopupProps.menu(showSearchBox: true),
+                  dropdownDecoratorProps: const DropDownDecoratorProps(
+                    dropdownSearchDecoration: InputDecoration(
+                      labelText: 'Select Salesperson',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
 
-          // Apply Filters Button
           Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  padding: EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+            bottom: 16,
+            left: 16,
+            right: 16,
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Validate date ranges
+                      if (fromDate != null && toDate != null && toDate!.isBefore(fromDate!)) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('To Date cannot be before From Date')),
+                        );
+                        return;
+                      }
+                      if (deliveryFromDate != null &&
+                          deliveryToDate != null &&
+                          deliveryToDate!.isBefore(deliveryFromDate!)) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Delivery To Date cannot be before Delivery From Date')),
+                        );
+                        return;
+                      }
+
+                      // Debug print selected values
+                      debugPrint("=== FILTER VALUES SELECTED ===");
+                      debugPrint(
+                        "Party: ${selectedLedger?.name ?? 'None'} (${selectedLedger?.key ?? 'N/A'})",
+                      );
+                      debugPrint(
+                        "Salesperson: ${selectedSalesperson?.name ?? 'None'} (${selectedSalesperson?.key ?? 'N/A'})",
+                      );
+                      debugPrint(
+                        "From Date: ${fromDate != null ? DateFormat('dd-MM-yyyy').format(fromDate!) : 'Not selected'}",
+                      );
+                      debugPrint(
+                        "To Date: ${toDate != null ? DateFormat('dd-MM-yyyy').format(toDate!) : 'Not selected'}",
+                      );
+                      debugPrint(
+                        "Delivery From Date: ${deliveryFromDate != null ? DateFormat('dd-MM-yyyy').format(deliveryFromDate!) : 'Not selected'}",
+                      );
+                      debugPrint(
+                        "Delivery To Date: ${deliveryToDate != null ? DateFormat('dd-MM-yyyy').format(deliveryToDate!) : 'Not selected'}",
+                      );
+                      debugPrint(
+                        "Order Status: ${selectedOrderStatus ?? 'Not selected'}",
+                      );
+
+                      // Call the callback with selected values
+                      widget.onApplyFilters(
+                        selectedLedger: selectedLedger,
+                        selectedSalesperson: selectedSalesperson,
+                        fromDate: fromDate,
+                        toDate: toDate,
+                        deliveryFromDate: deliveryFromDate,
+                        deliveryToDate: deliveryToDate,
+                        selectedOrderStatus: selectedOrderStatus,
+                        selectedDateRange: selectedDateRange,
+                      );
+
+                      // Navigate back
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3F51B5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      child: Text(
+                        'Apply Filters',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
                   ),
                 ),
-                onPressed: () {
-                  Map<String, dynamic> selectedFilters = {
-                    'ledger': selectedLedger,
-                    'salesperson': selectedSalesperson,
-                  };
-                  Navigator.pop(context, selectedFilters);
-                },
-                child: Text(
-                  'Apply Filters',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        selectedLedger = null;
+                        selectedSalesperson = null;
+                        fromDate = null;
+                        toDate = null;
+                        deliveryFromDate = null;
+                        deliveryToDate = null;
+                        selectedOrderStatus = null;
+                        selectedDateRange = 'Custom';
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      child: Text(
+                        'Clear Filters',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-// Custom ExpansionTile (same as the reference code)
-class CustomExpansionTile extends StatefulWidget {
-  final String title;
-  final List<Widget> children;
-  final bool initiallyExpanded;
-  final ValueChanged<bool>? onExpansionChanged;
-
-  const CustomExpansionTile({
-    required this.title,
-    required this.children,
-    this.initiallyExpanded = true,
-    this.onExpansionChanged,
-  });
-
-  @override
-  _CustomExpansionTileState createState() => _CustomExpansionTileState();
-}
-
-class _CustomExpansionTileState extends State<CustomExpansionTile> {
-  late bool _isExpanded;
-
-  @override
-  void initState() {
-    super.initState();
-    _isExpanded = widget.initiallyExpanded;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Theme(
-      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-      child: ExpansionTile(
-        title: Text(
-          widget.title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.primaryColor,
-          ),
-        ),
-        initiallyExpanded: widget.initiallyExpanded,
-        onExpansionChanged: (expanded) {
-          setState(() => _isExpanded = expanded);
-          widget.onExpansionChanged?.call(expanded);
-        },
-        tilePadding: EdgeInsets.symmetric(horizontal: 16),
-        backgroundColor: Colors.grey.withOpacity(0.1),
-        collapsedBackgroundColor: Colors.grey.withOpacity(0.2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        collapsedShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        trailing: RotationTransition(
-          turns: AlwaysStoppedAnimation(_isExpanded ? 0.5 : 0),
-          child: Icon(
-            Icons.keyboard_arrow_down,
-            size: 24,
-            color: AppColors.primaryColor,
-          ),
-        ),
-        children: widget.children,
       ),
     );
   }
