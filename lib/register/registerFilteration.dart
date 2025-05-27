@@ -173,7 +173,16 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
       appBar: AppBar(
         title: const Text('Filter Orders'),
         backgroundColor: AppColors.primaryColor,
+        iconTheme: const IconThemeData(
+          color: Colors.white,
+        ), // <-- back icon color
+        titleTextStyle: const TextStyle(
+          color: Colors.white, // <-- title text color
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
       ),
+
       body:
       // Stack(
       //   children: [
@@ -377,7 +386,7 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
                       Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3F51B5),
+                      backgroundColor: AppColors.primaryColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
