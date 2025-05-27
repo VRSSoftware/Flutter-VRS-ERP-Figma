@@ -115,6 +115,7 @@ flutter:
     - assets/images/garment.png
     - assets/images/default.png
     - assets/images/barcode.png
+    - assets/images/register.png
     - assets/garments/image_01.png
     - assets/garments/image_02.png
     - assets/garments/image_03.png

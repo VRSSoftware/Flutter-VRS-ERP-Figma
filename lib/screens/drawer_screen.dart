@@ -15,7 +15,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
     'Home': 'assets/images/home.png',
     'Order Booking': 'assets/images/orderbooking.png',
     'Catalog': 'assets/images/catalog.png',
-    'Order Register':'assets/images/catalog.png'
+    'Order Register':'assets/images/register.png'
   };
 
   @override
