@@ -984,99 +984,153 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
     );
   }
 
-  Future<void> _submitAllOrders() async {
-    List<Future> apiCalls = [];
-      Set<String> processedStyles = {}; 
-    for (var catalog in widget.catalogs) {
-      final controllers = controllersMap[catalog.styleCode];
-      final noteController = noteControllersMap[catalog.styleCode];
-      final styleCode = styleCodeMap[catalog.styleCode] ?? '';
-      final sizes = sizesMap[catalog.styleCode] ?? [];
+Future<void> _submitAllOrders() async {
+  List<Future<http.Response>> apiCalls = [];
+  List<String> apiCallStyles = [];
+  final cartModel = Provider.of<CartModel>(context, listen: false);
+  Set<String> processedStyles = {};
 
-      if (controllers != null) {
-        for (var colorEntry in controllers.entries) {
-          String color = colorEntry.key;
-          for (var sizeEntry in colorEntry.value.entries) {
-            String size = sizeEntry.key;
-            String qty = sizeEntry.value.text;
-            if (qty.isNotEmpty &&
-                int.tryParse(qty) != null &&
-                int.parse(qty) > 0) {
-              final payload = {
-                "userId": userId,
-                "coBrId": coBrId,
-                "fcYrId": fcYrId,
-                "data": {
-                  "designcode": styleCode,
-                  "mrp":
-                      sizeMrpMap[catalog.styleCode]?[size]?.toStringAsFixed(0) ??
-                          '0',
-                  "WSP":
-                      sizeWspMap[catalog.styleCode]?[size]?.toStringAsFixed(0) ??
-                          '0',
-                  "size": size,
-                  "TotQty": getTotalQty(catalog.styleCode).toString(),
-                  "Note": noteController?.text ?? '',
-                  "color": color,
-                  "Qty": qty,
-                  "cobrid": coBrId,
-                  "user": userId.toLowerCase(),
-                  "barcode": "",
-                },
-                "typ": 0,
-              };
+  for (var catalog in widget.catalogs) {
+    final controllers = controllersMap[catalog.styleCode];
+    final noteController = noteControllersMap[catalog.styleCode];
+    final styleCode = styleCodeMap[catalog.styleCode] ?? '';
+    final sizes = sizesMap[catalog.styleCode] ?? [];
 
-              apiCalls.add(
-                http.post(
-                  Uri.parse(
-                    '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
-                  ),
-                  headers: {'Content-Type': 'application/json'},
-                  body: jsonEncode(payload),
+    // Skip if the item is already in the cart
+    if (cartModel.addedItems.contains(styleCode)) {
+      continue;
+    }
+
+    if (controllers != null) {
+      for (var colorEntry in controllers.entries) {
+        String color = colorEntry.key;
+        for (var sizeEntry in colorEntry.value.entries) {
+          String size = sizeEntry.key;
+          String qty = sizeEntry.value.text;
+          if (qty.isNotEmpty &&
+              int.tryParse(qty) != null &&
+              int.parse(qty) > 0) {
+            final payload = {
+              "userId": userId,
+              "coBrId": coBrId,
+              "fcYrId": fcYrId,
+              "data": {
+                "designcode": styleCode,
+                "mrp":
+                    sizeMrpMap[catalog.styleCode]?[size]?.toStringAsFixed(0) ??
+                        '0',
+                "WSP":
+                    sizeWspMap[catalog.styleCode]?[size]?.toStringAsFixed(0) ??
+                        '0',
+                "size": size,
+                "TotQty": getTotalQty(catalog.styleCode).toString(),
+                "Note": noteController?.text ?? '',
+                "color": color,
+                "Qty": qty,
+                "cobrid": coBrId,
+                "user": userId.toLowerCase(),
+                "barcode": "",
+              },
+              "typ": 0,
+            };
+
+            apiCalls.add(
+              http.post(
+                Uri.parse(
+                  '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
                 ),
-              );
-            }
+                headers: {'Content-Type': 'application/json'},
+                body: jsonEncode(payload),
+              ),
+            );
+            apiCallStyles.add(styleCode);
           }
         }
       }
     }
+  }
 
-    try {
-      final responses = await Future.wait(apiCalls);
-      if (responses.every((r) => r.statusCode == 200)) {
-             processedStyles = widget.catalogs.map((c) => c.styleCode).toSet();
-      
-      // Update provider
-      Provider.of<CartModel>(context, listen: false)
-        ..addItems(processedStyles)
-        ..updateCount(Provider.of<CartModel>(context, listen: false).count + processedStyles.length);
-          widget.onSuccess(); 
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-              title: const Text("Success"),
-              content: const Text("All orders submitted successfully."),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pop(context);
-                  },
-                  child: const Text("OK"),
-                ),
-              ],
+  if (apiCalls.isEmpty) {
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("Warning"),
+          content: const Text("No new items with valid quantities to submit."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
             ),
-          );
+          ],
+        ),
+      );
+    }
+    return;
+  }
+
+  try {
+    final responses = await Future.wait(apiCalls);
+    final successfulStyles = <String>{};
+
+    for (int i = 0; i < responses.length; i++) {
+      final response = responses[i];
+      if (response.statusCode == 200) {
+        try {
+          // Try parsing as JSON first
+          final responseBody = jsonDecode(response.body);
+          if (responseBody is Map<String, dynamic> && responseBody['success'] == true) {
+            successfulStyles.add(apiCallStyles[i]);
+            cartModel.addItem(apiCallStyles[i]);
+          }
+        } catch (e) {
+          // Handle plain text "Success" response
+          if (response.body.trim() == "Success") {
+            successfulStyles.add(apiCallStyles[i]);
+            cartModel.addItem(apiCallStyles[i]);
+          } else {
+            print('Failed to parse response for style ${apiCallStyles[i]}: $e, response: ${response.body}');
+          }
         }
+      } else {
+        print('API call failed for style ${apiCallStyles[i]}: ${response.statusCode}, response: ${response.body}');
       }
-    } catch (e) {
+    }
+
+    if (successfulStyles.isNotEmpty) {
+      cartModel.updateCount(cartModel.count + successfulStyles.length);
+      processedStyles = successfulStyles;
+      widget.onSuccess();
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text("Success"),
+            content: Text(
+              "Successfully submitted ${successfulStyles.length} item${successfulStyles.length > 1 ? 's' : ''}.",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                   Navigator.pop(context);
+                    Navigator.pop(context);
+
+                },
+                // Pop only the dialog
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+      }
+    } else {
       if (mounted) {
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
             title: const Text("Error"),
-            content: Text("Failed to submit orders: $e"),
+            content: const Text("No items were successfully submitted."),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -1087,8 +1141,24 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
         );
       }
     }
+  } catch (e) {
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("Error"),
+          content: Text("Failed to submit orders: $e"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+    }
   }
-
+}
 }
 
 class _TableHeaderCell extends StatelessWidget {

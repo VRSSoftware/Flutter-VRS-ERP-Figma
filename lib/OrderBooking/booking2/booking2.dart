@@ -212,11 +212,18 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 Future<void> _submitAllOrders() async {
   List<Future<http.Response>> apiCalls = [];
   List<String> apiCallStyles = [];
+  final cartModel = Provider.of<CartModel>(context, listen: false);
 
+  // Filter out already added items to prevent duplicate submissions
   for (var catalogOrder in catalogOrderList) {
     final catalog = catalogOrder.catalog;
     final matrix = catalogOrder.orderMatrix;
     final styleCode = catalog.styleCode;
+
+    // Skip if the item is already in the cart
+    if (cartModel.addedItems.contains(styleCode)) {
+      continue;
+    }
 
     final quantityMap = quantities[catalog.styleKey];
     if (quantityMap != null) {
@@ -265,45 +272,13 @@ Future<void> _submitAllOrders() async {
     }
   }
 
-  try {
-    final responses = await Future.wait(apiCalls);
-    final successfulStyles = <String>{};
-    
-    for (int i = 0; i < responses.length; i++) {
-      if (responses[i].statusCode == 200) {
-        successfulStyles.add(apiCallStyles[i]);
-      }
-    }
-
-    if (successfulStyles.isNotEmpty) {
-      final cartModel = Provider.of<CartModel>(context, listen: false);
-      cartModel.addItems(successfulStyles);
-      cartModel.updateCount(cartModel.count + successfulStyles.length);
-      
-      widget.onSuccess();
-
+  if (apiCalls.isEmpty) {
+    if (mounted) {
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          title: const Text("Partial Success"),
-          content: Text("Successfully submitted ${successfulStyles.length} items"),
-          actions: [
-            TextButton(
-              onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pop(context);
-                  },
-              child: const Text("OK"),
-            ),
-          ],
-        ),
-      );
-    } else {
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text("Error"),
-          content: const Text("No items were successfully submitted"),
+          title: const Text("Warning"),
+          content: const Text("No new items to submit."),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -313,23 +288,95 @@ Future<void> _submitAllOrders() async {
         ),
       );
     }
-  } catch (e) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Error"),
-        content: Text("Failed to submit orders: $e"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
+    return;
+  }
+
+  try {
+    final responses = await Future.wait(apiCalls);
+    final successfulStyles = <String>{};
+
+    for (int i = 0; i < responses.length; i++) {
+      final response = responses[i];
+      if (response.statusCode == 200) {
+        try {
+          // Try parsing as JSON first
+          final responseBody = jsonDecode(response.body);
+          if (responseBody is Map<String, dynamic> && responseBody['success'] == true) {
+            successfulStyles.add(apiCallStyles[i]);
+            cartModel.addItem(apiCallStyles[i]);
+          }
+        } catch (e) {
+          // Handle plain text "Success" response
+          if (response.body.trim() == "Success") {
+            successfulStyles.add(apiCallStyles[i]);
+            cartModel.addItem(apiCallStyles[i]);
+          } else {
+            print('Failed to parse response for style ${apiCallStyles[i]}: $e, response: ${response.body}');
+          }
+        }
+      } else {
+        print('API call failed for style ${apiCallStyles[i]}: ${response.statusCode}, response: ${response.body}');
+      }
+    }
+
+    if (successfulStyles.isNotEmpty) {
+      cartModel.updateCount(cartModel.count + successfulStyles.length);
+      widget.onSuccess();
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text("Success"),
+            content: Text("Successfully submitted ${successfulStyles.length} item${successfulStyles.length > 1 ? 's' : ''}"),
+            actions: [
+              TextButton(
+                onPressed: () {
+                   Navigator.pop(context);
+                    Navigator.pop(context);
+
+                }, // Pop only the dialog
+                child: const Text("OK"),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        );
+      }
+    } else {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text("Error"),
+            content: const Text("No items were successfully submitted"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  } catch (e) {
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("Error"),
+          content: Text("Failed to submit orders: $e"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+    }
   }
 }
-  
   @override
   Widget build(BuildContext context) {
     return Scaffold(

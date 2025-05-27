@@ -333,37 +333,36 @@ class ApiService {
     }
   }
 
-  static Future<List<String>> fetchAddedItems({
-    required String coBrId,
-    required String userId,
-    required String fcYrId,
-    required String barcode,
-  }) async {
-    final url = Uri.parse(
-      '${AppConstants.BASE_URL}/orderBooking/GetAddedItems',
-    );
+static Future<List<String>> fetchAddedItems({
+  required String coBrId,
+  required String userId,
+  required String fcYrId,
+  required String barcode,
+}) async {
+  final url = Uri.parse(
+    '${AppConstants.BASE_URL}/orderBooking/GetAddedItems',
+  );
 
-    final body = {
-      "coBrId": coBrId,
-      "userId": "Admin",
-      "fcYrId": fcYrId,
-      // "barcode": barcode,
-    };
-    print("aaaaaaaaaaa ${body}");
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(body),
-    );
-    print("DDDDDDDDDDDDDDDresponse body:${response.body}");
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.cast<String>(); // Ensures it's List<String>
-    } else {
-      throw Exception('Failed to fetch added items');
-    }
+  final body = {
+    "coBrId": coBrId,
+    "userId": userId, // Ensure this is correct
+    "fcYrId": fcYrId,
+     "barcode": barcode,
+  };
+  print("Request body: $body");
+  final response = await http.post(
+    url,
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode(body),
+  );
+  print("Response body: ${response.body}");
+  if (response.statusCode == 200) {
+    final List<dynamic> data = jsonDecode(response.body);
+    return data.cast<String>(); // Ensure the response is a list of style codes
+  } else {
+    throw Exception('Failed to fetch added items: ${response.statusCode}');
   }
-
+}
   static Future<Map<String, dynamic>> fetchConsinees({
     required String key,
     required String CoBrId,

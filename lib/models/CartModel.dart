@@ -1,15 +1,11 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 class CartModel extends ChangeNotifier {
   int _count = 0;
+  Set<String> _addedItems = {};
 
   int get count => _count;
-
-   Set<String> _addedItems = {};
-
   Set<String> get addedItems => _addedItems;
-
-
 
   void updateCount(int newCount) {
     _count = newCount;
@@ -26,18 +22,28 @@ class CartModel extends ChangeNotifier {
     notifyListeners();
   }
 
-
   void reset() {
     _count = 0;
+    _addedItems.clear();
     notifyListeners();
   }
 
-    void refreshAddedItems() {
+  void addItem(String styleCode) {
+    _addedItems.add(styleCode);
     notifyListeners();
   }
 
-    void addItems(Set<String> newItems) {
-    _addedItems = _addedItems.union(newItems);
+  void updateAddedItems(Set<String> newItems) {
+    _addedItems = newItems;
+    notifyListeners();
+  }
+
+  void clearAddedItems() {
+    _addedItems.clear();
+    notifyListeners();
+  }
+
+  void refreshAddedItems() {
     notifyListeners();
   }
 }
