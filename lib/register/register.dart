@@ -184,51 +184,68 @@ class _RegisterPageState extends State<RegisterPage> {
                   icon: const Icon(Icons.more_vert, color: Colors.black54),
                   onSelected: (value) {
                     switch (value) {
-                      case 'checkbox':
-                        setState(() {
-                          checkedOrders[registerOrder.orderNo] =
-                              !checkedOrders[registerOrder.orderNo]!;
-                        });
-                        break;
                       case 'whatsapp':
                         // Implement WhatsApp sharing logic
+                        Navigator.pop(context); // Close menu for other actions
                         break;
                       case 'download':
                         // Implement download logic
+                        Navigator.pop(context); // Close menu for other actions
                         break;
                       case 'view':
                         // Implement view logic
+                        Navigator.pop(context); // Close menu for other actions
                         break;
                     }
                   },
                   itemBuilder:
                       (BuildContext context) => [
-                        PopupMenuItem<String>(
-                          value: 'checkbox',
-                          child: Row(
-                            children: [
-                              Checkbox(
-                                value: checkedOrders[registerOrder.orderNo],
-                                onChanged: (bool? value) {
-                                  setState(() {
-                                    checkedOrders[registerOrder.orderNo] =
-                                        value ?? false;
-                                  });
-                                  //  Navigator.pop(context);
-                                  setState(() {});
-                                },
-                                activeColor: AppColors.primaryColor,
-                                checkColor: Colors.white,
-                                side: BorderSide(color: AppColors.primaryColor),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'with image',
-                                style: GoogleFonts.poppins(fontSize: 14),
-                              ),
-                            ],
-                          ),
-                        ),
+                 PopupMenuItem<String>(
+  enabled: false,
+  padding: const EdgeInsets.symmetric(horizontal: 12), // match others
+  child: StatefulBuilder(
+    builder: (BuildContext context, StateSetter setMenuState) {
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          final current = checkedOrders[registerOrder.orderNo] ?? false;
+          setState(() {
+            checkedOrders[registerOrder.orderNo] = !current;
+          });
+          setMenuState(() {});
+        },
+        child: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: Checkbox(
+                value: checkedOrders[registerOrder.orderNo] ?? false,
+                onChanged: (bool? value) {
+                  setState(() {
+                    checkedOrders[registerOrder.orderNo] = value ?? false;
+                  });
+                  setMenuState(() {});
+                },
+                activeColor: AppColors.primaryColor,
+                checkColor: Colors.white,
+                side: BorderSide(color: AppColors.primaryColor),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'With Image',
+              style: GoogleFonts.poppins(fontSize: 14),
+            ),
+          ],
+        ),
+      );
+    },
+  ),
+),
+
                         PopupMenuItem<String>(
                           value: 'whatsapp',
                           child: Row(
