@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/keyName.dart';
 
 class RegisterFilterPage extends StatefulWidget {
@@ -15,7 +16,8 @@ class RegisterFilterPage extends StatefulWidget {
     DateTime? deliveryToDate,
     String? selectedOrderStatus,
     String? selectedDateRange,
-  }) onApplyFilters;
+  })
+  onApplyFilters;
 
   const RegisterFilterPage({
     Key? key,
@@ -63,11 +65,14 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
     if (args != null) {
       ledgerList = List<KeyName>.from(args['ledgerList'] ?? widget.ledgerList);
-      salespersonList = List<KeyName>.from(args['salespersonList'] ?? widget.salespersonList);
+      salespersonList = List<KeyName>.from(
+        args['salespersonList'] ?? widget.salespersonList,
+      );
     } else {
       ledgerList = widget.ledgerList;
       salespersonList = widget.salespersonList;
@@ -82,13 +87,14 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
     final initialDate = DateTime.now();
     final picked = await showDatePicker(
       context: context,
-      initialDate: isFromDate
-          ? (isDeliveryDate
-              ? deliveryFromDate ?? initialDate
-              : fromDate ?? initialDate)
-          : (isDeliveryDate
-              ? deliveryToDate ?? initialDate
-              : toDate ?? initialDate),
+      initialDate:
+          isFromDate
+              ? (isDeliveryDate
+                  ? deliveryFromDate ?? initialDate
+                  : fromDate ?? initialDate)
+              : (isDeliveryDate
+                  ? deliveryToDate ?? initialDate
+                  : toDate ?? initialDate),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
@@ -164,20 +170,33 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Filter Orders')),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      appBar: AppBar(
+        title: const Text('Filter Orders'),
+        backgroundColor: AppColors.primaryColor,
+      ),
+      body:
+      // Stack(
+      //   children: [
+      SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- Date Range ---
+            _buildExpansionTile(
+              title: 'Date Range Filter',
               children: [
                 DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(labelText: 'Select Date Range'),
+                  decoration: const InputDecoration(
+                    labelText: 'Select Date Range',
+                  ),
                   value: selectedDateRange,
-                  items: dateRangeOptions
-                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                      .toList(),
+                  items:
+                      dateRangeOptions
+                          .map(
+                            (e) => DropdownMenuItem(value: e, child: Text(e)),
+                          )
+                          .toList(),
                   onChanged: (value) {
                     setState(() {
                       selectedDateRange = value;
@@ -186,13 +205,14 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
                   },
                 ),
                 const SizedBox(height: 10),
-
                 Row(
                   children: [
                     Expanded(
                       child: TextFormField(
                         readOnly: true,
-                        decoration: const InputDecoration(labelText: 'From Date'),
+                        decoration: const InputDecoration(
+                          labelText: 'From Date',
+                        ),
                         controller: TextEditingController(
                           text: _formatDate(fromDate),
                         ),
@@ -212,7 +232,6 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -243,25 +262,40 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
                     ),
                   ],
                 ),
+              ],
+            ),
 
-                const SizedBox(height: 16),
+            // --- Order Status ---
+            const SizedBox(height: 10),
+            _buildExpansionTile(
+              title: 'Order Status',
+              children: [
                 DropdownButtonFormField<String>(
                   decoration: const InputDecoration(labelText: 'Order Status'),
-                  value: orderStatusOptions.contains(selectedOrderStatus) ? selectedOrderStatus : null,
-                  items: orderStatusOptions
-                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                      .toList(),
+                  value:
+                      orderStatusOptions.contains(selectedOrderStatus)
+                          ? selectedOrderStatus
+                          : null,
+                  items:
+                      orderStatusOptions
+                          .map(
+                            (e) => DropdownMenuItem(value: e, child: Text(e)),
+                          )
+                          .toList(),
                   onChanged: (value) {
                     debugPrint("Selected status value: $value");
-                    setState(() {
-                      selectedOrderStatus = value;
-                    });
-                    debugPrint("Updated selectedOrderStatus: $selectedOrderStatus");
+                    setState(() => selectedOrderStatus = value);
                   },
                   hint: const Text('Select Order Status'),
                 ),
+              ],
+            ),
 
-                const SizedBox(height: 16),
+            // --- Party ---
+            const SizedBox(height: 10),
+            _buildExpansionTile(
+              title: 'Party',
+              children: [
                 DropdownSearch<KeyName>(
                   items: ledgerList,
                   selectedItem: selectedLedger,
@@ -275,13 +309,20 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
                     ),
                   ),
                 ),
+              ],
+            ),
 
-                const SizedBox(height: 16),
+            // --- Salesperson ---
+            const SizedBox(height: 10),
+            _buildExpansionTile(
+              title: 'Salesperson',
+              children: [
                 DropdownSearch<KeyName>(
                   items: salespersonList,
                   selectedItem: selectedSalesperson,
                   itemAsString: (KeyName? u) => u?.name ?? '',
-                  onChanged: (value) => setState(() => selectedSalesperson = value),
+                  onChanged:
+                      (value) => setState(() => selectedSalesperson = value),
                   popupProps: const PopupProps.menu(showSearchBox: true),
                   dropdownDecoratorProps: const DropDownDecoratorProps(
                     dropdownSearchDecoration: InputDecoration(
@@ -292,21 +333,21 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
                 ),
               ],
             ),
-          ),
 
-          Positioned(
-            bottom: 16,
-            left: 16,
-            right: 16,
-            child: Row(
+            // --- Buttons ---
+            const SizedBox(height: 20),
+            Row(
               children: [
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      // Validate date ranges
-                      if (fromDate != null && toDate != null && toDate!.isBefore(fromDate!)) {
+                      if (fromDate != null &&
+                          toDate != null &&
+                          toDate!.isBefore(fromDate!)) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('To Date cannot be before From Date')),
+                          const SnackBar(
+                            content: Text('To Date cannot be before From Date'),
+                          ),
                         );
                         return;
                       }
@@ -314,36 +355,15 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
                           deliveryToDate != null &&
                           deliveryToDate!.isBefore(deliveryFromDate!)) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Delivery To Date cannot be before Delivery From Date')),
+                          const SnackBar(
+                            content: Text(
+                              'Delivery To Date cannot be before Delivery From Date',
+                            ),
+                          ),
                         );
                         return;
                       }
 
-                      // Debug print selected values
-                      debugPrint("=== FILTER VALUES SELECTED ===");
-                      debugPrint(
-                        "Party: ${selectedLedger?.name ?? 'None'} (${selectedLedger?.key ?? 'N/A'})",
-                      );
-                      debugPrint(
-                        "Salesperson: ${selectedSalesperson?.name ?? 'None'} (${selectedSalesperson?.key ?? 'N/A'})",
-                      );
-                      debugPrint(
-                        "From Date: ${fromDate != null ? DateFormat('dd-MM-yyyy').format(fromDate!) : 'Not selected'}",
-                      );
-                      debugPrint(
-                        "To Date: ${toDate != null ? DateFormat('dd-MM-yyyy').format(toDate!) : 'Not selected'}",
-                      );
-                      debugPrint(
-                        "Delivery From Date: ${deliveryFromDate != null ? DateFormat('dd-MM-yyyy').format(deliveryFromDate!) : 'Not selected'}",
-                      );
-                      debugPrint(
-                        "Delivery To Date: ${deliveryToDate != null ? DateFormat('dd-MM-yyyy').format(deliveryToDate!) : 'Not selected'}",
-                      );
-                      debugPrint(
-                        "Order Status: ${selectedOrderStatus ?? 'Not selected'}",
-                      );
-
-                      // Call the callback with selected values
                       widget.onApplyFilters(
                         selectedLedger: selectedLedger,
                         selectedSalesperson: selectedSalesperson,
@@ -354,8 +374,6 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
                         selectedOrderStatus: selectedOrderStatus,
                         selectedDateRange: selectedDateRange,
                       );
-
-                      // Navigate back
                       Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(
@@ -405,8 +423,149 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
                 ),
               ],
             ),
+          ],
+        ),
+      ),
+
+      // Positioned(
+      //   bottom: 16,
+      //   left: 16,
+      //   right: 16,
+      //   child: Row(
+      //     children: [
+      //       Expanded(
+      //         child: ElevatedButton(
+      //           onPressed: () {
+      //             // Validate date ranges
+      //             if (fromDate != null && toDate != null && toDate!.isBefore(fromDate!)) {
+      //               ScaffoldMessenger.of(context).showSnackBar(
+      //                 const SnackBar(content: Text('To Date cannot be before From Date')),
+      //               );
+      //               return;
+      //             }
+      //             if (deliveryFromDate != null &&
+      //                 deliveryToDate != null &&
+      //                 deliveryToDate!.isBefore(deliveryFromDate!)) {
+      //               ScaffoldMessenger.of(context).showSnackBar(
+      //                 const SnackBar(content: Text('Delivery To Date cannot be before Delivery From Date')),
+      //               );
+      //               return;
+      //             }
+
+      //             // Debug print selected values
+      //             debugPrint("=== FILTER VALUES SELECTED ===");
+      //             debugPrint(
+      //               "Party: ${selectedLedger?.name ?? 'None'} (${selectedLedger?.key ?? 'N/A'})",
+      //             );
+      //             debugPrint(
+      //               "Salesperson: ${selectedSalesperson?.name ?? 'None'} (${selectedSalesperson?.key ?? 'N/A'})",
+      //             );
+      //             debugPrint(
+      //               "From Date: ${fromDate != null ? DateFormat('dd-MM-yyyy').format(fromDate!) : 'Not selected'}",
+      //             );
+      //             debugPrint(
+      //               "To Date: ${toDate != null ? DateFormat('dd-MM-yyyy').format(toDate!) : 'Not selected'}",
+      //             );
+      //             debugPrint(
+      //               "Delivery From Date: ${deliveryFromDate != null ? DateFormat('dd-MM-yyyy').format(deliveryFromDate!) : 'Not selected'}",
+      //             );
+      //             debugPrint(
+      //               "Delivery To Date: ${deliveryToDate != null ? DateFormat('dd-MM-yyyy').format(deliveryToDate!) : 'Not selected'}",
+      //             );
+      //             debugPrint(
+      //               "Order Status: ${selectedOrderStatus ?? 'Not selected'}",
+      //             );
+
+      //             // Call the callback with selected values
+      //             widget.onApplyFilters(
+      //               selectedLedger: selectedLedger,
+      //               selectedSalesperson: selectedSalesperson,
+      //               fromDate: fromDate,
+      //               toDate: toDate,
+      //               deliveryFromDate: deliveryFromDate,
+      //               deliveryToDate: deliveryToDate,
+      //               selectedOrderStatus: selectedOrderStatus,
+      //               selectedDateRange: selectedDateRange,
+      //             );
+
+      //             // Navigate back
+      //             Navigator.pop(context);
+      //           },
+      //           style: ElevatedButton.styleFrom(
+      //             backgroundColor: const Color(0xFF3F51B5),
+      //             shape: RoundedRectangleBorder(
+      //               borderRadius: BorderRadius.circular(10),
+      //             ),
+      //           ),
+      //           child: const Padding(
+      //             padding: EdgeInsets.symmetric(vertical: 14),
+      //             child: Text(
+      //               'Apply Filters',
+      //               style: TextStyle(color: Colors.white),
+      //             ),
+      //           ),
+      //         ),
+      //       ),
+      //       const SizedBox(width: 10),
+      //       Expanded(
+      //         child: ElevatedButton(
+      //           onPressed: () {
+      //             setState(() {
+      //               selectedLedger = null;
+      //               selectedSalesperson = null;
+      //               fromDate = null;
+      //               toDate = null;
+      //               deliveryFromDate = null;
+      //               deliveryToDate = null;
+      //               selectedOrderStatus = null;
+      //               selectedDateRange = 'Custom';
+      //             });
+      //           },
+      //           style: ElevatedButton.styleFrom(
+      //             backgroundColor: Colors.grey,
+      //             shape: RoundedRectangleBorder(
+      //               borderRadius: BorderRadius.circular(10),
+      //             ),
+      //           ),
+      //           child: const Padding(
+      //             padding: EdgeInsets.symmetric(vertical: 14),
+      //             child: Text(
+      //               'Clear Filters',
+      //               style: TextStyle(color: Colors.white),
+      //             ),
+      //           ),
+      //         ),
+      //       ),
+      //     ],
+      //   ),
+      // ),
+      //   ],
+      // ),
+    );
+  }
+
+  Widget _buildExpansionTile({
+    required String title,
+    required List<Widget> children,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Theme(
+        data: ThemeData().copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: true,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+          childrenPadding: const EdgeInsets.all(16),
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-        ],
+          children: children,
+        ),
       ),
     );
   }
