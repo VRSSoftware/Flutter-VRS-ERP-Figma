@@ -289,9 +289,9 @@ class _CustomerMasterDialogState extends State<CustomerMasterDialog> {
 
         // Prepare request body
         final requestBody = {
-          "coBrId": "01",
-          "userId": "Admin",
-          "fcYrId": "24",
+          "coBrId": UserSession.coBrId??'',
+          "userId": UserSession.userName??'',
+          "fcYrId": UserSession.userFcYr??'',
           "data2": dataJson,
         };
 

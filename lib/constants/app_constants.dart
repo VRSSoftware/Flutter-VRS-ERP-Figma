@@ -1,10 +1,11 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AppConstants {
-  static const String BASE_URL = "http://192.168.0.19:8080/api/v1";
- // static const String BASE_URL = "https://vrserp.com/vrs_erp/api/v1";
+  // static const String BASE_URL = "http://192.168.0.23:8080/api/v1";
+ static const String BASE_URL = "https://vrserp.com/vrs_erp/api/v1";
   static const String whatsappKey= "cbDjhhibDuKvsGbVqM";
   static const String Pdf_url = "http://pdferp.uniretailsoftware.com";
 
@@ -40,3 +41,22 @@ class AppColors {
   static const Color background = Colors.white;
   static const Color textColor = Colors.black87;
 }
+class UserSession {
+  static int? userId;
+  static String? coBrId;
+  static String? userType;
+  static String? userName;
+  static String? userLedKey;
+  static String? userFcYr='24';
+
+  // Load from SharedPreferences after login
+  // static Future<void> loadSession() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   userId = prefs.getInt("userId");
+  //   coBrId = prefs.getString('coBrId');
+  //   userType = prefs.getString('userType');
+  //   userName = prefs.getString('userName');
+  //   userLedKey = prefs.getString('ledKey');
+  // }
+}
+

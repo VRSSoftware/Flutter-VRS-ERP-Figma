@@ -61,7 +61,7 @@ Future<void> _fetchCartCount() async {
   try {
     final data = await ApiService.getSalesOrderData(
       coBrId: '01',
-      userId: 'Admin',
+      userId: UserSession.userName??'',
       fcYrId: 24,
       barcode: showBarcodeWidget ? 'true' : 'false',
     );

@@ -37,9 +37,9 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
   String itemSubGrpKey = '';
   String itemKey = '';
   String styleKey = '';
-  String userId = "Admin";
-  String coBrId = "01";
-  String fcYrId = "24";
+  String userId = UserSession.userName??'';
+  String coBrId = UserSession.coBrId??'';
+  String fcYrId = UserSession.userFcYr??'';
   bool stockWise = true;
   bool isLoading = true;
   List<String> _copiedRow = [];

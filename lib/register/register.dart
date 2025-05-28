@@ -103,7 +103,7 @@ class _RegisterPageState extends State<RegisterPage> {
         dlvFromDate:
             deliveryFromDate == null ? null : deliveryFromDate.toString(),
         dlvToDate: deliveryToDate == null ? null : deliveryToDate.toString(),
-        userName: 'Admin',
+        userName: UserSession.userName??'',
         lastSavedOrderId: null,
       );
       setState(() {

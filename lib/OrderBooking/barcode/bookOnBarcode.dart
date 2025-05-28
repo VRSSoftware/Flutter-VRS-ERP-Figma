@@ -94,7 +94,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTableBarcode> {
 
     final Map<String, dynamic> requestBody = {
       "coBrId": "01",
-      "userId": "Admin",
+      "userId": UserSession.userName??'',
       "fcYrId": "24",
       "barcode": barcode,
     };

@@ -388,9 +388,9 @@ class _StyleCardState extends State<StyleCard> {
     bCode = parts[1];
     }
     final payload = {
-      "userId": "Admin",
-      "coBrId": "01",
-      "fcYrId": "24",
+      "userId": UserSession.userName??'',
+      "coBrId": UserSession.coBrId??'',
+      "fcYrId": UserSession.userFcYr??'',
       "data": {
         "designcode": sCode,
         "mrp": '0',
@@ -400,7 +400,7 @@ class _StyleCardState extends State<StyleCard> {
         "Note": noteController.text,
         "color": "",
         "Qty": " ",
-        "cobrid": "01",
+        "cobrid": UserSession.userName??'',
         "user": "admin",
         "barcode": bCode,
       },
@@ -459,9 +459,9 @@ class _StyleCardState extends State<StyleCard> {
     }
     // Create the initial payload for the first API call
     final initialPayload = {
-      "userId": "Admin",
-      "coBrId": "01",
-      "fcYrId": "24",
+      "userId": UserSession.userName??'',
+      "coBrId": UserSession.coBrId??'',
+      "fcYrId": UserSession.userFcYr??'',
       "data": {
         "designcode":sCode,
         "mrp": '0',
@@ -471,7 +471,7 @@ class _StyleCardState extends State<StyleCard> {
         "Note": noteController.text,
         "color": "",
         "Qty": " ",
-        "cobrid": "01",
+        "cobrid": UserSession.coBrId??'',
         "user": "admin",
         "barcode": bCode,
       },
@@ -526,9 +526,9 @@ class _StyleCardState extends State<StyleCard> {
             bCode = parts[1];
           }
           final payload = {
-            "userId": "Admin",
-            "coBrId": "01",
-            "fcYrId": "24",
+            "userId": UserSession.userName??'',
+            "coBrId": UserSession.coBrId??'',
+            "fcYrId": UserSession.userFcYr??'',
             "data": {
               "designcode": sCode,
               "mrp": sizeDetails[size]?['mrp']?.toStringAsFixed(0) ?? '0',
@@ -538,7 +538,7 @@ class _StyleCardState extends State<StyleCard> {
               "Note": noteController.text,
               "color": shade,
               "Qty": qty,
-              "cobrid": "01",
+              "cobrid": UserSession.coBrId??'',
               "user": "admin",
               "barcode":bCode,
             },

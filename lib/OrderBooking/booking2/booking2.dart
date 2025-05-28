@@ -68,7 +68,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         "itemSubGrpKey": item.itemSubGrpKey,
         "itemKey": item.itemKey,
         "styleKey": item.styleKey,
-        "userId": "Admin",
+        "userId": UserSession.userName??'',
         "coBrId": "01",
         "fcYrId": "24",
       };
@@ -239,9 +239,9 @@ Future<void> _submitAllOrders() async {
           if (quantity > 0) {
             final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
             final payload = {
-              "userId": "Admin",
-              "coBrId": "01",
-              "fcYrId": "24",
+              "userId": UserSession.userName??'',
+              "coBrId": UserSession.coBrId??'',
+              "fcYrId": UserSession.userFcYr??'',
               "data": {
                 "designcode": styleCode,
                 "mrp": matrixData[0],
@@ -251,7 +251,7 @@ Future<void> _submitAllOrders() async {
                 "Note": "",
                 "color": shade,
                 "Qty": quantity.toString(),
-                "cobrid": "01",
+                "cobrid": UserSession.coBrId??'',
                 "user": "admin",
                 "barcode": "",
               },

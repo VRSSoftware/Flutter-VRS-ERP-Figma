@@ -62,7 +62,8 @@ class MyApp extends StatelessWidget {
         '/registerOrders': (context) => RegisterPage(),
       },
 
-      home: HomeScreen(),
+      // home: HomeScreen(),
+      home: SplashScreen(),
     );
   }
 }

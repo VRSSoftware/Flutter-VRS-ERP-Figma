@@ -131,9 +131,9 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
 
   Future<void> fetchAndPrintSalesOrderNumber() async {
     Map<String, dynamic> salesOrderData = await ApiService.getSalesOrderData(
-      coBrId: "01",
-      userId: "Admin",
-      fcYrId: 24,
+      coBrId: UserSession.coBrId??'',
+      userId: UserSession.userName??'',
+      fcYrId: UserSession.userFcYr??'',
       barcode: "false",
     );
 
@@ -149,8 +149,8 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
 
   Future<String> insertFinalSalesOrder(String orderDataJson) async {
     final Map<String, dynamic> body = {
-      'userId': 'Admin',
-      'coBrId': '01',
+      'userId': UserSession.userName??'',
+      'coBrId': UserSession.coBrId??'',
       'fcYrId': 24,
       'data2': orderDataJson.toString(),
     };
@@ -731,9 +731,9 @@ class _StyleManager {
       Uri.parse('${AppConstants.BASE_URL}/orderBooking/GetViewOrder'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
-        "coBrId": "01",
-        "userId": "Admin",
-        "fcYrId": "24",
+        "coBrId": UserSession.coBrId??'',
+        "userId": UserSession.userName??'',
+        "fcYrId": UserSession.userFcYr??'',
         "barcode": barcode ? "true" : "false", // Use the passed barcode value
       }),
     );
@@ -750,9 +750,9 @@ class _StyleManager {
       Uri.parse('${AppConstants.BASE_URL}/orderBooking/GetViewOrder'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
-        "coBrId": "01",
-        "userId": "Admin",
-        "fcYrId": "24",
+        "coBrId": UserSession.coBrId??'',
+        "userId": UserSession.userName??'',
+        "fcYrId": UserSession.userFcYr??'',
         "barcode": barcode ? "true" : "false",
       }),
     );

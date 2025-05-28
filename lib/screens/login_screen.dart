@@ -9,7 +9,6 @@ import 'package:vrs_erp_figma/screens/catalog_screen.dart';
 import 'package:vrs_erp_figma/screens/home_screen.dart';
 import 'package:vrs_erp_figma/screens/register_screen.dart';
 
-
 class LoginScreen extends StatefulWidget {
   @override
   _LoginPageState createState() => _LoginPageState();
@@ -134,8 +133,17 @@ class _LoginPageState extends State<LoginScreen> {
             print(responseData?["userId"]);
 
             final prefs = await SharedPreferences.getInstance();
-            await prefs.setString('coBrId', _selectedCompany?["coBrId"]);
             await prefs.setInt('userId', responseData?["userId"]);
+            await prefs.setString('coBrId', _selectedCompany?["coBrId"]);
+            await prefs.setString('userType', responseData["userType"]);
+            await prefs.setString('userName', responseData["userName"]);
+            await prefs.setString('userLedKey', responseData["ledKey"]);
+
+            UserSession.userId = responseData?["userId"];
+            UserSession.coBrId = _selectedCompany?["coBrId"];
+            UserSession.userType = responseData["userType"];
+            UserSession.userName = responseData["userName"];
+            UserSession.userLedKey = responseData["ledKey"];
 
             if (responseData.containsKey('userName') &&
                 responseData['userName'] == _usernameController.text.trim()) {
@@ -147,7 +155,6 @@ class _LoginPageState extends State<LoginScreen> {
               _showPopupMessage(context, "Invalid Username or Password");
             }
           } else {
-   
             final Map<String, dynamic> errorResponse = json.decode(
               response.body,
             );
@@ -341,7 +348,10 @@ class _LoginPageState extends State<LoginScreen> {
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(30),
                                   gradient: LinearGradient(
-                                    colors: [AppColors.primaryColor, AppColors.maroon],
+                                    colors: [
+                                      AppColors.primaryColor,
+                                      AppColors.maroon,
+                                    ],
                                     begin: Alignment.centerLeft,
                                     end: Alignment.centerRight,
                                   ),
@@ -455,15 +465,24 @@ class _LoginPageState extends State<LoginScreen> {
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0),
+                borderSide: BorderSide(
+                  color: AppColors.primaryColor,
+                  width: 2.0,
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.primaryColor, width: 3.0),
+                borderSide: BorderSide(
+                  color: AppColors.primaryColor,
+                  width: 3.0,
+                ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0),
+                borderSide: BorderSide(
+                  color: AppColors.primaryColor,
+                  width: 2.0,
+                ),
               ),
               errorStyle: TextStyle(height: 0.7),
             ),
@@ -506,15 +525,24 @@ class _LoginPageState extends State<LoginScreen> {
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0),
+                borderSide: BorderSide(
+                  color: AppColors.primaryColor,
+                  width: 2.0,
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.primaryColor, width: 3.0),
+                borderSide: BorderSide(
+                  color: AppColors.primaryColor,
+                  width: 3.0,
+                ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0),
+                borderSide: BorderSide(
+                  color: AppColors.primaryColor,
+                  width: 2.0,
+                ),
               ),
               errorStyle: TextStyle(height: 0.7),
             ),

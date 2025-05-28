@@ -53,9 +53,9 @@ class _ViewOrderScreenState extends State<ViewOrderScreens> {
       url,
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
-        "coBrId": "01",
-        "userId": "Admin",
-        "fcYrId": "24",
+        "coBrId": UserSession.coBrId??'',
+        "userId": UserSession.userName??'',
+        "fcYrId": UserSession.userFcYr??'',
         "barcode": "false",
       }),
     );

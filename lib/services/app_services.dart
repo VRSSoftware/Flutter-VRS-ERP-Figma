@@ -261,9 +261,9 @@ class ApiService {
     );
 
     final body = {
-      "coBrId": "01",
-      "userId": "Admin",
-      "fcYrId": "24",
+      "coBrId": UserSession.coBrId??'',
+      "userId": UserSession.userName??'',
+      "fcYrId": UserSession.userFcYr??'',
       "barcode": barcode,
     };
 
@@ -421,7 +421,7 @@ static Future<List<String>> fetchAddedItems({
 static Future<Map<String, dynamic>> getSalesOrderData({
   required String coBrId,
   required String userId,
-  required int fcYrId,
+  required String fcYrId,
   required String barcode,
 }) async {
   try {

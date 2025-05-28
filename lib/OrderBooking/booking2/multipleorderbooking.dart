@@ -61,9 +61,9 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
   Map<String, bool> isLoadingMap = {};
   Map<String, List<String>> copiedRowsMap = {};
 
-  String userId = "Admin";
-  String coBrId = "01";
-  String fcYrId = "24";
+  String userId = UserSession.userName??'';
+  String coBrId = UserSession.coBrId??'';
+  String fcYrId = UserSession.userFcYr??'';
   bool stockWise = true;
   int maxSizes = 0;
   bool isLoading = true;

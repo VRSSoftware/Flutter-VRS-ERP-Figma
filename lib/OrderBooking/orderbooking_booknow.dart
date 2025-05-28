@@ -212,7 +212,7 @@ Future<void> _fetchCartCount() async {
     try {
       final data = await ApiService.getSalesOrderData(
         coBrId: '01',
-        userId: 'Admin',
+        userId: UserSession.userName??'',
         fcYrId: 24,
         barcode: '',
       );
@@ -228,7 +228,7 @@ Future<void> _fetchCartCount() async {
     final barcode = '';
     final addedItemsList = await ApiService.fetchAddedItems(
       coBrId: coBrId,
-      userId: 'Admin', // Ensure this is dynamic if needed
+      userId: UserSession.userName??'', 
       fcYrId: fcYrId,
       barcode: barcode,
     );
