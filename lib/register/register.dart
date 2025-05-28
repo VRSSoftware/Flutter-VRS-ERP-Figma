@@ -1,12 +1,21 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 import 'package:marquee/marquee.dart';
-import 'package:vrs_erp_figma/models/registerModel.dart';
-import 'package:vrs_erp_figma/models/keyName.dart';
-import 'package:vrs_erp_figma/register/registerFilteration.dart';
+import 'package:http/http.dart' as http; // Added for HTTP requests
+import 'dart:convert'; // Added for base64 encoding
+
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/models/keyName.dart';
+import 'package:vrs_erp_figma/models/registerModel.dart';
+import 'package:vrs_erp_figma/register/registerFilteration.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
+import 'package:vrs_erp_figma/viewOrder/Pdf_viewer_screen.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -182,70 +191,147 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert, color: Colors.black54),
-                  onSelected: (value) {
+                  onSelected: (value) async {
                     switch (value) {
                       case 'whatsapp':
-                        // Implement WhatsApp sharing logic
-                        Navigator.pop(context); // Close menu for other actions
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            final TextEditingController controller =
+                                TextEditingController(
+                                  text: registerOrder.whatsAppMobileNo ?? '',
+                                );
+                            return AlertDialog(
+                              title: Text('Enter WhatsApp Number'),
+                              content: TextField(
+                                controller: controller,
+                                keyboardType: TextInputType.number,
+                                maxLength: 10,
+                                decoration: InputDecoration(
+                                  hintText: 'Enter 10-digit number',
+                                  counterText: '',
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: Text('Cancel'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    String number = controller.text.trim();
+                                    if (number.length != 10 ||
+                                        !RegExp(
+                                          r'^[0-9]{10}$',
+                                        ).hasMatch(number)) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Please enter a valid 10-digit number',
+                                          ),
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    Navigator.pop(context); // Close dialog
+                                    String docId = registerOrder.orderId;
+
+                                    try {
+                                      final dio = Dio();
+                                      final response = await dio.post(
+                                        '${AppConstants.Pdf_url}/api/values/order',
+                                        data: {"doc_id": docId},
+                                        options: Options(
+                                          responseType: ResponseType.bytes,
+                                        ),
+                                      );
+
+                                      bool sent = await sendWhatsAppFile(
+                                        fileBytes: response.data,
+                                        mobileNo: number,
+                                        fileType: 'pdf',
+                                        caption: 'Order PDF',
+                                      );
+
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            sent
+                                                ? 'Sent on WhatsApp'
+                                                : 'Failed to send',
+                                          ),
+                                        ),
+                                      );
+                                    } catch (e) {
+                                      print('Error: $e');
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Failed to download or send',
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: Text('Send'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
                         break;
+
                       case 'download':
-                        // Implement download logic
-                        Navigator.pop(context); // Close menu for other actions
+                        try {
+                          final dio = Dio();
+                          final response = await dio.post(
+                            '${AppConstants.Pdf_url}/api/values/order',
+                            data: {"doc_id": registerOrder.orderId},
+                            options: Options(responseType: ResponseType.bytes),
+                          );
+
+                          final directory =
+                              await getApplicationDocumentsDirectory();
+                          final filePath =
+                              '${directory.path}/Order_${registerOrder.orderId}.pdf';
+                          final file = File(filePath);
+                          await file.writeAsBytes(response.data);
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Downloaded successfully')),
+                          );
+                        } catch (e) {
+                          print('Download error: $e');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Download failed')),
+                          );
+                        }
                         break;
+
                       case 'view':
-                        // Implement view logic
-                        Navigator.pop(context); // Close menu for other actions
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => PdfViewerScreen(
+                                  orderNo: registerOrder.orderId,
+                                  whatsappNo: registerOrder.whatsAppMobileNo,
+                                ),
+                          ),
+                        );
                         break;
                     }
                   },
                   itemBuilder:
                       (BuildContext context) => [
-                 PopupMenuItem<String>(
-  enabled: false,
-  padding: const EdgeInsets.symmetric(horizontal: 12), // match others
-  child: StatefulBuilder(
-    builder: (BuildContext context, StateSetter setMenuState) {
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          final current = checkedOrders[registerOrder.orderNo] ?? false;
-          setState(() {
-            checkedOrders[registerOrder.orderNo] = !current;
-          });
-          setMenuState(() {});
-        },
-        child: Row(
-          children: [
-            SizedBox(
-              width: 20,
-              height: 20,
-              child: Checkbox(
-                value: checkedOrders[registerOrder.orderNo] ?? false,
-                onChanged: (bool? value) {
-                  setState(() {
-                    checkedOrders[registerOrder.orderNo] = value ?? false;
-                  });
-                  setMenuState(() {});
-                },
-                activeColor: AppColors.primaryColor,
-                checkColor: Colors.white,
-                side: BorderSide(color: AppColors.primaryColor),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'With Image',
-              style: GoogleFonts.poppins(fontSize: 14),
-            ),
-          ],
-        ),
-      );
-    },
-  ),
-),
-
+                        // ... (checkbox PopupMenuItem if needed)
                         PopupMenuItem<String>(
                           value: 'whatsapp',
                           child: Row(
@@ -255,7 +341,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 color: Colors.green,
                                 size: 20,
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: 8),
                               Text(
                                 'WhatsApp',
                                 style: GoogleFonts.poppins(fontSize: 14),
@@ -272,7 +358,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 color: Colors.blue,
                                 size: 20,
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: 8),
                               Text(
                                 'Download',
                                 style: GoogleFonts.poppins(fontSize: 14),
@@ -289,7 +375,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 color: Colors.purple,
                                 size: 20,
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: 8),
                               Text(
                                 'View',
                                 style: GoogleFonts.poppins(fontSize: 14),
@@ -298,12 +384,6 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ],
-                  offset: const Offset(0, 40),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  color: Colors.white,
-                  elevation: 4,
                 ),
               ],
             ),
@@ -663,36 +743,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ],
                 ),
               ),
-      bottomNavigationBar: BottomAppBar(
-        height: 60,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('BACK', style: GoogleFonts.montserrat()),
-              ),
-              TextButton(
-                onPressed:
-                    _calculateTotalQuantity() > 0
-                        ? _submitRegisterOrders
-                        : null,
-                child: Text(
-                  'SUBMIT',
-                  style: GoogleFonts.montserrat(
-                    color:
-                        _calculateTotalQuantity() > 0
-                            ? Colors.black
-                            : Colors.grey,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 50),
         child: FloatingActionButton(
@@ -786,53 +837,9 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             );
           },
-          // onPressed: () async {
-          //   final result = await Navigator.push(
-          //     context,
-          //     PageRouteBuilder(
-          //       pageBuilder:
-          //           (context, animation, secondaryAnimation) =>
-          //               RegisterFilterPage(),
-          //       settings: RouteSettings(
-          //         arguments: {
-          //           'ledgerList': ledgerList,
-          //           'salespersonList': salespersonList,
-          //           'selectedLedger': selectedLedger,
-          //           'selectedSalesperson': selectedSalesperson,
-          //           'fromDate': fromDate,
-          //           'toDate': toDate,
-          //           'deliveryFromDate': deliveryFromDate,
-          //           'deliveryToDate': deliveryToDate,
-          //           'selectedOrderStatus': selectedOrderStatus,
-          //         },
-          //       ),
-          //       transitionDuration: Duration(milliseconds: 500),
-          //       transitionsBuilder: (
-          //         context,
-          //         animation,
-          //         secondaryAnimation,
-          //         child,
-          //       ) {
-          //         return ScaleTransition(
-          //           scale: animation,
-          //           alignment: Alignment.bottomRight,
-          //           child: FadeTransition(opacity: animation, child: child),
-          //         );
-          //       },
-          //     ),
-          //   );
-          //   if (result != null) {
-          //     print(result['ledger']);
-          //     print(result['salesperson']);
-          //     setState(() {
-          //       selectedLedger = result['selectedLedger'];
-          //       selectedSalesperson = result['selectedSalesperson'];
-          //     });
-          //     fetchOrders();
-          //   }
-          // },
-          child: const Icon(Icons.filter_list, color: Colors.white),
+
           tooltip: 'Filter Orders',
+          child: const Icon(Icons.filter_list, color: Colors.white),
         ),
       ),
     );
