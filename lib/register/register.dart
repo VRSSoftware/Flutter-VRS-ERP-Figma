@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
+import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:marquee/marquee.dart';
 import 'package:http/http.dart' as http; // Added for HTTP requests
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:convert'; // Added for base64 encoding
 
 import 'package:vrs_erp_figma/constants/app_constants.dart';
@@ -290,6 +292,45 @@ class _RegisterPageState extends State<RegisterPage> {
 
                       case 'download':
                         try {
+                          // Request storage permission for Android
+                          if (Platform.isAndroid) {
+                            var status = await Permission.storage.status;
+                            if (!status.isGranted) {
+                              status = await Permission.storage.request();
+                              if (!status.isGranted) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Storage permission denied',
+                                      ),
+                                    ),
+                                  );
+                                }
+                                debugPrint('Storage permission denied');
+                                break;
+                              }
+                            }
+                          }
+
+                          // Show loading dialog
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder:
+                                (context) => AlertDialog(
+                                  content: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: const [
+                                      CircularProgressIndicator(),
+                                      SizedBox(width: 16),
+                                      Text('Downloading...'),
+                                    ],
+                                  ),
+                                ),
+                          );
+
+                          // Make API request
                           final dio = Dio();
                           final response = await dio.post(
                             '${AppConstants.Pdf_url}/api/values/order',
@@ -297,21 +338,94 @@ class _RegisterPageState extends State<RegisterPage> {
                             options: Options(responseType: ResponseType.bytes),
                           );
 
-                          final directory =
-                              await getApplicationDocumentsDirectory();
-                          final filePath =
-                              '${directory.path}/Order_${registerOrder.orderId}.pdf';
-                          final file = File(filePath);
-                          await file.writeAsBytes(response.data);
+                          debugPrint(
+                            'API response status: ${response.statusCode}',
+                          );
 
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Downloaded successfully')),
-                          );
+                          if (response.statusCode == 200) {
+                            // Get Downloads directory
+                            Directory? directory;
+                            String filePath;
+                            if (Platform.isAndroid) {
+                              directory = Directory(
+                                '/storage/emulated/0/Download',
+                              );
+                              if (!await directory.exists()) {
+                                await directory.create(recursive: true);
+                              }
+                              filePath =
+                                  '${directory.path}/Order_${registerOrder.orderId}.pdf';
+                            } else if (Platform.isIOS) {
+                              directory =
+                                  await getApplicationDocumentsDirectory();
+                              filePath =
+                                  '${directory.path}/Order_${registerOrder.orderId}.pdf';
+                            } else {
+                              throw Exception('Unsupported platform');
+                            }
+
+                            // Write file
+                            final file = File(filePath);
+                            await file.writeAsBytes(response.data, flush: true);
+                            debugPrint(
+                              'PDF downloaded to: $filePath, exists: ${await file.exists()}',
+                            );
+
+                            // Close loading dialog
+                            if (mounted) {
+                              Navigator.of(context, rootNavigator: true).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('PDF downloaded to $filePath'),
+                                  action: SnackBarAction(
+                                    label: 'Open',
+                                    onPressed: () async {
+                                      final result = await OpenFile.open(
+                                        filePath,
+                                      );
+                                      debugPrint(
+                                        'OpenFile result: ${result.type}, message: ${result.message}',
+                                      );
+                                      if (result.type != ResultType.done &&
+                                          mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Failed to open PDF: ${result.message}',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                              );
+                            }
+                          } else {
+                            if (mounted) {
+                              Navigator.of(context, rootNavigator: true).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Failed to load PDF: ${response.statusCode}',
+                                  ),
+                                ),
+                              );
+                            }
+                            debugPrint(
+                              'Failed to load PDF: ${response.statusCode}',
+                            );
+                          }
                         } catch (e) {
-                          print('Download error: $e');
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Download failed')),
-                          );
+                          debugPrint('Download error: $e');
+                          if (mounted) {
+                            Navigator.of(context, rootNavigator: true).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Download failed: $e')),
+                            );
+                          }
                         }
                         break;
 
