@@ -211,9 +211,9 @@ class _OrderPageState extends State<OrderPage> {
 Future<void> _fetchCartCount() async {
     try {
       final data = await ApiService.getSalesOrderData(
-        coBrId: '01',
+        coBrId: UserSession.coBrId??'',
         userId: UserSession.userName??'',
-        fcYrId: 24,
+        fcYrId: UserSession.userFcYr??'',
         barcode: '',
       );
       final cartModel = Provider.of<CartModel>(context, listen: false);

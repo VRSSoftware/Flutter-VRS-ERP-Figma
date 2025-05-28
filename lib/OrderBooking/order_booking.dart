@@ -26,8 +26,8 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
 
   String? _selectedCategoryKey = '-1';
   String? _selectedCategoryName = 'All';
-  String? coBr = '01';
-  String? fcYrId = '24';
+  String? coBr = UserSession.coBrId??'';
+  String? fcYrId = UserSession.userFcYr??'';
   List<Category> _categories = [];
   List<Item> _items = [];
   List<Item> _allItems = [];
@@ -60,9 +60,9 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
 Future<void> _fetchCartCount() async {
   try {
     final data = await ApiService.getSalesOrderData(
-      coBrId: '01',
+      coBrId: UserSession.coBrId??'',
       userId: UserSession.userName??'',
-      fcYrId: 24,
+      fcYrId: UserSession.userFcYr??'',
       barcode: showBarcodeWidget ? 'true' : 'false',
     );
     

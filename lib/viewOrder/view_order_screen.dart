@@ -58,7 +58,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
 
   Future<void> _loadBookingTypes() async {
     try {
-      final rawData = await ApiService.fetchBookingTypes(coBrId: '01');
+      final rawData = await ApiService.fetchBookingTypes(coBrId: UserSession.coBrId??'');
       setState(() {
         _bookingTypes =
             (rawData as List)
@@ -81,7 +81,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       final response = await http.post(
         Uri.parse('${AppConstants.BASE_URL}/users/getPytTermDisc'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({"coBrId": "01"}),
+        body: jsonEncode({"coBrId": UserSession.coBrId??''}),
       );
 
       if (response.statusCode == 200) {
@@ -151,7 +151,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     final Map<String, dynamic> body = {
       'userId': UserSession.userName??'',
       'coBrId': UserSession.coBrId??'',
-      'fcYrId': 24,
+      'fcYrId': UserSession.userFcYr??'',
       'data2': orderDataJson.toString(),
     };
 
@@ -528,7 +528,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     if (key == null) return;
     _orderControllers.selectedPartyKey = key;
     try {
-      await fetchAndMapConsignees(key: key, CoBrId: '01');
+      await fetchAndMapConsignees(key: key, CoBrId: UserSession.coBrId??'');
 
       final details = await _dropdownData.fetchLedgerDetails(key);
       _dropdownData.updateDependentFields(
@@ -684,7 +684,7 @@ class _DropdownData {
     final response = await http.post(
       Uri.parse('${AppConstants.BASE_URL}/users/getLedger'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({"ledCat": ledCat, "coBrId": "01"}),
+      body: jsonEncode({"ledCat": ledCat, "coBrId": UserSession.coBrId??''}),
     );
     return response.statusCode == 200
         ? (jsonDecode(response.body) as List)

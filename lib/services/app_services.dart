@@ -228,7 +228,7 @@ class ApiService {
     String? sizeKey,
     double? fromMRP,
     double? toMRP,
-    String coBr = '01',
+    String? coBr ,
   }) async {
     final response = await http.post(
       Uri.parse('${AppConstants.BASE_URL}/catalog'),

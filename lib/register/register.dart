@@ -62,11 +62,11 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       final fetchedLedgersResponse = await ApiService.fetchLedgers(
         ledCat: 'w',
-        coBrId: '01',
+        coBrId: UserSession.coBrId??'',
       );
       final fetchedSalespersonResponse = await ApiService.fetchLedgers(
         ledCat: 's',
-        coBrId: '01',
+        coBrId: UserSession.coBrId??'',
       );
 
       setState(() {
@@ -97,7 +97,7 @@ class _RegisterPageState extends State<RegisterPage> {
         fromDate: fromDateController.text,
         toDate: toDateController.text,
         custKey: selectedLedger?.key,
-        coBrId: '01',
+        coBrId: UserSession.coBrId??'',
         salesPerson: selectedSalesperson?.key,
         status: selectedOrderStatus,
         dlvFromDate:

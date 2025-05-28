@@ -44,12 +44,12 @@ class _CustomerMasterDialogState extends State<CustomerMasterDialog> {
   Future<void> fetchDropdowns() async {
     try {
       final results = await Future.wait([
-        ApiService.fetchLedgers(ledCat: 'L', coBrId: '01'),
-        ApiService.fetchStations(coBrId: '01'),
-        ApiService.fetchLedgers(ledCat: 'B', coBrId: '01'),
-        ApiService.fetchLedgers(ledCat: 'T', coBrId: '01'),
-        ApiService.fetchLedgers(ledCat: 'S', coBrId: '01'),
-        ApiService.fetchPayTerms(coBrId: '01'),
+        ApiService.fetchLedgers(ledCat: 'L', coBrId: UserSession.coBrId??''),
+        ApiService.fetchStations(coBrId: UserSession.coBrId??''),
+        ApiService.fetchLedgers(ledCat: 'B', coBrId: UserSession.coBrId??''),
+        ApiService.fetchLedgers(ledCat: 'T', coBrId: UserSession.coBrId??''),
+        ApiService.fetchLedgers(ledCat: 'S', coBrId: UserSession.coBrId??''),
+        ApiService.fetchPayTerms(coBrId: UserSession.coBrId??''),
       ]);
 
       setState(() {

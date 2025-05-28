@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/item.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
 import 'package:vrs_erp_figma/models/PytTermDisc.dart';
@@ -130,7 +131,7 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
 
     setState(() => _isLoadingBookingTypes = true);
     try {
-      final rawData = await ApiService.fetchBookingTypes(coBrId: '01');
+      final rawData = await ApiService.fetchBookingTypes(coBrId: UserSession.coBrId??'');
       final data = (rawData as List)
           .map((json) => Item(
                 itemKey: json['key'],

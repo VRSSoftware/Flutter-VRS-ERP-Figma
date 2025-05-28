@@ -53,8 +53,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen3> {
         "itemKey": item.itemKey,
         "styleKey": item.styleKey,
         "userId": UserSession.userName??'',
-        "coBrId": "01",
-        "fcYrId": "24",
+        "coBrId": UserSession.coBrId??'',
+        "fcYrId": UserSession.userFcYr??'',
       };
 
       try {

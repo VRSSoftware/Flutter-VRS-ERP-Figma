@@ -27,8 +27,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
   String? _selectedCategoryKey = '-1';
   String? _selectedCategoryName = 'All';
-  String? coBr = '01';
-  String? fcYrId = '24';
+  String? coBr = UserSession.coBrId??'';
+  String? fcYrId = UserSession.userFcYr??'';
   List<Category> _categories = [];
   List<Item> _items = [];
   List<Item> _allItems = [];
