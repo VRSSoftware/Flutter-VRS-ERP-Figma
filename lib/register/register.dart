@@ -137,6 +137,37 @@ class _RegisterPageState extends State<RegisterPage> {
   void _submitRegisterOrders() {
     // Handle register submission logic
   }
+  Future<bool> _sendWhatsAppFile2({
+    required List<int> fileBytes,
+    required String mobileNo,
+    required String fileType,
+    String? caption,
+  }) async {
+    try {
+      String fileBase64 = base64Encode(fileBytes);
+
+      final response = await http.post(
+        Uri.parse("http://node4.wabapi.com/v4/postfile.php"),
+        body: {
+          'data': fileBase64,
+          'filename': fileType == 'image' ? 'catalog.jpg' : 'catalog.pdf',
+          'key': AppConstants.whatsappKey,
+          'number': '91$mobileNo',
+          'caption': caption ?? 'Please find the file attached.',
+        },
+      );
+
+      if(response.statusCode == 200){
+      return true ;
+      }
+      else{
+        return false;
+      }
+    } catch (e) {
+      print('Error sending file: $e');
+      return false;
+    }
+  }
 
   Widget buildOrderItem(RegisterOrder registerOrder) {
     // Initialize checkbox state for this order if not already set
@@ -251,7 +282,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                         ),
                                       );
 
-                                      bool sent = await sendWhatsAppFile(
+                                      bool sent = await _sendWhatsAppFile2(
                                         fileBytes: response.data,
                                         mobileNo: number,
                                         fileType: 'pdf',
