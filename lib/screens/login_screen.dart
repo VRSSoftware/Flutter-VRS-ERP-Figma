@@ -141,6 +141,7 @@ class _LoginPageState extends State<LoginScreen> {
 
             UserSession.userId = responseData?["userId"];
             UserSession.coBrId = _selectedCompany?["coBrId"];
+            UserSession.userFcYr = _selectedYear?["fcYrId"];
             UserSession.userType = responseData["userType"];
             UserSession.userName = responseData["userName"];
             UserSession.userLedKey = responseData["ledKey"];
