@@ -47,7 +47,7 @@ class UserSession {
   static String? userType;
   static String? userName;
   static String? userLedKey;
-  static String? userFcYr='24';
+  static String? userFcYr;
 
   // Load from SharedPreferences after login
   // static Future<void> loadSession() async {
