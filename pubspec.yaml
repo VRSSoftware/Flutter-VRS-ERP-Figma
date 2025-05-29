@@ -55,6 +55,7 @@ dependencies:
   getwidget: ^2.0.4
   qr_flutter: ^4.1.0
   marquee: ^2.2.3
+  font_awesome_flutter: ^10.7.0
   # installed_apps: ^1.6.0
   google_fonts: ^4.0.4
  # android_intent_plus: ^4.0.2
@@ -116,6 +117,7 @@ flutter:
     - assets/images/default.png
     - assets/images/barcode.png
     - assets/images/register.png
+    - assets/images/report.png
     - assets/garments/image_01.png
     - assets/garments/image_02.png
     - assets/garments/image_03.png

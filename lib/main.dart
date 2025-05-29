@@ -11,6 +11,7 @@ import 'package:vrs_erp_figma/screens/catalog_screen.dart';
 import 'package:vrs_erp_figma/screens/home_screen.dart';
 import 'package:vrs_erp_figma/screens/login_screen.dart';
 import 'package:vrs_erp_figma/screens/splash_screen.dart';
+import 'package:vrs_erp_figma/stockReport/stockreportpage.dart';
 import 'package:vrs_erp_figma/viewOrder/view_order.dart';
 import 'package:vrs_erp_figma/viewOrder/view_order_screen.dart';
 
@@ -60,6 +61,7 @@ class MyApp extends StatelessWidget {
         '/viewOrder': (context) => ViewOrderScreen(),
         '/viewOrders': (context) => ViewOrderScreens(),
         '/registerOrders': (context) => RegisterPage(),
+            '/stockReport': (context) => StockReportPage(),
       },
 
       // home: HomeScreen(),
