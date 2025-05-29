@@ -49,7 +49,8 @@ class HomeScreen extends StatelessWidget {
           if (index == 1) Navigator.pushNamed(context, '/catalog');
           if (index == 2) Navigator.pushNamed(context, '/orderbooking');
           if (index == 3) Navigator.pushNamed(context, '/orderRegister');
-            if (index == 4) Navigator.pushNamed(context, '/stockReport');
+          if (index == 4) Navigator.pushNamed(context, '/stockReport');
+          if (index == 5) Navigator.pushNamed(context, '/dashboard');
           // Add others similarly...
         },
       ),
@@ -87,6 +88,12 @@ class HomeScreen extends StatelessWidget {
           'assets/images/report.png',
           'Stock Report',
           () => Navigator.pushNamed(context, '/stockReport'),
+          buttonWidth,
+        ),
+        _buildFeatureButton(
+          'assets/images/dashboard.png',
+          'Dashboard',
+          () => Navigator.pushNamed(context, '/dashboard'),
           buttonWidth,
         ),
       ],
