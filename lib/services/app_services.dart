@@ -8,6 +8,7 @@ import 'package:vrs_erp_figma/models/keyName.dart';
 import 'package:vrs_erp_figma/models/registerModel.dart';
 import 'package:vrs_erp_figma/models/shade.dart';
 import 'package:vrs_erp_figma/models/size.dart';
+import 'package:vrs_erp_figma/models/stockReportModel.dart';
 import 'package:vrs_erp_figma/models/style.dart';
 import '../constants/app_constants.dart';
 import '../models/consignee.dart';
@@ -599,4 +600,44 @@ static Future<Map<String, dynamic>> getSalesOrderData({
       return {'statusCode': 500, 'result': <KeyName>[]};
     }
   }
-}
+
+   // Add to ApiService class
+static Future<List<StockReportItem>> fetchStockReport({
+  required String itemSubGrpKey,
+  required String itemKey,
+  required String userId,
+  required String fcYrId,
+  required String cobr,
+  String? brandKey,
+  String? styleKey,
+  String? shadeKey,
+  String? sizeKey,
+  double? fromMRP,
+  double? toMRP,
+}) async {
+  final response = await http.post(
+    Uri.parse('${AppConstants.BASE_URL}/stockReport/getStockReport'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      "itemSubGrpKey": itemSubGrpKey,
+      "itemKey": itemKey,
+      "userId": userId,
+      "fcYrId": fcYrId,
+      "cobr": cobr,
+      "brandKey": brandKey,
+      "styleKey": styleKey,
+      "shadeKey": shadeKey,
+      "sizeKey": sizeKey,
+      "fromMRP": fromMRP,
+      "toMRP": toMRP,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    final List<dynamic> data = jsonDecode(response.body);
+    return data.map((json) => StockReportItem.fromJson(json)).toList();
+  } else {
+    throw Exception('Failed to load stock report: ${response.statusCode}');
+  }
+}}
+
