@@ -301,6 +301,7 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
             ),
 
             // --- Party ---
+            if(UserSession.userType != "C")...[
             const SizedBox(height: 10),
             _buildExpansionTile(
               title: 'Party',
@@ -320,8 +321,10 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
                 ),
               ],
             ),
+            ],
 
             // --- Salesperson ---
+            if(UserSession.userType != "S")...[
             const SizedBox(height: 10),
             _buildExpansionTile(
               title: 'Salesperson',
@@ -342,6 +345,7 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
                 ),
               ],
             ),
+            ],
 
             // --- Buttons ---
             const SizedBox(height: 20),
@@ -435,121 +439,6 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
           ],
         ),
       ),
-
-      // Positioned(
-      //   bottom: 16,
-      //   left: 16,
-      //   right: 16,
-      //   child: Row(
-      //     children: [
-      //       Expanded(
-      //         child: ElevatedButton(
-      //           onPressed: () {
-      //             // Validate date ranges
-      //             if (fromDate != null && toDate != null && toDate!.isBefore(fromDate!)) {
-      //               ScaffoldMessenger.of(context).showSnackBar(
-      //                 const SnackBar(content: Text('To Date cannot be before From Date')),
-      //               );
-      //               return;
-      //             }
-      //             if (deliveryFromDate != null &&
-      //                 deliveryToDate != null &&
-      //                 deliveryToDate!.isBefore(deliveryFromDate!)) {
-      //               ScaffoldMessenger.of(context).showSnackBar(
-      //                 const SnackBar(content: Text('Delivery To Date cannot be before Delivery From Date')),
-      //               );
-      //               return;
-      //             }
-
-      //             // Debug print selected values
-      //             debugPrint("=== FILTER VALUES SELECTED ===");
-      //             debugPrint(
-      //               "Party: ${selectedLedger?.name ?? 'None'} (${selectedLedger?.key ?? 'N/A'})",
-      //             );
-      //             debugPrint(
-      //               "Salesperson: ${selectedSalesperson?.name ?? 'None'} (${selectedSalesperson?.key ?? 'N/A'})",
-      //             );
-      //             debugPrint(
-      //               "From Date: ${fromDate != null ? DateFormat('dd-MM-yyyy').format(fromDate!) : 'Not selected'}",
-      //             );
-      //             debugPrint(
-      //               "To Date: ${toDate != null ? DateFormat('dd-MM-yyyy').format(toDate!) : 'Not selected'}",
-      //             );
-      //             debugPrint(
-      //               "Delivery From Date: ${deliveryFromDate != null ? DateFormat('dd-MM-yyyy').format(deliveryFromDate!) : 'Not selected'}",
-      //             );
-      //             debugPrint(
-      //               "Delivery To Date: ${deliveryToDate != null ? DateFormat('dd-MM-yyyy').format(deliveryToDate!) : 'Not selected'}",
-      //             );
-      //             debugPrint(
-      //               "Order Status: ${selectedOrderStatus ?? 'Not selected'}",
-      //             );
-
-      //             // Call the callback with selected values
-      //             widget.onApplyFilters(
-      //               selectedLedger: selectedLedger,
-      //               selectedSalesperson: selectedSalesperson,
-      //               fromDate: fromDate,
-      //               toDate: toDate,
-      //               deliveryFromDate: deliveryFromDate,
-      //               deliveryToDate: deliveryToDate,
-      //               selectedOrderStatus: selectedOrderStatus,
-      //               selectedDateRange: selectedDateRange,
-      //             );
-
-      //             // Navigate back
-      //             Navigator.pop(context);
-      //           },
-      //           style: ElevatedButton.styleFrom(
-      //             backgroundColor: const Color(0xFF3F51B5),
-      //             shape: RoundedRectangleBorder(
-      //               borderRadius: BorderRadius.circular(10),
-      //             ),
-      //           ),
-      //           child: const Padding(
-      //             padding: EdgeInsets.symmetric(vertical: 14),
-      //             child: Text(
-      //               'Apply Filters',
-      //               style: TextStyle(color: Colors.white),
-      //             ),
-      //           ),
-      //         ),
-      //       ),
-      //       const SizedBox(width: 10),
-      //       Expanded(
-      //         child: ElevatedButton(
-      //           onPressed: () {
-      //             setState(() {
-      //               selectedLedger = null;
-      //               selectedSalesperson = null;
-      //               fromDate = null;
-      //               toDate = null;
-      //               deliveryFromDate = null;
-      //               deliveryToDate = null;
-      //               selectedOrderStatus = null;
-      //               selectedDateRange = 'Custom';
-      //             });
-      //           },
-      //           style: ElevatedButton.styleFrom(
-      //             backgroundColor: Colors.grey,
-      //             shape: RoundedRectangleBorder(
-      //               borderRadius: BorderRadius.circular(10),
-      //             ),
-      //           ),
-      //           child: const Padding(
-      //             padding: EdgeInsets.symmetric(vertical: 14),
-      //             child: Text(
-      //               'Clear Filters',
-      //               style: TextStyle(color: Colors.white),
-      //             ),
-      //           ),
-      //         ),
-      //       ),
-      //     ],
-      //   ),
-      // ),
-      //   ],
-      // ),
     );
   }
 

@@ -96,14 +96,15 @@ class _RegisterPageState extends State<RegisterPage> {
       final orders = await ApiService.fetchOrderRegister(
         fromDate: fromDateController.text,
         toDate: toDateController.text,
-        custKey: selectedLedger?.key,
+        custKey: UserSession.userType == "C" ? UserSession.userLedKey : selectedLedger?.key,
         coBrId: UserSession.coBrId??'',
-        salesPerson: selectedSalesperson?.key,
+        salesPerson: UserSession.userType == "S" ? UserSession.userLedKey : selectedSalesperson?.key,
         status: selectedOrderStatus,
         dlvFromDate:
             deliveryFromDate == null ? null : deliveryFromDate.toString(),
         dlvToDate: deliveryToDate == null ? null : deliveryToDate.toString(),
-        userName: UserSession.userName??'',
+        // userName: UserSession.userType == 'Admin'? '''',
+        userName: null,
         lastSavedOrderId: null,
       );
       setState(() {
