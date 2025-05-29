@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/category.dart';
 import 'package:vrs_erp_figma/models/item.dart';
@@ -16,23 +17,22 @@ class StockReportPage extends StatefulWidget {
 }
 
 class _StockReportPageState extends State<StockReportPage> {
-  String? selectedCategoryKey; // Store itemSubGrpKey for API calls
-  String? selectedCategoryName; // Store itemSubGrpName for display
+  String? selectedCategoryKey;
+  String? selectedCategoryName;
   String? selectedItem;
 
-  List<Category> categories = []; // List to store category data
-  List<Item> items = []; // List to store item data
-  bool isLoadingCategories = true; // Loading state for categories
-  bool isLoadingItems = true; // Loading state for items
+  List<Category> categories = [];
+  List<Item> items = [];
+  bool isLoadingCategories = true;
+  bool isLoadingItems = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchCategories(); // Fetch all categories when the page loads
-    _fetchAllItems(); // Fetch all items initially
+    _fetchCategories();
+    _fetchAllItems();
   }
 
-  // Fetch categories from API using ApiService
   Future<void> _fetchCategories() async {
     setState(() {
       isLoadingCategories = true;
@@ -40,7 +40,7 @@ class _StockReportPageState extends State<StockReportPage> {
     try {
       final fetchedCategories = await ApiService.fetchCategories();
       setState(() {
-        categories = fetchedCategories; // Store the category list
+        categories = fetchedCategories;
         isLoadingCategories = false;
       });
     } catch (e) {
@@ -53,7 +53,6 @@ class _StockReportPageState extends State<StockReportPage> {
     }
   }
 
-  // Fetch all items initially
   Future<void> _fetchAllItems() async {
     setState(() {
       isLoadingItems = true;
@@ -74,7 +73,6 @@ class _StockReportPageState extends State<StockReportPage> {
     }
   }
 
-  // Fetch items by category
   Future<void> _fetchItemsByCategory(String categoryKey) async {
     setState(() {
       isLoadingItems = true;
@@ -100,7 +98,7 @@ class _StockReportPageState extends State<StockReportPage> {
       selectedCategoryKey = null;
       selectedCategoryName = null;
       selectedItem = null;
-      _fetchAllItems(); // Reset to all items when clearing filters
+      _fetchAllItems();
     });
   }
 
@@ -112,77 +110,149 @@ class _StockReportPageState extends State<StockReportPage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Show loading indicator for categories
-            if (isLoadingCategories)
-              const Center(child: CircularProgressIndicator())
-            else
-              // Category Dropdown
-              DropdownSearch<String>(
-                items: categories.map((category) => category.itemSubGrpName).toList(),
-                selectedItem: selectedCategoryName,
-                onChanged: (value) {
-                  setState(() {
-                    selectedCategoryName = value;
-                    selectedItem = null; // Reset item selection when category changes
-                    if (value != null) {
-                      Category? selectedCategory;
-                      try {
+            // Category Dropdown with WaveDots in Popup
+            DropdownSearch<String>(
+              items: categories.map((category) => category.itemSubGrpName).toList(),
+              selectedItem: selectedCategoryName,
+              onChanged: (value) {
+                setState(() {
+                  selectedCategoryName = value;
+                  selectedItem = null; // Reset item selection when category changes
+                  if (value != null) {
+                    Category? selectedCategory;
+                    try {
+                      for (var cat in categories) {
+                        if (cat.itemSubGrpName == value) {
+                          selectedCategory = cat;
+                          break;
+                        }
+                      }
+                      if (selectedCategory != null) {
+                        selectedCategoryKey = selectedCategory.itemSubGrpKey;
+                        _fetchItemsByCategory(selectedCategoryKey!);
+                      } else {
+                        selectedCategoryKey = null;
+                        _fetchAllItems(); // Fallback to all items if no category match
+                      }
+                    } catch (e) {
+                      selectedCategoryKey = null;
+                      _fetchAllItems();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error selecting category: $e'),
+                        ),
+                      );
+                    }
+                  } else {
+                    selectedCategoryKey = null;
+                    _fetchAllItems(); // If no category selected, fetch all items
+                  }
+                });
+              },
+              dropdownDecoratorProps: const DropDownDecoratorProps(
+                dropdownSearchDecoration: InputDecoration(
+                  labelText: "Select Category",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              popupProps: PopupProps.menu(
+                showSearchBox: true,
+                fit: FlexFit.loose,
+                loadingBuilder: isLoadingCategories
+                    ? (context, searchEntry) => Center(
+                          child: LoadingAnimationWidget.waveDots(
+                            color: Colors.blue,
+                            size: 40,
+                          ),
+                        )
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Item Dropdown with WaveDots in Popup
+            DropdownSearch<String>(
+              items: items.map((item) => item.itemName).toList(),
+              selectedItem: selectedItem,
+              onChanged: (value) {
+                setState(() {
+                  selectedItem = value;
+                  if (value != null) {
+                    Item? selectedItemObj;
+                    try {
+                      for (var item in items) {
+                        if (item.itemName == value) {
+                          selectedItemObj = item;
+                          break;
+                        }
+                      }
+                      if (selectedItemObj != null) {
+                        String itemSubGrpKey =
+                            selectedItemObj.itemSubGrpKey ?? 'default_key';
+                        Category? matchingCategory;
                         for (var cat in categories) {
-                          if (cat.itemSubGrpName == value) {
-                            selectedCategory = cat;
+                          if (cat.itemSubGrpKey == itemSubGrpKey) {
+                            matchingCategory = cat;
                             break;
                           }
                         }
-                        if (selectedCategory != null) {
-                          selectedCategoryKey = selectedCategory.itemSubGrpKey;
+                        if (matchingCategory != null) {
+                          // Auto-select the category
+                          selectedCategoryKey = matchingCategory.itemSubGrpKey;
+                          selectedCategoryName = matchingCategory.itemSubGrpName;
                           _fetchItemsByCategory(selectedCategoryKey!);
                         } else {
+                          // If no matching category, reset category and fetch all items
                           selectedCategoryKey = null;
-                          _fetchAllItems(); // Fallback to all items if no category match
+                          selectedCategoryName = null;
+                          _fetchAllItems();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'No matching category found for the selected item',
+                              ),
+                            ),
+                          );
                         }
-                      } catch (e) {
+                      } else {
                         selectedCategoryKey = null;
+                        selectedCategoryName = null;
                         _fetchAllItems();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error selecting category: $e')),
-                        );
                       }
-                    } else {
+                    } catch (e) {
                       selectedCategoryKey = null;
-                      _fetchAllItems(); // If no category selected, fetch all items
+                      selectedCategoryName = null;
+                      _fetchAllItems();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error selecting item: $e')),
+                      );
                     }
-                  });
-                },
-                dropdownDecoratorProps: const DropDownDecoratorProps(
-                  dropdownSearchDecoration: InputDecoration(
-                    labelText: "Select Category",
-                    border: OutlineInputBorder(),
-                  ),
+                  } else {
+                    // If no item selected, keep category as is or reset if needed
+                    if (selectedCategoryKey == null) {
+                      _fetchAllItems();
+                    }
+                  }
+                });
+              },
+              dropdownDecoratorProps: const DropDownDecoratorProps(
+                dropdownSearchDecoration: InputDecoration(
+                  labelText: "Select Item",
+                  border: OutlineInputBorder(),
                 ),
-                popupProps: const PopupProps.menu(showSearchBox: true),
               ),
-            const SizedBox(height: 16),
-            // Show loading indicator for items
-            if (isLoadingItems)
-              const Center(child: CircularProgressIndicator())
-            else
-              // Item Dropdown
-              DropdownSearch<String>(
-                items: items.map((item) => item.itemName).toList(),
-                selectedItem: selectedItem,
-                onChanged: (value) {
-                  setState(() {
-                    selectedItem = value;
-                  });
-                },
-                dropdownDecoratorProps: const DropDownDecoratorProps(
-                  dropdownSearchDecoration: InputDecoration(
-                    labelText: "Select Item",
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                popupProps: const PopupProps.menu(showSearchBox: true),
+              popupProps: PopupProps.menu(
+                showSearchBox: true,
+                fit: FlexFit.loose,
+                loadingBuilder: isLoadingItems
+                    ? (context, searchEntry) => Center(
+                          child: LoadingAnimationWidget.waveDots(
+                            color: Colors.blue,
+                            size: 40,
+                          ),
+                        )
+                    : null,
               ),
+            ),
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
