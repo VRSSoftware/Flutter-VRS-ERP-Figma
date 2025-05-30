@@ -2,10 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 
+import 'customerOrderDetailsPage.dart';
+
 class OrderDetailsPage extends StatelessWidget {
   final List<Map<String, dynamic>> orderDetails;
+    final DateTime fromDate;  // Add these
+  final DateTime toDate;    // Add these
 
-  const OrderDetailsPage({super.key, required this.orderDetails});
+
+  const OrderDetailsPage({super.key, required this.orderDetails,
+     required this.fromDate,  // Add these
+    required this.toDate,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +50,7 @@ class OrderDetailsPage extends StatelessWidget {
               ...orderDetails.map((order) {
                 return Column(
                   children: [
-                    _buildCustomerOrderCard(order),
+                    _buildCustomerOrderCard(context,order),
                     const SizedBox(height: 16),
                   ],
                 );
@@ -91,8 +99,22 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCustomerOrderCard(Map<String, dynamic> order) {
-    return Container(
+    Widget _buildCustomerOrderCard(BuildContext context,Map<String, dynamic> order) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CustomerOrderDetailsPage(
+              custKey: order['cust_key'] ?? '',
+              customerName: order['customernamewithcity'] ?? '',
+              fromDate: fromDate,  // Pass fromDate
+              toDate: toDate,      // Pass toDate
+            ),
+          ),
+        );
+      },
+      child: Container(
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey.shade300),
@@ -196,6 +218,6 @@ class OrderDetailsPage extends StatelessWidget {
           ],
         ),
       ),
-    );
+     ) );
   }
 }

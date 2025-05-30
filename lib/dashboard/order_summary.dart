@@ -589,14 +589,16 @@ Future<void> _showOrderDetails(String orderType) async {
       final data = jsonDecode(response.body);
       // Check if data is a List as per the API response format
       if (data is List) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OrderDetailsPage(
-              orderDetails: List<Map<String, dynamic>>.from(data),
-            ),
-          ),
-        );
+       Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) => OrderDetailsPage(
+      orderDetails: List<Map<String, dynamic>>.from(data),
+      fromDate: fromDate,  // Pass fromDate
+      toDate: toDate,      // Pass toDate
+    ),
+  ),
+);
       } else {
         throw Exception('Unexpected response format: Expected a list');
       }
