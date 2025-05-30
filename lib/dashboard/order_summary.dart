@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/widget/bottom_navbar.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class OrderSummaryPage extends StatefulWidget {
   const OrderSummaryPage({super.key});
@@ -14,10 +16,31 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
   DateTime toDate = DateTime.now();
   String selectedRange = 'Today';
 
+  // Declare variables for customer, city, salesman, and state
+  String? customer; // CustKey
+  String? city; // City
+  String? salesman; // SalesPerson
+  String? state; // State
+
+  // Variables to store API response data
+  String orderDocCount = '0';
+  String pendingQty = '0';
+  String packedDocCount = '0';
+  String cancelledQty = '0';
+  String invoicedDocCount = '0';
+  String invoicedQty = '0';
+  String orderQty = '0';
+  String pendingDocCount = '0';
+  String packedQty = '0';
+  String cancelledDocCount = '0';
+  String toBeReceived = '0';
+  String inHand = '0';
+
   @override
   void initState() {
     super.initState();
     _updateDateRange('Today'); // Initialize with default range
+    _fetchOrderSummary(); // Fetch data on page load
   }
 
   Future<void> _selectDate(BuildContext context, bool isFromDate) async {
@@ -34,9 +57,9 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         } else {
           toDate = picked;
         }
-        selectedRange =
-            'Custom'; // Switch to custom when dates are manually selected
+        selectedRange = 'Custom'; // Switch to custom when dates are manually selected
       });
+      _fetchOrderSummary(); // Fetch updated data after date change
     }
   }
 
@@ -129,14 +152,68 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
           break;
       }
     });
+    _fetchOrderSummary(); // Fetch updated data after range change
   }
+
+  // API call to fetch order summary
+  Future<void> _fetchOrderSummary() async {
+    const String apiUrl = '${AppConstants.BASE_URL}/orderRegister/order-details-dash'; // Replace with your API endpoint
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          "FromDate": "${fromDate.year}-${fromDate.month.toString().padLeft(2, '0')}-${fromDate.day.toString().padLeft(2, '0')}",
+          "ToDate": "${toDate.year}-${toDate.month.toString().padLeft(2, '0')}-${toDate.day.toString().padLeft(2, '0')}",
+          "CoBr_Id": "01",
+          "CustKey": customer,
+          "SalesPerson": salesman,
+          "State": state,
+          "City": city,
+          "orderType": null,
+          "Detail": null
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          orderDocCount = data['orderdoccount']?.toString() ?? '0';
+          pendingQty = data['pendingqty']?.toString() ?? '0'; 
+          packedDocCount = data['packeddoccount']?.toString() ?? '0';
+          cancelledQty = data['cancelledqty']?.toString() ?? '0'; 
+          invoicedDocCount = data['invoiceddoccount']?.toString() ?? '0';
+          invoicedQty = data['invoicedqty']?.toString() ?? '0'; 
+          orderQty = data['orderqty']?.toString() ?? '0'; 
+          pendingDocCount = data['pendingdoccount']?.toString() ?? '0';
+          packedQty = data['packedqty']?.toString() ?? '0'; 
+          cancelledDocCount = data['cancelleddoccount']?.toString() ?? '0';
+          toBeReceived = data['tobereceived']?.toString() ?? '0'; 
+          inHand = data['inhand']?.toString() ?? '0'; 
+        });
+      } else {
+        // Handle non-200 response
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load data: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      // Handle network or parsing errors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Order Summary',
+          'Dashboard',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -178,25 +255,24 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                         value: selectedRange,
                         isExpanded: true,
                         underline: const SizedBox(),
-                        items:
-                            <String>[
-                              'Custom',
-                              'Today',
-                              'This Week',
-                              'This Month',
-                              'This Quarter',
-                              'This Year',
-                              'Yesterday',
-                              'Previous Week',
-                              'Previous Month',
-                              'Previous Quarter',
-                              'Previous Year',
-                            ].map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
+                        items: <String>[
+                          'Custom',
+                          'Today',
+                          'This Week',
+                          'This Month',
+                          'This Quarter',
+                          'This Year',
+                          'Yesterday',
+                          'Previous Week',
+                          'Previous Month',
+                          'Previous Quarter',
+                          'Previous Year',
+                        ].map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
                         onChanged: (String? newValue) {
                           if (newValue != null) {
                             _updateDateRange(newValue);
@@ -296,10 +372,12 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
             // First Row of Cards
             Row(
               children: [
-                Expanded(child: _buildOrderCard('TOTAL ORDER', '0', '0', true)),
+                Expanded(
+                  child: _buildOrderCard('TOTAL ORDER', orderDocCount, orderQty, true),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildOrderCard('PENDING ORDER', '0', '0', true),
+                  child: _buildOrderCard('PENDING ORDER', pendingDocCount, pendingQty, true),
                 ),
               ],
             ),
@@ -308,11 +386,11 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
             Row(
               children: [
                 Expanded(
-                  child: _buildOrderCard('PACKED ORDER', '0', '0', true),
+                  child: _buildOrderCard('PACKED ORDER', packedDocCount, packedQty, true),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildOrderCard('CANCELE ORDER', '0', '0', true),
+                  child: _buildOrderCard('CANCELE ORDER', cancelledDocCount, cancelledQty, true),
                 ),
               ],
             ),
@@ -321,7 +399,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
             Row(
               children: [
                 Expanded(
-                  child: _buildOrderCard('INVOICED ORDER', '0', '0', true),
+                  child: _buildOrderCard('INVOICED ORDER', invoicedDocCount, invoicedQty, true),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -338,23 +416,23 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: _buildOrderCard('IN HAND', '4305', '0', false)),
+                Expanded(child: _buildOrderCard('IN HAND', inHand, '0', false)),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildOrderCard('TO BE RECEIVED', '14', '0', false),
+                  child: _buildOrderCard('TO BE RECEIVED', toBeReceived, '0', false),
                 ),
               ],
             ),
           ],
         ),
       ),
-         bottomNavigationBar: BottomNavigationWidget(
+      bottomNavigationBar: BottomNavigationWidget(
         currentIndex: 4, // 👈 Highlight Order icon
         onTap: (index) {
           if (index == 0) Navigator.pushNamed(context, '/home');
           if (index == 1) Navigator.pushNamed(context, '/catalog');
           if (index == 2) Navigator.pushNamed(context, '/orderbooking');
-           if (index == 3) Navigator.pushNamed(context, '/stockReport');
+          if (index == 3) Navigator.pushNamed(context, '/stockReport');
           if (index == 4) return;
         },
       ),
