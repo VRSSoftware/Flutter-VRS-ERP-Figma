@@ -386,6 +386,8 @@ Future<void> _fetchCartCount() async {
           if (index == 0) Navigator.pushNamed(context, '/home');
           if (index == 1) Navigator.pushNamed(context, '/catalog');
           if (index == 2) return; // Already on Order
+          if (index == 3) Navigator.pushNamed(context, '/stockReport');
+          if (index == 4) Navigator.pushNamed(context, '/dashboard');
         },
       ),
     );

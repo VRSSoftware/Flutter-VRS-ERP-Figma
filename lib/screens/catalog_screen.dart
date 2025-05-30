@@ -303,6 +303,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
           if (index == 0) Navigator.pushNamed(context, '/home');
           if (index == 1) return;
           if (index == 2) Navigator.pushNamed(context, '/orderbooking');
+          if (index == 3) Navigator.pushNamed(context, '/stockReport');
+          if (index == 4) Navigator.pushNamed(context, '/dashboard');
         },
       ),
     );

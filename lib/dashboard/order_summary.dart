@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/widget/bottom_navbar.dart';
 
 class OrderSummaryPage extends StatefulWidget {
   const OrderSummaryPage({super.key});
@@ -346,6 +347,16 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
             ),
           ],
         ),
+      ),
+         bottomNavigationBar: BottomNavigationWidget(
+        currentIndex: 4, // 👈 Highlight Order icon
+        onTap: (index) {
+          if (index == 0) Navigator.pushNamed(context, '/home');
+          if (index == 1) Navigator.pushNamed(context, '/catalog');
+          if (index == 2) Navigator.pushNamed(context, '/orderbooking');
+           if (index == 3) Navigator.pushNamed(context, '/stockReport');
+          if (index == 4) return;
+        },
       ),
     );
   }

@@ -16,6 +16,7 @@ import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/keyName.dart';
 import 'package:vrs_erp_figma/models/registerModel.dart';
 import 'package:vrs_erp_figma/register/registerFilteration.dart';
+import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
 import 'package:vrs_erp_figma/viewOrder/Pdf_viewer_screen.dart';
 
@@ -768,12 +769,18 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: Text(
-          'Register',
-          style: GoogleFonts.poppins(color: Colors.white),
+            backgroundColor: Colors.white,
+       drawer: DrawerScreen(),
+        appBar: AppBar(
+        title: Text('Order Register', style: TextStyle(color: AppColors.white)),
+        backgroundColor: AppColors.primaryColor,
+        elevation: 1,
+        leading: Builder(
+          builder:
+              (context) => IconButton(
+                icon: Icon(Icons.menu, color: AppColors.white),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
         ),
         actions: const [
           Padding(

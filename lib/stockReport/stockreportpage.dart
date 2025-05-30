@@ -13,8 +13,10 @@ import 'package:vrs_erp_figma/models/shade.dart';
 import 'package:vrs_erp_figma/models/size.dart';
 import 'package:vrs_erp_figma/models/brand.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
+import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
-import 'package:vrs_erp_figma/stockReport/stockfilter.dart'; // Import StockFilterPage
+import 'package:vrs_erp_figma/stockReport/stockfilter.dart';
+import 'package:vrs_erp_figma/widget/bottom_navbar.dart'; // Import StockFilterPage
 
 class StockReportPage extends StatefulWidget {
   const StockReportPage({super.key});
@@ -360,177 +362,137 @@ class _StockReportPageState extends State<StockReportPage> {
     return items.fold(0, (sum, item) => sum + (item.total ?? 0));
   }
 
-Widget _buildStyleTable(String styleCode, List<StockReportItem> items, BuildContext context) {
-  // Parse details to extract size-wise quantities
-  Map<String, Map<String, int>> shadeSizeQuantities = {};
-  List<String> allSizes = [];
+  Widget _buildStyleTable(
+    String styleCode,
+    List<StockReportItem> items,
+    BuildContext context,
+  ) {
+    // Parse details to extract size-wise quantities
+    Map<String, Map<String, int>> shadeSizeQuantities = {};
+    List<String> allSizes = [];
 
-  for (var item in items) {
-    if (item.details != null && item.details!.isNotEmpty) {
-      Map<String, int> sizeMap = {};
-      List<String> sizePairs = item.details!.split(',');
+    for (var item in items) {
+      if (item.details != null && item.details!.isNotEmpty) {
+        Map<String, int> sizeMap = {};
+        List<String> sizePairs = item.details!.split(',');
 
-      for (String pair in sizePairs) {
-        List<String> parts = pair.split(':');
-        if (parts.length == 2) {
-          String size = parts[0].trim();
-          int quantity = int.tryParse(parts[1].trim()) ?? 0;
-          sizeMap[size] = quantity;
+        for (String pair in sizePairs) {
+          List<String> parts = pair.split(':');
+          if (parts.length == 2) {
+            String size = parts[0].trim();
+            int quantity = int.tryParse(parts[1].trim()) ?? 0;
+            sizeMap[size] = quantity;
 
-          if (!allSizes.contains(size)) {
-            allSizes.add(size);
+            if (!allSizes.contains(size)) {
+              allSizes.add(size);
+            }
           }
         }
-      }
 
-      shadeSizeQuantities[item.shadeName ?? 'Unknown'] = sizeMap;
-    }
-  }
-
-  // Sort sizes numerically
-  allSizes.sort((a, b) {
-    int? aNum = int.tryParse(a);
-    int? bNum = int.tryParse(b);
-    if (aNum != null && bNum != null) {
-      return aNum.compareTo(bNum);
-    }
-    return a.compareTo(b);
-  });
-
-  // Calculate totals
-  Map<String, int> sizeTotals = {};
-  int styleTotal = 0;
-
-  for (var size in allSizes) {
-    sizeTotals[size] = 0;
-  }
-
-  for (var item in items) {
-    styleTotal += item.total ?? 0;
-
-    if (shadeSizeQuantities.containsKey(item.shadeName)) {
-      var sizeMap = shadeSizeQuantities[item.shadeName]!;
-      for (var size in sizeMap.keys) {
-        sizeTotals[size] = (sizeTotals[size] ?? 0) + (sizeMap[size] ?? 0);
+        shadeSizeQuantities[item.shadeName ?? 'Unknown'] = sizeMap;
       }
     }
-  }
 
-  // Get the screen width
-  double screenWidth = MediaQuery.of(context).size.width;
+    // Sort sizes numerically
+    allSizes.sort((a, b) {
+      int? aNum = int.tryParse(a);
+      int? bNum = int.tryParse(b);
+      if (aNum != null && bNum != null) {
+        return aNum.compareTo(bNum);
+      }
+      return a.compareTo(b);
+    });
 
-  // Define the number of columns: "Shade" + all sizes + "Total"
-  int totalColumns = 1 + allSizes.length + 1; // Shade + sizes + Total
+    // Calculate totals
+    Map<String, int> sizeTotals = {};
+    int styleTotal = 0;
 
-  // Calculate the minimum width for each column
-  double minColumnWidth = screenWidth / totalColumns; // Distribute screen width evenly
-  double shadeColumnWidth = minColumnWidth.clamp(100, double.infinity); // Ensure "Shade" column is at least 100px
-  double sizeColumnWidth = minColumnWidth.clamp(60, double.infinity); // Ensure size and total columns are at least 60px
+    for (var size in allSizes) {
+      sizeTotals[size] = 0;
+    }
 
-  // Calculate the total width of the table content
-  double totalContentWidth = shadeColumnWidth + (allSizes.length * sizeColumnWidth) + sizeColumnWidth;
+    for (var item in items) {
+      styleTotal += item.total ?? 0;
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      // Style Code Header (itemName without Total)
-      Container(
-        width: double.infinity, // Ensure header takes full width
-        padding: const EdgeInsets.all(12),
-        color: const Color(0xFF0288D1), // Matches the teal color in the image
-        child: Text(
-          '$styleCode - ${items.first.type ?? ''}',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            fontSize: 16,
+      if (shadeSizeQuantities.containsKey(item.shadeName)) {
+        var sizeMap = shadeSizeQuantities[item.shadeName]!;
+        for (var size in sizeMap.keys) {
+          sizeTotals[size] = (sizeTotals[size] ?? 0) + (sizeMap[size] ?? 0);
+        }
+      }
+    }
+
+    // Get the screen width
+    double screenWidth = MediaQuery.of(context).size.width;
+
+    // Define the number of columns: "Shade" + all sizes + "Total"
+    int totalColumns = 1 + allSizes.length + 1; // Shade + sizes + Total
+
+    // Calculate the minimum width for each column
+    double minColumnWidth =
+        screenWidth / totalColumns; // Distribute screen width evenly
+    double shadeColumnWidth = minColumnWidth.clamp(
+      100,
+      double.infinity,
+    ); // Ensure "Shade" column is at least 100px
+    double sizeColumnWidth = minColumnWidth.clamp(
+      60,
+      double.infinity,
+    ); // Ensure size and total columns are at least 60px
+
+    // Calculate the total width of the table content
+    double totalContentWidth =
+        shadeColumnWidth +
+        (allSizes.length * sizeColumnWidth) +
+        sizeColumnWidth;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Style Code Header (itemName without Total)
+        Container(
+          width: double.infinity, // Ensure header takes full width
+          padding: const EdgeInsets.all(12),
+          color: const Color(0xFF0288D1), // Matches the teal color in the image
+          child: Text(
+            '$styleCode - ${items.first.type ?? ''}',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              fontSize: 16,
+            ),
           ),
         ),
-      ),
 
-      // Horizontally Scrollable Table (if needed)
-      SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minWidth: screenWidth, // Ensure the table takes at least the screen width
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Table Header (Shades and Sizes)
-              Container(
-                color: const Color(0xFF4FC3F7), // Lighter teal as per the image
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: shadeColumnWidth,
-                      child: const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          'Shade',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                    ...allSizes.map(
-                      (size) => SizedBox(
-                        width: sizeColumnWidth,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            size,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: sizeColumnWidth,
-                      child: const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          'Total',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Table Rows (Shade-wise quantities)
-              ...shadeSizeQuantities.entries.map((entry) {
-                String shade = entry.key;
-                Map<String, int> sizeMap = entry.value;
-                int shadeTotal = items
-                        .firstWhere(
-                          (item) => item.shadeName == shade,
-                          orElse: () => StockReportItem(),
-                        )
-                        .total ??
-                    0;
-
-                return Container(
-                  color: Colors.grey[200],
+        // Horizontally Scrollable Table (if needed)
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth:
+                  screenWidth, // Ensure the table takes at least the screen width
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Table Header (Shades and Sizes)
+                Container(
+                  color: const Color(
+                    0xFF4FC3F7,
+                  ), // Lighter teal as per the image
                   child: Row(
                     children: [
                       SizedBox(
                         width: shadeColumnWidth,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(shade),
+                        child: const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'Shade',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ),
                       ...allSizes.map(
@@ -539,8 +501,114 @@ Widget _buildStyleTable(String styleCode, List<StockReportItem> items, BuildCont
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Text(
-                              sizeMap[size]?.toString() ?? '0',
+                              size,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                               textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: sizeColumnWidth,
+                        child: const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'Total',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Table Rows (Shade-wise quantities)
+                ...shadeSizeQuantities.entries.map((entry) {
+                  String shade = entry.key;
+                  Map<String, int> sizeMap = entry.value;
+                  int shadeTotal =
+                      items
+                          .firstWhere(
+                            (item) => item.shadeName == shade,
+                            orElse: () => StockReportItem(),
+                          )
+                          .total ??
+                      0;
+
+                  return Container(
+                    color: Colors.grey[200],
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: shadeColumnWidth,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(shade),
+                          ),
+                        ),
+                        ...allSizes.map(
+                          (size) => SizedBox(
+                            width: sizeColumnWidth,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                sizeMap[size]?.toString() ?? '0',
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: sizeColumnWidth,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              shadeTotal.toString(),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+
+                // Total Row for the Style
+                Container(
+                  color: Colors.grey[400],
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: shadeColumnWidth,
+                        child: const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'TOTAL',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                      ...allSizes.map(
+                        (size) => SizedBox(
+                          width: sizeColumnWidth,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              sizeTotals[size]?.toString() ?? '0',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -550,7 +618,7 @@ Widget _buildStyleTable(String styleCode, List<StockReportItem> items, BuildCont
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Text(
-                            shadeTotal.toString(),
+                            styleTotal.toString(),
                             textAlign: TextAlign.center,
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
@@ -558,60 +626,17 @@ Widget _buildStyleTable(String styleCode, List<StockReportItem> items, BuildCont
                       ),
                     ],
                   ),
-                );
-              }).toList(),
-
-              // Total Row for the Style
-              Container(
-                color: Colors.grey[400],
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: shadeColumnWidth,
-                      child: const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          'TOTAL',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                    ...allSizes.map(
-                      (size) => SizedBox(
-                        width: sizeColumnWidth,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            sizeTotals[size]?.toString() ?? '0',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: sizeColumnWidth,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          styleTotal.toString(),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
 
-      const SizedBox(height: 20),
-    ],
-  );
-}
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     int grandTotal = 0;
@@ -619,14 +644,20 @@ Widget _buildStyleTable(String styleCode, List<StockReportItem> items, BuildCont
       grandTotal += items.fold(0, (sum, item) => sum + (item.total ?? 0));
     });
     return Scaffold(
-    appBar: AppBar(
-  backgroundColor: AppColors.primaryColor,
-  iconTheme: const IconThemeData(color: Colors.white), // Makes back icon white
-  title: const Text(
-    'Stock Report',
-    style: TextStyle(color: Colors.white), // Makes title text white
-  ),
-),
+      backgroundColor: Colors.white,
+      drawer: DrawerScreen(),
+      appBar: AppBar(
+        title: Text('Stock Report', style: TextStyle(color: AppColors.white)),
+        backgroundColor: AppColors.primaryColor,
+        elevation: 1,
+        leading: Builder(
+          builder:
+              (context) => IconButton(
+                icon: Icon(Icons.menu, color: AppColors.white),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -925,7 +956,11 @@ Widget _buildStyleTable(String styleCode, List<StockReportItem> items, BuildCont
 
                             // Group and display tables by style code
                             ..._groupItemsByStyleCode().entries.map((entry) {
-                              return _buildStyleTable(entry.key, entry.value,context);
+                              return _buildStyleTable(
+                                entry.key,
+                                entry.value,
+                                context,
+                              );
                             }).toList(),
 
                             if (_groupItemsByStyleCode().isNotEmpty &&
@@ -1004,6 +1039,16 @@ Widget _buildStyleTable(String styleCode, List<StockReportItem> items, BuildCont
           child: const Icon(Icons.filter_list, color: Colors.white),
           tooltip: 'Filter Options',
         ),
+      ),
+      bottomNavigationBar: BottomNavigationWidget(
+        currentIndex: 3, // 👈 Highlight Order icon
+        onTap: (index) {
+          if (index == 0) Navigator.pushNamed(context, '/home');
+          if (index == 1) Navigator.pushNamed(context, '/catalog');
+          if (index == 2) Navigator.pushNamed(context, '/orderbooking');
+          if (index == 3) return;
+          if (index == 4) Navigator.pushNamed(context, '/dashboard');
+        },
       ),
     );
   }

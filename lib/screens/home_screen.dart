@@ -48,9 +48,11 @@ class HomeScreen extends StatelessWidget {
           if (index == 0) return;
           if (index == 1) Navigator.pushNamed(context, '/catalog');
           if (index == 2) Navigator.pushNamed(context, '/orderbooking');
-          if (index == 3) Navigator.pushNamed(context, '/orderRegister');
-          if (index == 4) Navigator.pushNamed(context, '/stockReport');
-          if (index == 5) Navigator.pushNamed(context, '/dashboard');
+           if (index == 3) Navigator.pushNamed(context, '/stockReport');
+             if (index == 4) Navigator.pushNamed(context, '/dashboard');
+          if (index == 5) Navigator.pushNamed(context, '/orderRegister');
+         
+        
           // Add others similarly...
         },
       ),
