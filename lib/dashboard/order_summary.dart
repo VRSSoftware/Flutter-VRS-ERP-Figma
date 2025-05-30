@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/dashboard/dashboard_filter.dart';
+import 'package:vrs_erp_figma/models/keyName.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
+import 'package:vrs_erp_figma/services/app_services.dart';
 import 'package:vrs_erp_figma/widget/bottom_navbar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -37,11 +40,54 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
   String toBeReceived = '0';
   String inHand = '0';
 
+  KeyName? selectedLedger;
+  KeyName? selectedSalesperson;
+  List<KeyName> ledgerList = [];
+  List<KeyName> salespersonList = [];
+  bool isLoadingLedgers = true;
+  bool isLoadingSalesperson = true;
+
   @override
   void initState() {
     super.initState();
     _updateDateRange('Today'); // Initialize with default range
+    _loadDropdownData();
     _fetchOrderSummary(); // Fetch data on page load
+  }
+
+  Future<void> _loadDropdownData() async {
+    setState(() {
+      isLoadingLedgers = true;
+      isLoadingSalesperson = true;
+    });
+
+    try {
+      final fetchedLedgersResponse = await ApiService.fetchLedgers(
+        ledCat: 'w',
+        coBrId: UserSession.coBrId ?? '',
+      );
+      final fetchedSalespersonResponse = await ApiService.fetchLedgers(
+        ledCat: 's',
+        coBrId: UserSession.coBrId ?? '',
+      );
+
+      setState(() {
+        ledgerList = List<KeyName>.from(fetchedLedgersResponse['result'] ?? []);
+        salespersonList = List<KeyName>.from(
+          fetchedSalespersonResponse['result'] ?? [],
+        );
+        isLoadingLedgers = false;
+        isLoadingSalesperson = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoadingLedgers = false;
+        isLoadingSalesperson = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching dropdown data: $e')),
+      );
+    }
   }
 
   Future<void> _selectDate(BuildContext context, bool isFromDate) async {
@@ -182,17 +228,17 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         final data = jsonDecode(response.body);
         setState(() {
           orderDocCount = data['orderdoccount']?.toString() ?? '0';
-          pendingQty = data['pendingqty']?.toString() ?? '0'; 
+          pendingQty = data['pendingqty']?.toString() ?? '0';
           packedDocCount = data['packeddoccount']?.toString() ?? '0';
-          cancelledQty = data['cancelledqty']?.toString() ?? '0'; 
+          cancelledQty = data['cancelledqty']?.toString() ?? '0';
           invoicedDocCount = data['invoiceddoccount']?.toString() ?? '0';
-          invoicedQty = data['invoicedqty']?.toString() ?? '0'; 
-          orderQty = data['orderqty']?.toString() ?? '0'; 
+          invoicedQty = data['invoicedqty']?.toString() ?? '0';
+          orderQty = data['orderqty']?.toString() ?? '0';
           pendingDocCount = data['pendingdoccount']?.toString() ?? '0';
-          packedQty = data['packedqty']?.toString() ?? '0'; 
+          packedQty = data['packedqty']?.toString() ?? '0';
           cancelledDocCount = data['cancelleddoccount']?.toString() ?? '0';
-          toBeReceived = data['tobereceived']?.toString() ?? '0'; 
-          inHand = data['inhand']?.toString() ?? '0'; 
+          toBeReceived = data['tobereceived']?.toString() ?? '0';
+          inHand = data['inhand']?.toString() ?? '0';
         });
       } else {
         // Handle non-200 response
@@ -208,22 +254,20 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-          backgroundColor: Colors.white,
+      backgroundColor: Colors.white,
       drawer: DrawerScreen(),
       appBar: AppBar(
         title: Text('Dashboard', style: TextStyle(color: AppColors.white)),
         backgroundColor: AppColors.primaryColor,
         elevation: 1,
         leading: Builder(
-          builder:
-              (context) => IconButton(
-                icon: Icon(Icons.menu, color: AppColors.white),
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu, color: AppColors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -260,18 +304,19 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                       child: DropdownButton<String>(
                         value: selectedRange,
                         isExpanded: true,
-                        underline: const SizedBox(),
+                        underline: const 
+                        SizedBox(),
                         items: <String>[
                           'Custom',
                           'Today',
-                          'This Week',
-                          'This Month',
-                          'This Quarter',
-                          'This Year',
                           'Yesterday',
+                          'This Week',
                           'Previous Week',
+                          'This Month',
                           'Previous Month',
+                          'This Quarter',
                           'Previous Quarter',
+                          'This Year',
                           'Previous Year',
                         ].map<DropdownMenuItem<String>>((String value) {
                           return DropdownMenuItem<String>(
@@ -396,7 +441,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildOrderCard('CANCELE ORDER', cancelledDocCount, cancelledQty, true),
+                  child: _buildOrderCard('CANCELED ORDER', cancelledDocCount, cancelledQty, true),
                 ),
               ],
             ),
@@ -432,8 +477,77 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
           ],
         ),
       ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 50),
+        child: FloatingActionButton(
+          backgroundColor: Colors.blue,
+          onPressed: () async {
+            await Navigator.push(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (
+                  context,
+                  animation,
+                  secondaryAnimation,
+                ) =>
+                    DashboardFilterPage(
+                  ledgerList: ledgerList,
+                  salespersonList: salespersonList,
+                  onApplyFilters: ({
+                    KeyName? selectedLedger,
+                    KeyName? selectedSalesperson,
+                    DateTime? fromDate,
+                    DateTime? toDate,
+                    String? selectedState,
+                    String? selectedCity,
+                  }) {
+                    setState(() {
+                      this.selectedLedger = selectedLedger;
+                      this.selectedSalesperson = selectedSalesperson;
+                      this.fromDate = fromDate ?? this.fromDate;
+                      this.toDate = toDate ?? this.toDate;
+                      this.state = selectedState;
+                      this.city = selectedCity;
+                      this.customer = selectedLedger?.key;
+                      this.salesman = selectedSalesperson?.key;
+                      this.selectedRange = 'Custom'; // Default to Custom if dates are set
+                    });
+                    _fetchOrderSummary(); // Fetch updated data after applying filters
+                  },
+                ),
+                settings: RouteSettings(
+                  arguments: {
+                    'ledgerList': ledgerList,
+                    'salespersonList': salespersonList,
+                    'selectedLedger': selectedLedger,
+                    'selectedSalesperson': selectedSalesperson,
+                    'fromDate': fromDate,
+                    'toDate': toDate,
+                    'selectedDateRange': selectedRange,
+                  },
+                ),
+                transitionDuration: const Duration(milliseconds: 500),
+                transitionsBuilder: (
+                  context,
+                  animation,
+                  secondaryAnimation,
+                  child,
+                ) {
+                  return ScaleTransition(
+                    scale: animation,
+                    alignment: Alignment.bottomRight,
+                    child: FadeTransition(opacity: animation, child: child),
+                  );
+                },
+              ),
+            );
+          },
+          tooltip: 'Filter Orders',
+          child: const Icon(Icons.filter_list, color: Colors.white),
+        ),
+      ),
       bottomNavigationBar: BottomNavigationWidget(
-        currentIndex: 4, // 👈 Highlight Order icon
+        currentIndex: 4, // Highlight Order icon
         onTap: (index) {
           if (index == 0) Navigator.pushNamed(context, '/home');
           if (index == 1) Navigator.pushNamed(context, '/catalog');

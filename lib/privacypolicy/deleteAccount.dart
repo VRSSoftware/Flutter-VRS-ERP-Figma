@@ -280,7 +280,13 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ScaffoldMessenger(
+     return WillPopScope(
+      onWillPop: () async {
+        // Navigate to DrawerScreen when back button is pressed
+        Navigator.pushReplacementNamed(context, '/home');
+        return false; // Prevent default back behavior
+      },
+      child:ScaffoldMessenger(
       key: _scaffoldMessengerKey,
       child: Scaffold(
         backgroundColor: Colors.white,
@@ -371,6 +377,6 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
           ],
         ),
       ),
-    );
+     ));
   }
 }

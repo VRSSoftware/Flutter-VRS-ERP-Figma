@@ -10,6 +10,7 @@ import 'package:vrs_erp_figma/privacypolicy/deleteAccount.dart';
 import 'package:vrs_erp_figma/privacypolicy/privacypolicy.dart';
 import 'package:vrs_erp_figma/register/register.dart';
 import 'package:vrs_erp_figma/screens/catalog_screen.dart';
+import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 
 import 'package:vrs_erp_figma/screens/home_screen.dart';
 import 'package:vrs_erp_figma/screens/login_screen.dart';
@@ -21,13 +22,12 @@ import 'package:vrs_erp_figma/viewOrder/view_order_screen.dart';
 void main() {
   runApp(
     MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => CartModel()),
-      ],
+      providers: [ChangeNotifierProvider(create: (_) => CartModel())],
       child: MyApp(),
     ),
   );
 }
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -65,10 +65,10 @@ class MyApp extends StatelessWidget {
         '/viewOrders': (context) => ViewOrderScreens(),
         '/registerOrders': (context) => RegisterPage(),
         '/stockReport': (context) => StockReportPage(),
-        '/dashboard' : (context) => OrderSummaryPage(),
-         '/deleteAccount' : (context) => DeleteAccountPage(),
-          '/setting' : (context) => PrivacyPolicyPage(),
-
+        '/dashboard': (context) => OrderSummaryPage(),
+        '/deleteAccount': (context) => DeleteAccountPage(),
+        '/setting': (context) => PrivacyPolicyPage(),
+        '/drawer': (context) => DrawerScreen(),
       },
 
       home: HomeScreen(),
