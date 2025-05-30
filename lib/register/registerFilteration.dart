@@ -183,260 +183,341 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
         ),
       ),
 
-      body:
-      // Stack(
-      //   children: [
-      SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- Date Range ---
-            _buildExpansionTile(
-              title: 'Date Range Filter',
-              children: [
-                DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
-                    labelText: 'Select Date Range',
-                  ),
-                  value: selectedDateRange,
-                  items:
-                      dateRangeOptions
-                          .map(
-                            (e) => DropdownMenuItem(value: e, child: Text(e)),
-                          )
-                          .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedDateRange = value;
-                      if (value != 'Custom') _setDateRange(value!);
-                    });
-                  },
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        readOnly: true,
-                        decoration: const InputDecoration(
-                          labelText: 'From Date',
-                        ),
-                        controller: TextEditingController(
-                          text: _formatDate(fromDate),
-                        ),
-                        onTap: () => _pickDate(context, true, false),
-                      ),
+      body: Container(
+        color: Colors.white, // Set entire body background to white
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // --- Date Range ---
+              _buildExpansionTile(
+                title: 'Date Range Filter',
+                children: [
+                  DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(
+                      labelText: 'Select Date Range',
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextFormField(
-                        readOnly: true,
-                        decoration: const InputDecoration(labelText: 'To Date'),
-                        controller: TextEditingController(
-                          text: _formatDate(toDate),
-                        ),
-                        onTap: () => _pickDate(context, false, false),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        readOnly: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Delivery From Date',
-                        ),
-                        controller: TextEditingController(
-                          text: _formatDate(deliveryFromDate),
-                        ),
-                        onTap: () => _pickDate(context, true, true),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextFormField(
-                        readOnly: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Delivery To Date',
-                        ),
-                        controller: TextEditingController(
-                          text: _formatDate(deliveryToDate),
-                        ),
-                        onTap: () => _pickDate(context, false, true),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-
-            // --- Order Status ---
-            const SizedBox(height: 10),
-            _buildExpansionTile(
-              title: 'Order Status',
-              children: [
-                DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(labelText: 'Order Status'),
-                  value:
-                      orderStatusOptions.contains(selectedOrderStatus)
-                          ? selectedOrderStatus
-                          : null,
-                  items:
-                      orderStatusOptions
-                          .map(
-                            (e) => DropdownMenuItem(value: e, child: Text(e)),
-                          )
-                          .toList(),
-                  onChanged: (value) {
-                    debugPrint("Selected status value: $value");
-                    setState(() => selectedOrderStatus = value);
-                  },
-                  hint: const Text('Select Order Status'),
-                ),
-              ],
-            ),
-
-            // --- Party ---
-            if(UserSession.userType != "C")...[
-            const SizedBox(height: 10),
-            _buildExpansionTile(
-              title: 'Party',
-              children: [
-                DropdownSearch<KeyName>(
-                  items: ledgerList,
-                  selectedItem: selectedLedger,
-                  itemAsString: (KeyName? u) => u?.name ?? '',
-                  onChanged: (value) => setState(() => selectedLedger = value),
-                  popupProps: const PopupProps.menu(showSearchBox: true),
-                  dropdownDecoratorProps: const DropDownDecoratorProps(
-                    dropdownSearchDecoration: InputDecoration(
-                      labelText: 'Select Party',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            ],
-
-            // --- Salesperson ---
-            if(UserSession.userType != "S")...[
-            const SizedBox(height: 10),
-            _buildExpansionTile(
-              title: 'Salesperson',
-              children: [
-                DropdownSearch<KeyName>(
-                  items: salespersonList,
-                  selectedItem: selectedSalesperson,
-                  itemAsString: (KeyName? u) => u?.name ?? '',
-                  onChanged:
-                      (value) => setState(() => selectedSalesperson = value),
-                  popupProps: const PopupProps.menu(showSearchBox: true),
-                  dropdownDecoratorProps: const DropDownDecoratorProps(
-                    dropdownSearchDecoration: InputDecoration(
-                      labelText: 'Select Salesperson',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            ],
-
-            // --- Buttons ---
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (fromDate != null &&
-                          toDate != null &&
-                          toDate!.isBefore(fromDate!)) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('To Date cannot be before From Date'),
-                          ),
-                        );
-                        return;
-                      }
-                      if (deliveryFromDate != null &&
-                          deliveryToDate != null &&
-                          deliveryToDate!.isBefore(deliveryFromDate!)) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Delivery To Date cannot be before Delivery From Date',
-                            ),
-                          ),
-                        );
-                        return;
-                      }
-
-                      widget.onApplyFilters(
-                        selectedLedger: selectedLedger,
-                        selectedSalesperson: selectedSalesperson,
-                        fromDate: fromDate,
-                        toDate: toDate,
-                        deliveryFromDate: deliveryFromDate,
-                        deliveryToDate: deliveryToDate,
-                        selectedOrderStatus: selectedOrderStatus,
-                        selectedDateRange: selectedDateRange,
-                      );
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 14),
-                      child: Text(
-                        'Apply Filters',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
+                    dropdownColor: Colors.white,
+                    value: selectedDateRange,
+                    items:
+                        dateRangeOptions
+                            .map(
+                              (e) => DropdownMenuItem(value: e, child: Text(e)),
+                            )
+                            .toList(),
+                    onChanged: (value) {
                       setState(() {
-                        selectedLedger = null;
-                        selectedSalesperson = null;
-                        fromDate = null;
-                        toDate = null;
-                        deliveryFromDate = null;
-                        deliveryToDate = null;
-                        selectedOrderStatus = null;
-                        selectedDateRange = 'Custom';
+                        selectedDateRange = value;
+                        if (value != 'Custom') _setDateRange(value!);
                       });
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                  ),
+                  const SizedBox(height: 10),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            labelText: 'From Date',
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(0),
+                            ),
+                          ),
+                          controller: TextEditingController(
+                            text: _formatDate(fromDate),
+                          ),
+                          onTap: () => _pickDate(context, true, false),
+                        ),
+                      ),
+
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextFormField(
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            labelText: 'To Date',
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(0),
+                            ),
+                          ),
+                          controller: TextEditingController(
+                            text: _formatDate(toDate),
+                          ),
+                          onTap: () => _pickDate(context, false, false),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            labelText: 'Delivery From Date',
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(0),
+                            ),
+                          ),
+                          controller: TextEditingController(
+                            text: _formatDate(deliveryFromDate),
+                          ),
+                          onTap: () => _pickDate(context, true, true),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextFormField(
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            labelText: 'Delivery To Date',
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(0),
+                            ),
+                          ),
+                          controller: TextEditingController(
+                            text: _formatDate(deliveryToDate),
+                          ),
+                          onTap: () => _pickDate(context, false, true),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              // --- Order Status ---
+              const SizedBox(height: 10),
+              _buildExpansionTile(
+                title: 'Order Status',
+                children: [
+                  DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      labelText: 'Order Status',
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(0),
                       ),
                     ),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 14),
-                      child: Text(
-                        'Clear Filters',
-                        style: TextStyle(color: Colors.white),
+                    dropdownColor: Colors.white, // Menu background
+                    value:
+                        orderStatusOptions.contains(selectedOrderStatus)
+                            ? selectedOrderStatus
+                            : null,
+                    items:
+                        orderStatusOptions
+                            .map(
+                              (e) => DropdownMenuItem(value: e, child: Text(e)),
+                            )
+                            .toList(),
+                    onChanged: (value) {
+                      debugPrint("Selected status value: $value");
+                      setState(() => selectedOrderStatus = value);
+                    },
+                    hint: const Text('Select Order Status'),
+                  ),
+                ],
+              ),
+
+              // --- Party ---
+              if (UserSession.userType != "C") ...[
+                const SizedBox(height: 10),
+                _buildExpansionTile(
+                  title: 'Party',
+                  children: [
+                    DropdownSearch<KeyName>(
+                      items: ledgerList,
+                      selectedItem: selectedLedger,
+                      itemAsString: (KeyName? u) => u?.name ?? '',
+                      onChanged:
+                          (value) => setState(() => selectedLedger = value),
+                      popupProps: PopupProps.menu(
+                        showSearchBox: true,
+                        containerBuilder:
+                            (context, popupWidget) => Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white, // Menu background
+                                borderRadius: BorderRadius.circular(0),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.5),
+                                    spreadRadius: 2,
+                                    blurRadius: 5,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: popupWidget,
+                            ),
+                      ),
+                      dropdownDecoratorProps: DropDownDecoratorProps(
+                        dropdownSearchDecoration: InputDecoration(
+                          labelText: 'Select Party',
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(0),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              // --- Salesperson ---
+              if (UserSession.userType != "S") ...[
+                const SizedBox(height: 10),
+                _buildExpansionTile(
+                  title: 'Salesperson',
+                  children: [
+                    DropdownSearch<KeyName>(
+                      items: salespersonList,
+                      selectedItem: selectedSalesperson,
+                      itemAsString: (KeyName? u) => u?.name ?? '',
+                      onChanged:
+                          (value) =>
+                              setState(() => selectedSalesperson = value),
+                      popupProps: PopupProps.menu(
+                        showSearchBox: true,
+                        containerBuilder:
+                            (context, popupWidget) => Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white, // Menu background
+                                borderRadius: BorderRadius.circular(0),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.5),
+                                    spreadRadius: 2,
+                                    blurRadius: 5,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: popupWidget,
+                            ),
+                      ),
+                      dropdownDecoratorProps: DropDownDecoratorProps(
+                        dropdownSearchDecoration: InputDecoration(
+                          labelText: 'Select Salesperson',
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(0),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              // --- Buttons ---
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (fromDate != null &&
+                            toDate != null &&
+                            toDate!.isBefore(fromDate!)) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'To Date cannot be before From Date',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        if (deliveryFromDate != null &&
+                            deliveryToDate != null &&
+                            deliveryToDate!.isBefore(deliveryFromDate!)) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Delivery To Date cannot be before Delivery From Date',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+
+                        widget.onApplyFilters(
+                          selectedLedger: selectedLedger,
+                          selectedSalesperson: selectedSalesperson,
+                          fromDate: fromDate,
+                          toDate: toDate,
+                          deliveryFromDate: deliveryFromDate,
+                          deliveryToDate: deliveryToDate,
+                          selectedOrderStatus: selectedOrderStatus,
+                          selectedDateRange: selectedDateRange,
+                        );
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(0),
+                        ),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 14),
+                        child: Text(
+                          'Apply Filters',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          selectedLedger = null;
+                          selectedSalesperson = null;
+                          fromDate = null;
+                          toDate = null;
+                          deliveryFromDate = null;
+                          deliveryToDate = null;
+                          selectedOrderStatus = null;
+                          selectedDateRange = 'Custom';
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(0),
+                        ),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 14),
+                        child: Text(
+                          'Clear Filters',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -449,7 +530,7 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(0),
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: Theme(
