@@ -9,9 +9,15 @@ class OrderSummaryPage extends StatefulWidget {
 }
 
 class _OrderSummaryPageState extends State<OrderSummaryPage> {
-  DateTime fromDate = DateTime(2025, 1, 1);
-  DateTime toDate = DateTime(2025, 12, 31);
-  String selectedRange = 'This Year';
+  DateTime fromDate = DateTime.now();
+  DateTime toDate = DateTime.now();
+  String selectedRange = 'Today';
+
+  @override
+  void initState() {
+    super.initState();
+    _updateDateRange('Today'); // Initialize with default range
+  }
 
   Future<void> _selectDate(BuildContext context, bool isFromDate) async {
     final DateTime? picked = await showDatePicker(
@@ -27,8 +33,101 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         } else {
           toDate = picked;
         }
+        selectedRange =
+            'Custom'; // Switch to custom when dates are manually selected
       });
     }
+  }
+
+  void _updateDateRange(String range) {
+    final now = DateTime.now();
+    setState(() {
+      selectedRange = range;
+      switch (range) {
+        case 'Today':
+          fromDate = DateTime(now.year, now.month, now.day);
+          toDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
+          break;
+        case 'Yesterday':
+          final yesterday = now.subtract(const Duration(days: 1));
+          fromDate = DateTime(yesterday.year, yesterday.month, yesterday.day);
+          toDate = DateTime(
+            yesterday.year,
+            yesterday.month,
+            yesterday.day,
+            23,
+            59,
+            59,
+          );
+          break;
+        case 'This Week':
+          final firstDayOfWeek = now.subtract(Duration(days: now.weekday - 1));
+          fromDate = DateTime(
+            firstDayOfWeek.year,
+            firstDayOfWeek.month,
+            firstDayOfWeek.day,
+          );
+          toDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
+          break;
+        case 'Previous Week':
+          final firstDayOfLastWeek = now.subtract(
+            Duration(days: now.weekday + 6),
+          );
+          fromDate = DateTime(
+            firstDayOfLastWeek.year,
+            firstDayOfLastWeek.month,
+            firstDayOfLastWeek.day,
+          );
+          toDate = DateTime(
+            firstDayOfLastWeek.year,
+            firstDayOfLastWeek.month,
+            firstDayOfLastWeek.day + 6,
+            23,
+            59,
+            59,
+          );
+          break;
+        case 'This Month':
+          fromDate = DateTime(now.year, now.month, 1);
+          toDate = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+          break;
+        case 'Previous Month':
+          final firstDayOfLastMonth = DateTime(now.year, now.month - 1, 1);
+          fromDate = firstDayOfLastMonth;
+          toDate = DateTime(now.year, now.month, 0, 23, 59, 59);
+          break;
+        case 'This Quarter':
+          final quarter = (now.month - 1) ~/ 3;
+          fromDate = DateTime(now.year, quarter * 3 + 1, 1);
+          toDate = DateTime(now.year, quarter * 3 + 4, 0, 23, 59, 59);
+          break;
+        case 'Previous Quarter':
+          final quarter = (now.month - 1) ~/ 3;
+          final prevQuarter = quarter == 0 ? 3 : quarter - 1;
+          final prevQuarterYear = quarter == 0 ? now.year - 1 : now.year;
+          fromDate = DateTime(prevQuarterYear, prevQuarter * 3 + 1, 1);
+          toDate = DateTime(
+            prevQuarterYear,
+            prevQuarter * 3 + 4,
+            0,
+            23,
+            59,
+            59,
+          );
+          break;
+        case 'This Year':
+          fromDate = DateTime(now.year, 1, 1);
+          toDate = DateTime(now.year, 12, 31, 23, 59, 59);
+          break;
+        case 'Previous Year':
+          fromDate = DateTime(now.year - 1, 1, 1);
+          toDate = DateTime(now.year - 1, 12, 31, 23, 59, 59);
+          break;
+        case 'Custom':
+          // Keep the existing custom dates
+          break;
+      }
+    });
   }
 
   @override
@@ -37,10 +136,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
       appBar: AppBar(
         title: const Text(
           'Order Summary',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         backgroundColor: AppColors.primaryColor,
@@ -81,19 +177,29 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                         value: selectedRange,
                         isExpanded: true,
                         underline: const SizedBox(),
-                        items: <String>['Custom', 'Today', 'This Week','This Month',
-                                        'This Quarter', 'This Year', 'Yesterday','Previous Week'
-                                        'Previous Month','Previous Quarter','Previous Year']
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
+                        items:
+                            <String>[
+                              'Custom',
+                              'Today',
+                              'This Week',
+                              'This Month',
+                              'This Quarter',
+                              'This Year',
+                              'Yesterday',
+                              'Previous Week',
+                              'Previous Month',
+                              'Previous Quarter',
+                              'Previous Year',
+                            ].map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
                         onChanged: (String? newValue) {
-                          setState(() {
-                            selectedRange = newValue!;
-                          });
+                          if (newValue != null) {
+                            _updateDateRange(newValue);
+                          }
                         },
                       ),
                     ),
@@ -102,69 +208,82 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                       children: [
                         Expanded(
                           child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'From Date',
-                                  style: TextStyle(fontWeight: FontWeight.w500),
-                                ),
-                                const SizedBox(height: 4),
-                                GestureDetector(
-                                  onTap: () => _selectDate(context, true),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 12),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          '${fromDate.day.toString().padLeft(2, '0')}/${fromDate.month.toString().padLeft(2, '0')}/${fromDate.year}',
-                                        ),
-                                        const Icon(Icons.calendar_today,
-                                            size: 20, color: Colors.grey),
-                                      ],
-                                    ),
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'From Date',
+                                style: TextStyle(fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(height: 4),
+                              GestureDetector(
+                                onTap: () => _selectDate(context, true),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        '${fromDate.day.toString().padLeft(2, '0')}/${fromDate.month.toString().padLeft(2, '0')}/${fromDate.year}',
+                                      ),
+                                      const Icon(
+                                        Icons.calendar_today,
+                                        size: 20,
+                                        color: Colors.grey,
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ]),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                    'To Date',
-                                    style: TextStyle(fontWeight: FontWeight.w500)),
-                                const SizedBox(height: 4),
-                                GestureDetector(
-                                  onTap: () => _selectDate(context, false),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 12),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          '${toDate.day.toString().padLeft(2, '0')}/${toDate.month.toString().padLeft(2, '0')}/${toDate.year}',
-                                        ),
-                                        const Icon(Icons.calendar_today,
-                                            size: 20, color: Colors.grey),
-                                      ],
-                                    ),
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'To Date',
+                                style: TextStyle(fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(height: 4),
+                              GestureDetector(
+                                onTap: () => _selectDate(context, false),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        '${toDate.day.toString().padLeft(2, '0')}/${toDate.month.toString().padLeft(2, '0')}/${toDate.year}',
+                                      ),
+                                      const Icon(
+                                        Icons.calendar_today,
+                                        size: 20,
+                                        color: Colors.grey,
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ]),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -176,9 +295,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
             // First Row of Cards
             Row(
               children: [
-                Expanded(
-                  child: _buildOrderCard('TOTAL ORDER', '0', '0', true),
-                ),
+                Expanded(child: _buildOrderCard('TOTAL ORDER', '0', '0', true)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildOrderCard('PENDING ORDER', '0', '0', true),
@@ -194,7 +311,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildOrderCard('CANCELED ORDER', '0', '0', true),
+                  child: _buildOrderCard('CANCELE ORDER', '0', '0', true),
                 ),
               ],
             ),
@@ -215,17 +332,12 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
             // Inventory Summary Section
             const Text(
               'Inventory Summary',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                  child: _buildOrderCard('IN HAND', '4305', '0', false),
-                ),
+                Expanded(child: _buildOrderCard('IN HAND', '4305', '0', false)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildOrderCard('TO BE RECEIVED', '14', '0', false),
@@ -241,36 +353,23 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
   Widget _buildOrderCard(String title, String value, String qty, bool showQty) {
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Text(
               value,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             if (showQty) ...[
               const SizedBox(height: 4),
-              Text(
-                'Qty: $qty',
-                style: const TextStyle(
-                  fontSize: 14,
-                ),
-              ),
+              Text('Qty: $qty', style: const TextStyle(fontSize: 14)),
             ],
           ],
         ),
