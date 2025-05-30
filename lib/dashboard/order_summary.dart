@@ -563,6 +563,12 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
 
 Future<void> _showOrderDetails(String orderType) async {
   try {
+    // Convert orderType to camelCase to match API expectation (e.g., "TOTAL ORDER" -> "TotalOrder")
+    String formattedOrderType = orderType
+        .split(' ')
+        .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .join('');
+    
     final response = await http.post(
       Uri.parse('${AppConstants.BASE_URL}/report/getReportsDetail'),
       headers: {'Content-Type': 'application/json'},
@@ -574,26 +580,15 @@ Future<void> _showOrderDetails(String orderType) async {
         "SalesPerson": salesman,
         "State": state,
         "City": city,
-        "orderType": orderType,
+        "orderType": formattedOrderType,
+        "Detail": 1 // Added as per the sample API request
       }),
     );
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body); // Decode as dynamic (Map by default)
-      // Check if data is a Map and extract the list
-      if (data is Map<String, dynamic>) {
-        // Replace 'result' with the actual key name from your API response
-        final orderDetails = data['result'] as List<dynamic>? ?? [];
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OrderDetailsPage(
-              orderDetails: List<Map<String, dynamic>>.from(orderDetails),
-            ),
-          ),
-        );
-      } else if (data is List) {
-        // If the response is already a list (unlikely but possible)
+      final data = jsonDecode(response.body);
+      // Check if data is a List as per the API response format
+      if (data is List) {
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -603,7 +598,7 @@ Future<void> _showOrderDetails(String orderType) async {
           ),
         );
       } else {
-        throw Exception('Unexpected response format');
+        throw Exception('Unexpected response format: Expected a list');
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -616,7 +611,8 @@ Future<void> _showOrderDetails(String orderType) async {
     );
   }
 }
-
+ 
+ 
  Widget _buildOrderCard(String title, String value, String qty, bool showQty) {
   return GestureDetector(
     onTap: () {
@@ -649,4 +645,5 @@ Future<void> _showOrderDetails(String orderType) async {
     ),
   );
 }
+
 }
