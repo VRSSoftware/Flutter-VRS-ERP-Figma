@@ -15,9 +15,23 @@ class _DrawerScreenState extends State<DrawerScreen> {
     'Home': 'assets/images/home.png',
     'Order Booking': 'assets/images/orderbooking.png',
     'Catalog': 'assets/images/catalog.png',
-    'Order Register':'assets/images/register.png',
-    'Stock Report':'assets/images/report.png',
-    'Dashboard':'assets/images/dashboard.png'
+    'Order Register': 'assets/images/register.png',
+    'Stock Report': 'assets/images/report.png',
+    'Dashboard': 'assets/images/dashboard.png',
+    'Setting': 'assets/images/setting.png',
+    'Delete Account': 'assets/images/deleteAccount.png',
+  };
+
+  // Fallback icons in case assets fail to load
+  final Map<String, IconData> _fallbackIcons = {
+    'Home': Icons.home,
+    'Order Booking': Icons.book,
+    'Catalog': Icons.category,
+    'Order Register': Icons.list_alt,
+    'Stock Report': Icons.assessment,
+    'Dashboard': Icons.dashboard,
+    'Setting': Icons.settings,
+    'Delete Account': Icons.delete_forever,
   };
 
   @override
@@ -47,6 +61,10 @@ class _DrawerScreenState extends State<DrawerScreen> {
         return 'Stock Report';
       case '/dashboard':
         return 'Dashboard';
+      case '/setting':
+        return 'Setting';
+      case '/deleteAccount':
+        return 'Delete Account';
       default:
         return null;
     }
@@ -101,6 +119,10 @@ class _DrawerScreenState extends State<DrawerScreen> {
         return '/stockReport';
       case 'Dashboard':
         return '/dashboard';
+      case 'Setting':
+        return '/setting';
+      case 'Delete Account':
+        return '/deleteAccount';
       default:
         return '/home';
     }
@@ -122,15 +144,30 @@ class _DrawerScreenState extends State<DrawerScreen> {
           child: Container(
             decoration: BoxDecoration(
               color: isSelected || isHovered
-                  ? const Color.fromARGB(255, 222, 187, 231)
+                  ? const Color.fromARGB(255, 206, 222, 240)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(20),
             ),
             child: ListTile(
-              leading: Image.asset(
-                iconPath,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+              leading: SizedBox(
                 width: 24,
                 height: 24,
+                child: Image.asset(
+                  iconPath,
+                  width: 24,
+                  height: 24,
+                  errorBuilder: (context, error, stackTrace) {
+                    // Fallback to icon if asset fails to load
+                    return Icon(
+                      _fallbackIcons[title]!,
+                      size: 24,
+                      color: isSelected || isHovered
+                          ? AppColors.primaryColor
+                          : Colors.grey[800],
+                    );
+                  },
+                ),
               ),
               title: Text(
                 title,
@@ -169,10 +206,15 @@ class _DrawerScreenState extends State<DrawerScreen> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: ListTile(
-              leading: Icon(
-                Icons.exit_to_app, // Logout icon
-                size: 24,
-                color: hoveredSection == 'Logout' ? AppColors.primaryColor : Colors.grey[800],
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+              leading: SizedBox(
+                width: 24,
+                height: 24,
+                child: Icon(
+                  Icons.exit_to_app,
+                  size: 24,
+                  color: hoveredSection == 'Logout' ? AppColors.primaryColor : Colors.grey[800],
+                ),
               ),
               title: Text(
                 'Logout',

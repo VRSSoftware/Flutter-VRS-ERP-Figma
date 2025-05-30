@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/widget/bottom_navbar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -211,14 +212,19 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+          backgroundColor: Colors.white,
+      drawer: DrawerScreen(),
       appBar: AppBar(
-        title: const Text(
-          'Dashboard',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
+        title: Text('Dashboard', style: TextStyle(color: AppColors.white)),
         backgroundColor: AppColors.primaryColor,
-        elevation: 0,
+        elevation: 1,
+        leading: Builder(
+          builder:
+              (context) => IconButton(
+                icon: Icon(Icons.menu, color: AppColors.white),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(

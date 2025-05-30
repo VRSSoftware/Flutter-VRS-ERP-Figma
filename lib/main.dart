@@ -6,6 +6,8 @@ import 'package:vrs_erp_figma/catalog/catalog.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/dashboard/order_summary.dart';
 import 'package:vrs_erp_figma/models/CartModel.dart';
+import 'package:vrs_erp_figma/privacypolicy/deleteAccount.dart';
+import 'package:vrs_erp_figma/privacypolicy/privacypolicy.dart';
 import 'package:vrs_erp_figma/register/register.dart';
 import 'package:vrs_erp_figma/screens/catalog_screen.dart';
 
@@ -64,6 +66,8 @@ class MyApp extends StatelessWidget {
         '/registerOrders': (context) => RegisterPage(),
         '/stockReport': (context) => StockReportPage(),
         '/dashboard' : (context) => OrderSummaryPage(),
+         '/deleteAccount' : (context) => DeleteAccountPage(),
+          '/setting' : (context) => PrivacyPolicyPage(),
 
       },
 
