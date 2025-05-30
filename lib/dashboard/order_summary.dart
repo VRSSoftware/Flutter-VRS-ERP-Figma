@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/dashboard/OrderDetails_page.dart';
 import 'package:vrs_erp_figma/dashboard/dashboard_filter.dart';
 import 'package:vrs_erp_figma/models/keyName.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
@@ -441,7 +442,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildOrderCard('CANCELED ORDER', cancelledDocCount, cancelledQty, true),
+                  child: _buildOrderCard('CANCELLED ORDER', cancelledDocCount, cancelledQty, true),
                 ),
               ],
             ),
@@ -559,8 +560,70 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     );
   }
 
-  Widget _buildOrderCard(String title, String value, String qty, bool showQty) {
-    return Card(
+
+Future<void> _showOrderDetails(String orderType) async {
+  try {
+    final response = await http.post(
+      Uri.parse('${AppConstants.BASE_URL}/report/getReportsDetail'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "FromDate": "${fromDate.year}-${fromDate.month.toString().padLeft(2, '0')}-${fromDate.day.toString().padLeft(2, '0')}",
+        "ToDate": "${toDate.year}-${toDate.month.toString().padLeft(2, '0')}-${toDate.day.toString().padLeft(2, '0')}",
+        "CoBr_Id": "01",
+        "CustKey": customer,
+        "SalesPerson": salesman,
+        "State": state,
+        "City": city,
+        "orderType": orderType,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body); // Decode as dynamic (Map by default)
+      // Check if data is a Map and extract the list
+      if (data is Map<String, dynamic>) {
+        // Replace 'result' with the actual key name from your API response
+        final orderDetails = data['result'] as List<dynamic>? ?? [];
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OrderDetailsPage(
+              orderDetails: List<Map<String, dynamic>>.from(orderDetails),
+            ),
+          ),
+        );
+      } else if (data is List) {
+        // If the response is already a list (unlikely but possible)
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OrderDetailsPage(
+              orderDetails: List<Map<String, dynamic>>.from(data),
+            ),
+          ),
+        );
+      } else {
+        throw Exception('Unexpected response format');
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load order details: ${response.statusCode}')),
+      );
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $e')),
+    );
+  }
+}
+
+ Widget _buildOrderCard(String title, String value, String qty, bool showQty) {
+  return GestureDetector(
+    onTap: () {
+      String orderType = title.replaceAll(' ', '');
+      _showOrderDetails(orderType);
+    },
+    child: Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -583,6 +646,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
