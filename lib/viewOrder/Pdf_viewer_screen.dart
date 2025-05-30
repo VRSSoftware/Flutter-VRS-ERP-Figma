@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:share_plus/share_plus.dart';
@@ -76,7 +77,12 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         child: Wrap(
           children: [
             ListTile(
-              leading: Icon(Icons.chat),
+              leading:const FaIcon(
+  FontAwesomeIcons.whatsapp,
+  size: 25,
+  //color: Colors.green,
+),
+
               title: Text('Send via WhatsApp'),
               onTap: () {
                 Navigator.pop(context);

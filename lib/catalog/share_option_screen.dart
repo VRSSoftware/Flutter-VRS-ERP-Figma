@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:vrs_erp_figma/catalog/toggle_option_screen.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 
@@ -176,7 +177,12 @@ class _ShareOptionsPageState extends State<ShareOptionsPage> {
           ),
           const SizedBox(height: 16),
           _buildShareOption(
-            icon: Icons.image,
+            icon: const FaIcon(
+  FontAwesomeIcons.image,
+  color: AppColors.primaryColor,
+  size: 22,
+),
+
             title: 'Image',
             onTap: () {
               widget.onImageShare(
@@ -193,23 +199,33 @@ class _ShareOptionsPageState extends State<ShareOptionsPage> {
             },
             context: context,
           ),
+  _buildShareOption(
+  icon: const FaIcon(
+    FontAwesomeIcons.whatsapp,
+    size: 22,
+    color: AppColors.primaryColor,
+  ),
+  title: 'WhatsApp',
+  onTap: () {
+    widget.onWhatsAppShare(
+      includeDesign: includeDesign,
+      includeShade: includeShade,
+      includeRate: includeRate,
+      includeSize: includeSize,
+      includeProduct: includeProduct,
+      includeRemark: includeRemark,
+    );
+  },
+  context: context,
+),
+
           _buildShareOption(
-            icon: Icons.ios_share,
-            title: 'WhatsApp',
-            onTap: () {
-              widget.onWhatsAppShare(
-                includeDesign: includeDesign,
-                includeShade: includeShade,
-                includeRate: includeRate,
-                includeSize: includeSize,
-                includeProduct: includeProduct,
-                includeRemark: includeRemark,
-              );
-            },
-            context: context,
-          ),
-          _buildShareOption(
-            icon: Icons.picture_as_pdf,
+            icon: const FaIcon(
+  FontAwesomeIcons.filePdf,
+  color: AppColors.primaryColor,
+  size: 22,
+),
+
             title: 'PDF',
             onTap: () {
               widget.onPDFShare(
@@ -227,7 +243,12 @@ class _ShareOptionsPageState extends State<ShareOptionsPage> {
             context: context,
           ),
           _buildShareOption(
-            icon: Icons.link,
+            icon: const FaIcon(
+  FontAwesomeIcons.link,
+  color: Colors.blue,
+  size: 22,
+),
+
             title: 'Web Link',
             onTap: () {
               widget.onLinkShare(
@@ -241,20 +262,18 @@ class _ShareOptionsPageState extends State<ShareOptionsPage> {
     );
   }
 
-  Widget _buildShareOption({
-    required IconData icon,
-    required String title,
-    required Function() onTap,
-    required BuildContext context,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: AppColors.primaryColor),
-      title: Text(title),
-      onTap: onTap,
-    );
-  }
+Widget _buildShareOption({
+  required Widget icon, // change from IconData to Widget
+  required String title,
+  required VoidCallback onTap,
+  required BuildContext context,
+}) {
+  return ListTile(
+    leading: icon,
+    title: Text(title),
+    onTap: onTap,
+  );
 }
-
 
 
 
@@ -626,4 +645,4 @@ class _ShareOptionsPageState extends State<ShareOptionsPage> {
 //       ],
 //     );
 //   }
-// }
+ }

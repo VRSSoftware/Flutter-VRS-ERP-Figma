@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
@@ -63,11 +64,11 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       final fetchedLedgersResponse = await ApiService.fetchLedgers(
         ledCat: 'w',
-        coBrId: UserSession.coBrId??'',
+        coBrId: UserSession.coBrId ?? '',
       );
       final fetchedSalespersonResponse = await ApiService.fetchLedgers(
         ledCat: 's',
-        coBrId: UserSession.coBrId??'',
+        coBrId: UserSession.coBrId ?? '',
       );
 
       setState(() {
@@ -97,9 +98,15 @@ class _RegisterPageState extends State<RegisterPage> {
       final orders = await ApiService.fetchOrderRegister(
         fromDate: fromDateController.text,
         toDate: toDateController.text,
-        custKey: UserSession.userType == "C" ? UserSession.userLedKey : selectedLedger?.key,
-        coBrId: UserSession.coBrId??'',
-        salesPerson: UserSession.userType == "S" ? UserSession.userLedKey : selectedSalesperson?.key,
+        custKey:
+            UserSession.userType == "C"
+                ? UserSession.userLedKey
+                : selectedLedger?.key,
+        coBrId: UserSession.coBrId ?? '',
+        salesPerson:
+            UserSession.userType == "S"
+                ? UserSession.userLedKey
+                : selectedSalesperson?.key,
         status: selectedOrderStatus,
         dlvFromDate:
             deliveryFromDate == null ? null : deliveryFromDate.toString(),
@@ -159,10 +166,9 @@ class _RegisterPageState extends State<RegisterPage> {
         },
       );
 
-      if(response.statusCode == 200){
-      return true ;
-      }
-      else{
+      if (response.statusCode == 200) {
+        return true;
+      } else {
         return false;
       }
     } catch (e) {
@@ -483,11 +489,12 @@ class _RegisterPageState extends State<RegisterPage> {
                           value: 'whatsapp',
                           child: Row(
                             children: [
-                              Icon(
-                                Icons.message,
-                                color: Colors.green,
+                              const FaIcon(
+                                FontAwesomeIcons.whatsapp,
                                 size: 20,
+                                color: Colors.green,
                               ),
+
                               SizedBox(width: 8),
                               Text(
                                 'WhatsApp',
@@ -769,9 +776,9 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-            backgroundColor: Colors.white,
-       drawer: DrawerScreen(),
-        appBar: AppBar(
+      backgroundColor: Colors.white,
+      drawer: DrawerScreen(),
+      appBar: AppBar(
         title: Text('Order Register', style: TextStyle(color: AppColors.white)),
         backgroundColor: AppColors.primaryColor,
         elevation: 1,
