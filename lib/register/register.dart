@@ -789,12 +789,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 onPressed: () => Scaffold.of(context).openDrawer(),
               ),
         ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Icon(Icons.receipt_long),
-          ),
-        ],
+       
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(20.0),
           child: Column(
