@@ -1,28 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/dashboard/customerOrderDetailsPage.dart';
 
-import 'customerOrderDetailsPage.dart';
-
-class OrderDetailsPage extends StatelessWidget {
+class OrderDetailsPage extends StatefulWidget {
   final List<Map<String, dynamic>> orderDetails;
-    final DateTime fromDate;  // Add these
-  final DateTime toDate;    // Add these
+  final DateTime fromDate;
+  final DateTime toDate;
 
-
-  const OrderDetailsPage({super.key, required this.orderDetails,
-     required this.fromDate,  // Add these
+  const OrderDetailsPage({
+    super.key,
+    required this.orderDetails,
+    required this.fromDate,
     required this.toDate,
   });
 
   @override
+  State<OrderDetailsPage> createState() => _OrderDetailsPageState();
+}
+
+class _OrderDetailsPageState extends State<OrderDetailsPage> {
+  @override
   Widget build(BuildContext context) {
-    int totalOrders = orderDetails.fold(0, (sum, item) => sum + (item['totalorder'] as int));
-    int totalQuantity = orderDetails.fold(0, (sum, item) => sum + (item['totalqty'] as int));
-    int totalAmount = orderDetails.fold(0, (sum, item) => sum + (item['totalamt'] as int));
+    int totalOrders = widget.orderDetails.fold(0, (sum, item) => sum + (item['totalorder'] as int));
+    int totalQuantity = widget.orderDetails.fold(0, (sum, item) => sum + (item['totalqty'] as int));
+    int totalAmount = widget.orderDetails.fold(0, (sum, item) => sum + (item['totalamt'] as int));
 
     return Scaffold(
-        backgroundColor: Colors.white, 
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Order Details', style: TextStyle(color: Colors.white)),
         backgroundColor: AppColors.primaryColor,
@@ -31,6 +36,50 @@ class OrderDetailsPage extends StatelessWidget {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.white),
+            onSelected: (String value) {
+              switch (value) {
+                case 'download':
+                  _handleDownload();
+                  break;
+                case 'whatsapp':
+                  _handleWhatsAppShare();
+                  break;
+                case 'view':
+                 _handleView();
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'download',
+                child: ListTile(
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.0),
+                  leading: Icon(Icons.download, size: 20, color: Colors.blue),
+                  title: Text('Download'),
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'whatsapp',
+                child: ListTile(
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.0),
+                  leading: FaIcon(FontAwesomeIcons.whatsapp, size: 20, color: Colors.green),
+                  title: Text('WhatsApp'),
+                ),
+              ),
+               const PopupMenuItem<String>(
+                value: 'view',
+                child: ListTile(
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.0),
+                  leading: FaIcon(FontAwesomeIcons.eye, size: 18, color: Colors.blue),
+                  title: Text('View'),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
@@ -47,10 +96,10 @@ class OrderDetailsPage extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 20),
-              ...orderDetails.map((order) {
+              ...widget.orderDetails.map((order) {
                 return Column(
                   children: [
-                    _buildCustomerOrderCard(context,order),
+                    _buildCustomerOrderCard(context, order),
                     const SizedBox(height: 16),
                   ],
                 );
@@ -59,6 +108,27 @@ class OrderDetailsPage extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void _handleDownload() {
+    // Implement download functionality
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Download functionality will be implemented here')),
+    );
+  }
+
+  void _handleWhatsAppShare() {
+    // Implement WhatsApp share functionality
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('WhatsApp share functionality will be implemented here')),
+    );
+  }
+
+   void _handleView() {
+    // Implement WhatsApp share functionality
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('view functionality will be implemented here')),
     );
   }
 
@@ -99,7 +169,7 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 
-    Widget _buildCustomerOrderCard(BuildContext context,Map<String, dynamic> order) {
+  Widget _buildCustomerOrderCard(BuildContext context, Map<String, dynamic> order) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -108,116 +178,117 @@ class OrderDetailsPage extends StatelessWidget {
             builder: (context) => CustomerOrderDetailsPage(
               custKey: order['cust_key'] ?? '',
               customerName: order['customernamewithcity'] ?? '',
-              fromDate: fromDate,  // Pass fromDate
-              toDate: toDate,      // Pass toDate
+              fromDate: widget.fromDate,
+              toDate: widget.toDate,
             ),
           ),
         );
       },
       child: Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Customer Name and City
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Text(
-                order['customernamewithcity'] ?? '',
-                overflow: TextOverflow.visible,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Customer Name and City
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Text(
+                  order['customernamewithcity'] ?? '',
+                  overflow: TextOverflow.visible,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 12),
 
-            // Table
-            Table(
-              border: TableBorder.all(color: Colors.grey.withOpacity(0.3)),
-              columnWidths: const {
-                0: FlexColumnWidth(),
-                1: FlexColumnWidth(),
-                2: FlexColumnWidth(),
-              },
-              children: [
-                const TableRow(
-                  decoration: BoxDecoration(color: Color.fromARGB(255, 226, 240, 245)),
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.all(6.0),
-                      child: Text(
-                        'TOTAL ORDER',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                        overflow: TextOverflow.visible,
+              // Table
+              Table(
+                border: TableBorder.all(color: Colors.grey.withOpacity(0.3)),
+                columnWidths: const {
+                  0: FlexColumnWidth(),
+                  1: FlexColumnWidth(),
+                  2: FlexColumnWidth(),
+                },
+                children: [
+                  const TableRow(
+                    decoration: BoxDecoration(color: Color.fromARGB(255, 226, 240, 245)),
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.all(6.0),
+                        child: Text(
+                          'TOTAL ORDER',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                          overflow: TextOverflow.visible,
+                        ),
                       ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(6.0),
-                      child: Text(
-                        'TOTAL QTY',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                        overflow: TextOverflow.visible,
+                      Padding(
+                        padding: EdgeInsets.all(6.0),
+                        child: Text(
+                          'TOTAL QTY',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                          overflow: TextOverflow.visible,
+                        ),
                       ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(6.0),
-                      child: Text(
-                        'TOTAL AMOUNT',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                        overflow: TextOverflow.visible,
+                      Padding(
+                        padding: EdgeInsets.all(6.0),
+                        child: Text(
+                          'TOTAL AMOUNT',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                          overflow: TextOverflow.visible,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                TableRow(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(6.0),
-                      child: Text(order['totalorder'].toString(), style: const TextStyle(fontSize: 12)),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(6.0),
-                      child: Text(order['totalqty'].toString(), style: const TextStyle(fontSize: 12)),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(6.0),
-                      child: Text('₹${order['totalamt'].toString()}', style: const TextStyle(fontSize: 12)),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-
-            if (order['whatsappmobileno'] != null && order['whatsappmobileno'].toString().isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Row(
-                  children: [
-                    const FaIcon(
-                      FontAwesomeIcons.whatsapp,
-                      size: 12,
-                      color: Colors.green,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      order['whatsappmobileno'].toString(),
-                      overflow: TextOverflow.visible,
-                      style: const TextStyle(color: Colors.green, fontSize: 12),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                  TableRow(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(6.0),
+                        child: Text(order['totalorder'].toString(), style: const TextStyle(fontSize: 12)),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(6.0),
+                        child: Text(order['totalqty'].toString(), style: const TextStyle(fontSize: 12)),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(6.0),
+                        child: Text('₹${order['totalamt'].toString()}', style: const TextStyle(fontSize: 12)),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-          ],
+
+              if (order['whatsappmobileno'] != null && order['whatsappmobileno'].toString().isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Row(
+                    children: [
+                      const FaIcon(
+                        FontAwesomeIcons.whatsapp,
+                        size: 12,
+                        color: Colors.green,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        order['whatsappmobileno'].toString(),
+                        overflow: TextOverflow.visible,
+                        style: const TextStyle(color: Colors.green, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
-     ) );
+    );
   }
 }
