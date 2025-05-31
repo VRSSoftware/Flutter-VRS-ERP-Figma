@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
@@ -362,239 +363,195 @@ class _StockReportPageState extends State<StockReportPage> {
     return items.fold(0, (sum, item) => sum + (item.total ?? 0));
   }
 
-  Widget _buildStyleTable(
-    String styleCode,
-    List<StockReportItem> items,
-    BuildContext context,
-  ) {
-    // Parse details to extract size-wise quantities
-    Map<String, Map<String, int>> shadeSizeQuantities = {};
-    List<String> allSizes = [];
+Widget _buildStyleTable(
+  String styleCode,
+  List<StockReportItem> items,
+  BuildContext context,
+) {
+  // Parse details to extract size-wise quantities
+  Map<String, Map<String, int>> shadeSizeQuantities = {};
+  List<String> allSizes = [];
 
-    for (var item in items) {
-      if (item.details != null && item.details!.isNotEmpty) {
-        Map<String, int> sizeMap = {};
-        List<String> sizePairs = item.details!.split(',');
+  for (var item in items) {
+    if (item.details != null && item.details!.isNotEmpty) {
+      Map<String, int> sizeMap = {};
+      List<String> sizePairs = item.details!.split(',');
 
-        for (String pair in sizePairs) {
-          List<String> parts = pair.split(':');
-          if (parts.length == 2) {
-            String size = parts[0].trim();
-            int quantity = int.tryParse(parts[1].trim()) ?? 0;
-            sizeMap[size] = quantity;
+      for (String pair in sizePairs) {
+        List<String> parts = pair.split(':');
+        if (parts.length == 2) {
+          String size = parts[0].trim();
+          int quantity = int.tryParse(parts[1].trim()) ?? 0;
+          sizeMap[size] = quantity;
 
-            if (!allSizes.contains(size)) {
-              allSizes.add(size);
-            }
+          if (!allSizes.contains(size)) {
+            allSizes.add(size);
           }
         }
+      }
 
-        shadeSizeQuantities[item.shadeName ?? 'Unknown'] = sizeMap;
+      shadeSizeQuantities[item.shadeName ?? 'Unknown'] = sizeMap;
+    }
+  }
+
+  // Sort sizes numerically
+  allSizes.sort((a, b) {
+    int? aNum = int.tryParse(a);
+    int? bNum = int.tryParse(b);
+    if (aNum != null && bNum != null) {
+      return aNum.compareTo(bNum);
+    }
+    return a.compareTo(b);
+  });
+
+  // Calculate totals
+  Map<String, int> sizeTotals = {};
+  int styleTotal = 0;
+
+  for (var size in allSizes) {
+    sizeTotals[size] = 0;
+  }
+
+  for (var item in items) {
+    styleTotal += item.total ?? 0;
+
+    if (shadeSizeQuantities.containsKey(item.shadeName)) {
+      var sizeMap = shadeSizeQuantities[item.shadeName]!;
+      for (var size in sizeMap.keys) {
+        sizeTotals[size] = (sizeTotals[size] ?? 0) + (sizeMap[size] ?? 0);
       }
     }
+  }
 
-    // Sort sizes numerically
-    allSizes.sort((a, b) {
-      int? aNum = int.tryParse(a);
-      int? bNum = int.tryParse(b);
-      if (aNum != null && bNum != null) {
-        return aNum.compareTo(bNum);
-      }
-      return a.compareTo(b);
-    });
+  // Get the screen width
+  double screenWidth = MediaQuery.of(context).size.width;
 
-    // Calculate totals
-    Map<String, int> sizeTotals = {};
-    int styleTotal = 0;
+  // Define the number of columns: "Shade" + all sizes + "Total"
+  int totalColumns = 1 + allSizes.length + 1; // Shade + sizes + Total
 
-    for (var size in allSizes) {
-      sizeTotals[size] = 0;
-    }
+  // Calculate the minimum width for each column
+  double minColumnWidth =
+      screenWidth / totalColumns; // Distribute screen width evenly
+  double shadeColumnWidth = minColumnWidth.clamp(
+    100,
+    double.infinity,
+  ); // Ensure "Shade" column is at least 100px
+  double sizeColumnWidth = minColumnWidth.clamp(
+    60,
+    double.infinity,
+  ); // Ensure size and total columns are at least 60px
 
-    for (var item in items) {
-      styleTotal += item.total ?? 0;
+  // Calculate the total width of the table content
+  double totalContentWidth =
+      shadeColumnWidth + (allSizes.length * sizeColumnWidth) + sizeColumnWidth;
 
-      if (shadeSizeQuantities.containsKey(item.shadeName)) {
-        var sizeMap = shadeSizeQuantities[item.shadeName]!;
-        for (var size in sizeMap.keys) {
-          sizeTotals[size] = (sizeTotals[size] ?? 0) + (sizeMap[size] ?? 0);
-        }
-      }
-    }
-
-    // Get the screen width
-    double screenWidth = MediaQuery.of(context).size.width;
-
-    // Define the number of columns: "Shade" + all sizes + "Total"
-    int totalColumns = 1 + allSizes.length + 1; // Shade + sizes + Total
-
-    // Calculate the minimum width for each column
-    double minColumnWidth =
-        screenWidth / totalColumns; // Distribute screen width evenly
-    double shadeColumnWidth = minColumnWidth.clamp(
-      100,
-      double.infinity,
-    ); // Ensure "Shade" column is at least 100px
-    double sizeColumnWidth = minColumnWidth.clamp(
-      60,
-      double.infinity,
-    ); // Ensure size and total columns are at least 60px
-
-    // Calculate the total width of the table content
-    double totalContentWidth =
-        shadeColumnWidth +
-        (allSizes.length * sizeColumnWidth) +
-        sizeColumnWidth;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Style Code Header (itemName without Total)
-        Container(
-          width: double.infinity, // Ensure header takes full width
-          padding: const EdgeInsets.all(12),
-          color: const Color(0xFF0288D1), // Matches the teal color in the image
-          child: Text(
-            '$styleCode - ${items.first.type ?? ''}',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              fontSize: 16,
-            ),
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // Style Code Header (itemName without Total)
+      Container(
+        width: double.infinity, // Ensure header takes full width
+        padding: const EdgeInsets.all(12),
+        color: const Color(0xFF0288D1), // Vibrant teal for header
+        child: Text(
+          '$styleCode - ${items.first.type ?? ''}',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: Colors.white, // High contrast white text
+            fontSize: 16,
           ),
         ),
+      ),
 
-        // Horizontally Scrollable Table (if needed)
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minWidth:
-                  screenWidth, // Ensure the table takes at least the screen width
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Table Header (Shades and Sizes)
-                Container(
-                  color: const Color(
-                    0xFF4FC3F7,
-                  ), // Lighter teal as per the image
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: shadeColumnWidth,
-                        child: const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Text(
-                            'Shade',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+      // Horizontally Scrollable Table (if needed)
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: screenWidth, // Ensure the table takes at least the screen width
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Table Header (Shades and Sizes)
+              Container(
+                color: const Color(0xFF4FC3F7), // Lighter teal for column headers
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: shadeColumnWidth,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          'Shade',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white, // White for contrast
                           ),
                         ),
                       ),
-                      ...allSizes.map(
-                        (size) => SizedBox(
-                          width: sizeColumnWidth,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              size,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(
+                    ),
+                    ...allSizes.map(
+                      (size) => SizedBox(
                         width: sizeColumnWidth,
-                        child: const Padding(
-                          padding: EdgeInsets.all(8.0),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
                           child: Text(
-                            'Total',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                            size,
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white, // White for contrast
                             ),
                             textAlign: TextAlign.center,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-
-                // Table Rows (Shade-wise quantities)
-                ...shadeSizeQuantities.entries.map((entry) {
-                  String shade = entry.key;
-                  Map<String, int> sizeMap = entry.value;
-                  int shadeTotal =
-                      items
-                          .firstWhere(
-                            (item) => item.shadeName == shade,
-                            orElse: () => StockReportItem(),
-                          )
-                          .total ??
-                      0;
-
-                  return Container(
-                    color: Colors.grey[200],
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: shadeColumnWidth,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(shade),
-                          ),
-                        ),
-                        ...allSizes.map(
-                          (size) => SizedBox(
-                            width: sizeColumnWidth,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                sizeMap[size]?.toString() ?? '0',
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: sizeColumnWidth,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              shadeTotal.toString(),
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
-                  );
-                }).toList(),
+                    SizedBox(
+                      width: sizeColumnWidth,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          'Total',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white, // White for contrast
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
-                // Total Row for the Style
-                Container(
-                  color: Colors.grey[400],
+              // Table Rows (Shade-wise quantities)
+              ...shadeSizeQuantities.entries.map((entry) {
+                String shade = entry.key;
+                Map<String, int> sizeMap = entry.value;
+                int shadeTotal =
+                    items
+                        .firstWhere(
+                          (item) => item.shadeName == shade,
+                          orElse: () => StockReportItem(),
+                        )
+                        .total ??
+                    0;
+
+                return Container(
+                  color: Colors.grey[100], // Very light grey for rows, clean and subtle
                   child: Row(
                     children: [
                       SizedBox(
                         width: shadeColumnWidth,
-                        child: const Padding(
-                          padding: EdgeInsets.all(8.0),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
                           child: Text(
-                            'TOTAL',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            shade,
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: Colors.black87, // Consistent with card's primary text
+                            ),
                           ),
                         ),
                       ),
@@ -604,11 +561,12 @@ class _StockReportPageState extends State<StockReportPage> {
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Text(
-                              sizeTotals[size]?.toString() ?? '0',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                              sizeMap[size]?.toString() ?? '0',
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                color: Colors.black87, // Consistent with card
                               ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
                         ),
@@ -618,25 +576,84 @@ class _StockReportPageState extends State<StockReportPage> {
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Text(
-                            styleTotal.toString(),
+                            shadeTotal.toString(),
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black, // Bold and black like card's value
+                            ),
                             textAlign: TextAlign.center,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
                     ],
                   ),
+                );
+              }).toList(),
+
+              // Total Row for the Style
+              Container(
+                color: const Color(0xFFB0BEC5), // Muted grey-blue, distinct yet cohesive
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: shadeColumnWidth,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          'TOTAL',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87, // Strong, readable text
+                          ),
+                        ),
+                      ),
+                    ),
+                    ...allSizes.map(
+                      (size) => SizedBox(
+                        width: sizeColumnWidth,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            sizeTotals[size]?.toString() ?? '0',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87, // Consistent and bold
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: sizeColumnWidth,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          styleTotal.toString(),
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black, // Bold and black like card's value
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
+      ),
 
-        const SizedBox(height: 20),
-      ],
-    );
-  }
-
+      const SizedBox(height: 20),
+    ],
+  );
+}
+ 
+ 
+ 
   @override
   Widget build(BuildContext context) {
     int grandTotal = 0;
@@ -658,7 +675,10 @@ class _StockReportPageState extends State<StockReportPage> {
               ),
         ),
       ),
-      body: Padding(
+      body:Container(
+  color: Colors.white, // Set background color to white
+  child: Padding(
+        
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
@@ -706,11 +726,17 @@ class _StockReportPageState extends State<StockReportPage> {
                 dropdownSearchDecoration: InputDecoration(
                   labelText: "Select Category",
                   border: OutlineInputBorder(),
+                       filled: true, // Add this
+      fillColor: Colors.white, 
                 ),
               ),
               popupProps: PopupProps.menu(
                 showSearchBox: true,
                 fit: FlexFit.loose,
+                  containerBuilder: (context, popupWidget) => Container(
+      color: Colors.white, // Set popup background color
+      child: popupWidget,
+    ),
                 loadingBuilder:
                     isLoadingCategories
                         ? (context, searchEntry) => Center(
@@ -722,6 +748,7 @@ class _StockReportPageState extends State<StockReportPage> {
                         : null,
               ),
             ),
+          
             const SizedBox(height: 16),
             // Item Dropdown
             DropdownSearch<String>(
@@ -790,11 +817,17 @@ class _StockReportPageState extends State<StockReportPage> {
                 dropdownSearchDecoration: InputDecoration(
                   labelText: "Select Item",
                   border: OutlineInputBorder(),
+                     filled: true, // Add this
+      fillColor: Colors.white, // Set background color
                 ),
               ),
               popupProps: PopupProps.menu(
                 showSearchBox: true,
                 fit: FlexFit.loose,
+                  containerBuilder: (context, popupWidget) => Container(
+      color: Colors.white, // Set popup background color
+      child: popupWidget,
+    ),
                 loadingBuilder:
                     isLoadingItems
                         ? (context, searchEntry) => Center(
@@ -1031,6 +1064,8 @@ class _StockReportPageState extends State<StockReportPage> {
           ],
         ),
       ),
+      ),
+   
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 120.0), // Adjust value as needed
         child: FloatingActionButton(

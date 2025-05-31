@@ -649,6 +649,7 @@
 // }
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/dashboard/OrderDetails_page.dart';
 import 'package:vrs_erp_figma/dashboard/dashboard_filter.dart';
@@ -1381,15 +1382,18 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     }
   }
 
-  Widget _buildOrderCard(
+Widget _buildOrderCard(
     String title,
     String value,
     String qty,
     bool showQty,
     Color bgColor,
     IconData icon,
-  ) {
-    return GestureDetector(
+) {
+  return SizedBox(
+    width: 100, // Set a consistent width for all cards
+    height: 200, // Optional: fixed height for uniformity
+    child: GestureDetector(
       onTap: () {
         String orderType = title.replaceAll(' ', '');
         _showOrderDetails(orderType);
@@ -1399,12 +1403,10 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         color: bgColor,
         shape: RoundedRectangleBorder(
           borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(
-              40,
-            ), // Increased curve for top-right corner
-            bottomLeft: Radius.circular(20),
-            bottomRight: Radius.circular(20),
+            topLeft: Radius.circular(5),
+            topRight: Radius.circular(90),
+            bottomLeft: Radius.circular(5),
+            bottomRight: Radius.circular(5),
           ),
         ),
         child: Padding(
@@ -1418,13 +1420,17 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                   color: Colors.white.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, size: 40, color: Colors.black54),
+                child: Icon(
+                  icon,
+                  size: 30,
+                  color: Colors.black54,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 14,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
                 ),
@@ -1433,8 +1439,8 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
               const SizedBox(height: 4),
               Text(
                 value,
-                style: const TextStyle(
-                  fontSize: 24,
+                style: GoogleFonts.poppins(
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
@@ -1444,7 +1450,10 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                 const SizedBox(height: 4),
                 Text(
                   'Qty: $qty',
-                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.black54,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -1452,6 +1461,8 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 }
