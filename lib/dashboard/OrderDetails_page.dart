@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/dashboard/customerOrderDetailsPage.dart';
+import 'package:vrs_erp_figma/dashboard/orderStatus.dart';
 
 class OrderDetailsPage extends StatefulWidget {
   final List<Map<String, dynamic>> orderDetails;
@@ -37,6 +38,17 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+      IconButton(
+  icon: const Icon(Icons.info_outline, color: Colors.white, size: 24),
+  tooltip: 'Order Status',
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const OrderStatus()),
+    );
+  },
+),
+
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: Colors.white),
             onSelected: (String value) {
@@ -81,6 +93,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
           ),
         ],
       ),
+     
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
         child: SingleChildScrollView(
