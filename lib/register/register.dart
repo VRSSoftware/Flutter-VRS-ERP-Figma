@@ -177,544 +177,579 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  Widget buildOrderItem(RegisterOrder registerOrder) {
-    // Initialize checkbox state for this order if not already set
-    checkedOrders.putIfAbsent(registerOrder.orderNo, () => false);
+Widget buildOrderItem(RegisterOrder registerOrder) {
+  // Initialize checkbox state for this order if not already set
+  checkedOrders.putIfAbsent(registerOrder.orderNo, () => false);
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.white, Colors.grey.shade50],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 24,
-                    child: Marquee(
-                      text: registerOrder.itemName,
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                      scrollAxis: Axis.horizontal,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      blankSpace: 20.0,
-                      velocity: 50.0,
-                      pauseAfterRound: const Duration(seconds: 1),
-                      startPadding: 10.0,
-                      accelerationDuration: const Duration(seconds: 1),
-                      accelerationCurve: Curves.linear,
-                      decelerationDuration: const Duration(milliseconds: 500),
-                      decelerationCurve: Curves.easeOut,
+  // Determine colors based on DeliveryType
+  Color deliveryIconColor;
+  Color deliveryTextColor;
+  Color deliveryBorderColor;
+  String deliveryType = registerOrder.deliveryType ?? 'N/A';
+  switch (deliveryType) {
+    case 'Approved':
+      deliveryIconColor = Colors.teal;
+      deliveryTextColor = Colors.teal;
+      deliveryBorderColor = Colors.teal;
+      break;
+    case 'Partially Delivered':
+      deliveryIconColor = Colors.orange;
+      deliveryTextColor = Colors.orange;
+      deliveryBorderColor = Colors.orange;
+      break;
+    case 'Delivered':
+      deliveryIconColor = Colors.blue;
+      deliveryTextColor = Colors.blue;
+      deliveryBorderColor = Colors.blue;
+      break;
+    case 'Completed':
+      deliveryIconColor = Colors.green;
+      deliveryTextColor = Colors.green;
+      deliveryBorderColor = Colors.green;
+      break;
+    case 'Partially Completed':
+      deliveryIconColor = Colors.greenAccent;
+      deliveryTextColor = Colors.greenAccent;
+      deliveryBorderColor = Colors.greenAccent;
+      break;
+    default:
+      deliveryIconColor = Colors.grey;
+      deliveryTextColor = Colors.grey;
+      deliveryBorderColor = Colors.grey;
+  }
+
+  return Container(
+    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+    width: double.infinity,
+    decoration: BoxDecoration(
+      color: Colors.white, // White background
+      border: Border.all(color: Colors.blueGrey.shade100, width: 1), // Subtle border
+      borderRadius: BorderRadius.circular(0), // Rounded corners
+
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(12.0), // Reduced padding for compactness
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // First Row: Item Name and Popup Menu
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 24,
+                  child: Marquee(
+                    text: registerOrder.itemName,
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.indigo, // Vibrant color for item name
                     ),
+                    scrollAxis: Axis.horizontal,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    blankSpace: 20.0,
+                    velocity: 50.0,
+                    pauseAfterRound: const Duration(seconds: 1),
+                    startPadding: 10.0,
+                    accelerationDuration: const Duration(seconds: 1),
+                    accelerationCurve: Curves.linear,
+                    decelerationDuration: const Duration(milliseconds: 500),
+                    decelerationCurve: Curves.easeOut,
                   ),
                 ),
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, color: Colors.black54),
-                  onSelected: (value) async {
-                    switch (value) {
-                      case 'whatsapp':
+              ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, color: Colors.black54),
+                onSelected: (value) async {
+                  switch (value) {
+                    case 'whatsapp':
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          final TextEditingController controller =
+                              TextEditingController(
+                            text: registerOrder.whatsAppMobileNo ?? '',
+                          );
+                          return AlertDialog(
+                            title: const Text('Enter WhatsApp Number'),
+                            content: TextField(
+                              controller: controller,
+                              keyboardType: TextInputType.number,
+                              maxLength: 10,
+                              decoration: const InputDecoration(
+                                hintText: 'Enter 10-digit number',
+                                counterText: '',
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Cancel'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  String number = controller.text.trim();
+                                  if (number.length != 10 ||
+                                      !RegExp(r'^[0-9]{10}$').hasMatch(number)) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Please enter a valid 10-digit number',
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  Navigator.pop(context); // Close dialog
+                                  String docId = registerOrder.orderId;
+
+                                  try {
+                                    final dio = Dio();
+                                    final response = await dio.post(
+                                      '${AppConstants.Pdf_url}/api/values/order',
+                                      data: {"doc_id": docId},
+                                      options: Options(
+                                        responseType: ResponseType.bytes,
+                                      ),
+                                    );
+
+                                    bool sent = await _sendWhatsAppFile2(
+                                      fileBytes: response.data,
+                                      mobileNo: number,
+                                      fileType: 'pdf',
+                                      caption: 'Order PDF',
+                                    );
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          sent
+                                              ? 'Sent on WhatsApp'
+                                              : 'Failed to send',
+                                        ),
+                                      ),
+                                    );
+                                  } catch (e) {
+                                    print('Error: $e');
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Failed to download or send'),
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: const Text('Send'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                      break;
+
+                    case 'download':
+                      try {
+                        // Request storage permission for Android
+                        if (Platform.isAndroid) {
+                          var status = await Permission.storage.status;
+                          if (!status.isGranted) {
+                            status = await Permission.storage.request();
+                            if (!status.isGranted) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Storage permission denied'),
+                                  ),
+                                );
+                              }
+                              debugPrint('Storage permission denied');
+                              break;
+                            }
+                          }
+                        }
+
+                        // Show loading dialog
                         showDialog(
                           context: context,
-                          builder: (context) {
-                            final TextEditingController controller =
-                                TextEditingController(
-                                  text: registerOrder.whatsAppMobileNo ?? '',
-                                );
-                            return AlertDialog(
-                              title: Text('Enter WhatsApp Number'),
-                              content: TextField(
-                                controller: controller,
-                                keyboardType: TextInputType.number,
-                                maxLength: 10,
-                                decoration: InputDecoration(
-                                  hintText: 'Enter 10-digit number',
-                                  counterText: '',
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: Text('Cancel'),
-                                ),
-                                ElevatedButton(
+                          barrierDismissible: false,
+                          builder: (context) => const AlertDialog(
+                            content: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircularProgressIndicator(),
+                                SizedBox(width: 16),
+                                Text('Downloading...'),
+                              ],
+                            ),
+                          ),
+                        );
+
+                        // Make API request
+                        final dio = Dio();
+                        final response = await dio.post(
+                          '${AppConstants.Pdf_url}/api/values/order',
+                          data: {"doc_id": registerOrder.orderId},
+                          options: Options(responseType: ResponseType.bytes),
+                        );
+
+                        debugPrint('API response status: ${response.statusCode}');
+
+                        if (response.statusCode == 200) {
+                          // Get Downloads directory
+                          Directory? directory;
+                          String filePath;
+                          if (Platform.isAndroid) {
+                            directory = Directory('/storage/emulated/0/Download');
+                            if (!await directory.exists()) {
+                              await directory.create(recursive: true);
+                            }
+                            filePath =
+                                '${directory.path}/Order_${registerOrder.orderId}.pdf';
+                          } else if (Platform.isIOS) {
+                            directory = await getApplicationDocumentsDirectory();
+                            filePath =
+                                '${directory.path}/Order_${registerOrder.orderId}.pdf';
+                          } else {
+                            throw Exception('Unsupported platform');
+                          }
+
+                          // Write file
+                          final file = File(filePath);
+                          await file.writeAsBytes(response.data, flush: true);
+                          debugPrint(
+                            'PDF downloaded to: $filePath, exists: ${await file.exists()}',
+                          );
+
+                          // Close loading dialog
+                          if (mounted) {
+                            Navigator.of(context, rootNavigator: true).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('PDF downloaded to $filePath'),
+                                action: SnackBarAction(
+                                  label: 'Open',
                                   onPressed: () async {
-                                    String number = controller.text.trim();
-                                    if (number.length != 10 ||
-                                        !RegExp(
-                                          r'^[0-9]{10}$',
-                                        ).hasMatch(number)) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
+                                    final result = await OpenFile.open(filePath);
+                                    debugPrint(
+                                      'OpenFile result: ${result.type}, message: ${result.message}',
+                                    );
+                                    if (result.type != ResultType.done && mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
                                           content: Text(
-                                            'Please enter a valid 10-digit number',
-                                          ),
-                                        ),
-                                      );
-                                      return;
-                                    }
-
-                                    Navigator.pop(context); // Close dialog
-                                    String docId = registerOrder.orderId;
-
-                                    try {
-                                      final dio = Dio();
-                                      final response = await dio.post(
-                                        '${AppConstants.Pdf_url}/api/values/order',
-                                        data: {"doc_id": docId},
-                                        options: Options(
-                                          responseType: ResponseType.bytes,
-                                        ),
-                                      );
-
-                                      bool sent = await _sendWhatsAppFile2(
-                                        fileBytes: response.data,
-                                        mobileNo: number,
-                                        fileType: 'pdf',
-                                        caption: 'Order PDF',
-                                      );
-
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            sent
-                                                ? 'Sent on WhatsApp'
-                                                : 'Failed to send',
-                                          ),
-                                        ),
-                                      );
-                                    } catch (e) {
-                                      print('Error: $e');
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Failed to download or send',
+                                            'Failed to open PDF: ${result.message}',
                                           ),
                                         ),
                                       );
                                     }
                                   },
-                                  child: Text('Send'),
                                 ),
-                              ],
-                            );
-                          },
-                        );
-                        break;
-
-                      case 'download':
-                        try {
-                          // Request storage permission for Android
-                          if (Platform.isAndroid) {
-                            var status = await Permission.storage.status;
-                            if (!status.isGranted) {
-                              status = await Permission.storage.request();
-                              if (!status.isGranted) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Storage permission denied',
-                                      ),
-                                    ),
-                                  );
-                                }
-                                debugPrint('Storage permission denied');
-                                break;
-                              }
-                            }
-                          }
-
-                          // Show loading dialog
-                          showDialog(
-                            context: context,
-                            barrierDismissible: false,
-                            builder:
-                                (context) => AlertDialog(
-                                  content: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: const [
-                                      CircularProgressIndicator(),
-                                      SizedBox(width: 16),
-                                      Text('Downloading...'),
-                                    ],
-                                  ),
-                                ),
-                          );
-
-                          // Make API request
-                          final dio = Dio();
-                          final response = await dio.post(
-                            '${AppConstants.Pdf_url}/api/values/order',
-                            data: {"doc_id": registerOrder.orderId},
-                            options: Options(responseType: ResponseType.bytes),
-                          );
-
-                          debugPrint(
-                            'API response status: ${response.statusCode}',
-                          );
-
-                          if (response.statusCode == 200) {
-                            // Get Downloads directory
-                            Directory? directory;
-                            String filePath;
-                            if (Platform.isAndroid) {
-                              directory = Directory(
-                                '/storage/emulated/0/Download',
-                              );
-                              if (!await directory.exists()) {
-                                await directory.create(recursive: true);
-                              }
-                              filePath =
-                                  '${directory.path}/Order_${registerOrder.orderId}.pdf';
-                            } else if (Platform.isIOS) {
-                              directory =
-                                  await getApplicationDocumentsDirectory();
-                              filePath =
-                                  '${directory.path}/Order_${registerOrder.orderId}.pdf';
-                            } else {
-                              throw Exception('Unsupported platform');
-                            }
-
-                            // Write file
-                            final file = File(filePath);
-                            await file.writeAsBytes(response.data, flush: true);
-                            debugPrint(
-                              'PDF downloaded to: $filePath, exists: ${await file.exists()}',
-                            );
-
-                            // Close loading dialog
-                            if (mounted) {
-                              Navigator.of(context, rootNavigator: true).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('PDF downloaded to $filePath'),
-                                  action: SnackBarAction(
-                                    label: 'Open',
-                                    onPressed: () async {
-                                      final result = await OpenFile.open(
-                                        filePath,
-                                      );
-                                      debugPrint(
-                                        'OpenFile result: ${result.type}, message: ${result.message}',
-                                      );
-                                      if (result.type != ResultType.done &&
-                                          mounted) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Failed to open PDF: ${result.message}',
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    },
-                                  ),
-                                ),
-                              );
-                            }
-                          } else {
-                            if (mounted) {
-                              Navigator.of(context, rootNavigator: true).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Failed to load PDF: ${response.statusCode}',
-                                  ),
-                                ),
-                              );
-                            }
-                            debugPrint(
-                              'Failed to load PDF: ${response.statusCode}',
+                              ),
                             );
                           }
-                        } catch (e) {
-                          debugPrint('Download error: $e');
+                        } else {
                           if (mounted) {
                             Navigator.of(context, rootNavigator: true).pop();
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Download failed: $e')),
+                              SnackBar(
+                                content: Text(
+                                  'Failed to load PDF: ${response.statusCode}',
+                                ),
+                              ),
                             );
                           }
+                          debugPrint('Failed to load PDF: ${response.statusCode}');
                         }
-                        break;
+                      } catch (e) {
+                        debugPrint('Download error: $e');
+                        if (mounted) {
+                          Navigator.of(context, rootNavigator: true).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Download failed: $e')),
+                          );
+                        }
+                      }
+                      break;
 
-                      case 'view':
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) => PdfViewerScreen(
-                                  orderNo: registerOrder.orderId,
-                                  whatsappNo: registerOrder.whatsAppMobileNo,
-                                ),
-                          ),
-                        );
-                        break;
-                    }
-                  },
-                  itemBuilder:
-                      (BuildContext context) => [
-                        // ... (checkbox PopupMenuItem if needed)
-                        PopupMenuItem<String>(
-                          value: 'whatsapp',
-                          child: Row(
-                            children: [
-                              const FaIcon(
-                                FontAwesomeIcons.whatsapp,
-                                size: 20,
-                                color: Colors.green,
-                              ),
-
-                              SizedBox(width: 8),
-                              Text(
-                                'WhatsApp',
-                                style: GoogleFonts.poppins(fontSize: 14),
-                              ),
-                            ],
+                    case 'view':
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PdfViewerScreen(
+                            orderNo: registerOrder.orderId,
+                            whatsappNo: registerOrder.whatsAppMobileNo,
                           ),
                         ),
-                        PopupMenuItem<String>(
-                          value: 'download',
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.download,
-                                color: Colors.blue,
-                                size: 20,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'Download',
-                                style: GoogleFonts.poppins(fontSize: 14),
-                              ),
-                            ],
-                          ),
+                      );
+                      break;
+                  }
+                },
+                itemBuilder: (BuildContext context) => [
+                  PopupMenuItem<String>(
+                    value: 'whatsapp',
+                    child: Row(
+                      children: [
+                        const FaIcon(
+                          FontAwesomeIcons.whatsapp,
+                          size: 20,
+                          color: Colors.green,
                         ),
-                        PopupMenuItem<String>(
-                          value: 'view',
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.visibility,
-                                color: Colors.purple,
-                                size: 20,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'View',
-                                style: GoogleFonts.poppins(fontSize: 14),
-                              ),
-                            ],
-                          ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'WhatsApp',
+                          style: GoogleFonts.poppins(fontSize: 14),
                         ),
                       ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Flexible(
-                  child: Text(
-                    registerOrder.orderNo,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Colors.black87,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Flexible(
-                  child: Text(
-                    registerOrder.city,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Colors.black87,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        registerOrder.deliveryType == 'Approved'
-                            ? Colors.green.withOpacity(0.2)
-                            : Colors.red.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    registerOrder.deliveryType,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color:
-                          registerOrder.deliveryType == 'Approved'
-                              ? Colors.green
-                              : Colors.red,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
+                  PopupMenuItem<String>(
+                    value: 'download',
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.download,
+                          color: Colors.blue,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Download',
+                          style: GoogleFonts.poppins(fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'view',
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.visibility,
+                          color: Colors.purple,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'View',
+                          style: GoogleFonts.poppins(fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Second Row: Order Number, City, and Delivery Type
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                decoration: BoxDecoration(
+                  color: Colors.indigo.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.indigo.withOpacity(0.5), width: 1), // Lighter border
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Table(
-              columnWidths: const {
-                0: FlexColumnWidth(2),
-                1: FlexColumnWidth(3),
-              },
-              border: TableBorder(
-                horizontalInside: BorderSide(
-                  color: Colors.grey.shade200,
-                  width: 1,
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.receipt_long,
+                      size: 16,
+                      color: Colors.indigo,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      registerOrder.orderNo,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.indigo,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               ),
-              children: [
-                TableRow(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Text(
-                        'Date:',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Text(
-                        '${registerOrder.orderDate} ${registerOrder.createdTime}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                  ],
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber.withOpacity(0.5), width: 1), // Lighter border
                 ),
-                TableRow(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Text(
-                        'Quantity:',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Text(
-                        '${registerOrder.quantity}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                TableRow(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Text(
-                        'Amount:',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Text(
-                        '₹${registerOrder.amount.toStringAsFixed(2)}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (registerOrder.salesPersonName.isNotEmpty)
-                  TableRow(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Text(
-                          'Salesperson:',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black54,
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Text(
-                          registerOrder.salesPersonName,
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ],
+                child: Text(
+                  registerOrder.city,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.amber,
                   ),
-              ],
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                decoration: BoxDecoration(
+                  color: deliveryTextColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: deliveryBorderColor.withOpacity(0.5), width: 1), // Lighter border
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.local_shipping,
+                      size: 16,
+                      color: deliveryIconColor,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      registerOrder.deliveryType,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: deliveryTextColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Table for Additional Details
+          Table(
+            columnWidths: const {
+              0: FlexColumnWidth(2),
+              1: FlexColumnWidth(3),
+            },
+            border: TableBorder(
+              horizontalInside: BorderSide(
+                color: Colors.grey.shade200,
+                width: 1,
+              ),
+              verticalInside: BorderSide(
+                color: Colors.grey.shade200,
+                width: 1,
+              ),
             ),
-          ],
-        ),
+            children: [
+              TableRow(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                    child: Text(
+                      'Date:',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                    child: Text(
+                      '${registerOrder.orderDate} ${registerOrder.createdTime}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              TableRow(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                    child: Text(
+                      'Quantity:',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                    child: Text(
+                      '${registerOrder.quantity}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.purple,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              TableRow(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                    child: Text(
+                      'Amount:',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                    child: Text(
+                      '₹${registerOrder.amount.toStringAsFixed(2)}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.deepOrange,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (registerOrder.salesPersonName.isNotEmpty)
+                TableRow(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                      child: Text(
+                        'Salesperson:',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                      child: Text(
+                        registerOrder.salesPersonName,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ],
       ),
-    );
-  }
-
+    ),
+  );
+}
   Future<void> _selectDate(
     BuildContext context,
     TextEditingController controller,
