@@ -132,42 +132,122 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     );
   }
 
-  Widget _buildSummaryCard(String title, String value) {
-    return Expanded(
-      child: Container(
-        height: 90,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                title,
-                overflow: TextOverflow.visible,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
+  // Widget _buildSummaryCard(String title, String value) {
+  //   return Expanded(
+  //     child: Container(
+  //       height: 90,
+  //       decoration: BoxDecoration(
+  //         color: Colors.white,
+  //         border: Border.all(color: Colors.grey.shade300),
+  //       ),
+  //       child: Padding(
+  //         padding: const EdgeInsets.all(10.0),
+  //         child: Column(
+  //           mainAxisAlignment: MainAxisAlignment.center,
+  //           children: [
+  //             Text(
+  //               title,
+  //               overflow: TextOverflow.visible,
+  //               style: const TextStyle(
+  //                 fontSize: 13,
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //             ),
+  //             const SizedBox(height: 6),
+  //             Text(
+  //               value,
+  //               overflow: TextOverflow.visible,
+  //               style: const TextStyle(
+  //                 fontSize: 15,
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
+Widget _buildSummaryCard(String title, String value) {
+  // Determine colors based on card type
+  Color cardColor;
+  Color textColor;
+  IconData iconData;
+
+  switch (title) {
+    case 'Total Orders':
+      cardColor = Colors.indigo.withOpacity(0.1);
+      textColor = Colors.indigo;
+      iconData = Icons.receipt_long;
+      break;
+    case 'Total Qty':
+      cardColor = Colors.amber.withOpacity(0.1);
+      textColor = Colors.amber;
+      iconData = Icons.format_list_numbered;
+      break;
+    case 'Total Amount':
+      cardColor = Colors.green.withOpacity(0.1);
+      textColor = Colors.green;
+      iconData = Icons.currency_rupee;
+      break;
+    default:
+      cardColor = Colors.blueGrey.withOpacity(0.1);
+      textColor = Colors.blueGrey;
+      iconData = Icons.info;
+  }
+
+  return Expanded(
+    child: Container(
+      height: 115,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.blueGrey.shade100),
+        borderRadius: BorderRadius.circular(0),
+        // boxShadow: [
+        //   BoxShadow(
+        //     color: Colors.grey.withOpacity(0.1),
+        //     blurRadius: 3,
+        //     offset: const Offset(0, 2),
+        //   ),
+        // ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6.0),
+              decoration: BoxDecoration(
+                color: cardColor,
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: 6),
-              Text(
-                value,
-                overflow: TextOverflow.visible,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
+              child: Icon(iconData, size: 20, color: textColor),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title == 'Total Amount' ? '$value' : value,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildCustomerOrderCard(BuildContext context, Map<String, dynamic> order) {
     return GestureDetector(
