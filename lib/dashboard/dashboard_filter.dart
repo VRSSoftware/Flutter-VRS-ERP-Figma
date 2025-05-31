@@ -13,7 +13,7 @@ class DashboardFilterPage extends StatefulWidget {
     DateTime? fromDate,
     DateTime? toDate,
     KeyName? selectedState,
-    String? selectedCity,
+    KeyName? selectedCity,
   }) onApplyFilters;
 
   const DashboardFilterPage({
@@ -31,14 +31,15 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
   List<KeyName> ledgerList = [];
   List<KeyName> salespersonList = [];
   List<KeyName> statesList = [];
+  List<KeyName> citiesList = [];
   List<String> stateList = ['State 1', 'State 2', 'State 3']; // Placeholder for states
   List<String> cityList = ['City 1', 'City 2', 'City 3']; // Placeholder for cities
 
   KeyName? selectedLedger;
   KeyName? selectedSalesperson;
   KeyName? selectedState;
+  KeyName? selectedCity;
   // String? selectedState;
-  String? selectedCity;
   String? selectedOrderStatus;
   DateTime? fromDate;
   DateTime? toDate;
@@ -67,6 +68,7 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
       ledgerList = List<KeyName>.from(args['ledgerList'] ?? widget.ledgerList);
       salespersonList = List<KeyName>.from(args['salespersonList'] ?? widget.salespersonList);
       statesList = List<KeyName>.from(args['statesList'] );
+      citiesList = List<KeyName>.from(args['citiesList'] );
       fromDate = args['fromDate'] as DateTime?;
       toDate = args['toDate'] as DateTime?;
       selectedLedger = args['selectedLedger'] as KeyName?;
@@ -373,43 +375,44 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
               // City Filter
               const SizedBox(height: 10),
               _buildExpansionTile(
-                title: 'City',
-                children: [
-                  DropdownSearch<String>(
-                    items: cityList,
-                    selectedItem: selectedCity,
-                    onChanged: (value) => setState(() => selectedCity = value),
-                    popupProps: PopupProps.menu(
-                      showSearchBox: true,
-                      containerBuilder: (context, popupWidget) => Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.5),
-                              spreadRadius: 2,
-                              blurRadius: 5,
-                              offset: Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: popupWidget,
-                      ),
-                    ),
-                    dropdownDecoratorProps: DropDownDecoratorProps(
-                      dropdownSearchDecoration: InputDecoration(
-                        labelText: 'Select City',
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(0),
+                  title: 'City',
+                  children: [
+                    DropdownSearch<KeyName>(
+                      items: citiesList,
+                      selectedItem: selectedCity,
+                      itemAsString: (KeyName? u) => u?.name ?? '',
+                      onChanged: (value) => setState(() => selectedCity = value),
+                      popupProps: PopupProps.menu(
+                        showSearchBox: true,
+                        containerBuilder: (context, popupWidget) => Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(0),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.5),
+                                spreadRadius: 2,
+                                blurRadius: 5,
+                                offset: Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: popupWidget,
                         ),
                       ),
+                      dropdownDecoratorProps: DropDownDecoratorProps(
+                        dropdownSearchDecoration: InputDecoration(
+                          labelText: 'Select City',
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(0),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
               // Buttons
               const SizedBox(height: 20),
               Row(

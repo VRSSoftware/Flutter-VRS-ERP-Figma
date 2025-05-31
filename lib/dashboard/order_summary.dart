@@ -693,9 +693,12 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
 
   KeyName? selectedLedger;
   KeyName? selectedSalesperson;
+  KeyName? selectedState;
+  KeyName? selectedCity;
   List<KeyName> ledgerList = [];
   List<KeyName> salespersonList = [];
   List<KeyName> statesList = [];
+  List<KeyName> citiesList = [];
   bool isLoadingLedgers = true;
   bool isLoadingSalesperson = true;
 
@@ -723,10 +726,12 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         coBrId: UserSession.coBrId ?? '',
       );
       final fetchedStatesResponse = await ApiService.fetchStates();
+      final fetchedCitiesResponse = await ApiService.fetchCities(stateKey: "");
 
       setState(() {
         ledgerList = List<KeyName>.from(fetchedLedgersResponse['result'] ?? []);
         statesList = List<KeyName>.from(fetchedStatesResponse['result'] ?? []);
+        citiesList = List<KeyName>.from(fetchedCitiesResponse['result'] ?? []);
         salespersonList = List<KeyName>.from(
           fetchedSalespersonResponse['result'] ?? [],
         );
@@ -836,11 +841,11 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         body: jsonEncode({
           "FromDate": "${fromDate.year}-${fromDate.month.toString().padLeft(2, '0')}-${fromDate.day.toString().padLeft(2, '0')}",
           "ToDate": "${toDate.year}-${toDate.month.toString().padLeft(2, '0')}-${toDate.day.toString().padLeft(2, '0')}",
-          "CoBr_Id": "01",
-          "CustKey": customer,
-          "SalesPerson": salesman,
-          "State": state,
-          "City": city,
+          "CoBr_Id": UserSession.coBrId,
+          "CustKey": UserSession.userType == 'C' ? UserSession.userLedKey : customer,
+          "SalesPerson": UserSession.userType == 'S' ? UserSession.userLedKey : salesman,
+          "State": selectedState!.key,
+          "City": selectedCity!.key,
           "orderType": null,
           "Detail": null
         }),
@@ -1195,7 +1200,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                         DateTime? fromDate,
                         DateTime? toDate,
                         KeyName? selectedState,
-                        String? selectedCity,
+                        KeyName? selectedCity,
                       }) {
                         setState(() {
                           this.selectedLedger = selectedLedger;
@@ -1203,7 +1208,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                           this.fromDate = fromDate ?? this.fromDate;
                           this.toDate = toDate ?? this.toDate;
                           //this.state = selectedState;
-                          this.city = selectedCity;
+                          //this.city = selectedCity;
                           this.customer = selectedLedger?.key;
                           this.salesman = selectedSalesperson?.key;
                           this.selectedRange = 'Custom';
@@ -1216,6 +1221,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                     'ledgerList': ledgerList,
                     'salespersonList': salespersonList,
                     'statesList': statesList,
+                    'citiesList': citiesList,
                     'selectedLedger': selectedLedger,
                     'selectedSalesperson': selectedSalesperson,
                     'fromDate': fromDate,
