@@ -670,7 +670,7 @@ class OrderSummaryPage extends StatefulWidget {
 
 class _OrderSummaryPageState extends State<OrderSummaryPage> {
   DateTime fromDate = DateTime.now();
-  DateTime toDate = DateTime.now();
+  DateTime toDate = DateTime.now(); 
   String selectedRange = 'Today';
 
   String? customer;
@@ -695,6 +695,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
   KeyName? selectedSalesperson;
   List<KeyName> ledgerList = [];
   List<KeyName> salespersonList = [];
+  List<KeyName> statesList = [];
   bool isLoadingLedgers = true;
   bool isLoadingSalesperson = true;
 
@@ -721,15 +722,18 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         ledCat: 's',
         coBrId: UserSession.coBrId ?? '',
       );
+      final fetchedStatesResponse = await ApiService.fetchStates();
 
       setState(() {
         ledgerList = List<KeyName>.from(fetchedLedgersResponse['result'] ?? []);
+        statesList = List<KeyName>.from(fetchedStatesResponse['result'] ?? []);
         salespersonList = List<KeyName>.from(
           fetchedSalespersonResponse['result'] ?? [],
         );
         isLoadingLedgers = false;
         isLoadingSalesperson = false;
       });
+
     } catch (e) {
       setState(() {
         isLoadingLedgers = false;
@@ -961,6 +965,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    if(selectedRange=='Custom')...[
                     Row(
                       children: [
                         Expanded(
@@ -1056,6 +1061,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                         ),
                       ],
                     ),
+                    ],
                   ],
                 ),
               ),
@@ -1188,7 +1194,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                         KeyName? selectedSalesperson,
                         DateTime? fromDate,
                         DateTime? toDate,
-                        String? selectedState,
+                        KeyName? selectedState,
                         String? selectedCity,
                       }) {
                         setState(() {
@@ -1196,7 +1202,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                           this.selectedSalesperson = selectedSalesperson;
                           this.fromDate = fromDate ?? this.fromDate;
                           this.toDate = toDate ?? this.toDate;
-                          this.state = selectedState;
+                          //this.state = selectedState;
                           this.city = selectedCity;
                           this.customer = selectedLedger?.key;
                           this.salesman = selectedSalesperson?.key;
@@ -1209,6 +1215,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                   arguments: {
                     'ledgerList': ledgerList,
                     'salespersonList': salespersonList,
+                    'statesList': statesList,
                     'selectedLedger': selectedLedger,
                     'selectedSalesperson': selectedSalesperson,
                     'fromDate': fromDate,

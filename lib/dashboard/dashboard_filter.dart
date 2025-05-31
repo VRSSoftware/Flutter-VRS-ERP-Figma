@@ -12,7 +12,7 @@ class DashboardFilterPage extends StatefulWidget {
     KeyName? selectedSalesperson,
     DateTime? fromDate,
     DateTime? toDate,
-    String? selectedState,
+    KeyName? selectedState,
     String? selectedCity,
   }) onApplyFilters;
 
@@ -30,12 +30,14 @@ class DashboardFilterPage extends StatefulWidget {
 class _DashboardFilterPageState extends State<DashboardFilterPage> {
   List<KeyName> ledgerList = [];
   List<KeyName> salespersonList = [];
+  List<KeyName> statesList = [];
   List<String> stateList = ['State 1', 'State 2', 'State 3']; // Placeholder for states
   List<String> cityList = ['City 1', 'City 2', 'City 3']; // Placeholder for cities
 
   KeyName? selectedLedger;
   KeyName? selectedSalesperson;
-  String? selectedState;
+  KeyName? selectedState;
+  // String? selectedState;
   String? selectedCity;
   String? selectedOrderStatus;
   DateTime? fromDate;
@@ -64,6 +66,7 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
     if (args != null) {
       ledgerList = List<KeyName>.from(args['ledgerList'] ?? widget.ledgerList);
       salespersonList = List<KeyName>.from(args['salespersonList'] ?? widget.salespersonList);
+      statesList = List<KeyName>.from(args['statesList'] );
       fromDate = args['fromDate'] as DateTime?;
       toDate = args['toDate'] as DateTime?;
       selectedLedger = args['selectedLedger'] as KeyName?;
@@ -328,44 +331,45 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
               ],
               // State Filter
               const SizedBox(height: 10),
-              _buildExpansionTile(
-                title: 'State',
-                children: [
-                  DropdownSearch<String>(
-                    items: stateList,
-                    selectedItem: selectedState,
-                    onChanged: (value) => setState(() => selectedState = value),
-                    popupProps: PopupProps.menu(
-                      showSearchBox: true,
-                      containerBuilder: (context, popupWidget) => Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.5),
-                              spreadRadius: 2,
-                              blurRadius: 5,
-                              offset: Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: popupWidget,
-                      ),
-                    ),
-                    dropdownDecoratorProps: DropDownDecoratorProps(
-                      dropdownSearchDecoration: InputDecoration(
-                        labelText: 'Select State',
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(0),
+               _buildExpansionTile(
+                  title: 'State',
+                  children: [
+                    DropdownSearch<KeyName>(
+                      items: statesList,
+                      selectedItem: selectedState,
+                      itemAsString: (KeyName? u) => u?.name ?? '',
+                      onChanged: (value) => setState(() => selectedState = value),
+                      popupProps: PopupProps.menu(
+                        showSearchBox: true,
+                        containerBuilder: (context, popupWidget) => Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(0),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.5),
+                                spreadRadius: 2,
+                                blurRadius: 5,
+                                offset: Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: popupWidget,
                         ),
                       ),
+                      dropdownDecoratorProps: DropDownDecoratorProps(
+                        dropdownSearchDecoration: InputDecoration(
+                          labelText: 'Select States',
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(0),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
               // City Filter
               const SizedBox(height: 10),
               _buildExpansionTile(
