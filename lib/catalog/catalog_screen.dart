@@ -523,7 +523,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                             itemCount: garmentImages.length,
                             itemBuilder: (context, index, realIndex) {
                               return ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(0),
                                 child: Image.asset(
                                   garmentImages[index],
                                   fit: BoxFit.cover,
@@ -662,12 +662,12 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                           side: MaterialStateProperty.all(
                                             BorderSide(
                                               color: AppColors.primaryColor,
-                                              width: 2,
+                                              width: 1,
                                             ),
                                           ),
                                           shape: MaterialStateProperty.all(
                                             RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(6),
+                                              borderRadius: BorderRadius.circular(0),
                                             ),
                                           ),
                                         ),
@@ -711,7 +711,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
   Widget _buildCategoryItems() {
     double buttonWidth = (MediaQuery.of(context).size.width - 48) / 2;
-    double buttonHeight = 50;
+    double buttonHeight = 43;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -759,7 +759,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                 side: BorderSide(color: Colors.grey.shade300),
                                 backgroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(0),
                                 ),
                               ),
                               onPressed: () {

@@ -459,7 +459,6 @@
 //   }
 // }
 
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -638,7 +637,7 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                     padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
                       color: Colors.red,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(0),
                     ),
                     constraints: const BoxConstraints(
                       minWidth: 14,
@@ -675,11 +674,11 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0), // Consistent padding
+        padding: const EdgeInsets.symmetric(horizontal: 8.0), // Reduced padding
         child: LayoutBuilder(
           builder: (context, constraints) {
-            // Button width: total width minus 32 (padding) minus 8 (gap), divided by 2, increased by 20%
-            double buttonWidth = ((constraints.maxWidth - 32 - 8) / 2) * 1;
+            // Button width: total width minus 16 (padding) minus 8 (gap), divided by 2, increased by 20%
+            double buttonWidth = ((constraints.maxWidth - 16 - 8) / 2) * 1;
             return SingleChildScrollView(
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
@@ -722,18 +721,21 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                         ),
                       if (!showBarcodeWidget) ...[
                         const SizedBox(height: 15),
-                        const Text(
-                          "Categories",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: const Text(
+                            "Categories",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 10),
                         _isLoadingCategories
                             ? const Center(child: CircularProgressIndicator())
                             : Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                padding: const EdgeInsets.symmetric(horizontal: 8.0),
                                 child: Wrap(
                                   spacing: 8, // Reduced gap between buttons
                                   runSpacing: 10,
@@ -777,21 +779,23 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                                           side: MaterialStateProperty.all(
                                             BorderSide(
                                               color: AppColors.primaryColor,
-                                              width: 2,
+                                              width: 1,
                                             ),
                                           ),
                                           shape: MaterialStateProperty.all(
                                             RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12),
+                                              borderRadius: BorderRadius.circular(0),
                                             ),
                                           ),
                                         ),
                                         child: Text(
                                           category.itemSubGrpName,
+                                          textAlign: TextAlign.center, // Center text
                                           style: TextStyle(
                                             color: _selectedCategoryKey == category.itemSubGrpKey
                                                 ? Colors.white
                                                 : AppColors.primaryColor,
+                                            fontSize: 14, // Consistent font size
                                           ),
                                         ),
                                       ),
@@ -825,20 +829,23 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
   }
 
   Widget _buildCategoryItems(double buttonWidth) {
-    double buttonHeight = 50;
+    double buttonHeight = 43;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Items in $_selectedCategoryName",
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: Text(
+            "Items in $_selectedCategoryName",
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
         ),
         const SizedBox(height: 10),
         _isLoadingItems
             ? const Center(child: CircularProgressIndicator())
             : Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: Wrap(
                   spacing: 8, // Reduced gap between buttons
                   runSpacing: 10,
@@ -852,7 +859,7 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                           side: BorderSide(color: Colors.grey.shade300),
                           backgroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12), // curve 12
+                            borderRadius: BorderRadius.circular(0), // curve 12
                           ),
                         ),
                         onPressed: () {
@@ -870,15 +877,12 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                             },
                           ).then((_) => _fetchCartCount());
                         },
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Text(
-                            item.itemName,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.black87,
-                              fontSize: 14,
-                            ),
+                        child: Text( // Remove SingleChildScrollView for consistent alignment
+                          item.itemName,
+                          textAlign: TextAlign.center, // Center text
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontSize: 14, // Consistent font size
                           ),
                         ),
                       ),

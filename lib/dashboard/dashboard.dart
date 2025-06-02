@@ -980,7 +980,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
               elevation: 0,
               color: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(0),
                 side: const BorderSide(color: Colors.grey),
               ),
               child: Padding(
@@ -1000,7 +1000,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                     Container(
                       decoration: BoxDecoration(
                         color: const Color(0xFFF5F7FA),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(0),
                       ),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -1067,7 +1067,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                                     ),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF5F7FA),
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(0),
                                     ),
                                     child: Row(
                                       mainAxisAlignment:
@@ -1114,7 +1114,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                                     ),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF5F7FA),
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(0),
                                     ),
                                     child: Row(
                                       mainAxisAlignment:
@@ -1425,7 +1425,7 @@ Widget _buildOrderCard(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(0),
                 ),
                 child: Icon(
                   icon,
