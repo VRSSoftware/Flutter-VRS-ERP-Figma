@@ -232,23 +232,25 @@ class HomeScreen extends StatelessWidget {
 
     return Column(
       children: [
-        _buildFeatureButton(
-          'assets/images/orderbooking.png',
-          'Order Booking',
-          () => Navigator.pushNamed(context, '/orderbooking'),
-          buttonWidth,
-          true,
-          Colors.blue,
-        ),
-        const SizedBox(height: 14),
+    
         _buildFeatureButton(
           'assets/images/catalog.png',
           'Catalog',
           () => Navigator.pushNamed(context, '/catalog'),
           buttonWidth,
-          false,
+          true,
           Colors.green,
         ),
+             const SizedBox(height: 14),
+        _buildFeatureButton(
+          'assets/images/orderbooking.png',
+          'Order Booking',
+          () => Navigator.pushNamed(context, '/orderbooking'),
+          buttonWidth,
+          false,
+          Colors.blue,
+        ),
+       
         const SizedBox(height: 14),
         _buildFeatureButton(
           'assets/images/register.png',
@@ -276,6 +278,15 @@ class HomeScreen extends StatelessWidget {
           true,
           Colors.teal,
         ),
+          const SizedBox(height: 14),
+          _buildFeatureButton(
+          'assets/images/team.png',
+          'Team',
+          () => Navigator.pushNamed(context, '/registerOrders'),
+          buttonWidth,
+          false,
+          Colors.pinkAccent,
+        ),
       ],
     );
   }
@@ -292,7 +303,7 @@ Widget _buildFeatureButton(
     onTap: onTap,
     child: Container(
       width: width,
-      height: 100,
+      height: 95,
       decoration: BoxDecoration(
         color: bgColor.withOpacity(0.1), // Background for the entire container
       ),

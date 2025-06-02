@@ -9,7 +9,7 @@ import 'package:vrs_erp_figma/models/CartModel.dart';
 import 'package:vrs_erp_figma/privacypolicy/deleteAccount.dart';
 import 'package:vrs_erp_figma/privacypolicy/privacypolicy.dart';
 import 'package:vrs_erp_figma/register/register.dart';
-import 'package:vrs_erp_figma/screens/catalog_screen.dart';
+import 'package:vrs_erp_figma/catalog/catalog_screen.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 
 import 'package:vrs_erp_figma/screens/home_screen.dart';

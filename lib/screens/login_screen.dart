@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import 'package:vrs_erp_figma/constants/app_constants.dart';
-import 'package:vrs_erp_figma/screens/catalog_screen.dart';
+import 'package:vrs_erp_figma/catalog/catalog_screen.dart';
 import 'package:vrs_erp_figma/screens/home_screen.dart';
 import 'package:vrs_erp_figma/screens/register_screen.dart';
 

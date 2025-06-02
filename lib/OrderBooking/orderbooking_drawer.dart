@@ -22,16 +22,16 @@ void showOrderMenu(BuildContext context, Offset position) async {
           },
         ),
       ),
-         PopupMenuItem(
-        child: ListTile(
-          leading: Icon(Icons.add_shopping_cart, color: AppColors.primaryColor),
-          title: const Text('View Order 1'),
-          onTap: () {
-             Navigator.pop(context); 
-      Navigator.pushNamed(context, '/viewOrders'); 
-          },
-        ),
-      ),
+      //    PopupMenuItem(
+      //   child: ListTile(
+      //     leading: Icon(Icons.add_shopping_cart, color: AppColors.primaryColor),
+      //     title: const Text('View Order 1'),
+      //     onTap: () {
+      //        Navigator.pop(context); 
+      // Navigator.pushNamed(context, '/viewOrders'); 
+      //     },
+      //   ),
+      // ),
       PopupMenuItem(
         child: ListTile(
           leading: Icon(Icons.inventory, color: AppColors.primaryColor),
