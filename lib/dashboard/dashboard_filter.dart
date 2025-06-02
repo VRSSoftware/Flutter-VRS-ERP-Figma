@@ -92,11 +92,10 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
   void initState() {
     super.initState();
     setState(() {
-
-      selectedsalespersons = FilterData.selectedSalespersons!;
-      selectedCities = FilterData.selectedCities!;
-      selectedStates = FilterData.selectedStates!;
-      selectedLedgers = FilterData.selectedLedgers!;
+      selectedsalespersons = FilterData.selectedSalespersons?? [];
+      selectedCities = FilterData.selectedCities ?? [];
+      selectedStates = FilterData.selectedStates ?? [];
+      selectedLedgers = FilterData.selectedLedgers ?? [];
     });
   }
 
@@ -179,6 +178,7 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
       selectedDateRange = range;
     });
   }
+  
 
   Future<void> _pickDate(BuildContext context, bool isFromDate) async {
     final DateTime? picked = await showDatePicker(
