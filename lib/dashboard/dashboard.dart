@@ -827,9 +827,9 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
               const SizedBox(height: 12),
               Text(
                 title,
-                style: GoogleFonts.poppins(
+                style: GoogleFonts.lemon(
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.normal,
                   color: Colors.black87,
                 ),
                 textAlign: TextAlign.center,
