@@ -14,27 +14,36 @@ class BottomNavigationWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-return BottomNavigationBar(
-  currentIndex: currentIndex,
-  backgroundColor: Colors.white,
-  selectedItemColor: AppColors.primaryColor,
-  unselectedItemColor: Colors.grey,
-  elevation: 8,
-  type: BottomNavigationBarType.fixed,
-  iconSize: 24,
-  selectedFontSize: 12, // reduce if needed
-  unselectedFontSize: 11, // reduce if needed
-  items: const [
-    BottomNavigationBarItem(icon: Icon(CupertinoIcons.home), label: 'Home'),
-    BottomNavigationBarItem(icon: Icon(CupertinoIcons.square_list_fill), label: 'Catalog'),
-    BottomNavigationBarItem(icon: Icon(CupertinoIcons.cart_fill_badge_plus), label: 'Order'),
-    BottomNavigationBarItem(icon: Icon(CupertinoIcons.today), label: 'Report'),
-    BottomNavigationBarItem(icon: Icon(CupertinoIcons.tray_full_fill), label: 'Dashboard'),
-    BottomNavigationBarItem(icon: Icon(CupertinoIcons.person_3_fill), label: 'Team'),
-  ],
-  onTap: onTap,
-);
+    // Build dynamic items list based on user type
+    List<BottomNavigationBarItem> navItems = [
+      const BottomNavigationBarItem(icon: Icon(CupertinoIcons.home), label: 'Home'),
+      const BottomNavigationBarItem(icon: Icon(CupertinoIcons.square_list_fill), label: 'Catalog'),
+      const BottomNavigationBarItem(icon: Icon(CupertinoIcons.cart_fill_badge_plus), label: 'Order'),
+    ];
 
+    if (UserSession.userType != 'C') {
+      navItems.addAll([
+        const BottomNavigationBarItem(icon: Icon(CupertinoIcons.today), label: 'Report'),
+        const BottomNavigationBarItem(icon: Icon(CupertinoIcons.tray_full_fill), label: 'Dashboard'),
+      ]);
+    }
+
+    navItems.add(
+      const BottomNavigationBarItem(icon: Icon(CupertinoIcons.person_3_fill), label: 'Team'),
+    );
+
+    return BottomNavigationBar(
+      currentIndex: currentIndex,
+      backgroundColor: Colors.white,
+      selectedItemColor: AppColors.primaryColor,
+      unselectedItemColor: Colors.grey,
+      elevation: 8,
+      type: BottomNavigationBarType.fixed,
+      iconSize: 24,
+      selectedFontSize: 12,
+      unselectedFontSize: 11,
+      items: navItems,
+      onTap: onTap,
+    );
   }
-
 }

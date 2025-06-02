@@ -92,10 +92,20 @@ class _DrawerScreenState extends State<DrawerScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              ..._iconPaths.keys.map((title) => _buildDrawerItem(
-                    title,
-                    _getRouteFromSection(title),
-                  )),
+              // ..._iconPaths.keys.map((title) => _buildDrawerItem(
+              //       title,
+              //       _getRouteFromSection(title),
+              //     )),
+              ..._iconPaths.keys
+                  .where((title) {
+                    if (UserSession.userType != 'C') return true;
+                    return title != 'Stock Report' && title != 'Dashboard';
+                  })
+                  .map(
+                    (title) =>
+                        _buildDrawerItem(title, _getRouteFromSection(title)),
+                  ),
+
               const Divider(),
               _buildLogoutButton(),
             ],
@@ -143,13 +153,17 @@ class _DrawerScreenState extends State<DrawerScreen> {
           onTap: () => _navigateTo(title, route),
           child: Container(
             decoration: BoxDecoration(
-              color: isSelected || isHovered
-                  ? const Color.fromARGB(255, 206, 222, 240)
-                  : Colors.transparent,
+              color:
+                  isSelected || isHovered
+                      ? const Color.fromARGB(255, 206, 222, 240)
+                      : Colors.transparent,
               borderRadius: BorderRadius.circular(20),
             ),
             child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 0,
+              ),
               leading: SizedBox(
                 width: 24,
                 height: 24,
@@ -162,9 +176,10 @@ class _DrawerScreenState extends State<DrawerScreen> {
                     return Icon(
                       _fallbackIcons[title]!,
                       size: 24,
-                      color: isSelected || isHovered
-                          ? AppColors.primaryColor
-                          : Colors.grey[800],
+                      color:
+                          isSelected || isHovered
+                              ? AppColors.primaryColor
+                              : Colors.grey[800],
                     );
                   },
                 ),
@@ -174,9 +189,10 @@ class _DrawerScreenState extends State<DrawerScreen> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: isSelected || isHovered
-                      ? AppColors.primaryColor
-                      : Colors.grey[800],
+                  color:
+                      isSelected || isHovered
+                          ? AppColors.primaryColor
+                          : Colors.grey[800],
                 ),
               ),
             ),
@@ -196,24 +212,34 @@ class _DrawerScreenState extends State<DrawerScreen> {
           borderRadius: BorderRadius.circular(20),
           onTap: () {
             Navigator.pop(context); // Close the drawer
-            Navigator.pushReplacementNamed(context, '/login'); // Navigate to login screen
+            Navigator.pushReplacementNamed(
+              context,
+              '/login',
+            ); // Navigate to login screen
           },
           child: Container(
             decoration: BoxDecoration(
-              color: hoveredSection == 'Logout'
-                  ? const Color.fromARGB(255, 222, 187, 231)
-                  : Colors.transparent,
+              color:
+                  hoveredSection == 'Logout'
+                      ? const Color.fromARGB(255, 222, 187, 231)
+                      : Colors.transparent,
               borderRadius: BorderRadius.circular(20),
             ),
             child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 0,
+              ),
               leading: SizedBox(
                 width: 24,
                 height: 24,
                 child: Icon(
                   Icons.exit_to_app,
                   size: 24,
-                  color: hoveredSection == 'Logout' ? AppColors.primaryColor : Colors.grey[800],
+                  color:
+                      hoveredSection == 'Logout'
+                          ? AppColors.primaryColor
+                          : Colors.grey[800],
                 ),
               ),
               title: Text(
@@ -221,7 +247,10 @@ class _DrawerScreenState extends State<DrawerScreen> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: hoveredSection == 'Logout' ? AppColors.primaryColor : Colors.grey[800],
+                  color:
+                      hoveredSection == 'Logout'
+                          ? AppColors.primaryColor
+                          : Colors.grey[800],
                 ),
               ),
             ),
