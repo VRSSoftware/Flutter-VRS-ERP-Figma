@@ -653,6 +653,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/dashboard/OrderDetails_page.dart';
 import 'package:vrs_erp_figma/dashboard/dashboard_filter.dart';
+import 'package:vrs_erp_figma/dashboard/data.dart';
 import 'package:vrs_erp_figma/models/keyName.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
@@ -884,9 +885,9 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
               "${toDate.year}-${toDate.month.toString().padLeft(2, '0')}-${toDate.day.toString().padLeft(2, '0')}",
           "CoBr_Id": UserSession.coBrId ?? '01', // Provide default value
           "CustKey":
-              UserSession.userType == 'C' ? UserSession.userLedKey : customer,
+              UserSession.userType == 'C' ? UserSession.userLedKey : FilterData.selectedLedger?.key,
           "SalesPerson":
-              UserSession.userType == 'S' ? UserSession.userLedKey : salesman,
+              UserSession.userType == 'S' ? UserSession.userLedKey : FilterData.selectedSalesperson?.key,
           "State":
               selectedState.key.isEmpty
                   ? null
@@ -1254,24 +1255,23 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                             KeyName? selectedState,
                             KeyName? selectedCity,
                           }) {
+                          
+                            
+
+
                             setState(() {
                               this.selectedLedger =
-                                  selectedLedger ??
-                                  KeyName(key: '', name: 'All Customers');
+                                  selectedLedger;
                               this.selectedSalesperson =
-                                  selectedSalesperson ??
-                                  KeyName(key: '', name: 'All Salespersons');
+                                  selectedSalesperson;
                               this.fromDate = fromDate ?? this.fromDate;
                               this.toDate = toDate ?? this.toDate;
-                              this.selectedState =
-                                  selectedState ??
-                                  KeyName(key: '', name: 'All States');
+                       
                               this.selectedCity =
                                   selectedCity ??
                                   KeyName(key: '', name: 'All Cities');
-                              this.customer = selectedLedger?.key;
-                              this.salesman = selectedSalesperson?.key;
-                              this.selectedRange = 'Custom';
+                             
+                              selectedRange = 'Custom';
                             });
                             _fetchOrderSummary();
                           },
@@ -1282,26 +1282,14 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                     'salespersonList': salespersonList,
                     'statesList': statesList,
                     'citiesList': citiesList,
-                    'selectedLedger': selectedLedger,
-                    'selectedSalesperson': selectedSalesperson,
+                    //'selectedLedger': selectedLedger,
+                    //'selectedSalesperson': selectedSalesperson,
                     'fromDate': fromDate,
                     'toDate': toDate,
                     'selectedDateRange': selectedRange,
                   },
                 ),
-                transitionDuration: const Duration(milliseconds: 500),
-                transitionsBuilder: (
-                  context,
-                  animation,
-                  secondaryAnimation,
-                  child,
-                ) {
-                  return ScaleTransition(
-                    scale: animation,
-                    alignment: Alignment.bottomRight,
-                    child: FadeTransition(opacity: animation, child: child),
-                  );
-                },
+
               ),
             );
           },

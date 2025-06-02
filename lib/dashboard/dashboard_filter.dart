@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/dashboard/data.dart';
 import 'package:vrs_erp_figma/models/keyName.dart';
 
 class DashboardFilterPage extends StatefulWidget {
@@ -14,7 +15,8 @@ class DashboardFilterPage extends StatefulWidget {
     DateTime? toDate,
     KeyName? selectedState,
     KeyName? selectedCity,
-  }) onApplyFilters;
+  })
+  onApplyFilters;
 
   const DashboardFilterPage({
     Key? key,
@@ -32,8 +34,6 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
   List<KeyName> salespersonList = [];
   List<KeyName> statesList = [];
   List<KeyName> citiesList = [];
-  List<String> stateList = ['State 1', 'State 2', 'State 3']; // Placeholder for states
-  List<String> cityList = ['City 1', 'City 2', 'City 3']; // Placeholder for cities
 
   KeyName? selectedLedger;
   KeyName? selectedSalesperson;
@@ -62,22 +62,36 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
     if (args != null) {
       ledgerList = List<KeyName>.from(args['ledgerList'] ?? widget.ledgerList);
-      salespersonList = List<KeyName>.from(args['salespersonList'] ?? widget.salespersonList);
-      statesList = List<KeyName>.from(args['statesList'] );
-      citiesList = List<KeyName>.from(args['citiesList'] );
+      salespersonList = List<KeyName>.from(
+        args['salespersonList'] ?? widget.salespersonList,
+      );
+      statesList = List<KeyName>.from(args['statesList']);
+      citiesList = List<KeyName>.from(args['citiesList']);
       fromDate = args['fromDate'] as DateTime?;
       toDate = args['toDate'] as DateTime?;
-      selectedLedger = args['selectedLedger'] as KeyName?;
-      selectedSalesperson = args['selectedSalesperson'] as KeyName?;
+      //selectedLedger = args['selectedLedger'] as KeyName?;
+      //selectedSalesperson = args['selectedSalesperson'] as KeyName?;
       selectedDateRange = args['selectedDateRange'] as String? ?? 'Custom';
     } else {
-      ledgerList = widget.ledgerList;
-      salespersonList = widget.salespersonList;
+      // ledgerList = widget.ledgerList;
+      // salespersonList = widget.salespersonList;
     }
+  }
+    @override
+  void initState() {
+    super.initState();
+    setState(() {
+      selectedLedger = FilterData.selectedLedger;
+      selectedSalesperson = FilterData.selectedSalesperson;
+      selectedState = FilterData.selectedState;
+      selectedSalesperson = FilterData.selectedSalesperson;
+
+    });
   }
 
   void _setDateRange(String range) {
@@ -91,16 +105,36 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
       case 'Yesterday':
         final yesterday = now.subtract(const Duration(days: 1));
         start = DateTime(yesterday.year, yesterday.month, yesterday.day);
-        end = DateTime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59);
+        end = DateTime(
+          yesterday.year,
+          yesterday.month,
+          yesterday.day,
+          23,
+          59,
+          59,
+        );
         break;
       case 'This Week':
         start = now.subtract(Duration(days: now.weekday - 1));
         end = DateTime(now.year, now.month, now.day, 23, 59, 59);
         break;
       case 'Previous Week':
-        final firstDayOfLastWeek = now.subtract(Duration(days: now.weekday + 6));
-        start = DateTime(firstDayOfLastWeek.year, firstDayOfLastWeek.month, firstDayOfLastWeek.day);
-        end = DateTime(firstDayOfLastWeek.year, firstDayOfLastWeek.month, firstDayOfLastWeek.day + 6, 23, 59, 59);
+        final firstDayOfLastWeek = now.subtract(
+          Duration(days: now.weekday + 6),
+        );
+        start = DateTime(
+          firstDayOfLastWeek.year,
+          firstDayOfLastWeek.month,
+          firstDayOfLastWeek.day,
+        );
+        end = DateTime(
+          firstDayOfLastWeek.year,
+          firstDayOfLastWeek.month,
+          firstDayOfLastWeek.day + 6,
+          23,
+          59,
+          59,
+        );
         break;
       case 'This Month':
         start = DateTime(now.year, now.month, 1);
@@ -143,7 +177,8 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
   Future<void> _pickDate(BuildContext context, bool isFromDate) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isFromDate ? fromDate ?? DateTime.now() : toDate ?? DateTime.now(),
+      initialDate:
+          isFromDate ? fromDate ?? DateTime.now() : toDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
@@ -193,9 +228,12 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
                     ),
                     dropdownColor: Colors.white,
                     value: selectedDateRange,
-                    items: dateRangeOptions
-                        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                        .toList(),
+                    items:
+                        dateRangeOptions
+                            .map(
+                              (e) => DropdownMenuItem(value: e, child: Text(e)),
+                            )
+                            .toList(),
                     onChanged: (value) {
                       setState(() {
                         selectedDateRange = value;
@@ -255,24 +293,26 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
                       items: ledgerList,
                       selectedItem: selectedLedger,
                       itemAsString: (KeyName? u) => u?.name ?? '',
-                      onChanged: (value) => setState(() => selectedLedger = value),
+                      onChanged:
+                          (value) => setState(() => selectedLedger = value),
                       popupProps: PopupProps.menu(
                         showSearchBox: true,
-                        containerBuilder: (context, popupWidget) => Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(0),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: Offset(0, 3),
+                        containerBuilder:
+                            (context, popupWidget) => Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(0),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.5),
+                                    spreadRadius: 2,
+                                    blurRadius: 5,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: popupWidget,
-                        ),
+                              child: popupWidget,
+                            ),
                       ),
                       dropdownDecoratorProps: DropDownDecoratorProps(
                         dropdownSearchDecoration: InputDecoration(
@@ -298,24 +338,27 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
                       items: salespersonList,
                       selectedItem: selectedSalesperson,
                       itemAsString: (KeyName? u) => u?.name ?? '',
-                      onChanged: (value) => setState(() => selectedSalesperson = value),
+                      onChanged:
+                          (value) =>
+                              setState(() => selectedSalesperson = value),
                       popupProps: PopupProps.menu(
                         showSearchBox: true,
-                        containerBuilder: (context, popupWidget) => Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(0),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: Offset(0, 3),
+                        containerBuilder:
+                            (context, popupWidget) => Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(0),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.5),
+                                    spreadRadius: 2,
+                                    blurRadius: 5,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: popupWidget,
-                        ),
+                              child: popupWidget,
+                            ),
                       ),
                       dropdownDecoratorProps: DropDownDecoratorProps(
                         dropdownSearchDecoration: InputDecoration(
@@ -333,86 +376,88 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
               ],
               // State Filter
               const SizedBox(height: 10),
-               _buildExpansionTile(
-                  title: 'State',
-                  children: [
-                    DropdownSearch<KeyName>(
-                      items: statesList,
-                      selectedItem: selectedState,
-                      itemAsString: (KeyName? u) => u?.name ?? '',
-                      onChanged: (value) => setState(() => selectedState = value),
-                      popupProps: PopupProps.menu(
-                        showSearchBox: true,
-                        containerBuilder: (context, popupWidget) => Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(0),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
+              _buildExpansionTile(
+                title: 'State',
+                children: [
+                  DropdownSearch<KeyName>(
+                    items: statesList,
+                    selectedItem: selectedState,
+                    itemAsString: (KeyName? u) => u?.name ?? '',
+                    onChanged: (value) => setState(() => selectedState = value),
+                    popupProps: PopupProps.menu(
+                      showSearchBox: true,
+                      containerBuilder:
+                          (context, popupWidget) => Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: popupWidget,
                           ),
-                          child: popupWidget,
-                        ),
-                      ),
-                      dropdownDecoratorProps: DropDownDecoratorProps(
-                        dropdownSearchDecoration: InputDecoration(
-                          labelText: 'Select States',
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(0),
-                          ),
+                    ),
+                    dropdownDecoratorProps: DropDownDecoratorProps(
+                      dropdownSearchDecoration: InputDecoration(
+                        labelText: 'Select States',
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(0),
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
               // City Filter
               const SizedBox(height: 10),
               _buildExpansionTile(
-                  title: 'City',
-                  children: [
-                    DropdownSearch<KeyName>(
-                      items: citiesList,
-                      selectedItem: selectedCity,
-                      itemAsString: (KeyName? u) => u?.name ?? '',
-                      onChanged: (value) => setState(() => selectedCity = value),
-                      popupProps: PopupProps.menu(
-                        showSearchBox: true,
-                        containerBuilder: (context, popupWidget) => Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(0),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
+                title: 'City',
+                children: [
+                  DropdownSearch<KeyName>(
+                    items: citiesList,
+                    selectedItem: selectedCity,
+                    itemAsString: (KeyName? u) => u?.name ?? '',
+                    onChanged: (value) => setState(() => selectedCity = value),
+                    popupProps: PopupProps.menu(
+                      showSearchBox: true,
+                      containerBuilder:
+                          (context, popupWidget) => Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: popupWidget,
                           ),
-                          child: popupWidget,
-                        ),
-                      ),
-                      dropdownDecoratorProps: DropDownDecoratorProps(
-                        dropdownSearchDecoration: InputDecoration(
-                          labelText: 'Select City',
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(0),
-                          ),
+                    ),
+                    dropdownDecoratorProps: DropDownDecoratorProps(
+                      dropdownSearchDecoration: InputDecoration(
+                        labelText: 'Select City',
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(0),
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
               // Buttons
               const SizedBox(height: 20),
               Row(
@@ -420,23 +465,40 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        if (fromDate != null && toDate != null && toDate!.isBefore(fromDate!)) {
+                        if (fromDate != null &&
+                            toDate != null &&
+                            toDate!.isBefore(fromDate!)) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('To Date cannot be before From Date'),
+                              content: Text(
+                                'To Date cannot be before From Date',
+                              ),
                             ),
                           );
                           return;
                         }
+                        print('selectedLedger: $selectedLedger');
+                        print('selectedSalesperson: $selectedSalesperson');
+                        print('fromDate: $fromDate');
+                        print('toDate: $toDate');
+                        print('selectedState: $selectedState');
+                        print('selectedCity: $selectedCity');
+
+                        FilterData.selectedLedger = selectedLedger;
+                        FilterData.selectedSalesperson = selectedSalesperson; 
+                        FilterData.selectedCity = selectedCity;
+                        FilterData.selectedState = selectedState;
+
+
                         widget.onApplyFilters(
-                          selectedLedger: selectedLedger,
-                          selectedSalesperson: selectedSalesperson,
-                          fromDate: fromDate,
-                          toDate: toDate,
-                          selectedState: selectedState,
-                          selectedCity: selectedCity,
+                          // selectedLedger: selectedLedger,
+                          // selectedSalesperson: selectedSalesperson,
+                          // fromDate: fromDate,
+                          // toDate: toDate,
+                          // selectedState: selectedState,
+                          // selectedCity: selectedCity,
                         );
-                        Navigator.pop(context);
+                       Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryColor,
