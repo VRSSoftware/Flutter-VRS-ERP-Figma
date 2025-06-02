@@ -788,7 +788,17 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
       onTap: () {
         String orderType = title.replaceAll(' ', '');
         print(orderType);
-        _showOrderDetails(orderType+'ORDER');
+        if(orderType.contains('INHAND') )
+        {
+          // _showOrderDetails(orderType+'ORDER');
+        }
+        else if(orderType.contains('TOBERECEIVED') )
+        {
+          // _showOrderDetails(orderType+'ORDER');
+        }
+        else if(orderType.contains('PENDING') || orderType.contains('PACKED') || orderType.contains('CANCELLED') || orderType.contains('INVOICED') ){
+           _showOrderDetails(orderType+'ORDER');
+        }
       },
       child: Card(
         elevation: 0,
