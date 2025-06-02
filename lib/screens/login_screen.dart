@@ -260,7 +260,7 @@ class _LoginPageState extends State<LoginScreen> {
                                 backgroundColor: Colors.white,
                                 child: ClipOval(
                                   child: Image.asset(
-                                    "assets/images/new_logo.png",
+                                    "assets/images/logo.png",
                                     width: 300,
                                     height: 350,
                                     fit: BoxFit.contain,
