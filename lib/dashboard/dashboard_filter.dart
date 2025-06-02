@@ -35,6 +35,11 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
   List<KeyName> statesList = [];
   List<KeyName> citiesList = [];
 
+  List<KeyName> selectedsalespersons = [];
+  List<KeyName> selectedLedgers = [];
+  List<KeyName> selectedStates = [];
+  List<KeyName> selectedCities = [];
+
   KeyName? selectedLedger;
   KeyName? selectedSalesperson;
   KeyName? selectedState;
@@ -82,15 +87,16 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
       // salespersonList = widget.salespersonList;
     }
   }
-    @override
+
+  @override
   void initState() {
     super.initState();
     setState(() {
-      selectedLedger = FilterData.selectedLedger;
-      selectedSalesperson = FilterData.selectedSalesperson;
-      selectedState = FilterData.selectedState;
-      selectedSalesperson = FilterData.selectedSalesperson;
 
+      selectedsalespersons = FilterData.selectedSalespersons!;
+      selectedCities = FilterData.selectedCities!;
+      selectedStates = FilterData.selectedStates!;
+      selectedLedgers = FilterData.selectedLedgers!;
     });
   }
 
@@ -289,13 +295,13 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
                 _buildExpansionTile(
                   title: 'Party',
                   children: [
-                    DropdownSearch<KeyName>(
+                    DropdownSearch<KeyName>.multiSelection(
                       items: ledgerList,
-                      selectedItem: selectedLedger,
+                      selectedItems: selectedLedgers,
                       itemAsString: (KeyName? u) => u?.name ?? '',
                       onChanged:
-                          (value) => setState(() => selectedLedger = value),
-                      popupProps: PopupProps.menu(
+                          (value) => setState(() => selectedLedgers = value),
+                      popupProps: PopupPropsMultiSelection.menu(
                         showSearchBox: true,
                         containerBuilder:
                             (context, popupWidget) => Container(
@@ -307,7 +313,7 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
                                     color: Colors.grey.withOpacity(0.5),
                                     spreadRadius: 2,
                                     blurRadius: 5,
-                                    offset: Offset(0, 3),
+                                    offset: const Offset(0, 3),
                                   ),
                                 ],
                               ),
@@ -325,6 +331,42 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
                         ),
                       ),
                     ),
+                    // DropdownSearch<KeyName>(
+                    //   items: ledgerList,
+                    //   selectedItem: selectedLedger,
+                    //   itemAsString: (KeyName? u) => u?.name ?? '',
+                    //   onChanged:
+                    //       (value) => setState(() => selectedLedger = value),
+                    //   popupProps: PopupProps.menu(
+                    //     showSearchBox: true,
+                    //     containerBuilder:
+                    //         (context, popupWidget) => Container(
+                    //           decoration: BoxDecoration(
+                    //             color: Colors.white,
+                    //             borderRadius: BorderRadius.circular(0),
+                    //             boxShadow: [
+                    //               BoxShadow(
+                    //                 color: Colors.grey.withOpacity(0.5),
+                    //                 spreadRadius: 2,
+                    //                 blurRadius: 5,
+                    //                 offset: Offset(0, 3),
+                    //               ),
+                    //             ],
+                    //           ),
+                    //           child: popupWidget,
+                    //         ),
+                    //   ),
+                    //   dropdownDecoratorProps: DropDownDecoratorProps(
+                    //     dropdownSearchDecoration: InputDecoration(
+                    //       labelText: 'Select Party',
+                    //       filled: true,
+                    //       fillColor: Colors.white,
+                    //       border: OutlineInputBorder(
+                    //         borderRadius: BorderRadius.circular(0),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ],
@@ -334,14 +376,14 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
                 _buildExpansionTile(
                   title: 'Salesperson',
                   children: [
-                    DropdownSearch<KeyName>(
+                    DropdownSearch<KeyName>.multiSelection(
                       items: salespersonList,
-                      selectedItem: selectedSalesperson,
+                      selectedItems: selectedsalespersons,
                       itemAsString: (KeyName? u) => u?.name ?? '',
                       onChanged:
                           (value) =>
-                              setState(() => selectedSalesperson = value),
-                      popupProps: PopupProps.menu(
+                              setState(() => selectedsalespersons = value),
+                      popupProps: PopupPropsMultiSelection.menu(
                         showSearchBox: true,
                         containerBuilder:
                             (context, popupWidget) => Container(
@@ -353,7 +395,7 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
                                     color: Colors.grey.withOpacity(0.5),
                                     spreadRadius: 2,
                                     blurRadius: 5,
-                                    offset: Offset(0, 3),
+                                    offset: const Offset(0, 3),
                                   ),
                                 ],
                               ),
@@ -362,7 +404,7 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
                       ),
                       dropdownDecoratorProps: DropDownDecoratorProps(
                         dropdownSearchDecoration: InputDecoration(
-                          labelText: 'Select Salesperson',
+                          labelText: 'Select Sales Persons',
                           filled: true,
                           fillColor: Colors.white,
                           border: OutlineInputBorder(
@@ -371,6 +413,43 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
                         ),
                       ),
                     ),
+                    // DropdownSearch<KeyName>(
+                    //   items: salespersonList,
+                    //   selectedItem: selectedSalesperson,
+                    //   itemAsString: (KeyName? u) => u?.name ?? '',
+                    //   onChanged:
+                    //       (value) =>
+                    //           setState(() => selectedSalesperson = value),
+                    //   popupProps: PopupProps.menu(
+                    //     showSearchBox: true,
+                    //     containerBuilder:
+                    //         (context, popupWidget) => Container(
+                    //           decoration: BoxDecoration(
+                    //             color: Colors.white,
+                    //             borderRadius: BorderRadius.circular(0),
+                    //             boxShadow: [
+                    //               BoxShadow(
+                    //                 color: Colors.grey.withOpacity(0.5),
+                    //                 spreadRadius: 2,
+                    //                 blurRadius: 5,
+                    //                 offset: Offset(0, 3),
+                    //               ),
+                    //             ],
+                    //           ),
+                    //           child: popupWidget,
+                    //         ),
+                    //   ),
+                    //   dropdownDecoratorProps: DropDownDecoratorProps(
+                    //     dropdownSearchDecoration: InputDecoration(
+                    //       labelText: 'Select Salesperson',
+                    //       filled: true,
+                    //       fillColor: Colors.white,
+                    //       border: OutlineInputBorder(
+                    //         borderRadius: BorderRadius.circular(0),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ],
@@ -379,12 +458,13 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
               _buildExpansionTile(
                 title: 'State',
                 children: [
-                  DropdownSearch<KeyName>(
+                  DropdownSearch<KeyName>.multiSelection(
                     items: statesList,
-                    selectedItem: selectedState,
+                    selectedItems: selectedStates,
                     itemAsString: (KeyName? u) => u?.name ?? '',
-                    onChanged: (value) => setState(() => selectedState = value),
-                    popupProps: PopupProps.menu(
+                    onChanged:
+                        (value) => setState(() => selectedStates = value),
+                    popupProps: PopupPropsMultiSelection.menu(
                       showSearchBox: true,
                       containerBuilder:
                           (context, popupWidget) => Container(
@@ -396,7 +476,7 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
                                   color: Colors.grey.withOpacity(0.5),
                                   spreadRadius: 2,
                                   blurRadius: 5,
-                                  offset: Offset(0, 3),
+                                  offset: const Offset(0, 3),
                                 ),
                               ],
                             ),
@@ -421,29 +501,28 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
               _buildExpansionTile(
                 title: 'City',
                 children: [
-                  DropdownSearch<KeyName>(
+                  DropdownSearch<KeyName>.multiSelection(
                     items: citiesList,
-                    selectedItem: selectedCity,
+                    selectedItems: selectedCities,
                     itemAsString: (KeyName? u) => u?.name ?? '',
-                    onChanged: (value) => setState(() => selectedCity = value),
-                    popupProps: PopupProps.menu(
+                    onChanged: (value) => setState(() => selectedCities = value),
+                    popupProps: PopupPropsMultiSelection.menu(
                       showSearchBox: true,
-                      containerBuilder:
-                          (context, popupWidget) => Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(0),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.5),
-                                  spreadRadius: 2,
-                                  blurRadius: 5,
-                                  offset: Offset(0, 3),
-                                ),
-                              ],
+                      containerBuilder: (context, popupWidget) => Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.5),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset: const Offset(0, 3),
                             ),
-                            child: popupWidget,
-                          ),
+                          ],
+                        ),
+                        child: popupWidget,
+                      ),
                     ),
                     dropdownDecoratorProps: DropDownDecoratorProps(
                       dropdownSearchDecoration: InputDecoration(
@@ -485,20 +564,16 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
                         print('selectedCity: $selectedCity');
 
                         FilterData.selectedLedger = selectedLedger;
-                        FilterData.selectedSalesperson = selectedSalesperson; 
+                        // FilterData.selectedSalesperson = selectedSalesperson;
                         FilterData.selectedCity = selectedCity;
                         FilterData.selectedState = selectedState;
+                        FilterData.selectedSalespersons = selectedsalespersons;
+                        FilterData.selectedLedgers = selectedLedgers;
+                        FilterData.selectedStates = selectedStates;
+                        FilterData.selectedCities = selectedCities;
 
-
-                        widget.onApplyFilters(
-                          // selectedLedger: selectedLedger,
-                          // selectedSalesperson: selectedSalesperson,
-                          // fromDate: fromDate,
-                          // toDate: toDate,
-                          // selectedState: selectedState,
-                          // selectedCity: selectedCity,
-                        );
-                       Navigator.pop(context);
+                        widget.onApplyFilters();
+                        Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryColor,

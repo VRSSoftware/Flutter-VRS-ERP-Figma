@@ -731,19 +731,19 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
       // In your _loadDropdownData method, add default options:
       setState(() {
         ledgerList = [
-          KeyName(key: '', name: 'All Customers'),
+          // KeyName(key: '', name: 'All Customers'),
           ...List<KeyName>.from(fetchedLedgersResponse['result'] ?? []),
         ];
         salespersonList = [
-          KeyName(key: '', name: 'All Salespersons'),
+          // KeyName(key: '', name: 'All Salespersons'),
           ...List<KeyName>.from(fetchedSalespersonResponse['result'] ?? []),
         ];
         statesList = [
-          KeyName(key: '', name: 'All States'),
+          // KeyName(key: '', name: 'All States'),
           ...List<KeyName>.from(fetchedStatesResponse['result'] ?? []),
         ];
         citiesList = [
-          KeyName(key: '', name: 'All Cities'),
+          // KeyName(key: '', name: 'All Cities'),
           ...List<KeyName>.from(fetchedCitiesResponse['result'] ?? []),
         ];
         isLoadingLedgers = false;
@@ -875,30 +875,49 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     const String apiUrl =
         '${AppConstants.BASE_URL}/orderRegister/order-details-dash';
     try {
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
+      final body =  jsonEncode({
           "FromDate":
               "${fromDate.year}-${fromDate.month.toString().padLeft(2, '0')}-${fromDate.day.toString().padLeft(2, '0')}",
           "ToDate":
               "${toDate.year}-${toDate.month.toString().padLeft(2, '0')}-${toDate.day.toString().padLeft(2, '0')}",
           "CoBr_Id": UserSession.coBrId ?? '01', // Provide default value
           "CustKey":
-              UserSession.userType == 'C' ? UserSession.userLedKey : FilterData.selectedLedger?.key,
+              UserSession.userType == 'C' ? UserSession.userLedKey : FilterData.selectedLedgers!.isNotEmpty == true ? FilterData.selectedLedgers!.map((b) => b.key).join(',') : null,
           "SalesPerson":
-              UserSession.userType == 'S' ? UserSession.userLedKey : FilterData.selectedSalesperson?.key,
+              UserSession.userType == 'S' ? UserSession.userLedKey : FilterData.selectedSalespersons!.isNotEmpty == true ? FilterData.selectedSalespersons!.map((b) => b.key).join(',') : null,
           "State":
-              selectedState.key.isEmpty
-                  ? null
-                  : selectedState.key, // Handle empty key
+              FilterData.selectedStates!.isNotEmpty == true ? FilterData.selectedStates!.map((b) => b.key).join(',') : null,
           "City":
-              selectedCity.key.isEmpty
-                  ? null
-                  : selectedCity.key, // Handle empty key
+              FilterData.selectedCities!.isNotEmpty == true ? FilterData.selectedCities!.map((b) => b.key).join(',') : null,
           "orderType": null,
           "Detail": null,
-        }),
+        });
+        print(body);
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: body
+        // body: jsonEncode({
+        //   "FromDate":
+        //       "${fromDate.year}-${fromDate.month.toString().padLeft(2, '0')}-${fromDate.day.toString().padLeft(2, '0')}",
+        //   "ToDate":
+        //       "${toDate.year}-${toDate.month.toString().padLeft(2, '0')}-${toDate.day.toString().padLeft(2, '0')}",
+        //   "CoBr_Id": UserSession.coBrId ?? '01', // Provide default value
+        //   "CustKey":
+        //       UserSession.userType == 'C' ? UserSession.userLedKey : FilterData.selectedLedger?.key,
+        //   "SalesPerson":
+        //       UserSession.userType == 'S' ? UserSession.userLedKey : FilterData.selectedsalespersons.isNotEmpty == true ? FilterData.selectedsalespersons.map((b) => b.key).join(',') : null,
+        //   "State":
+        //       selectedState.key.isEmpty
+        //           ? null
+        //           : selectedState.key, // Handle empty key
+        //   "City":
+        //       selectedCity.key.isEmpty
+        //           ? null
+        //           : selectedCity.key, // Handle empty key
+        //   "orderType": null,
+        //   "Detail": null,
+        // }),
       );
 
       if (response.statusCode == 200) {
