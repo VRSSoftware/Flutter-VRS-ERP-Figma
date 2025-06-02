@@ -145,6 +145,7 @@ class _LoginPageState extends State<LoginScreen> {
             UserSession.userType = responseData["userType"];
             UserSession.userName = responseData["userName"];
             UserSession.userLedKey = responseData["ledKey"];
+            UserSession.name = responseData["name"];
 
             if (responseData.containsKey('userName') &&
                 responseData['userName'] == _usernameController.text.trim()) {

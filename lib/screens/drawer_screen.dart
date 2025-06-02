@@ -91,7 +91,9 @@ class _DrawerScreenState extends State<DrawerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 20),
+              const SizedBox(height: 40),
+              _buildUserProfile(),
+              const Divider(),
               // ..._iconPaths.keys.map((title) => _buildDrawerItem(
               //       title,
               //       _getRouteFromSection(title),
@@ -198,6 +200,44 @@ class _DrawerScreenState extends State<DrawerScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildUserProfile() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundImage: AssetImage(
+              'assets/images/logo.png',
+            ),
+            backgroundColor: Colors.grey[300],
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  UserSession.name ??
+                      'Guest', // Make sure `loginName` is set
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // Text(
+                //   UserSession.userType == 'C' ? 'Customer' : 'User',
+                //   style: const TextStyle(fontSize: 13, color: Colors.grey),
+                // ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
