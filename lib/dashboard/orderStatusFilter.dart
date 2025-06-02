@@ -11,7 +11,7 @@
 //   final List<KeyName> sizesList;
 //   final List<KeyName> statusList;
 //   final Map<String, dynamic> initialFilters;
-  
+
 //   final Function({
 //     DateTime? fromDate,
 //     DateTime? toDate,
@@ -19,7 +19,7 @@
 //     List<KeyName>? selectedStyle,
 //     List<KeyName>? selectedShade,
 //     List<KeyName>? selectedSize,
-  
+
 //     KeyName? selectedStatus,
 //     KeyName? groupBy,
 //     bool? withImage,
@@ -634,6 +634,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/dashboard/orderStatusFilterData.dart';
 import 'package:vrs_erp_figma/models/keyName.dart';
 
 class OrderStatusFilterPage extends StatefulWidget {
@@ -655,7 +656,8 @@ class OrderStatusFilterPage extends StatefulWidget {
     KeyName? groupBy,
     bool? withImage,
     String? selectedDateRange,
-  }) onApplyFilters;
+  })
+  onApplyFilters;
 
   const OrderStatusFilterPage({
     super.key,
@@ -702,19 +704,32 @@ class _OrderStatusFilterPageState extends State<OrderStatusFilterPage> {
   @override
   void initState() {
     super.initState();
+    setState(() {
+      fromDate = Orderstatusfilterdata.fromDate;
+      toDate = Orderstatusfilterdata.toDate;
+      selectedBrand = Orderstatusfilterdata.selectedBrand!;
+      selectedStyle = Orderstatusfilterdata.selectedStyle!;
+      selectedShade = Orderstatusfilterdata.selectedShade!;
+      selectedSize = Orderstatusfilterdata.selectedSize!;
+      selectedStatus = Orderstatusfilterdata.selectedStatus;
+      groupBy = Orderstatusfilterdata.groupBy;
+      withImage = Orderstatusfilterdata.withImage!;
+      selectedDateRange = Orderstatusfilterdata.selectedDateRange;
+    });
+
     // Initialize with passed filters
-    fromDate = widget.filters['fromDate'] as DateTime?;
-    toDate = widget.filters['toDate'] as DateTime?;
-    selectedBrand = widget.filters['selectedBrand'] as List<KeyName>? ?? [];
-    selectedStyle = widget.filters['selectedStyle'] as List<KeyName>? ?? [];
-    selectedShade = widget.filters['selectedShade'] as List<KeyName>? ?? [];
-    selectedSize = widget.filters['selectedSize'] as List<KeyName>? ?? [];
-    selectedStatus = widget.filters['selectedStatus'] as KeyName? ??
-        widget.statusList.firstWhere((s) => s.key == 'all', orElse: () => widget.statusList[0]);
-    groupBy = widget.filters['groupBy'] as KeyName? ??
-        widget.groupByOptions.firstWhere((g) => g.key == 'cust', orElse: () => widget.groupByOptions[0]);
-    withImage = widget.filters['withImage'] as bool? ?? false;
-    selectedDateRange = widget.filters['selectedDateRange'] as String? ?? 'Custom';
+    //fromDate = widget.filters['fromDate'] as DateTime?;
+    //toDate = widget.filters['toDate'] as DateTime?;
+    //selectedBrand = widget.filters['selectedBrand'] as List<KeyName>? ?? [];
+    //selectedStyle = widget.filters['selectedStyle'] as List<KeyName>? ?? [];
+    //selectedShade = widget.filters['selectedShade'] as List<KeyName>? ?? [];
+    //selectedSize = widget.filters['selectedSize'] as List<KeyName>? ?? [];
+    //selectedStatus = widget.filters['selectedStatus'] as KeyName? ??
+    //    widget.statusList.firstWhere((s) => s.key == 'all', orElse: () => widget.statusList[0]);
+    //groupBy = widget.filters['groupBy'] as KeyName? ??
+    //  widget.groupByOptions.firstWhere((g) => g.key == 'cust', orElse: () => widget.groupByOptions[0]);
+    //withImage = widget.filters['withImage'] as bool? ?? false;
+    // selectedDateRange = widget.filters['selectedDateRange'] as String? ?? 'Custom';
   }
 
   void _setDateRange(String range) {
@@ -728,16 +743,27 @@ class _OrderStatusFilterPageState extends State<OrderStatusFilterPage> {
       case 'Yesterday':
         final yesterday = now.subtract(const Duration(days: 1));
         start = DateTime(yesterday.year, yesterday.month, yesterday.day);
-        end = DateTime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59);
+        end = DateTime(
+          yesterday.year,
+          yesterday.month,
+          yesterday.day,
+          23,
+          59,
+          59,
+        );
         break;
       case 'This Week':
         start = now.subtract(Duration(days: now.weekday - 1));
         end = DateTime(now.year, now.month, now.day, 23, 59, 59);
         break;
       case 'Previous Week':
-        final firstDayOfLastWeek = now.subtract(Duration(days: now.weekday + 6));
+        final firstDayOfLastWeek = now.subtract(
+          Duration(days: now.weekday + 6),
+        );
         start = firstDayOfLastWeek;
-        end = firstDayOfLastWeek.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+        end = firstDayOfLastWeek.add(
+          const Duration(days: 6, hours: 23, minutes: 59, seconds: 59),
+        );
         break;
       case 'This Month':
         start = DateTime(now.year, now.month, 1);
@@ -780,7 +806,8 @@ class _OrderStatusFilterPageState extends State<OrderStatusFilterPage> {
   Future<void> _pickDate(BuildContext context, bool isFromDate) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isFromDate ? fromDate ?? DateTime.now() : toDate ?? DateTime.now(),
+      initialDate:
+          isFromDate ? fromDate ?? DateTime.now() : toDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
@@ -830,9 +857,12 @@ class _OrderStatusFilterPageState extends State<OrderStatusFilterPage> {
                     ),
                     dropdownColor: Colors.white,
                     value: selectedDateRange,
-                    items: dateRangeOptions
-                        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                        .toList(),
+                    items:
+                        dateRangeOptions
+                            .map(
+                              (e) => DropdownMenuItem(value: e, child: Text(e)),
+                            )
+                            .toList(),
                     onChanged: (value) {
                       setState(() {
                         selectedDateRange = value;
@@ -894,21 +924,22 @@ class _OrderStatusFilterPageState extends State<OrderStatusFilterPage> {
                     onChanged: (value) => setState(() => selectedBrand = value),
                     popupProps: PopupPropsMultiSelection.menu(
                       showSearchBox: true,
-                      containerBuilder: (context, popupWidget) => Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.5),
-                              spreadRadius: 2,
-                              blurRadius: 5,
-                              offset: const Offset(0, 3),
+                      containerBuilder:
+                          (context, popupWidget) => Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: popupWidget,
-                      ),
+                            child: popupWidget,
+                          ),
                     ),
                     dropdownDecoratorProps: DropDownDecoratorProps(
                       dropdownSearchDecoration: InputDecoration(
@@ -935,21 +966,22 @@ class _OrderStatusFilterPageState extends State<OrderStatusFilterPage> {
                     onChanged: (value) => setState(() => selectedStyle = value),
                     popupProps: PopupPropsMultiSelection.menu(
                       showSearchBox: true,
-                      containerBuilder: (context, popupWidget) => Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.5),
-                              spreadRadius: 2,
-                              blurRadius: 5,
-                              offset: const Offset(0, 3),
+                      containerBuilder:
+                          (context, popupWidget) => Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: popupWidget,
-                      ),
+                            child: popupWidget,
+                          ),
                     ),
                     dropdownDecoratorProps: DropDownDecoratorProps(
                       dropdownSearchDecoration: InputDecoration(
@@ -976,21 +1008,22 @@ class _OrderStatusFilterPageState extends State<OrderStatusFilterPage> {
                     onChanged: (value) => setState(() => selectedShade = value),
                     popupProps: PopupPropsMultiSelection.menu(
                       showSearchBox: true,
-                      containerBuilder: (context, popupWidget) => Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.5),
-                              spreadRadius: 2,
-                              blurRadius: 5,
-                              offset: const Offset(0, 3),
+                      containerBuilder:
+                          (context, popupWidget) => Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: popupWidget,
-                      ),
+                            child: popupWidget,
+                          ),
                     ),
                     dropdownDecoratorProps: DropDownDecoratorProps(
                       dropdownSearchDecoration: InputDecoration(
@@ -1017,21 +1050,22 @@ class _OrderStatusFilterPageState extends State<OrderStatusFilterPage> {
                     onChanged: (value) => setState(() => selectedSize = value),
                     popupProps: PopupPropsMultiSelection.menu(
                       showSearchBox: true,
-                      containerBuilder: (context, popupWidget) => Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.5),
-                              spreadRadius: 2,
-                              blurRadius: 5,
-                              offset: const Offset(0, 3),
+                      containerBuilder:
+                          (context, popupWidget) => Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: popupWidget,
-                      ),
+                            child: popupWidget,
+                          ),
                     ),
                     dropdownDecoratorProps: DropDownDecoratorProps(
                       dropdownSearchDecoration: InputDecoration(
@@ -1055,24 +1089,26 @@ class _OrderStatusFilterPageState extends State<OrderStatusFilterPage> {
                     items: widget.statusList,
                     selectedItem: selectedStatus,
                     itemAsString: (KeyName? u) => u?.name ?? '',
-                    onChanged: (value) => setState(() => selectedStatus = value),
+                    onChanged:
+                        (value) => setState(() => selectedStatus = value),
                     popupProps: PopupProps.menu(
                       showSearchBox: true,
-                      containerBuilder: (context, popupWidget) => Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.5),
-                              spreadRadius: 2,
-                              blurRadius: 5,
-                              offset: const Offset(0, 3),
+                      containerBuilder:
+                          (context, popupWidget) => Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: popupWidget,
-                      ),
+                            child: popupWidget,
+                          ),
                     ),
                     dropdownDecoratorProps: DropDownDecoratorProps(
                       dropdownSearchDecoration: InputDecoration(
@@ -1099,21 +1135,22 @@ class _OrderStatusFilterPageState extends State<OrderStatusFilterPage> {
                     onChanged: (value) => setState(() => groupBy = value),
                     popupProps: PopupProps.menu(
                       showSearchBox: true,
-                      containerBuilder: (context, popupWidget) => Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.5),
-                              spreadRadius: 2,
-                              blurRadius: 5,
-                              offset: const Offset(0, 3),
+                      containerBuilder:
+                          (context, popupWidget) => Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: popupWidget,
-                      ),
+                            child: popupWidget,
+                          ),
                     ),
                     dropdownDecoratorProps: DropDownDecoratorProps(
                       dropdownSearchDecoration: InputDecoration(
@@ -1155,14 +1192,33 @@ class _OrderStatusFilterPageState extends State<OrderStatusFilterPage> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        if (fromDate != null && toDate != null && toDate!.isBefore(fromDate!)) {
+                        if (fromDate != null &&
+                            toDate != null &&
+                            toDate!.isBefore(fromDate!)) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('To Date cannot be before From Date'),
+                              content: Text(
+                                'To Date cannot be before From Date',
+                              ),
                             ),
                           );
                           return;
                         }
+                        Orderstatusfilterdata.fromDate = fromDate;
+                        Orderstatusfilterdata.toDate = toDate;
+
+                        Orderstatusfilterdata.selectedBrand = selectedBrand;
+
+                        Orderstatusfilterdata.selectedStyle = selectedStyle;
+                        Orderstatusfilterdata.selectedShade = selectedShade;
+                        Orderstatusfilterdata.selectedSize = selectedSize;
+                        Orderstatusfilterdata.selectedStatus = selectedStatus;
+                        Orderstatusfilterdata.groupBy = groupBy;
+
+                        Orderstatusfilterdata.withImage = withImage;
+                        Orderstatusfilterdata.selectedDateRange =
+                            selectedDateRange;
+
                         widget.onApplyFilters(
                           fromDate: fromDate,
                           toDate: toDate,
@@ -1196,7 +1252,9 @@ class _OrderStatusFilterPageState extends State<OrderStatusFilterPage> {
                     child: ElevatedButton(
                       onPressed: () {
                         setState(() {
-                          fromDate = DateTime.now().subtract(const Duration(days: 30));
+                          fromDate = DateTime.now().subtract(
+                            const Duration(days: 30),
+                          );
                           toDate = DateTime.now();
                           selectedDateRange = 'Custom';
                           selectedBrand = [];
