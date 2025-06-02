@@ -528,18 +528,6 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                             ),
                           ],
                         ),
-                        // Container(
-                        //   padding: const EdgeInsets.all(8),
-                        //   decoration: BoxDecoration(
-                        //     color: Colors.white.withOpacity(0.3),
-                        //     borderRadius: BorderRadius.circular(0),
-                        //   ),
-                        //   child: const Icon(
-                        //     Icons.shopping_cart,
-                        //     size: 30,
-                        //     color: Colors.black54,
-                        //   ),
-                        // ),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -784,25 +772,98 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     required Color color,
     required IconData icon,
   }) {
-    return GestureDetector(
+    return _StatusCard(
+      title: title,
+      count: count,
+      qty: qty,
+      progress: progress,
+      color: color,
+      icon: icon,
       onTap: () {
         String orderType = title.replaceAll(' ', '');
         print(orderType);
-        if(orderType.contains('INHAND') )
-        {
-          // _showOrderDetails(orderType+'ORDER');
-        }
-        else if(orderType.contains('TOBERECEIVED') )
-        {
-          // _showOrderDetails(orderType+'ORDER');
-        }
-        else if(orderType.contains('PENDING') || orderType.contains('PACKED') || orderType.contains('CANCELLED') || orderType.contains('INVOICED') ){
-           _showOrderDetails(orderType+'ORDER');
+        if (orderType.contains('INHAND') || orderType.contains('TOBERECEIVED')) {
+        } else if (orderType.contains('PENDING') ||
+            orderType.contains('PACKED') ||
+            orderType.contains('CANCELLED') ||
+            orderType.contains('INVOICED')) {
+          _showOrderDetails(orderType + 'ORDER');
         }
       },
+    );
+  }
+}
+
+class _StatusCard extends StatefulWidget {
+  final String title;
+  final String count;
+  final String qty;
+  final double progress;
+  final Color color;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _StatusCard({
+    required this.title,
+    required this.count,
+    required this.qty,
+    required this.progress,
+    required this.color,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  __StatusCardState createState() => __StatusCardState();
+}
+
+class __StatusCardState extends State<_StatusCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _progressAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 1),
+      vsync: this,
+    );
+    _progressAnimation = Tween<double>(begin: 0.0, end: widget.progress).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    _controller.forward();
+  }
+
+  @override
+  void didUpdateWidget(_StatusCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.progress != widget.progress) {
+      _progressAnimation = Tween<double>(
+        begin: _progressAnimation.value,
+        end: widget.progress,
+      ).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+      );
+      _controller
+        ..reset()
+        ..forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
       child: Card(
         elevation: 0,
-        color: color,
+        color: widget.color,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(5),
         ),
@@ -817,27 +878,33 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                   SizedBox(
                     width: 60,
                     height: 60,
-                    child: CircularProgressIndicator(
-                      value: progress,
-                      strokeWidth: 6,
-                      backgroundColor: Colors.white.withOpacity(0.3),
-                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+                    child: AnimatedBuilder(
+                      animation: _progressAnimation,
+                      builder: (context, child) {
+                        return CircularProgressIndicator(
+                          value: _progressAnimation.value,
+                          strokeWidth: 6,
+                          backgroundColor: Colors.white.withOpacity(0.3),
+                          valueColor:
+                              const AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+                        );
+                      },
                     ),
                   ),
-                    Text(
-                count,
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.deepPurple,
-                ),
-                textAlign: TextAlign.center,
-              ),
+                  Text(
+                    widget.count,
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.deepPurple,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
               Text(
-                title,
+                widget.title,
                 style: GoogleFonts.lemon(
                   fontSize: 13,
                   fontWeight: FontWeight.normal,
@@ -845,19 +912,9 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              // const SizedBox(height: 4),
-              // Text(
-              //   count,
-              //   style: GoogleFonts.poppins(
-              //     fontSize: 18,
-              //     fontWeight: FontWeight.bold,
-              //     color: Colors.black,
-              //   ),
-              //   textAlign: TextAlign.center,
-              // ),
               const SizedBox(height: 4),
               Text(
-                'Qty: ${double.parse(qty).toStringAsFixed(0)}',
+                'Qty: ${double.parse(widget.qty).toStringAsFixed(0)}',
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   color: Colors.black54,
