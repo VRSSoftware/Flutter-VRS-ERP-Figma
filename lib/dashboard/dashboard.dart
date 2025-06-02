@@ -787,7 +787,8 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     return GestureDetector(
       onTap: () {
         String orderType = title.replaceAll(' ', '');
-        _showOrderDetails(orderType);
+        print(orderType);
+        _showOrderDetails(orderType+'ORDER');
       },
       child: Card(
         elevation: 0,
