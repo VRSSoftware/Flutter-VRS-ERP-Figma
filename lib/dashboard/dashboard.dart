@@ -648,6 +648,7 @@
 
 // }
 
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
@@ -728,22 +729,17 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
       final fetchedStatesResponse = await ApiService.fetchStates();
       final fetchedCitiesResponse = await ApiService.fetchCities(stateKey: "");
 
-      // In your _loadDropdownData method, add default options:
       setState(() {
         ledgerList = [
-          // KeyName(key: '', name: 'All Customers'),
           ...List<KeyName>.from(fetchedLedgersResponse['result'] ?? []),
         ];
         salespersonList = [
-          // KeyName(key: '', name: 'All Salespersons'),
           ...List<KeyName>.from(fetchedSalespersonResponse['result'] ?? []),
         ];
         statesList = [
-          // KeyName(key: '', name: 'All States'),
           ...List<KeyName>.from(fetchedStatesResponse['result'] ?? []),
         ];
         citiesList = [
-          // KeyName(key: '', name: 'All Cities'),
           ...List<KeyName>.from(fetchedCitiesResponse['result'] ?? []),
         ];
         isLoadingLedgers = false;
@@ -875,49 +871,36 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     const String apiUrl =
         '${AppConstants.BASE_URL}/orderRegister/order-details-dash';
     try {
-      final body =  jsonEncode({
-          "FromDate":
-              "${fromDate.year}-${fromDate.month.toString().padLeft(2, '0')}-${fromDate.day.toString().padLeft(2, '0')}",
-          "ToDate":
-              "${toDate.year}-${toDate.month.toString().padLeft(2, '0')}-${toDate.day.toString().padLeft(2, '0')}",
-          "CoBr_Id": UserSession.coBrId ?? '01', // Provide default value
-          "CustKey":
-              UserSession.userType == 'C' ? UserSession.userLedKey : FilterData.selectedLedgers!.isNotEmpty == true ? FilterData.selectedLedgers!.map((b) => b.key).join(',') : null,
-          "SalesPerson":
-              UserSession.userType == 'S' ? UserSession.userLedKey : FilterData.selectedSalespersons!.isNotEmpty == true ? FilterData.selectedSalespersons!.map((b) => b.key).join(',') : null,
-          "State":
-              FilterData.selectedStates!.isNotEmpty == true ? FilterData.selectedStates!.map((b) => b.key).join(',') : null,
-          "City":
-              FilterData.selectedCities!.isNotEmpty == true ? FilterData.selectedCities!.map((b) => b.key).join(',') : null,
-          "orderType": null,
-          "Detail": null,
-        });
-        print(body);
+      final body = jsonEncode({
+        "FromDate":
+            "${fromDate.year}-${fromDate.month.toString().padLeft(2, '0')}-${fromDate.day.toString().padLeft(2, '0')}",
+        "ToDate":
+            "${toDate.year}-${toDate.month.toString().padLeft(2, '0')}-${toDate.day.toString().padLeft(2, '0')}",
+        "CoBr_Id": UserSession.coBrId ?? '01',
+        "CustKey": UserSession.userType == 'C'
+            ? UserSession.userLedKey
+            : FilterData.selectedLedgers!.isNotEmpty == true
+                ? FilterData.selectedLedgers!.map((b) => b.key).join(',')
+                : null,
+        "SalesPerson": UserSession.userType == 'S'
+            ? UserSession.userLedKey
+            : FilterData.selectedSalespersons!.isNotEmpty == true
+                ? FilterData.selectedSalespersons!.map((b) => b.key).join(',')
+                : null,
+        "State": FilterData.selectedStates!.isNotEmpty == true
+            ? FilterData.selectedStates!.map((b) => b.key).join(',')
+            : null,
+        "City": FilterData.selectedCities!.isNotEmpty == true
+            ? FilterData.selectedCities!.map((b) => b.key).join(',')
+            : null,
+        "orderType": null,
+        "Detail": null,
+      });
+      print(body);
       final response = await http.post(
         Uri.parse(apiUrl),
         headers: {'Content-Type': 'application/json'},
-        body: body
-        // body: jsonEncode({
-        //   "FromDate":
-        //       "${fromDate.year}-${fromDate.month.toString().padLeft(2, '0')}-${fromDate.day.toString().padLeft(2, '0')}",
-        //   "ToDate":
-        //       "${toDate.year}-${toDate.month.toString().padLeft(2, '0')}-${toDate.day.toString().padLeft(2, '0')}",
-        //   "CoBr_Id": UserSession.coBrId ?? '01', // Provide default value
-        //   "CustKey":
-        //       UserSession.userType == 'C' ? UserSession.userLedKey : FilterData.selectedLedger?.key,
-        //   "SalesPerson":
-        //       UserSession.userType == 'S' ? UserSession.userLedKey : FilterData.selectedsalespersons.isNotEmpty == true ? FilterData.selectedsalespersons.map((b) => b.key).join(',') : null,
-        //   "State":
-        //       selectedState.key.isEmpty
-        //           ? null
-        //           : selectedState.key, // Handle empty key
-        //   "City":
-        //       selectedCity.key.isEmpty
-        //           ? null
-        //           : selectedCity.key, // Handle empty key
-        //   "orderType": null,
-        //   "Detail": null,
-        // }),
+        body: body,
       );
 
       if (response.statusCode == 200) {
@@ -944,9 +927,8 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -963,11 +945,10 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         backgroundColor: AppColors.primaryColor,
         elevation: 0,
         leading: Builder(
-          builder:
-              (context) => IconButton(
-                icon: const Icon(Icons.menu, color: Colors.white),
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -1010,31 +991,30 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                         value: selectedRange,
                         isExpanded: true,
                         underline: const SizedBox(),
-                        items:
-                            <String>[
-                              'Custom',
-                              'Today',
-                              'Yesterday',
-                              'This Week',
-                              'Previous Week',
-                              'This Month',
-                              'Previous Month',
-                              'This Quarter',
-                              'Previous Quarter',
-                              'This Year',
-                              'Previous Year',
-                            ].map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(
-                                  value,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
+                        items: <String>[
+                          'Custom',
+                          'Today',
+                          'Yesterday',
+                          'This Week',
+                          'Previous Week',
+                          'This Month',
+                          'Previous Month',
+                          'This Quarter',
+                          'Previous Quarter',
+                          'This Year',
+                          'Previous Year',
+                        ].map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(
+                              value,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          );
+                        }).toList(),
                         onChanged: (String? newValue) {
                           if (newValue != null) {
                             _updateDateRange(newValue);
@@ -1147,6 +1127,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
               ),
             ),
             const SizedBox(height: 32),
+            // Row 1: TOTAL ORDER (top-right curve), PENDING ORDER (bottom-right curve)
             Row(
               children: [
                 Expanded(
@@ -1157,6 +1138,8 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                     true,
                     const Color(0xFFF8E1D9),
                     Icons.shopping_cart,
+                    row: 1,
+                    isFirstCard: true,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -1168,11 +1151,14 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                     true,
                     const Color(0xFFE6F0FA),
                     Icons.hourglass_empty,
+                    row: 1,
+                    isFirstCard: false,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
+            // Row 2: PACKED ORDER (top-right curve), CANCELLED ORDER (bottom-right curve)
             Row(
               children: [
                 Expanded(
@@ -1183,6 +1169,8 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                     true,
                     const Color(0xFFE8F5E9),
                     Icons.check_circle,
+                    row: 2,
+                    isFirstCard: true,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -1194,11 +1182,14 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                     true,
                     const Color(0xFFFFE6E6),
                     Icons.cancel,
+                    row: 2,
+                    isFirstCard: false,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
+            // Row 3: INVOICED ORDER (top-right curve), Empty (no curve needed)
             Row(
               children: [
                 Expanded(
@@ -1209,6 +1200,8 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                     true,
                     const Color(0xFFF3E8FF),
                     Icons.receipt,
+                    row: 3,
+                    isFirstCard: true,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -1225,6 +1218,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
               ),
             ),
             const SizedBox(height: 16),
+            // Row 4: IN HAND (top-right curve), TO BE RECEIVED (bottom-right curve)
             Row(
               children: [
                 Expanded(
@@ -1235,6 +1229,8 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                     false,
                     const Color(0xFFE0F7FA),
                     Icons.inventory,
+                    row: 4,
+                    isFirstCard: true,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -1246,6 +1242,8 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                     false,
                     const Color(0xFFFFF9C4),
                     Icons.local_shipping,
+                    row: 4,
+                    isFirstCard: false,
                   ),
                 ),
               ],
@@ -1261,54 +1259,41 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
             await Navigator.push(
               context,
               PageRouteBuilder(
-                pageBuilder:
-                    (context, animation, secondaryAnimation) =>
-                        DashboardFilterPage(
-                          ledgerList: ledgerList,
-                          salespersonList: salespersonList,
-                          onApplyFilters: ({
-                            KeyName? selectedLedger,
-                            KeyName? selectedSalesperson,
-                            DateTime? fromDate,
-                            DateTime? toDate,
-                            KeyName? selectedState,
-                            KeyName? selectedCity,
-                          }) {
-                          
-                            
-
-
-                            setState(() {
-                              this.selectedLedger =
-                                  selectedLedger;
-                              this.selectedSalesperson =
-                                  selectedSalesperson;
-                              this.fromDate = fromDate ?? this.fromDate;
-                              this.toDate = toDate ?? this.toDate;
-                       
-                              this.selectedCity =
-                                  selectedCity ??
-                                  KeyName(key: '', name: 'All Cities');
-                             
-                              selectedRange = 'Custom';
-                            });
-                            _fetchOrderSummary();
-                          },
-                        ),
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    DashboardFilterPage(
+                  ledgerList: ledgerList,
+                  salespersonList: salespersonList,
+                  onApplyFilters: ({
+                    KeyName? selectedLedger,
+                    KeyName? selectedSalesperson,
+                    DateTime? fromDate,
+                    DateTime? toDate,
+                    KeyName? selectedState,
+                    KeyName? selectedCity,
+                  }) {
+                    setState(() {
+                      this.selectedLedger = selectedLedger;
+                      this.selectedSalesperson = selectedSalesperson;
+                      this.fromDate = fromDate ?? this.fromDate;
+                      this.toDate = toDate ?? this.toDate;
+                      this.selectedCity =
+                          selectedCity ?? KeyName(key: '', name: 'All Cities');
+                      selectedRange = 'Custom';
+                    });
+                    _fetchOrderSummary();
+                  },
+                ),
                 settings: RouteSettings(
                   arguments: {
                     'ledgerList': ledgerList,
                     'salespersonList': salespersonList,
                     'statesList': statesList,
                     'citiesList': citiesList,
-                    //'selectedLedger': selectedLedger,
-                    //'selectedSalesperson': selectedSalesperson,
                     'fromDate': fromDate,
                     'toDate': toDate,
                     'selectedDateRange': selectedRange,
                   },
                 ),
-
               ),
             );
           },
@@ -1362,12 +1347,11 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder:
-                  (context) => OrderDetailsPage(
-                    orderDetails: List<Map<String, dynamic>>.from(data),
-                    fromDate: fromDate,
-                    toDate: toDate,
-                  ),
+              builder: (context) => OrderDetailsPage(
+                orderDetails: List<Map<String, dynamic>>.from(data),
+                fromDate: fromDate,
+                toDate: toDate,
+              ),
             ),
           );
         } else {
@@ -1383,93 +1367,122 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
-Widget _buildOrderCard(
+  Widget _buildOrderCard(
     String title,
     String value,
     String qty,
     bool showQty,
     Color bgColor,
-    IconData icon,
-) {
-  return SizedBox(
-    width: 100, // Set a consistent width for all cards
-    height: 200, // Optional: fixed height for uniformity
-    child: GestureDetector(
-      onTap: () {
-        String orderType = title.replaceAll(' ', '');
-        _showOrderDetails(orderType);
-      },
-      child: Card(
-        elevation: 0,
-        color: bgColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(5),
-            topRight: Radius.circular(90),
-            bottomLeft: Radius.circular(5),
-            bottomRight: Radius.circular(5),
+    IconData icon, {
+    required int row, // Added to identify the row
+    required bool isFirstCard, // Added to identify position in the row
+  }) {
+    // Determine border radius based on row and position
+    BorderRadius borderRadius;
+    if (row == 1 || row == 3) {
+      // 1st and 3rd row design
+      borderRadius = isFirstCard
+          ? const BorderRadius.only(
+              topLeft: Radius.circular(5),
+              topRight: Radius.circular(90), // Curve on top-right for first card
+              bottomLeft: Radius.circular(5),
+              bottomRight: Radius.circular(5),
+            )
+          : const BorderRadius.only(
+              topLeft: Radius.circular(5),
+              topRight: Radius.circular(5),
+              bottomLeft: Radius.circular(5),
+              bottomRight: Radius.circular(90), // Curve on bottom-right for second card
+            );
+    } else {
+      // 2nd and 4th row design
+      borderRadius = isFirstCard
+          ? const BorderRadius.only(
+              topLeft: Radius.circular(5),
+              topRight: Radius.circular(90), // Curve on top-right for first card
+              bottomLeft: Radius.circular(5),
+              bottomRight: Radius.circular(5),
+            )
+          : const BorderRadius.only(
+              topLeft: Radius.circular(5),
+              topRight: Radius.circular(5),
+              bottomLeft: Radius.circular(5),
+              bottomRight: Radius.circular(90), // Curve on bottom-right for second card
+            );
+    }
+
+    return SizedBox(
+      width: 100, // Set a consistent width for all cards
+      height: 200, // Optional: fixed height for uniformity
+      child: GestureDetector(
+        onTap: () {
+          String orderType = title.replaceAll(' ', '');
+          _showOrderDetails(orderType);
+        },
+        child: Card(
+          elevation: 0,
+          color: bgColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: borderRadius, // Apply the determined border radius
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(0),
-                ),
-                child: Icon(
-                  icon,
-                  size: 30,
-                  color: Colors.black54,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: GoogleFonts.poppins(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              if (showQty) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'Qty: $qty',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(0),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 30,
                     color: Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
                   ),
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                if (showQty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Qty: $qty',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.black54,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 }
