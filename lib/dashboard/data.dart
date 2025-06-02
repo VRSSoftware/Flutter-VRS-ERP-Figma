@@ -6,7 +6,7 @@ class FilterData {
   static KeyName? selectedState;
   static KeyName? selectedCity;
   // static List<KeyName> selectedsalespersons = [];
-  static List<KeyName>? selectedLedgers;
+  static List<KeyName>? selectedLedgers=[];
   static List<KeyName>? selectedSalespersons = [];
   static List<KeyName>? selectedStates = [];
   static List<KeyName>? selectedCities = [];

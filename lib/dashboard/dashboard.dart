@@ -876,10 +876,10 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
             "${fromDate.year}-${fromDate.month.toString().padLeft(2, '0')}-${fromDate.day.toString().padLeft(2, '0')}",
         "ToDate":
             "${toDate.year}-${toDate.month.toString().padLeft(2, '0')}-${toDate.day.toString().padLeft(2, '0')}",
-        "CoBr_Id": UserSession.coBrId ?? '01',
+        "CoBr_Id": UserSession.coBrId,
         "CustKey": UserSession.userType == 'C'
             ? UserSession.userLedKey
-            : FilterData.selectedLedgers!.isNotEmpty == true
+            : FilterData.selectedLedgers!.isNotEmpty
                 ? FilterData.selectedLedgers!.map((b) => b.key).join(',')
                 : null,
         "SalesPerson": UserSession.userType == 'S'
@@ -1278,7 +1278,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                       this.toDate = toDate ?? this.toDate;
                       this.selectedCity =
                           selectedCity ?? KeyName(key: '', name: 'All Cities');
-                      selectedRange = 'Custom';
+                     // selectedRange = 'Custom';
                     });
                     _fetchOrderSummary();
                   },
@@ -1291,7 +1291,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                     'citiesList': citiesList,
                     'fromDate': fromDate,
                     'toDate': toDate,
-                    'selectedDateRange': selectedRange,
+                   // 'selectedDateRange': selectedRange,
                   },
                 ),
               ),
