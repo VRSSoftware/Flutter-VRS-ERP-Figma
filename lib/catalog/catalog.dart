@@ -8,6 +8,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 // import 'package:installed_apps/installed_apps.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -479,7 +480,7 @@ class _CatalogPageState extends State<CatalogPage> {
                         return Dialog(
                           backgroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(0),
                             side: BorderSide(
                               color: Colors.grey.shade300,
                               width: 1,
@@ -698,7 +699,11 @@ class _CatalogPageState extends State<CatalogPage> {
               ),
               child:
                   isLoading
-                      ? Center(child: CircularProgressIndicator())
+                      ?  Center(
+                              child: LoadingAnimationWidget.waveDots(
+                                color: AppColors.primaryColor,
+                                size: 30,
+                              ))
                       : catalogItems.isEmpty
                       ? Center(child: Text("No Item Available"))
                       : LayoutBuilder(
@@ -761,7 +766,11 @@ class _CatalogPageState extends State<CatalogPage> {
       ),
       itemBuilder: (context, index) {
         if (index == filteredItems.length && isLoadingMore) {
-          return Center(child: CircularProgressIndicator());
+          return  Center(
+                              child: LoadingAnimationWidget.waveDots(
+                                color: AppColors.primaryColor,
+                                size: 30,
+                              ),);
         }
         final item = filteredItems[index];
         return GestureDetector(
@@ -786,7 +795,11 @@ class _CatalogPageState extends State<CatalogPage> {
       itemCount: filteredItems.length + (isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == filteredItems.length && isLoadingMore) {
-          return Center(child: CircularProgressIndicator());
+          return  Center(
+                              child: LoadingAnimationWidget.waveDots(
+                                color: AppColors.primaryColor,
+                                size: 30,
+                              ),);
         }
         final item = filteredItems[index];
         bool isSelected = selectedItems.contains(item);
@@ -822,7 +835,7 @@ class _CatalogPageState extends State<CatalogPage> {
             child: Card(
               elevation: isSelected ? 8 : 4,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(0),
               ),
               color: isSelected ? Colors.blue.shade50 : Colors.white,
               child: Stack(
@@ -836,8 +849,8 @@ class _CatalogPageState extends State<CatalogPage> {
                       decoration: BoxDecoration(
                         color: AppColors.primaryColor,
                         borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(12),
-                          bottomLeft: Radius.circular(12),
+                          topLeft: Radius.circular(0),
+                          bottomLeft: Radius.circular(0),
                         ),
                       ),
                     ),
@@ -851,8 +864,8 @@ class _CatalogPageState extends State<CatalogPage> {
                           flex: 2,
                           child: ClipRRect(
                             borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(12),
-                              topRight: Radius.circular(12),
+                              topLeft: Radius.circular(0),
+                              topRight: Radius.circular(0),
                             ),
                             child: LayoutBuilder(
                               builder: (context, constraints) {
@@ -1052,7 +1065,11 @@ class _CatalogPageState extends State<CatalogPage> {
       itemCount: filteredItems.length + (isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == filteredItems.length && isLoadingMore) {
-          return Center(child: CircularProgressIndicator());
+          return  Center(
+                              child: LoadingAnimationWidget.waveDots(
+                                color: AppColors.primaryColor,
+                                size: 30,
+                              ),);
         }
         final item = filteredItems[index];
         final isSelected = selectedItems.contains(item);
@@ -1083,7 +1100,7 @@ class _CatalogPageState extends State<CatalogPage> {
               horizontal: isLargeScreen ? 16 : 8,
             ),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(0),
             ),
             color: isSelected ? Colors.blue.shade50 : Colors.white,
             child: Stack(
@@ -1093,8 +1110,8 @@ class _CatalogPageState extends State<CatalogPage> {
                   children: [
                     ClipRRect(
                       borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
+                        topLeft: Radius.circular(0),
+                        topRight: Radius.circular(0),
                       ),
                       child: LayoutBuilder(
                         builder: (context, constraints) {
@@ -1398,7 +1415,7 @@ class _CatalogPageState extends State<CatalogPage> {
       },
       child: Card(
         elevation: isSelected ? 8 : 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
         color: isSelected ? Colors.blue.shade50 : Colors.white,
         child: Stack(
           children: [
@@ -1408,8 +1425,8 @@ class _CatalogPageState extends State<CatalogPage> {
               children: [
                 ClipRRect(
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    topRight: Radius.circular(12),
+                    topLeft: Radius.circular(0),
+                    topRight: Radius.circular(0),
                   ),
                   child: LayoutBuilder(
                     builder: (context, constraints) {
@@ -1619,7 +1636,7 @@ class _CatalogPageState extends State<CatalogPage> {
                 backgroundColor: Colors.white,
                 foregroundColor: AppColors.primaryColor,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(0),
                 ),
                 padding: EdgeInsets.symmetric(
                   horizontal: isLargeScreen ? 24 : 16,
@@ -1648,7 +1665,7 @@ class _CatalogPageState extends State<CatalogPage> {
         backgroundColor: Colors.white,
         foregroundColor:
             filterOption == label ? AppColors.primaryColor : Colors.grey,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
         padding: EdgeInsets.symmetric(
           vertical: isLargeScreen ? 16 : 12,
           horizontal: isLargeScreen ? 24 : 16,
@@ -1926,7 +1943,7 @@ class _CatalogPageState extends State<CatalogPage> {
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(0),
           ),
           title: const Text('Enter Mobile Number'),
           content: Column(
@@ -2168,7 +2185,7 @@ class _CatalogPageState extends State<CatalogPage> {
             return AlertDialog(
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(0),
               ),
               title: const Text('Share as Link'),
               content: SingleChildScrollView(

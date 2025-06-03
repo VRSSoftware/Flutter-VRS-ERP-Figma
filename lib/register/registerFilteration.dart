@@ -171,10 +171,12 @@ class _RegisterFilterPageState extends State<RegisterFilterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Filter Orders'),
+       title: Text('Register Filter', style: TextStyle(color: Colors.white)),
         backgroundColor: AppColors.primaryColor,
-        iconTheme: const IconThemeData(
-          color: Colors.white,
+        elevation: 1,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ), // <-- back icon color
         titleTextStyle: const TextStyle(
           color: Colors.white, // <-- title text color

@@ -142,11 +142,11 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
                   filled: true,
                   fillColor: const Color(0xFFF6F8FA),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(0),
                     borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(0),
                     borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
                   ),
                 ),
@@ -170,7 +170,7 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
             minimumSize: const Size(80, 40),
             padding: const EdgeInsets.symmetric(horizontal: 20),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(0),
             ),
           ),
           // onPressed: _searchBarcode2,
@@ -180,7 +180,7 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
               builder:
                   (context) => Dialog(
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(0),
                     ),
                     child: SizedBox(
                       width: double.infinity,

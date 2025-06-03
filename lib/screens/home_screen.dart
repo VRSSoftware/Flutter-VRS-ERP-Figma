@@ -286,7 +286,7 @@ class HomeScreen extends StatelessWidget {
           _buildFeatureButton(
           'assets/images/team.png',
           'Team',
-          () => Navigator.pushNamed(context, '/registerOrders'),
+          () => Navigator.pushNamed(context, '/home'),
           buttonWidth,
           false,
           Colors.pinkAccent,

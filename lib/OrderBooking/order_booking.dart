@@ -462,6 +462,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:provider/provider.dart';
 
 import 'package:vrs_erp_figma/OrderBooking/orderbooking_drawer.dart';
@@ -733,7 +734,12 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                         ),
                         const SizedBox(height: 10),
                         _isLoadingCategories
-                            ? const Center(child: CircularProgressIndicator())
+                            ? Center(
+                              child: LoadingAnimationWidget.waveDots(
+                                color: AppColors.primaryColor,
+                                size: 30,
+                              ),
+                            )
                             : Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
                                 child: Wrap(
@@ -843,7 +849,12 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
         ),
         const SizedBox(height: 10),
         _isLoadingItems
-            ? const Center(child: CircularProgressIndicator())
+            ? Center(
+                              child: LoadingAnimationWidget.waveDots(
+                                color: AppColors.primaryColor,
+                                size: 30,
+                              ),
+                            )
             : Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: Wrap(

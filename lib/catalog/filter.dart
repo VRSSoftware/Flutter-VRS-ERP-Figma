@@ -221,7 +221,7 @@ class _FilterPageState extends State<FilterPage> {
       backgroundColor: Colors.white,
       drawer: DrawerScreen(),
       appBar: AppBar(
-        title: Text('Filter', style: TextStyle(color: Colors.white)),
+        title: Text(' Filter', style: TextStyle(color: Colors.white)),
         backgroundColor: AppColors.primaryColor,
         elevation: 1,
         leading: IconButton(
@@ -229,7 +229,9 @@ class _FilterPageState extends State<FilterPage> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Stack(
+      body:Container(
+  color: Colors.white, // Set background color
+  child: Stack(
         children: [
           SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
@@ -297,14 +299,17 @@ class _FilterPageState extends State<FilterPage> {
                         },
                         popupProps: PopupPropsMultiSelection.menu(
                           showSearchBox: true,
+                           menuProps: MenuProps(
+      backgroundColor: Colors.white,
+    ),
                           searchFieldProps: TextFieldProps(
                             decoration: InputDecoration(
                               hintText: 'Search and select styles',
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(0),
                               ),
                               focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(0),
                                 borderSide: BorderSide(
                                   color: AppColors.primaryColor,
                                 ),
@@ -570,48 +575,88 @@ class _FilterPageState extends State<FilterPage> {
             ),
           ),
 
-          // Filter Button at the Bottom
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  padding: EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    // Add this
-                    borderRadius: BorderRadius.circular(12), // No curvature
-                  ),
-                ),
-                onPressed: () {
-                  Map<String, dynamic> selectedFilters = {
-                    'styles': selectedStyles,
-                    'shades': selectedShades,
-                    'sizes': selectedSizes,
-                    'brands': selectedBrands,
-                    'fromMRP': fromMRPController.text,
-                    'toMRP': toMRPController.text,
-                    'fromDate': fromDateController.text,
-                    'toDate': toDateController.text,
-                    'WSPfrom': wspFromController.text,
-                    'WSPto': wspToController.text,
-                    'sortBy': sortBy,
-                    //'sortType': sortType,
-                  };
-                  Navigator.pop(context, selectedFilters);
-                },
-                child: Text(
-                  'Apply Filters',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
+      // Filter Buttons at the Bottom
+Positioned(
+  bottom: 0,
+  left: 0,
+  right: 0,
+  child: Padding(
+    padding: const EdgeInsets.all(16),
+    child: Row(
+      children: [
+   
+        Expanded(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryColor,
+              padding: EdgeInsets.symmetric(vertical: 15),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(0),
               ),
             ),
+            onPressed: () {
+              Map<String, dynamic> selectedFilters = {
+                'styles': selectedStyles,
+                'shades': selectedShades,
+                'sizes': selectedSizes,
+                'brands': selectedBrands,
+                'fromMRP': fromMRPController.text,
+                'toMRP': toMRPController.text,
+                'fromDate': fromDateController.text,
+                'toDate': toDateController.text,
+                'WSPfrom': wspFromController.text,
+                'WSPto': wspToController.text,
+                'sortBy': sortBy,
+              };
+              Navigator.pop(context, selectedFilters);
+            },
+            child: Text(
+              'Apply Filters',
+              style: TextStyle(fontSize: 16, color: Colors.white),
+            ),
           ),
+        ),
+         SizedBox(width: 12),
+             Expanded(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[400],
+              padding: EdgeInsets.symmetric(vertical: 15),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(0),
+              ),
+            ),
+            onPressed: () {
+              // Clear all filters
+              selectedStyles.clear();
+              selectedShades.clear();
+              selectedSizes.clear();
+              selectedBrands.clear();
+              fromMRPController.clear();
+              toMRPController.clear();
+              fromDateController.clear();
+              toDateController.clear();
+              wspFromController.clear();
+              wspToController.clear();
+              sortBy = null;
+
+              setState(() {}); // Refresh UI if needed
+            },
+            child: Text(
+              'Clear',
+              style: TextStyle(fontSize: 16, color: Colors.black),
+            ),
+          ),
+        ),
+       
+      ],
+    ),
+  ),
+),
+
         ],
-      ),
+     ) ),
+  
     );
   }
 
@@ -629,7 +674,7 @@ class _FilterPageState extends State<FilterPage> {
       color: AppColors.primaryColor.withOpacity(0.2),
       selectedColor: AppColors.primaryColor,
       fillColor: AppColors.primaryColor,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(0),
       borderColor: AppColors.primaryColor,
       selectedBorderColor: AppColors.primaryColor,
       constraints: const BoxConstraints(minHeight: 40, minWidth: 100),
@@ -705,12 +750,15 @@ class _FilterPageState extends State<FilterPage> {
       onChanged: (selectedItems) => onChanged(selectedItems ?? []),
       popupProps: PopupPropsMultiSelection.menu(
         showSearchBox: true,
+                                  menuProps: MenuProps(
+      backgroundColor: Colors.white,
+    ),
         searchFieldProps: TextFieldProps(
           decoration: InputDecoration(
             hintText: hintText,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(0)),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(0),
               borderSide: BorderSide(color: AppColors.primaryColor),
             ),
           ),
@@ -755,11 +803,11 @@ class _FilterPageState extends State<FilterPage> {
         floatingLabelStyle: TextStyle(color: AppColors.primaryColor),
         hintStyle: TextStyle(color: const Color(0xFF87898A)),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(0),
           borderSide: BorderSide(color: AppColors.secondaryColor),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(0),
           borderSide: BorderSide(color: AppColors.primaryColor),
         ),
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -800,11 +848,11 @@ class _FilterPageState extends State<FilterPage> {
           onPressed: () => _selectDate(context, controller, date),
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(0),
           borderSide: BorderSide(color: AppColors.secondaryColor),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(0),
           borderSide: BorderSide(color: AppColors.primaryColor),
         ),
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -865,41 +913,46 @@ class _CustomExpansionTileState extends State<CustomExpansionTile> {
     _isExpanded = widget.initiallyExpanded;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Theme(
-      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-      child: ExpansionTile(
-        title: Text(
-          widget.title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.primaryColor,
-          ),
+@override
+Widget build(BuildContext context) {
+  return Theme(
+    data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+    child: ExpansionTile(
+      title: Text(
+        widget.title,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: AppColors.primaryColor,
         ),
-        initiallyExpanded: widget.initiallyExpanded,
-        onExpansionChanged: (expanded) {
-          setState(() => _isExpanded = expanded);
-          widget.onExpansionChanged?.call(expanded);
-        },
-        tilePadding: EdgeInsets.symmetric(horizontal: 16),
-        backgroundColor: Colors.grey.withOpacity(0.1),
-        collapsedBackgroundColor: Colors.grey.withOpacity(0.2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        collapsedShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        trailing: RotationTransition(
-          turns: AlwaysStoppedAnimation(_isExpanded ? 0.5 : 0),
-          child: Icon(
-            Icons.keyboard_arrow_down,
-            size: 24,
-            color: AppColors.primaryColor,
-          ),
-        ),
-        children: widget.children,
       ),
-    );
-  }
+      initiallyExpanded: widget.initiallyExpanded,
+      onExpansionChanged: (expanded) {
+        setState(() => _isExpanded = expanded);
+        widget.onExpansionChanged?.call(expanded);
+      },
+      tilePadding: EdgeInsets.symmetric(horizontal: 16),
+      backgroundColor: Colors.white,
+      collapsedBackgroundColor: Colors.grey.withOpacity(0.2),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(0),
+        side: BorderSide(color: const Color.fromARGB(255, 202, 201, 201), width: 0.5), // Expanded border
+      ),
+      collapsedShape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(0),
+        side: BorderSide(color: const Color.fromARGB(255, 202, 201, 201), width: 0.5), // Collapsed border
+      ),
+      trailing: RotationTransition(
+        turns: AlwaysStoppedAnimation(_isExpanded ? 0.5 : 0),
+        child: Icon(
+          Icons.keyboard_arrow_down,
+          size: 24,
+          color: AppColors.primaryColor,
+        ),
+      ),
+      children: widget.children,
+    ),
+  );
+}
+
 }

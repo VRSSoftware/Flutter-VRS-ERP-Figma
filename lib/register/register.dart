@@ -866,7 +866,7 @@ Widget buildOrderItem(RegisterOrder registerOrder) {
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(3.5),
+                        borderRadius: BorderRadius.circular(0),
                         boxShadow: const [
                           BoxShadow(
                             color: Colors.black12,

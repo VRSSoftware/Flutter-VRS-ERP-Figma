@@ -151,7 +151,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         child: InkWell(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(0),
           onTap: () => _navigateTo(title, route),
           child: Container(
             decoration: BoxDecoration(
@@ -159,7 +159,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                   isSelected || isHovered
                       ? const Color.fromARGB(255, 206, 222, 240)
                       : Colors.transparent,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(0),
             ),
             child: ListTile(
               contentPadding: const EdgeInsets.symmetric(
@@ -249,7 +249,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         child: InkWell(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(0),
           onTap: () {
             Navigator.pop(context); // Close the drawer
             Navigator.pushReplacementNamed(
@@ -263,7 +263,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                   hoveredSection == 'Logout'
                       ? const Color.fromARGB(255, 222, 187, 231)
                       : Colors.transparent,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(0),
             ),
             child: ListTile(
               contentPadding: const EdgeInsets.symmetric(

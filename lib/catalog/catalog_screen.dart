@@ -377,7 +377,6 @@
 //   }
 // }
 
-
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
@@ -386,6 +385,7 @@ import 'package:vrs_erp_figma/models/item.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
 import 'package:vrs_erp_figma/widget/bottom_navbar.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class CatalogScreen extends StatefulWidget {
   @override
@@ -598,7 +598,12 @@ class _CatalogScreenState extends State<CatalogScreen> {
                       ),
                       SizedBox(height: 10),
                       _isLoadingCategories
-                          ? Center(child: CircularProgressIndicator())
+                          ? Center(
+                              child: LoadingAnimationWidget.waveDots(
+                                color: AppColors.primaryColor,
+                                size: 30,
+                              ),
+                            )
                           : _categoryError != null
                               ? Center(
                                   child: Column(
@@ -722,7 +727,12 @@ class _CatalogScreenState extends State<CatalogScreen> {
         ),
         SizedBox(height: 10),
         _isLoadingItems
-            ? Center(child: CircularProgressIndicator())
+            ? Center(
+                child: LoadingAnimationWidget.waveDots(
+                  color: AppColors.primaryColor,
+                  size: 30,
+                ),
+              )
             : _itemsError != null
                 ? Center(
                     child: Column(

@@ -157,7 +157,7 @@ class _StockFilterPageState extends State<StockFilterPage> {
       backgroundColor: Colors.white,
       drawer: DrawerScreen(),
       appBar: AppBar(
-        title: Text('Filter', style: TextStyle(color: Colors.white)),
+        title: Text('Stock Filter', style: TextStyle(color: Colors.white)),
         backgroundColor: AppColors.primaryColor,
         elevation: 1,
         leading: IconButton(

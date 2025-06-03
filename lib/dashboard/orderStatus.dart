@@ -594,6 +594,7 @@
 //   }
 // }
 
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dropdown_search/dropdown_search.dart';
@@ -602,18 +603,15 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/dashboard/orderStatusFilter.dart';
-
 import 'package:vrs_erp_figma/models/brand.dart';
 import 'package:vrs_erp_figma/models/item.dart';
 import 'dart:convert';
-
 import 'package:vrs_erp_figma/models/keyName.dart';
 import 'package:vrs_erp_figma/models/shade.dart';
 import 'package:vrs_erp_figma/models/size.dart';
 import 'package:vrs_erp_figma/models/style.dart';
-
 import 'package:vrs_erp_figma/services/app_services.dart';
-import 'order_status_card.dart'; // Import the new card widget
+import 'order_status_card.dart';
 
 class OrderStatus extends StatefulWidget {
   const OrderStatus({super.key});
@@ -1027,7 +1025,16 @@ class _OrderStatusState extends State<OrderStatus> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Order Status'),
+        title: const Text(
+          'Order Status',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: AppColors.primaryColor,
+        elevation: 1,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
