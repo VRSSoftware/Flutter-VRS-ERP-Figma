@@ -49,6 +49,7 @@ class _StockReportPageState extends State<StockReportPage> {
   String fromMRP = '';
   String toMRP = '';
   String coBr = '';
+  bool withImage = false;
 
   @override
   void initState() {
@@ -57,6 +58,7 @@ class _StockReportPageState extends State<StockReportPage> {
     _fetchAllItems();
     _fetchBrands();
   }
+
 
   Future<void> _fetchStockReport() async {
     if (selectedCategoryKey == null || selectedItem == null) {
@@ -268,6 +270,7 @@ class _StockReportPageState extends State<StockReportPage> {
             'selectedBrands': selectedBrands,
             'fromMRP': fromMRP,
             'toMRP': toMRP,
+            'withImage': withImage,
           },
         ),
         transitionDuration: Duration(milliseconds: 500),
@@ -290,6 +293,7 @@ class _StockReportPageState extends State<StockReportPage> {
         selectedBrands = selectedFilters['brands'] ?? [];
         fromMRP = selectedFilters['fromMRP'] ?? '';
         toMRP = selectedFilters['toMRP'] ?? '';
+        withImage = selectedFilters['withImage'] ?? false;
       });
 
       if (selectedCategoryKey != null && selectedItem != null) {
@@ -453,7 +457,44 @@ Widget _buildStyleTable(
         width: double.infinity, // Ensure header takes full width
         padding: const EdgeInsets.all(12),
         color: const Color(0xFF0288D1), // Vibrant teal for header
-        child: Text(
+       child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Add image display here
+            if (withImage && items.isNotEmpty)
+              Container(
+                width: 60,
+                height: 60,
+                margin: const EdgeInsets.only(right: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Colors.white, width: 1),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: Image.network(
+                    _getImageUrl(items.first),
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.broken_image, color: Colors.grey),
+                  ),
+                ),
+              ),
+            Expanded(
+              child:
+        Text(
           '$styleCode - ${items.first.type ?? ''}',
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
@@ -462,7 +503,9 @@ Widget _buildStyleTable(
           ),
         ),
       ),
-
+  ],
+        ),
+      ),
       // Horizontally Scrollable Table (if needed)
       SingleChildScrollView(
         scrollDirection: Axis.horizontal,

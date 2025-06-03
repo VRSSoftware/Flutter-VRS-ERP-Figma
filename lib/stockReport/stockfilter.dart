@@ -7,6 +7,19 @@ import 'package:vrs_erp_figma/models/style.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 
+// New model class for image-based items
+class ImageItem {
+  final String itemKey;
+  final String itemName;
+  final String imageUrl; // URL or asset path for the image
+
+  ImageItem({
+    required this.itemKey,
+    required this.itemName,
+    required this.imageUrl,
+  });
+}
+
 class StockFilterPage extends StatefulWidget {
   @override
   _StockFilterPageState createState() => _StockFilterPageState();
@@ -23,6 +36,7 @@ class _StockFilterPageState extends State<StockFilterPage> {
   List<Brand> selectedBrands = [];
   bool isCheckboxModeBrand = true;
   bool isBrandExpanded = true;
+   bool withImage = false;
 
   TextEditingController fromMRPController = TextEditingController();
   TextEditingController toMRPController = TextEditingController();
@@ -31,6 +45,12 @@ class _StockFilterPageState extends State<StockFilterPage> {
   bool isShadeExpanded = true;
   bool isCheckboxModeSize = true;
   bool isSizeExpanded = true;
+
+  // New fields for image items and stock status
+  List<ImageItem> imageItems = [];
+  List<ImageItem> selectedImageItems = [];
+  bool isImageExpanded = true;
+  String stockStatus = 'All'; // Default stock status
 
   bool _isExpanded = true;
 
@@ -43,18 +63,28 @@ class _StockFilterPageState extends State<StockFilterPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (args != null) {
       styles = args['styles'] is List<Style> ? args['styles'] : [];
       shades = args['shades'] is List<Shade> ? args['shades'] : [];
-      selectedShades = args['selectedShades'] is List<Shade> ? args['selectedShades'] : [];
+      selectedShades =
+          args['selectedShades'] is List<Shade> ? args['selectedShades'] : [];
       sizes = args['sizes'] is List<Sizes> ? args['sizes'] : [];
-      selectedStyles = args['selectedStyles'] is List<Style> ? args['selectedStyles'] : [];
-      selectedSizes = args['selectedSizes'] is List<Sizes> ? args['selectedSizes'] : [];
-      selectedBrands = args['selectedBrands'] is List<Brand> ? args['selectedBrands'] : [];
+      selectedStyles =
+          args['selectedStyles'] is List<Style> ? args['selectedStyles'] : [];
+      selectedSizes =
+          args['selectedSizes'] is List<Sizes> ? args['selectedSizes'] : [];
+      selectedBrands =
+          args['selectedBrands'] is List<Brand> ? args['selectedBrands'] : [];
       fromMRPController.text = args['fromMRP'] is String ? args['fromMRP'] : "";
       toMRPController.text = args['toMRP'] is String ? args['toMRP'] : "";
       brands = args['brands'] is List<Brand> ? args['brands'] : [];
+      imageItems = args['imageItems'] is List<ImageItem> ? args['imageItems'] : [];
+      selectedImageItems =
+          args['selectedImageItems'] is List<ImageItem> ? args['selectedImageItems'] : [];
+      stockStatus = args['stockStatus'] is String ? args['stockStatus'] : 'All';
+         withImage = args['withImage'] ?? false; 
     }
   }
 
@@ -76,6 +106,12 @@ class _StockFilterPageState extends State<StockFilterPage> {
     });
   }
 
+  void syncSelectedImageItems(List<ImageItem> newSelectedImageItems) {
+    setState(() {
+      selectedImageItems = List.from(newSelectedImageItems);
+    });
+  }
+
   Widget _buildCheckboxSection<T>(
     List<T> items,
     List<T> selectedItems,
@@ -92,33 +128,125 @@ class _StockFilterPageState extends State<StockFilterPage> {
       rows.add(
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children:
+              rowItems.map((item) {
+                bool isSelected = selectedItems.any((s) => compareFn(s, item));
+                return Expanded(
+                  child: Row(
+                    children: [
+                      Checkbox(
+                        value: isSelected,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            if (value == true) {
+                              if (!selectedItems.any(
+                                (s) => compareFn(s, item),
+                              )) {
+                                selectedItems.add(item);
+                              }
+                            } else {
+                              selectedItems.removeWhere(
+                                (s) => compareFn(s, item),
+                              );
+                            }
+                          });
+                          onChanged(selectedItems);
+                        },
+                      ),
+                      Expanded(
+                        child: Text(
+                          labelFn(item),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: Column(children: rows),
+        ),
+      ],
+    );
+  }
+
+  // Updated method for image checkbox section with circular images
+  Widget _buildImageCheckboxSection(
+    List<ImageItem> items,
+    List<ImageItem> selectedItems,
+    Function(List<ImageItem>) onChanged,
+  ) {
+    List<Widget> rows = [];
+    for (int i = 0; i < items.length; i += 2) { // 2 items per row for better layout
+      List<ImageItem> rowItems = items.sublist(
+        i,
+        i + 2 > items.length ? items.length : i + 2,
+      );
+      rows.add(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: rowItems.map((item) {
-            bool isSelected = selectedItems.any((s) => compareFn(s, item));
+            bool isSelected = selectedItems.any((s) => s.itemKey == item.itemKey);
             return Expanded(
-              child: Row(
-                children: [
-                  Checkbox(
-                    value: isSelected,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        if (value == true) {
-                          if (!selectedItems.any((s) => compareFn(s, item))) {
-                            selectedItems.add(item);
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Row(
+                  children: [
+                    Checkbox(
+                      value: isSelected,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          if (value == true) {
+                            if (!selectedItems.any((s) => s.itemKey == item.itemKey)) {
+                              selectedItems.add(item);
+                            }
+                          } else {
+                            selectedItems.removeWhere((s) => s.itemKey == item.itemKey);
                           }
-                        } else {
-                          selectedItems.removeWhere((s) => compareFn(s, item));
-                        }
-                      });
-                      onChanged(selectedItems);
-                    },
-                  ),
-                  Expanded(
-                    child: Text(
-                      labelFn(item),
-                      overflow: TextOverflow.ellipsis,
+                        });
+                        onChanged(selectedItems);
+                      },
                     ),
-                  ),
-                ],
+                    SizedBox(width: 8),
+                    Column(
+                      children: [
+                        ClipOval( // Makes the image circular
+                          child: Container(
+                            height: 80, // Fixed height for image
+                            width: 80,  // Fixed width for image
+                            child: item.imageUrl.startsWith('http')
+                                ? Image.network(
+                                    item.imageUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) =>
+                                        Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                                  )
+                                : Image.asset(
+                                    item.imageUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) =>
+                                        Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                                  ),
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          item.itemName,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             );
           }).toList(),
@@ -132,6 +260,46 @@ class _StockFilterPageState extends State<StockFilterPage> {
         SingleChildScrollView(
           scrollDirection: Axis.vertical,
           child: Column(children: rows),
+        ),
+      ],
+    );
+  }
+
+  // Stock status radio buttons
+  Widget _buildStockStatusRadio() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Radio<String>(
+              value: 'All',
+              groupValue: stockStatus,
+              onChanged: (String? value) {
+                setState(() {
+                  stockStatus = value ?? 'All';
+                });
+              },
+              activeColor: AppColors.primaryColor,
+            ),
+            Text('All', style: TextStyle(color: AppColors.primaryColor)),
+          ],
+        ),
+        SizedBox(width: 20),
+        Row(
+          children: [
+            Radio<String>(
+              value: 'Ready',
+              groupValue: stockStatus,
+              onChanged: (String? value) {
+                setState(() {
+                  stockStatus = value ?? 'All';
+                });
+              },
+              activeColor: AppColors.primaryColor,
+            ),
+            Text('Ready', style: TextStyle(color: AppColors.primaryColor)),
+          ],
         ),
       ],
     );
@@ -189,14 +357,15 @@ class _StockFilterPageState extends State<StockFilterPage> {
                         },
                         popupProps: PopupPropsMultiSelection.menu(
                           showSearchBox: true,
+                          menuProps: MenuProps(backgroundColor: Colors.white),
                           searchFieldProps: TextFieldProps(
                             decoration: InputDecoration(
                               hintText: 'Search and select styles',
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(0),
                               ),
                               focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(0),
                                 borderSide: BorderSide(
                                   color: AppColors.primaryColor,
                                 ),
@@ -206,11 +375,14 @@ class _StockFilterPageState extends State<StockFilterPage> {
                         ),
                         itemAsString: (Style s) => s.styleCode,
                         compareFn: (a, b) => a.styleKey == b.styleKey,
-                        dropdownBuilder: (context, selectedItems) => Text(
-                          selectedItems.isEmpty
-                              ? 'Select styles'
-                              : selectedItems.map((e) => e.styleCode).join(', '),
-                        ),
+                        dropdownBuilder:
+                            (context, selectedItems) => Text(
+                              selectedItems.isEmpty
+                                  ? 'Select styles'
+                                  : selectedItems
+                                      .map((e) => e.styleCode)
+                                      .join(', '),
+                            ),
                       ),
                     ),
                   ],
@@ -222,8 +394,8 @@ class _StockFilterPageState extends State<StockFilterPage> {
                 _buildExpansionTile(
                   title: 'Select Shades',
                   initiallyExpanded: isShadeExpanded,
-                  onExpansionChanged: (expanded) =>
-                      setState(() => isShadeExpanded = expanded),
+                  onExpansionChanged:
+                      (expanded) => setState(() => isShadeExpanded = expanded),
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(
@@ -237,38 +409,46 @@ class _StockFilterPageState extends State<StockFilterPage> {
                             children: [
                               _buildModeSelector(
                                 isCheckboxMode: isCheckboxModeShade,
-                                onChanged: (value) => setState(
-                                    () => isCheckboxModeShade = value == 'Checkbox'),
+                                onChanged:
+                                    (value) => setState(
+                                      () =>
+                                          isCheckboxModeShade =
+                                              value == 'Checkbox',
+                                    ),
                               ),
                               _buildSelectAllButton(
                                 selectedCount: selectedShades.length,
                                 totalCount: shades.length,
-                                onPressed: () => setState(() {
-                                  selectedShades = selectedShades.length == shades.length
-                                      ? []
-                                      : List.from(shades);
-                                }),
+                                onPressed:
+                                    () => setState(() {
+                                      selectedShades =
+                                          selectedShades.length == shades.length
+                                              ? []
+                                              : List.from(shades);
+                                    }),
                               ),
                             ],
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: isCheckboxModeShade
-                                ? _buildCheckboxSection<Shade>(
-                                    shades,
-                                    selectedShades,
-                                    (a, b) => a.shadeKey == b.shadeKey,
-                                    (s) => s.shadeName,
-                                    syncSelectedShades,
-                                  )
-                                : _buildDropdownSection<Shade>(
-                                    items: shades,
-                                    selectedItems: selectedShades,
-                                    hintText: 'Search and select shades',
-                                    itemAsString: (s) => s.shadeName,
-                                    compareFn: (a, b) => a.shadeKey == b.shadeKey,
-                                    onChanged: syncSelectedShades,
-                                  ),
+                            child:
+                                isCheckboxModeShade
+                                    ? _buildCheckboxSection<Shade>(
+                                      shades,
+                                      selectedShades,
+                                      (a, b) => a.shadeKey == b.shadeKey,
+                                      (s) => s.shadeName,
+                                      syncSelectedShades,
+                                    )
+                                    : _buildDropdownSection<Shade>(
+                                      items: shades,
+                                      selectedItems: selectedShades,
+                                      hintText: 'Search and select shades',
+                                      itemAsString: (s) => s.shadeName,
+                                      compareFn:
+                                          (a, b) => a.shadeKey == b.shadeKey,
+                                      onChanged: syncSelectedShades,
+                                    ),
                           ),
                         ],
                       ),
@@ -282,8 +462,8 @@ class _StockFilterPageState extends State<StockFilterPage> {
                 _buildExpansionTile(
                   title: 'Select Sizes',
                   initiallyExpanded: isSizeExpanded,
-                  onExpansionChanged: (expanded) =>
-                      setState(() => isSizeExpanded = expanded),
+                  onExpansionChanged:
+                      (expanded) => setState(() => isSizeExpanded = expanded),
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(
@@ -297,38 +477,47 @@ class _StockFilterPageState extends State<StockFilterPage> {
                             children: [
                               _buildModeSelector(
                                 isCheckboxMode: isCheckboxModeSize,
-                                onChanged: (value) => setState(
-                                    () => isCheckboxModeSize = value == 'Checkbox'),
+                                onChanged:
+                                    (value) => setState(
+                                      () =>
+                                          isCheckboxModeSize =
+                                              value == 'Checkbox',
+                                    ),
                               ),
                               _buildSelectAllButton(
                                 selectedCount: selectedSizes.length,
                                 totalCount: sizes.length,
-                                onPressed: () => setState(() {
-                                  selectedSizes = selectedSizes.length == sizes.length
-                                      ? []
-                                      : List.from(sizes);
-                                }),
+                                onPressed:
+                                    () => setState(() {
+                                      selectedSizes =
+                                          selectedSizes.length == sizes.length
+                                              ? []
+                                              : List.from(sizes);
+                                    }),
                               ),
                             ],
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: isCheckboxModeSize
-                                ? _buildCheckboxSection<Sizes>(
-                                    sizes,
-                                    selectedSizes,
-                                    (a, b) => a.itemSizeKey == b.itemSizeKey,
-                                    (s) => s.sizeName,
-                                    syncSelectedSizes,
-                                  )
-                                : _buildDropdownSection<Sizes>(
-                                    items: sizes,
-                                    selectedItems: selectedSizes,
-                                    hintText: 'Search and select sizes',
-                                    itemAsString: (s) => s.sizeName,
-                                    compareFn: (a, b) => a.itemSizeKey == b.itemSizeKey,
-                                    onChanged: syncSelectedSizes,
-                                  ),
+                            child:
+                                isCheckboxModeSize
+                                    ? _buildCheckboxSection<Sizes>(
+                                      sizes,
+                                      selectedSizes,
+                                      (a, b) => a.itemSizeKey == b.itemSizeKey,
+                                      (s) => s.sizeName,
+                                      syncSelectedSizes,
+                                    )
+                                    : _buildDropdownSection<Sizes>(
+                                      items: sizes,
+                                      selectedItems: selectedSizes,
+                                      hintText: 'Search and select sizes',
+                                      itemAsString: (s) => s.sizeName,
+                                      compareFn:
+                                          (a, b) =>
+                                              a.itemSizeKey == b.itemSizeKey,
+                                      onChanged: syncSelectedSizes,
+                                    ),
                           ),
                         ],
                       ),
@@ -342,8 +531,8 @@ class _StockFilterPageState extends State<StockFilterPage> {
                 _buildExpansionTile(
                   title: 'Select Brands',
                   initiallyExpanded: isBrandExpanded,
-                  onExpansionChanged: (expanded) =>
-                      setState(() => isBrandExpanded = expanded),
+                  onExpansionChanged:
+                      (expanded) => setState(() => isBrandExpanded = expanded),
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(
@@ -357,41 +546,89 @@ class _StockFilterPageState extends State<StockFilterPage> {
                             children: [
                               _buildModeSelector(
                                 isCheckboxMode: isCheckboxModeBrand,
-                                onChanged: (value) => setState(
-                                    () => isCheckboxModeBrand = value == 'Checkbox'),
+                                onChanged:
+                                    (value) => setState(
+                                      () =>
+                                          isCheckboxModeBrand =
+                                              value == 'Checkbox',
+                                    ),
                               ),
                               _buildSelectAllButton(
                                 selectedCount: selectedBrands.length,
                                 totalCount: brands.length,
-                                onPressed: () => setState(() {
-                                  selectedBrands = selectedBrands.length == brands.length
-                                      ? []
-                                      : List.from(brands);
-                                }),
+                                onPressed:
+                                    () => setState(() {
+                                      selectedBrands =
+                                          selectedBrands.length == brands.length
+                                              ? []
+                                              : List.from(brands);
+                                    }),
                               ),
                             ],
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: isCheckboxModeBrand
-                                ? _buildCheckboxSection<Brand>(
-                                    brands,
-                                    selectedBrands,
-                                    (a, b) => a.brandKey == b.brandKey,
-                                    (b) => b.brandName,
-                                    syncSelectedBrands,
-                                  )
-                                : _buildDropdownSection<Brand>(
-                                    items: brands,
-                                    selectedItems: selectedBrands,
-                                    hintText: 'Search and select brands',
-                                    itemAsString: (b) => b.brandName,
-                                    compareFn: (a, b) => a.brandKey == b.brandKey,
-                                    onChanged: syncSelectedBrands,
-                                  ),
+                            child:
+                                isCheckboxModeBrand
+                                    ? _buildCheckboxSection<Brand>(
+                                      brands,
+                                      selectedBrands,
+                                      (a, b) => a.brandKey == b.brandKey,
+                                      (b) => b.brandName,
+                                      syncSelectedBrands,
+                                    )
+                                    : _buildDropdownSection<Brand>(
+                                      items: brands,
+                                      selectedItems: selectedBrands,
+                                      hintText: 'Search and select brands',
+                                      itemAsString: (b) => b.brandName,
+                                      compareFn:
+                                          (a, b) => a.brandKey == b.brandKey,
+                                      onChanged: syncSelectedBrands,
+                                    ),
                           ),
                         ],
                       ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 16),
+
+              // With Image Checkbox
+              const SizedBox(height: 10),
+              _buildExpansionTile(
+  title: 'Image Options',
+  children: [
+    Row(
+      children: [
+        Checkbox(
+          value: withImage,
+          onChanged: (value) {
+            setState(() {
+              withImage = value ?? false;
+            });
+          },
+          activeColor: AppColors.primaryColor,
+        ),
+        const Text('Show Images in Report'),
+      ],
+    ),
+  ],
+),
+
+                SizedBox(height: 16),
+
+                // Stock Status Section
+                _buildExpansionTile(
+                  title: 'Stock Status',
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      child: _buildStockStatusRadio(),
                     ),
                   ],
                 ),
@@ -439,6 +676,9 @@ class _StockFilterPageState extends State<StockFilterPage> {
                     'brands': selectedBrands,
                     'fromMRP': fromMRPController.text,
                     'toMRP': toMRPController.text,
+                    'imageItems': selectedImageItems,
+                    'stockStatus': stockStatus,
+                    'withImage': withImage, 
                   };
                   Navigator.pop(context, selectedFilters);
                 },
@@ -467,7 +707,7 @@ class _StockFilterPageState extends State<StockFilterPage> {
       color: AppColors.primaryColor.withOpacity(0.2),
       selectedColor: AppColors.primaryColor,
       fillColor: AppColors.primaryColor,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(0),
       borderColor: AppColors.primaryColor,
       selectedBorderColor: AppColors.primaryColor,
       constraints: const BoxConstraints(minHeight: 40, minWidth: 100),
@@ -504,7 +744,8 @@ class _StockFilterPageState extends State<StockFilterPage> {
               Text(
                 'Combo',
                 style: TextStyle(
-                  color: !isCheckboxMode ? Colors.white : AppColors.primaryColor,
+                  color:
+                      !isCheckboxMode ? Colors.white : AppColors.primaryColor,
                 ),
               ),
             ],
@@ -542,12 +783,13 @@ class _StockFilterPageState extends State<StockFilterPage> {
       onChanged: (selectedItems) => onChanged(selectedItems ?? []),
       popupProps: PopupPropsMultiSelection.menu(
         showSearchBox: true,
+        menuProps: MenuProps(backgroundColor: Colors.white),
         searchFieldProps: TextFieldProps(
           decoration: InputDecoration(
             hintText: hintText,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(0)),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(0),
               borderSide: BorderSide(color: AppColors.primaryColor),
             ),
           ),
@@ -555,11 +797,12 @@ class _StockFilterPageState extends State<StockFilterPage> {
       ),
       itemAsString: itemAsString,
       compareFn: compareFn,
-      dropdownBuilder: (context, selectedItems) => Text(
-        selectedItems?.isEmpty ?? true
-            ? 'Select ${hintText.split(' ').last}'
-            : selectedItems!.map(itemAsString).join(', '),
-      ),
+      dropdownBuilder:
+          (context, selectedItems) => Text(
+            selectedItems?.isEmpty ?? true
+                ? 'Select ${hintText.split(' ').last}'
+                : selectedItems!.map(itemAsString).join(', '),
+          ),
     );
   }
 
@@ -591,11 +834,11 @@ class _StockFilterPageState extends State<StockFilterPage> {
         floatingLabelStyle: TextStyle(color: AppColors.primaryColor),
         hintStyle: TextStyle(color: const Color(0xFF87898A)),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(0),
           borderSide: BorderSide(color: AppColors.secondaryColor),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(0),
           borderSide: BorderSide(color: AppColors.primaryColor),
         ),
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -649,11 +892,21 @@ class _CustomExpansionTileState extends State<CustomExpansionTile> {
           widget.onExpansionChanged?.call(expanded);
         },
         tilePadding: EdgeInsets.symmetric(horizontal: 16),
-        backgroundColor: Colors.grey.withOpacity(0.1),
+        backgroundColor: Colors.white,
         collapsedBackgroundColor: Colors.grey.withOpacity(0.2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(0),
+          side: BorderSide(
+            color: const Color.fromARGB(255, 202, 201, 201),
+            width: 0.5,
+          ), // Expanded border
+        ),
         collapsedShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(0),
+          side: BorderSide(
+            color: const Color.fromARGB(255, 202, 201, 201),
+            width: 0.5,
+          ), // Collapsed border
         ),
         trailing: RotationTransition(
           turns: AlwaysStoppedAnimation(_isExpanded ? 0.5 : 0),

@@ -896,7 +896,7 @@ class _OrderStatusState extends State<OrderStatus> {
     final List<KeyName> groupByOptions = [
       KeyName(key: 'cust', name: 'Customer'),
       KeyName(key: 'design', name: 'Design'),
-      KeyName(key: 'style', name: 'Style'),
+   
     ];
 
     final result = await Navigator.push(
