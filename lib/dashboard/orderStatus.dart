@@ -1,4 +1,3 @@
-
 // import 'package:flutter/material.dart';
 // import 'package:intl/intl.dart';
 // import 'package:dropdown_search/dropdown_search.dart';
@@ -594,7 +593,6 @@
 //   }
 // }
 
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dropdown_search/dropdown_search.dart';
@@ -659,10 +657,7 @@ class _OrderStatusState extends State<OrderStatus> {
       _isLoading = true;
     });
     try {
-      final response = await ApiService.fetchLedgers(
-        ledCat: 'W',
-        coBrId: '01',
-      );
+      final response = await ApiService.fetchLedgers(ledCat: 'W', coBrId: '01');
       if (response['statusCode'] == 200) {
         final List<KeyName> result = response['result'];
         setState(() {
@@ -674,16 +669,20 @@ class _OrderStatusState extends State<OrderStatus> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to fetch categories: ${response['statusCode']}')),
+          SnackBar(
+            content: Text(
+              'Failed to fetch categories: ${response['statusCode']}',
+            ),
+          ),
         );
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading categories: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error loading categories: $e')));
     }
   }
 
@@ -701,9 +700,9 @@ class _OrderStatusState extends State<OrderStatus> {
       setState(() {
         _isLoadingProducts = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading products: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error loading products: $e')));
     }
   }
 
@@ -714,9 +713,9 @@ class _OrderStatusState extends State<OrderStatus> {
         _brands = brands;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading brands: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error loading brands: $e')));
     }
   }
 
@@ -727,12 +726,12 @@ class _OrderStatusState extends State<OrderStatus> {
         styles = await ApiService.fetchStylesByItemKey(itemKey);
       }
       setState(() {
-      _styles = _styles;
+        _styles = _styles;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading styles: $e}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error loading styles: $e}')));
     }
   }
 
@@ -746,9 +745,9 @@ class _OrderStatusState extends State<OrderStatus> {
         _shades = shades;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading shades: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error loading shades: $e')));
     }
   }
 
@@ -762,16 +761,18 @@ class _OrderStatusState extends State<OrderStatus> {
         _sizes = sizes;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading sizes: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error loading sizes: $e')));
     }
   }
 
   Future<void> _fetchOrderStatus(Map<String, dynamic> filters) async {
     if (_selectedProducts.isEmpty || _selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one product and a category')),
+        const SnackBar(
+          content: Text('Please select at least one product and a category'),
+        ),
       );
       return;
     }
@@ -790,17 +791,31 @@ class _OrderStatusState extends State<OrderStatus> {
         'product': _selectedProducts.join(','),
         'groupby': groupBy?.key ?? 'cust',
         'CoBr_Id': UserSession.coBrId ?? '01',
-        'brand': selectedBrand?.isNotEmpty == true ? selectedBrand!.map((b) => b.key).join(',') : null,
-        'style': selectedStyle?.isNotEmpty == true ? selectedStyle!.map((s) => s.key).join(',') : null,
-        'shade': selectedShade?.isNotEmpty == true ? selectedShade!.map((s) => s.key).join(',') : null,
-        'size': selectedSize?.isNotEmpty == true ? selectedSize!.map((s) => s.key).join(',') : null,
+        'brand':
+            selectedBrand?.isNotEmpty == true
+                ? selectedBrand!.map((b) => b.key).join(',')
+                : null,
+        'style':
+            selectedStyle?.isNotEmpty == true
+                ? selectedStyle!.map((s) => s.key).join(',')
+                : null,
+        'shade':
+            selectedShade?.isNotEmpty == true
+                ? selectedShade!.map((s) => s.key).join(',')
+                : null,
+        'size':
+            selectedSize?.isNotEmpty == true
+                ? selectedSize!.map((s) => s.key).join(',')
+                : null,
         'status': selectedStatus?.key != 'all' ? selectedStatus?.key : null,
       };
 
       print('Request Body: ${jsonEncode(requestBody)}');
 
       final response = await http.post(
-        Uri.parse('${AppConstants.BASE_URL}/report/GetOrderStatus?t=${DateTime.now().millisecondsSinceEpoch}'),
+        Uri.parse(
+          '${AppConstants.BASE_URL}/report/GetOrderStatus?t=${DateTime.now().millisecondsSinceEpoch}',
+        ),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );
@@ -809,32 +824,45 @@ class _OrderStatusState extends State<OrderStatus> {
 
       if (response.statusCode == 200) {
         final dynamic result = jsonDecode(response.body);
-        List<dynamic> flattenedResult = result is List && result.isNotEmpty && result[0] is List
-            ? result.expand((i) => i).toList()
-            : result is List
+        List<dynamic> flattenedResult =
+            result is List && result.isNotEmpty && result[0] is List
+                ? result.expand((i) => i).toList()
+                : result is List
                 ? result
                 : [];
         // Client-side filtering for API issue
-        List<dynamic> filteredResult = flattenedResult.where((item) {
-          bool brandMatch = selectedBrand?.isEmpty ?? true ||
-              selectedBrand!.any((b) => b.key == item['brand']);
-          bool styleMatch = selectedStyle?.isEmpty ?? true ||
-              selectedStyle!.any((s) => s.key == item['StyleCode']);
-          bool shadeMatch = selectedShade?.isEmpty ?? true ||
-              selectedShade!.any((s) => s.key == item['Color']);
-          bool sizeMatch = selectedSize?.isEmpty ?? true ||
-              selectedSize!.any((s) => s.key == item['Size']);
-          bool statusMatch = selectedStatus?.key == 'all' ||
-              item['Status'] == selectedStatus?.key;
-          return brandMatch && styleMatch && shadeMatch && sizeMatch && statusMatch;
-        }).toList();
+        List<dynamic> filteredResult =
+            flattenedResult.where((item) {
+              bool brandMatch =
+                  selectedBrand?.isEmpty ??
+                  true || selectedBrand!.any((b) => b.key == item['brand']);
+              bool styleMatch =
+                  selectedStyle?.isEmpty ??
+                  true || selectedStyle!.any((s) => s.key == item['StyleCode']);
+              bool shadeMatch =
+                  selectedShade?.isEmpty ??
+                  true || selectedShade!.any((s) => s.key == item['Color']);
+              bool sizeMatch =
+                  selectedSize?.isEmpty ??
+                  true || selectedSize!.any((s) => s.key == item['Size']);
+              bool statusMatch =
+                  selectedStatus?.key == 'all' ||
+                  item['Status'] == selectedStatus?.key;
+              return brandMatch &&
+                  styleMatch &&
+                  shadeMatch &&
+                  sizeMatch &&
+                  statusMatch;
+            }).toList();
         setState(() {
           _orderData = filteredResult;
           _isLoading = false;
         });
         if (filteredResult.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No data returned. Check filters or API.')),
+            const SnackBar(
+              content: Text('No data returned. Check filters or API.'),
+            ),
           );
         }
       } else {
@@ -842,7 +870,11 @@ class _OrderStatusState extends State<OrderStatus> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to fetch order status: ${response.statusCode}')),
+          SnackBar(
+            content: Text(
+              'Failed to fetch order status: ${response.statusCode}',
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -870,41 +902,55 @@ class _OrderStatusState extends State<OrderStatus> {
     final result = await Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => OrderStatusFilterPage(
-          brandsList: _brands.map((b) => KeyName(key: b.brandKey, name: b.brandName)).toList(),
-          stylesList: _styles.map((s) => KeyName(key: s.styleKey, name: s.styleCode)).toList(),
-          shadesList: _shades.map((s) => KeyName(key: s.shadeKey, name: s.shadeName)).toList(),
-          sizesList: _sizes.map((s) => KeyName(key: s.itemSizeKey, name: s.sizeName)).toList(),
-          statusList: statusList,
-          groupByOptions: groupByOptions,
-          filters: _currentFilters, // Changed from initialFilters to filters
-          onApplyFilters: ({
-            fromDate,
-            toDate,
-            selectedBrand,
-            selectedStyle,
-            selectedShade,
-            selectedSize,
-            selectedStatus,
-            groupBy,
-            withImage,
-            selectedDateRange,
-          }) {
-            final newFilters = {
-              'fromDate': fromDate,
-              'toDate': toDate,
-              'selectedDateRange': selectedDateRange,
-              'selectedBrand': selectedBrand,
-              'selectedStyle': selectedStyle,
-              'selectedShade': selectedShade,
-              'selectedSize': selectedSize,
-              'selectedStatus': selectedStatus,
-              'groupBy': groupBy,
-              'withImage': withImage,
-            };
-            Navigator.pop(context, newFilters);
-          },
-        ),
+        pageBuilder:
+            (context, animation, secondaryAnimation) => OrderStatusFilterPage(
+              brandsList:
+                  _brands
+                      .map((b) => KeyName(key: b.brandKey, name: b.brandName))
+                      .toList(),
+              stylesList:
+                  _styles
+                      .map((s) => KeyName(key: s.styleKey, name: s.styleCode))
+                      .toList(),
+              shadesList:
+                  _shades
+                      .map((s) => KeyName(key: s.shadeKey, name: s.shadeName))
+                      .toList(),
+              sizesList:
+                  _sizes
+                      .map((s) => KeyName(key: s.itemSizeKey, name: s.sizeName))
+                      .toList(),
+              statusList: statusList,
+              groupByOptions: groupByOptions,
+              filters:
+                  _currentFilters, // Changed from initialFilters to filters
+              onApplyFilters: ({
+                fromDate,
+                toDate,
+                selectedBrand,
+                selectedStyle,
+                selectedShade,
+                selectedSize,
+                selectedStatus,
+                groupBy,
+                withImage,
+                selectedDateRange,
+              }) {
+                final newFilters = {
+                  'fromDate': fromDate,
+                  'toDate': toDate,
+                  'selectedDateRange': selectedDateRange,
+                  'selectedBrand': selectedBrand,
+                  'selectedStyle': selectedStyle,
+                  'selectedShade': selectedShade,
+                  'selectedSize': selectedSize,
+                  'selectedStatus': selectedStatus,
+                  'groupBy': groupBy,
+                  'withImage': withImage,
+                };
+                Navigator.pop(context, newFilters);
+              },
+            ),
         transitionDuration: const Duration(milliseconds: 500),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return ScaleTransition(
@@ -1067,23 +1113,27 @@ class _OrderStatusState extends State<OrderStatus> {
                 },
                 popupProps: PopupPropsMultiSelection.menu(
                   showSearchBox: true,
-                  loadingBuilder: (context, searchEntry) => Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      LoadingAnimationWidget.waveDots(
-                        color: Colors.blue,
-                        size: 20,
+                  loadingBuilder:
+                      (context, searchEntry) => Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          LoadingAnimationWidget.waveDots(
+                            color: Colors.blue,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('Loading Products...'),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      const Text('Loading Products...'),
-                    ],
-                  ),
                 ),
                 dropdownDecoratorProps: const DropDownDecoratorProps(
                   dropdownSearchDecoration: InputDecoration(
                     labelText: 'Select Products',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                   ),
                 ),
                 itemAsString: (String? key) {
@@ -1109,23 +1159,27 @@ class _OrderStatusState extends State<OrderStatus> {
                 },
                 popupProps: PopupProps.menu(
                   showSearchBox: true,
-                  loadingBuilder: (context, searchEntry) => Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      LoadingAnimationWidget.waveDots(
-                        color: Colors.blue,
-                        size: 20,
+                  loadingBuilder:
+                      (context, searchEntry) => Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          LoadingAnimationWidget.waveDots(
+                            color: Colors.blue,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('Loading Categories...'),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      const Text('Loading Categories...'),
-                    ],
-                  ),
                 ),
                 dropdownDecoratorProps: const DropDownDecoratorProps(
                   dropdownSearchDecoration: InputDecoration(
                     labelText: 'Select Category',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                   ),
                 ),
                 enabled: !_isLoading,
@@ -1140,13 +1194,24 @@ class _OrderStatusState extends State<OrderStatus> {
                     await _fetchOrderStatus(_currentFilters);
                   }),
                   const SizedBox(width: 8),
-                  _buildButton("Download", Icons.download, Colors.deepPurple, () {
-                    // TODO: Implement download logic
-                  }),
+                  _buildButton(
+                    "Download",
+                    Icons.download,
+                    Colors.deepPurple,
+                    () {
+                      // TODO: Implement download logic
+                    },
+                  ),
                   const SizedBox(width: 8),
-                  _buildButton("WhatsApp", FontAwesomeIcons.whatsapp, Colors.green, () {
-                    // TODO: Implement WhatsApp logic
-                  }, isFaIcon: true),
+                  _buildButton(
+                    "WhatsApp",
+                    FontAwesomeIcons.whatsapp,
+                    Colors.green,
+                    () {
+                      // TODO: Implement WhatsApp logic
+                    },
+                    isFaIcon: true,
+                  ),
                   const SizedBox(width: 8),
                   _buildButton("Clear", Icons.clear, Colors.red, clearFilters),
                 ],
@@ -1154,22 +1219,23 @@ class _OrderStatusState extends State<OrderStatus> {
             ),
             // Display Order Data
             Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _orderData.isEmpty
+              child:
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _orderData.isEmpty
                       ? const Center(child: Text('No orders found'))
                       : ListView.builder(
-                          itemCount: groupedData.length,
-                          itemBuilder: (context, index) {
-                            final group = groupedData[index];
-                            return OrderStatusCard(
-                              productName: group['productName'],
-                              orderNo: group['groupKey'], // OrderNo or StyleCode
-                              items: group['items'],
-                              showImage: _currentFilters['withImage'] == true,
-                            );
-                          },
-                        ),
+                        itemCount: groupedData.length,
+                        itemBuilder: (context, index) {
+                          final group = groupedData[index];
+                          return OrderStatusCard(
+                            productName: group['productName'],
+                            orderNo: group['groupKey'], // OrderNo or StyleCode
+                            items: group['items'],
+                            showImage: _currentFilters['withImage'] == true,
+                          );
+                        },
+                      ),
             ),
           ],
         ),
@@ -1190,15 +1256,22 @@ class _OrderStatusState extends State<OrderStatus> {
     return date != null ? DateFormat('dd-MM-yyyy').format(date) : '';
   }
 
-  Widget _buildButton(String label, IconData icon, Color color, VoidCallback onPressed, {bool isFaIcon = false}) {
+  Widget _buildButton(
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onPressed, {
+    bool isFaIcon = false,
+  }) {
     return Expanded(
       child: SizedBox(
         height: 40,
         child: OutlinedButton.icon(
           onPressed: onPressed,
-          icon: isFaIcon
-              ? FaIcon(icon, size: 12, color: color)
-              : Icon(icon, size: 12, color: color),
+          icon:
+              isFaIcon
+                  ? FaIcon(icon, size: 12, color: color)
+                  : Icon(icon, size: 12, color: color),
           label: Text(
             label,
             style: TextStyle(fontSize: 10, color: color),
@@ -1206,7 +1279,9 @@ class _OrderStatusState extends State<OrderStatus> {
           ),
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.zero,
+            ),
             side: BorderSide(color: color),
             foregroundColor: color,
             backgroundColor: Colors.transparent,

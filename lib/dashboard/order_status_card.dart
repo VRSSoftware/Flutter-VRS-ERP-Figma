@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/catalog/imagezoom.dart';
@@ -16,6 +15,25 @@ class OrderStatusCard extends StatelessWidget {
     required this.showImage,
     super.key,
   });
+
+  Color _getColorCode(String color) {
+    switch (color.toLowerCase()) {
+      case 'red':
+        return Colors.red;
+      case 'green':
+        return Colors.green;
+      case 'blue':
+        return Colors.blue;
+      case 'yellow':
+        return Colors.yellow[800]!;
+      case 'black':
+        return Colors.black;
+      case 'white':
+        return Colors.grey;
+      default:
+        return Colors.black;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +59,9 @@ class OrderStatusCard extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (showImage && firstItem['Style_Image'] != null && firstItem['Style_Image'].isNotEmpty)
+        if (showImage &&
+            firstItem['Style_Image'] != null &&
+            firstItem['Style_Image'].isNotEmpty)
           _buildItemImage(context, firstItem['Style_Image']),
         const SizedBox(width: 16),
         Expanded(
@@ -73,9 +93,13 @@ class OrderStatusCard extends StatelessWidget {
         child: Image.network(
           _getImageUrl(imageUrl),
           fit: BoxFit.contain,
-          loadingBuilder: (context, child, loadingProgress) =>
-              loadingProgress == null ? child : const Center(child: CircularProgressIndicator()),
-          errorBuilder: (context, error, stackTrace) => const _ImageErrorWidget(),
+          loadingBuilder:
+              (context, child, loadingProgress) =>
+                  loadingProgress == null
+                      ? child
+                      : const Center(child: CircularProgressIndicator()),
+          errorBuilder:
+              (context, error, stackTrace) => const _ImageErrorWidget(),
         ),
       ),
     );
@@ -113,56 +137,107 @@ class OrderStatusCard extends StatelessWidget {
     );
   }
 
-  Widget _buildOrderTable(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minWidth: MediaQuery.of(context).size.width - 64,
-        ),
-        child: Table(
-          border: TableBorder.all(color: Colors.grey.shade300, width: 1),
-          columnWidths: const {
-            0: FixedColumnWidth(100), // Shade
-            1: FixedColumnWidth(80),  // Size
-            2: FixedColumnWidth(120), // Party
-            3: FixedColumnWidth(80),  // OrderQty
-            4: FixedColumnWidth(80),  // DelvQty
-            5: FixedColumnWidth(80),  // SettleQty
-            6: FixedColumnWidth(80),  // PendingQty
-            7: FixedColumnWidth(100), // OrderNo
-          },
+Widget _buildOrderTable(BuildContext context) {
+  final Map<String, List<dynamic>> groupedItems = {};
+  for (var item in items) {
+    final color = item['Color'] ?? 'Unknown';
+    groupedItems.putIfAbsent(color, () => []).add(item);
+  }
+
+  // Dynamically build table rows
+  final List<TableRow> tableRows = [];
+
+  // Table header
+  tableRows.add(
+    TableRow(
+      decoration: BoxDecoration(color: Colors.grey.shade100),
+      children: [
+        _buildTableHeader('Shade'),
+        _buildTableHeader('Size'),
+        _buildTableHeader('Party'),
+        _buildTableHeader('Order Qty'),
+        _buildTableHeader('Delv Qty'),
+        _buildTableHeader('Settle Qty'),
+        _buildTableHeader('Pending Qty'),
+        _buildTableHeader('Order No'),
+      ],
+    ),
+  );
+
+  final entries = groupedItems.entries.toList();
+  for (int groupIndex = 0; groupIndex < entries.length; groupIndex++) {
+    final entry = entries[groupIndex];
+    final isLastGroup = groupIndex == entries.length - 1;
+
+    for (int i = 0; i < entry.value.length; i++) {
+      final item = entry.value[i];
+      tableRows.add(
+        TableRow(
           children: [
-            TableRow(
-              decoration: BoxDecoration(color: Colors.grey.shade100),
-              children: [
-                _buildTableHeader('Shade'),
-                _buildTableHeader('Size'),
-                _buildTableHeader('Party'),
-                _buildTableHeader('Order Qty'),
-                _buildTableHeader('Delv Qty'),
-                _buildTableHeader('Settle Qty'),
-                _buildTableHeader('Pending Qty'),
-                _buildTableHeader('Order No'),
-              ],
-            ),
-            ...items.map((item) => TableRow(
-                  children: [
-                    _buildTableCell(item['Color'] ?? ''),
-                    _buildTableCell(item['Size'] ?? ''),
-                    _buildTableCell(item['Party'] ?? ''),
-                    _buildTableCell(item['OrderQty']?.toString() ?? '0'),
-                    _buildTableCell(item['DelvQty']?.toString() ?? '0'),
-                    _buildTableCell(item['SettleQty']?.toString() ?? '0'),
-                    _buildTableCell(item['PendingQty']?.toString() ?? '0'),
-                    _buildTableCell(item['OrderNo'] ?? ''),
-                  ],
-                )),
+            if (i == 0)
+              TableCell(
+                verticalAlignment: TableCellVerticalAlignment.middle,
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Text(
+                    entry.key,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: _getColorCode(entry.key),
+                    ),
+                  ),
+                ),
+              )
+            else
+              const SizedBox(),
+            _buildTableCell(item['Size'] ?? ''),
+            _buildTableCell(item['Party'] ?? ''),
+            _buildTableCell(item['OrderQty']?.toString() ?? '0'),
+            _buildTableCell(item['DelvQty']?.toString() ?? '0'),
+            _buildTableCell(item['SettleQty']?.toString() ?? '0'),
+            _buildTableCell(item['PendingQty']?.toString() ?? '0'),
+            _buildTableCell(item['OrderNo'] ?? ''),
           ],
         ),
-      ),
-    );
+      );
+    }
+
+    if (!isLastGroup) {
+      tableRows.add(
+        TableRow(
+          children: List.generate(
+            8,
+            (_) => Container(height: 1, color: const Color.fromARGB(255, 124, 124, 124)),
+          ),
+        ),
+      );
+    }
   }
+
+  return SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: ConstrainedBox(
+      constraints: BoxConstraints(
+        minWidth: MediaQuery.of(context).size.width - 64,
+      ),
+      child: Table(
+        border: TableBorder.all(color: Colors.grey.shade300, width: 1),
+        columnWidths: const {
+          0: FixedColumnWidth(100),
+          1: FixedColumnWidth(80),
+          2: FixedColumnWidth(120),
+          3: FixedColumnWidth(80),
+          4: FixedColumnWidth(80),
+          5: FixedColumnWidth(80),
+          6: FixedColumnWidth(80),
+          7: FixedColumnWidth(100),
+        },
+        children: tableRows,
+      ),
+    ),
+  );
+}
 
   Widget _buildTableHeader(String text) {
     return TableCell(
@@ -183,10 +258,7 @@ class OrderStatusCard extends StatelessWidget {
       verticalAlignment: TableCellVerticalAlignment.middle,
       child: Padding(
         padding: const EdgeInsets.all(8),
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-        ),
+        child: Text(text, textAlign: TextAlign.center),
       ),
     );
   }
