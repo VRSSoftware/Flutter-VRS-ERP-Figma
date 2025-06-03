@@ -128,11 +128,13 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
   void _updateDateRange(String range) {
     final now = DateTime.now();
     setState(() {
-      selectedRange = range;
+      // selectedRange = range;
+      selectedRange = FilterData.selectedDateRange ?? 'Today';
       switch (range) {
         case 'Today':
           fromDate = DateTime(now.year, now.month, now.day);
           toDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
           break;
         case 'Yesterday':
           final yesterday = now.subtract(const Duration(days: 1));
@@ -213,6 +215,8 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
           break;
       }
     });
+    FilterData.fromDate = fromDate;
+    FilterData.toDate = toDate;
     _fetchOrderSummary();
   }
 
@@ -399,6 +403,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                             }).toList(),
                         onChanged: (String? newValue) {
                           if (newValue != null) {
+                            FilterData.selectedDateRange = newValue;
                             _updateDateRange(newValue);
                           }
                         },
@@ -523,7 +528,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                   children: [
                     GestureDetector(
                       onTap: () {
-                         _showOrderDetails('TOTALORDER');
+                        _showOrderDetails('TOTALORDER');
                         // Your tap logic here
                       },
                       child: Container(
@@ -867,6 +872,12 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                                   selectedCity ??
                                   KeyName(key: '', name: 'All Cities');
                             });
+                            setState(() {
+                              selectedRange = FilterData.selectedDateRange ?? 'Today';
+                              fromDate = FilterData.fromDate;
+                              toDate = FilterData.toDate;
+                            });
+
                             _fetchOrderSummary();
                           },
                         ),

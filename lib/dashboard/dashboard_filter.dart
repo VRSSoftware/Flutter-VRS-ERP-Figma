@@ -77,11 +77,11 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
       );
       statesList = List<KeyName>.from(args['statesList']);
       citiesList = List<KeyName>.from(args['citiesList']);
-      fromDate = args['fromDate'] as DateTime?;
-      toDate = args['toDate'] as DateTime?;
+      // fromDate = args['fromDate'] as DateTime?;
+      // toDate = args['toDate'] as DateTime?;
       //selectedLedger = args['selectedLedger'] as KeyName?;
       //selectedSalesperson = args['selectedSalesperson'] as KeyName?;
-      selectedDateRange = args['selectedDateRange'] as String? ?? 'Custom';
+      //selectedDateRange = args['selectedDateRange'] as String? ?? 'Custom';
     } else {
       // ledgerList = widget.ledgerList;
       // salespersonList = widget.salespersonList;
@@ -92,10 +92,13 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
   void initState() {
     super.initState();
     setState(() {
-      selectedsalespersons = FilterData.selectedSalespersons?? [];
+      selectedsalespersons = FilterData.selectedSalespersons ?? [];
       selectedCities = FilterData.selectedCities ?? [];
       selectedStates = FilterData.selectedStates ?? [];
       selectedLedgers = FilterData.selectedLedgers ?? [];
+      selectedDateRange = FilterData.selectedDateRange;
+      toDate = FilterData.toDate;
+      fromDate = FilterData.fromDate;
     });
   }
 
@@ -177,8 +180,10 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
       toDate = end;
       selectedDateRange = range;
     });
+    FilterData.selectedDateRange = selectedDateRange;
+    FilterData.fromDate = fromDate;
+    FilterData.toDate = toDate;
   }
-  
 
   Future<void> _pickDate(BuildContext context, bool isFromDate) async {
     final DateTime? picked = await showDatePicker(
@@ -331,42 +336,6 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
                         ),
                       ),
                     ),
-                    // DropdownSearch<KeyName>(
-                    //   items: ledgerList,
-                    //   selectedItem: selectedLedger,
-                    //   itemAsString: (KeyName? u) => u?.name ?? '',
-                    //   onChanged:
-                    //       (value) => setState(() => selectedLedger = value),
-                    //   popupProps: PopupProps.menu(
-                    //     showSearchBox: true,
-                    //     containerBuilder:
-                    //         (context, popupWidget) => Container(
-                    //           decoration: BoxDecoration(
-                    //             color: Colors.white,
-                    //             borderRadius: BorderRadius.circular(0),
-                    //             boxShadow: [
-                    //               BoxShadow(
-                    //                 color: Colors.grey.withOpacity(0.5),
-                    //                 spreadRadius: 2,
-                    //                 blurRadius: 5,
-                    //                 offset: Offset(0, 3),
-                    //               ),
-                    //             ],
-                    //           ),
-                    //           child: popupWidget,
-                    //         ),
-                    //   ),
-                    //   dropdownDecoratorProps: DropDownDecoratorProps(
-                    //     dropdownSearchDecoration: InputDecoration(
-                    //       labelText: 'Select Party',
-                    //       filled: true,
-                    //       fillColor: Colors.white,
-                    //       border: OutlineInputBorder(
-                    //         borderRadius: BorderRadius.circular(0),
-                    //       ),
-                    //     ),
-                    //   ),
-                    // ),
                   ],
                 ),
               ],
@@ -413,43 +382,6 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
                         ),
                       ),
                     ),
-                    // DropdownSearch<KeyName>(
-                    //   items: salespersonList,
-                    //   selectedItem: selectedSalesperson,
-                    //   itemAsString: (KeyName? u) => u?.name ?? '',
-                    //   onChanged:
-                    //       (value) =>
-                    //           setState(() => selectedSalesperson = value),
-                    //   popupProps: PopupProps.menu(
-                    //     showSearchBox: true,
-                    //     containerBuilder:
-                    //         (context, popupWidget) => Container(
-                    //           decoration: BoxDecoration(
-                    //             color: Colors.white,
-                    //             borderRadius: BorderRadius.circular(0),
-                    //             boxShadow: [
-                    //               BoxShadow(
-                    //                 color: Colors.grey.withOpacity(0.5),
-                    //                 spreadRadius: 2,
-                    //                 blurRadius: 5,
-                    //                 offset: Offset(0, 3),
-                    //               ),
-                    //             ],
-                    //           ),
-                    //           child: popupWidget,
-                    //         ),
-                    //   ),
-                    //   dropdownDecoratorProps: DropDownDecoratorProps(
-                    //     dropdownSearchDecoration: InputDecoration(
-                    //       labelText: 'Select Salesperson',
-                    //       filled: true,
-                    //       fillColor: Colors.white,
-                    //       border: OutlineInputBorder(
-                    //         borderRadius: BorderRadius.circular(0),
-                    //       ),
-                    //     ),
-                    //   ),
-                    // ),
                   ],
                 ),
               ],
@@ -505,24 +437,26 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
                     items: citiesList,
                     selectedItems: selectedCities,
                     itemAsString: (KeyName? u) => u?.name ?? '',
-                    onChanged: (value) => setState(() => selectedCities = value),
+                    onChanged:
+                        (value) => setState(() => selectedCities = value),
                     popupProps: PopupPropsMultiSelection.menu(
                       showSearchBox: true,
-                      containerBuilder: (context, popupWidget) => Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.5),
-                              spreadRadius: 2,
-                              blurRadius: 5,
-                              offset: const Offset(0, 3),
+                      containerBuilder:
+                          (context, popupWidget) => Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: popupWidget,
-                      ),
+                            child: popupWidget,
+                          ),
                     ),
                     dropdownDecoratorProps: DropDownDecoratorProps(
                       dropdownSearchDecoration: InputDecoration(
@@ -571,6 +505,9 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
                         FilterData.selectedLedgers = selectedLedgers;
                         FilterData.selectedStates = selectedStates;
                         FilterData.selectedCities = selectedCities;
+                        FilterData.selectedDateRange = selectedDateRange;
+                        FilterData.fromDate = fromDate;
+                        FilterData.toDate = toDate;
 
                         widget.onApplyFilters();
                         Navigator.pop(context);
@@ -594,6 +531,17 @@ class _DashboardFilterPageState extends State<DashboardFilterPage> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
+                        FilterData.selectedSalespersons = [];
+                        FilterData.selectedLedgers = [];
+                        FilterData.selectedStates = [];
+                        FilterData.selectedCities = [];
+
+                        setState(() {
+                          selectedsalespersons = FilterData.selectedSalespersons ?? [];
+                          selectedCities = FilterData.selectedCities ?? [];
+                          selectedStates = FilterData.selectedStates ?? [];
+                          selectedLedgers = FilterData.selectedLedgers ?? [];
+                        });
                         setState(() {
                           selectedLedger = null;
                           selectedSalesperson = null;
