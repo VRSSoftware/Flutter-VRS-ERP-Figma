@@ -226,22 +226,26 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         "ToDate":
             "${toDate.year}-${toDate.month.toString().padLeft(2, '0')}-${toDate.day.toString().padLeft(2, '0')}",
         "CoBr_Id": UserSession.coBrId,
-        "CustKey": UserSession.userType == 'C'
-            ? UserSession.userLedKey
-            : FilterData.selectedLedgers!.isNotEmpty
+        "CustKey":
+            UserSession.userType == 'C'
+                ? UserSession.userLedKey
+                : FilterData.selectedLedgers!.isNotEmpty
                 ? FilterData.selectedLedgers!.map((b) => b.key).join(',')
                 : null,
-        "SalesPerson": UserSession.userType == 'S'
-            ? UserSession.userLedKey
-            : FilterData.selectedSalespersons!.isNotEmpty == true
+        "SalesPerson":
+            UserSession.userType == 'S'
+                ? UserSession.userLedKey
+                : FilterData.selectedSalespersons!.isNotEmpty == true
                 ? FilterData.selectedSalespersons!.map((b) => b.key).join(',')
                 : null,
-        "State": FilterData.selectedStates!.isNotEmpty == true
-            ? FilterData.selectedStates!.map((b) => b.key).join(',')
-            : null,
-        "City": FilterData.selectedCities!.isNotEmpty == true
-            ? FilterData.selectedCities!.map((b) => b.key).join(',')
-            : null,
+        "State":
+            FilterData.selectedStates!.isNotEmpty == true
+                ? FilterData.selectedStates!.map((b) => b.key).join(',')
+                : null,
+        "City":
+            FilterData.selectedCities!.isNotEmpty == true
+                ? FilterData.selectedCities!.map((b) => b.key).join(',')
+                : null,
         "orderType": null,
         "Detail": null,
       });
@@ -276,8 +280,9 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -285,12 +290,28 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
   Widget build(BuildContext context) {
     // Calculate progress for each status based on orderDocCount
     double totalOrders = double.tryParse(orderDocCount) ?? 0;
-    double pendingProgress = totalOrders > 0 ? (double.tryParse(pendingDocCount) ?? 0) / totalOrders : 0;
-    double packedProgress = totalOrders > 0 ? (double.tryParse(packedDocCount) ?? 0) / totalOrders : 0;
-    double cancelledProgress = totalOrders > 0 ? (double.tryParse(cancelledDocCount) ?? 0) / totalOrders : 0;
-    double invoicedProgress = totalOrders > 0 ? (double.tryParse(invoicedDocCount) ?? 0) / totalOrders : 0;
-    double inHandProgress = totalOrders > 0 ? (double.tryParse(inHand) ?? 0) / totalOrders : 0;
-    double toBeReceivedProgress = totalOrders > 0 ? (double.tryParse(toBeReceived) ?? 0) / totalOrders : 0;
+    double pendingProgress =
+        totalOrders > 0
+            ? (double.tryParse(pendingDocCount) ?? 0) / totalOrders
+            : 0;
+    double packedProgress =
+        totalOrders > 0
+            ? (double.tryParse(packedDocCount) ?? 0) / totalOrders
+            : 0;
+    double cancelledProgress =
+        totalOrders > 0
+            ? (double.tryParse(cancelledDocCount) ?? 0) / totalOrders
+            : 0;
+    double invoicedProgress =
+        totalOrders > 0
+            ? (double.tryParse(invoicedDocCount) ?? 0) / totalOrders
+            : 0;
+    double inHandProgress =
+        totalOrders > 0 ? (double.tryParse(inHand) ?? 0) / totalOrders : 0;
+    double toBeReceivedProgress =
+        totalOrders > 0
+            ? (double.tryParse(toBeReceived) ?? 0) / totalOrders
+            : 0;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -303,10 +324,11 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         backgroundColor: AppColors.primaryColor,
         elevation: 0,
         leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
+          builder:
+              (context) => IconButton(
+                icon: const Icon(Icons.menu, color: Colors.white),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -350,30 +372,31 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                         value: selectedRange,
                         isExpanded: true,
                         underline: const SizedBox(),
-                        items: <String>[
-                          'Custom',
-                          'Today',
-                          'Yesterday',
-                          'This Week',
-                          'Previous Week',
-                          'This Month',
-                          'Previous Month',
-                          'This Quarter',
-                          'Previous Quarter',
-                          'This Year',
-                          'Previous Year',
-                        ].map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(
-                              value,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.black54,
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                        items:
+                            <String>[
+                              'Custom',
+                              'Today',
+                              'Yesterday',
+                              'This Week',
+                              'Previous Week',
+                              'This Month',
+                              'Previous Month',
+                              'This Quarter',
+                              'Previous Quarter',
+                              'This Year',
+                              'Previous Year',
+                            ].map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(
+                                  value,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
                         onChanged: (String? newValue) {
                           if (newValue != null) {
                             _updateDateRange(newValue);
@@ -409,7 +432,8 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                                       borderRadius: BorderRadius.circular(0),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
                                           '${fromDate.day.toString().padLeft(2, '0')}/${fromDate.month.toString().padLeft(2, '0')}/${fromDate.year}',
@@ -455,7 +479,8 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                                       borderRadius: BorderRadius.circular(0),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
                                           '${toDate.day.toString().padLeft(2, '0')}/${toDate.month.toString().padLeft(2, '0')}/${toDate.year}',
@@ -496,40 +521,101 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    GestureDetector(
+                      onTap: () {
+                         _showOrderDetails('TOTALORDER');
+                        // Your tap logic here
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color(0xFFB2EBF2),
+                              Color(0xFF80DEEA),
+                            ], // Example blue gradient
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'TOTAL ORDER',
-                              style: GoogleFonts.quando(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.deepPurple,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              orderDocCount,
-                              style: GoogleFonts.poppins(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.deepPurple,
-                              ),
-                            ),
-                            Text(
-                              'Qty: ${double.parse(orderQty).toStringAsFixed(0)}',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                color: Colors.deepPurple,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'TOTAL ORDER',
+                                  style: GoogleFonts.quando(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.deepPurple,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  orderDocCount,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.deepPurple,
+                                  ),
+                                ),
+                                Text(
+                                  'Qty: ${double.parse(orderQty).toStringAsFixed(0)}',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    color: Colors.deepPurple,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
+                      ),
                     ),
+
+                    // GestureDetector(
+                    //   //onTap: onTotalOrderTap,
+                    //   onTap: () {
+
+                    //   },
+                    //   child: Row(
+                    //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //     children: [
+                    //       Column(
+                    //         crossAxisAlignment: CrossAxisAlignment.start,
+                    //         children: [
+                    //           Text(
+                    //             'TOTAL ORDER',
+                    //             style: GoogleFonts.quando(
+                    //               fontSize: 16,
+                    //               fontWeight: FontWeight.bold,
+                    //               color: Colors.deepPurple,
+                    //             ),
+                    //           ),
+                    //           const SizedBox(height: 8),
+                    //           Text(
+                    //             orderDocCount,
+                    //             style: GoogleFonts.poppins(
+                    //               fontSize: 24,
+                    //               fontWeight: FontWeight.bold,
+                    //               color: Colors.deepPurple,
+                    //             ),
+                    //           ),
+                    //           Text(
+                    //             'Qty: ${double.parse(orderQty).toStringAsFixed(0)}',
+                    //             style: GoogleFonts.poppins(
+                    //               fontSize: 14,
+                    //               color: Colors.deepPurple,
+                    //             ),
+                    //           ),
+                    //         ],
+                    //       ),
+                    //     ],
+                    //   ),
+                    // ),
                     const SizedBox(height: 16),
                     // Row 1: Pending, Packed
                     Row(
@@ -590,6 +676,112 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                 ),
               ),
             ),
+
+            // Card(
+            //   elevation: 0,
+            //   color: Colors.blue.withOpacity(0.2),
+            //   shape: RoundedRectangleBorder(
+            //     borderRadius: BorderRadius.circular(5),
+            //   ),
+            //   child: Padding(
+            //     padding: const EdgeInsets.all(16.0),
+            //     child: Column(
+            //       crossAxisAlignment: CrossAxisAlignment.start,
+            //       children: [
+            //         Row(
+            //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //           children: [
+            //             Column(
+            //               crossAxisAlignment: CrossAxisAlignment.start,
+            //               children: [
+            //                 Text(
+            //                   'TOTAL ORDER',
+            //                   style: GoogleFonts.quando(
+            //                     fontSize: 16,
+            //                     fontWeight: FontWeight.bold,
+            //                     color: Colors.deepPurple,
+            //                   ),
+            //                 ),
+            //                 const SizedBox(height: 8),
+            //                 Text(
+            //                   orderDocCount,
+            //                   style: GoogleFonts.poppins(
+            //                     fontSize: 24,
+            //                     fontWeight: FontWeight.bold,
+            //                     color: Colors.deepPurple,
+            //                   ),
+            //                 ),
+            //                 Text(
+            //                   'Qty: ${double.parse(orderQty).toStringAsFixed(0)}',
+            //                   style: GoogleFonts.poppins(
+            //                     fontSize: 14,
+            //                     color: Colors.deepPurple,
+            //                   ),
+            //                 ),
+            //               ],
+            //             ),
+            //           ],
+            //         ),
+            //         const SizedBox(height: 16),
+            //         // Row 1: Pending, Packed
+            //         Row(
+            //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //           children: [
+            //             Expanded(
+            //               child: _buildStatusCard(
+            //                 title: 'PENDING',
+            //                 count: pendingDocCount,
+            //                 qty: pendingQty,
+            //                 progress: pendingProgress,
+            //                 color: const Color(0xFFE6F0FA),
+            //                 icon: Icons.hourglass_empty,
+            //               ),
+            //             ),
+            //             const SizedBox(width: 16),
+            //             Expanded(
+            //               child: _buildStatusCard(
+            //                 title: 'PACKED',
+            //                 count: packedDocCount,
+            //                 qty: packedQty,
+            //                 progress: packedProgress,
+            //                 color: const Color(0xFFE8F5E9),
+            //                 icon: Icons.check_circle,
+            //               ),
+            //             ),
+            //           ],
+            //         ),
+            //         const SizedBox(height: 16),
+            //         // Row 2: Cancelled, Invoiced
+            //         Row(
+            //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //           children: [
+            //             Expanded(
+            //               child: _buildStatusCard(
+            //                 title: 'CANCELLED',
+            //                 count: cancelledDocCount,
+            //                 qty: cancelledQty,
+            //                 progress: cancelledProgress,
+            //                 color: const Color(0xFFFFE6E6),
+            //                 icon: Icons.cancel,
+            //               ),
+            //             ),
+            //             const SizedBox(width: 16),
+            //             Expanded(
+            //               child: _buildStatusCard(
+            //                 title: 'INVOICED',
+            //                 count: invoicedDocCount,
+            //                 qty: invoicedQty,
+            //                 progress: invoicedProgress,
+            //                 color: const Color(0xFFF3E8FF),
+            //                 icon: Icons.receipt,
+            //               ),
+            //             ),
+            //           ],
+            //         ),
+            //       ],
+            //     ),
+            //   ),
+            // ),
             const SizedBox(height: 32),
             // Inventory Summary Box
             Card(
@@ -653,29 +845,31 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
             await Navigator.push(
               context,
               PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) =>
-                    DashboardFilterPage(
-                  ledgerList: ledgerList,
-                  salespersonList: salespersonList,
-                  onApplyFilters: ({
-                    KeyName? selectedLedger,
-                    KeyName? selectedSalesperson,
-                    DateTime? fromDate,
-                    DateTime? toDate,
-                    KeyName? selectedState,
-                    KeyName? selectedCity,
-                  }) {
-                    setState(() {
-                      this.selectedLedger = selectedLedger;
-                      this.selectedSalesperson = selectedSalesperson;
-                      this.fromDate = fromDate ?? this.fromDate;
-                      this.toDate = toDate ?? this.toDate;
-                      this.selectedCity =
-                          selectedCity ?? KeyName(key: '', name: 'All Cities');
-                    });
-                    _fetchOrderSummary();
-                  },
-                ),
+                pageBuilder:
+                    (context, animation, secondaryAnimation) =>
+                        DashboardFilterPage(
+                          ledgerList: ledgerList,
+                          salespersonList: salespersonList,
+                          onApplyFilters: ({
+                            KeyName? selectedLedger,
+                            KeyName? selectedSalesperson,
+                            DateTime? fromDate,
+                            DateTime? toDate,
+                            KeyName? selectedState,
+                            KeyName? selectedCity,
+                          }) {
+                            setState(() {
+                              this.selectedLedger = selectedLedger;
+                              this.selectedSalesperson = selectedSalesperson;
+                              this.fromDate = fromDate ?? this.fromDate;
+                              this.toDate = toDate ?? this.toDate;
+                              this.selectedCity =
+                                  selectedCity ??
+                                  KeyName(key: '', name: 'All Cities');
+                            });
+                            _fetchOrderSummary();
+                          },
+                        ),
                 settings: RouteSettings(
                   arguments: {
                     'ledgerList': ledgerList,
@@ -739,11 +933,12 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => OrderDetailsPage(
-                orderDetails: List<Map<String, dynamic>>.from(data),
-                fromDate: fromDate,
-                toDate: toDate,
-              ),
+              builder:
+                  (context) => OrderDetailsPage(
+                    orderDetails: List<Map<String, dynamic>>.from(data),
+                    fromDate: fromDate,
+                    toDate: toDate,
+                  ),
             ),
           );
         } else {
@@ -759,8 +954,9 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -782,7 +978,8 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
       onTap: () {
         String orderType = title.replaceAll(' ', '');
         print(orderType);
-        if (orderType.contains('INHAND') || orderType.contains('TOBERECEIVED')) {
+        if (orderType.contains('INHAND') ||
+            orderType.contains('TOBERECEIVED')) {
         } else if (orderType.contains('PENDING') ||
             orderType.contains('PACKED') ||
             orderType.contains('CANCELLED') ||
@@ -829,9 +1026,10 @@ class __StatusCardState extends State<_StatusCard>
       duration: const Duration(seconds: 1),
       vsync: this,
     );
-    _progressAnimation = Tween<double>(begin: 0.0, end: widget.progress).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _progressAnimation = Tween<double>(
+      begin: 0.0,
+      end: widget.progress,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
     _controller.forward();
   }
 
@@ -842,9 +1040,7 @@ class __StatusCardState extends State<_StatusCard>
       _progressAnimation = Tween<double>(
         begin: _progressAnimation.value,
         end: widget.progress,
-      ).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-      );
+      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
       _controller
         ..reset()
         ..forward();
@@ -864,9 +1060,7 @@ class __StatusCardState extends State<_StatusCard>
       child: Card(
         elevation: 0,
         color: widget.color,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(5),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Column(
@@ -885,8 +1079,9 @@ class __StatusCardState extends State<_StatusCard>
                           value: _progressAnimation.value,
                           strokeWidth: 6,
                           backgroundColor: Colors.white.withOpacity(0.3),
-                          valueColor:
-                              const AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Colors.blueAccent,
+                          ),
                         );
                       },
                     ),
@@ -915,10 +1110,7 @@ class __StatusCardState extends State<_StatusCard>
               const SizedBox(height: 4),
               Text(
                 'Qty: ${double.parse(widget.qty).toStringAsFixed(0)}',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: Colors.black54,
-                ),
+                style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
                 textAlign: TextAlign.center,
               ),
             ],
