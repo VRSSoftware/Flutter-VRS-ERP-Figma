@@ -928,11 +928,27 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
               "${fromDate.year}-${fromDate.month.toString().padLeft(2, '0')}-${fromDate.day.toString().padLeft(2, '0')}",
           "ToDate":
               "${toDate.year}-${toDate.month.toString().padLeft(2, '0')}-${toDate.day.toString().padLeft(2, '0')}",
-          "CoBr_Id": "01",
-          "CustKey": customer,
-          "SalesPerson": salesman,
-          "State": state,
-          "City": city,
+          "CoBr_Id": UserSession.coBrId,
+         "CustKey":
+            UserSession.userType == 'C'
+                ? UserSession.userLedKey
+                : FilterData.selectedLedgers!.isNotEmpty
+                ? FilterData.selectedLedgers!.map((b) => b.key).join(',')
+                : null,
+        "SalesPerson":
+            UserSession.userType == 'S'
+                ? UserSession.userLedKey
+                : FilterData.selectedSalespersons!.isNotEmpty == true
+                ? FilterData.selectedSalespersons!.map((b) => b.key).join(',')
+                : null,
+        "State":
+            FilterData.selectedStates!.isNotEmpty == true
+                ? FilterData.selectedStates!.map((b) => b.key).join(',')
+                : null,
+        "City":
+            FilterData.selectedCities!.isNotEmpty == true
+                ? FilterData.selectedCities!.map((b) => b.key).join(',')
+                : null,
           "orderType": formattedOrderType,
           "Detail": 1,
         }),
@@ -949,6 +965,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                     orderDetails: List<Map<String, dynamic>>.from(data),
                     fromDate: fromDate,
                     toDate: toDate,
+                    orderType : formattedOrderType,
                   ),
             ),
           );

@@ -6,19 +6,22 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:marquee/marquee.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/dashboard/data.dart';
 
 class CustomerOrderDetailsPage extends StatefulWidget {
   final String custKey;
   final String customerName;
   final DateTime fromDate;
   final DateTime toDate;
+  final String orderType;
 
   const CustomerOrderDetailsPage({
     super.key,
     required this.custKey,
     required this.customerName,
     required this.fromDate,
-    required this.toDate,
+    required this.toDate,       
+    required this.orderType,       
   });
 
   @override
@@ -51,12 +54,33 @@ class _CustomerOrderDetailsPageState extends State<CustomerOrderDetailsPage> {
         body: jsonEncode({
           "FromDate": DateFormat('yyyy-MM-dd').format(widget.fromDate),
           "ToDate": DateFormat('yyyy-MM-dd').format(widget.toDate),
-          "CoBr_Id": "01",
+          "CoBr_Id": UserSession.coBrId,
           "CustKey": widget.custKey,
-          "SalesPerson": null,
-          "State": null,
-          "City": null,
-          "orderType": "TotalOrder",
+          // "CustKey":
+          //   UserSession.userType == 'C'
+          //       ? UserSession.userLedKey
+          //       : FilterData.selectedLedgers!.isNotEmpty
+          //       ? FilterData.selectedLedgers!.map((b) => b.key).join(',')
+          //       : null,
+        "SalesPerson":
+            UserSession.userType == 'S'
+                ? UserSession.userLedKey
+                : FilterData.selectedSalespersons!.isNotEmpty == true
+                ? FilterData.selectedSalespersons!.map((b) => b.key).join(',')
+                : null,
+        "State":
+            FilterData.selectedStates!.isNotEmpty == true
+                ? FilterData.selectedStates!.map((b) => b.key).join(',')
+                : null,
+        "City":
+            FilterData.selectedCities!.isNotEmpty == true
+                ? FilterData.selectedCities!.map((b) => b.key).join(',')
+                : null,
+          // "SalesPerson": null,
+          // "State": null,
+          // "City": null,
+          "orderType": widget.orderType,
+          // "orderType": "TotalOrder",
           "Detail": 2,
         }),
       );

@@ -8,12 +8,14 @@ class OrderDetailsPage extends StatefulWidget {
   final List<Map<String, dynamic>> orderDetails;
   final DateTime fromDate;
   final DateTime toDate;
+  final String orderType;
 
   const OrderDetailsPage({
     super.key,
     required this.orderDetails,
     required this.fromDate,
     required this.toDate,
+    required this.orderType,
   });
 
   @override
@@ -320,6 +322,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                   customerName: order['customernamewithcity'] ?? '',
                   fromDate: widget.fromDate,
                   toDate: widget.toDate,
+                  orderType : widget.orderType
                 ),
           ),
         );
