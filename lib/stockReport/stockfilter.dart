@@ -653,42 +653,82 @@ class _StockFilterPageState extends State<StockFilterPage> {
             ),
           ),
 
-          // Filter Button at the Bottom
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  padding: EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () {
-                  Map<String, dynamic> selectedFilters = {
-                    'styles': selectedStyles,
-                    'shades': selectedShades,
-                    'sizes': selectedSizes,
-                    'brands': selectedBrands,
-                    'fromMRP': fromMRPController.text,
-                    'toMRP': toMRPController.text,
-                    'imageItems': selectedImageItems,
-                    'stockStatus': stockStatus,
-                    'withImage': withImage, 
-                  };
-                  Navigator.pop(context, selectedFilters);
-                },
-                child: Text(
-                  'Apply Filters',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
+      // Filter Buttons at the Bottom
+Positioned(
+  bottom: 0,
+  left: 0,
+  right: 0,
+  child: Padding(
+    padding: const EdgeInsets.all(16),
+    child: Row(
+      children: [
+            // Apply Filters Button
+        Expanded(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryColor,
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(0),
               ),
             ),
+            onPressed: () {
+              Map<String, dynamic> selectedFilters = {
+                'styles': selectedStyles,
+                'shades': selectedShades,
+                'sizes': selectedSizes,
+                'brands': selectedBrands,
+                'fromMRP': fromMRPController.text,
+                'toMRP': toMRPController.text,
+                'imageItems': selectedImageItems,
+                'stockStatus': stockStatus,
+                'withImage': withImage,
+              };
+              Navigator.pop(context, selectedFilters);
+            },
+            child: const Text(
+              'Apply Filters',
+              style: TextStyle(fontSize: 16, color: Colors.white),
+            ),
           ),
+        ),
+         const SizedBox(width: 10),
+    
+        // Clear Filters Button
+        Expanded(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey,
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(0),
+              ),
+            ),
+            onPressed: () {
+              setState(() {
+                selectedStyles = [];
+                selectedShades = [];
+                selectedSizes = [];
+                selectedBrands = [];
+                fromMRPController.clear();
+                toMRPController.clear();
+                selectedImageItems = [];
+               // stockStatus = null;
+                withImage = false;
+              });
+            },
+            child: const Text(
+              'Clear Filters',
+              style: TextStyle(fontSize: 16, color: Colors.white),
+            ),
+          ),
+        ),
+       
+      ],
+    ),
+  ),
+),
+
         ],
       ),
     );
@@ -893,7 +933,7 @@ class _CustomExpansionTileState extends State<CustomExpansionTile> {
         },
         tilePadding: EdgeInsets.symmetric(horizontal: 16),
         backgroundColor: Colors.white,
-        collapsedBackgroundColor: Colors.grey.withOpacity(0.2),
+        collapsedBackgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(0),
           side: BorderSide(
