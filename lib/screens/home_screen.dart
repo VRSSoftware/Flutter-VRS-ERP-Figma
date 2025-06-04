@@ -169,7 +169,6 @@
 // }
 
 
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
@@ -232,25 +231,23 @@ class HomeScreen extends StatelessWidget {
 
     return Column(
       children: [
-    
         _buildFeatureButton(
           'assets/images/catalog.png',
           'Catalog',
           () => Navigator.pushNamed(context, '/catalog'),
           buttonWidth,
           true,
-          Colors.green,
+          Colors.blue, // Changed to blue
         ),
-             const SizedBox(height: 14),
+        const SizedBox(height: 14),
         _buildFeatureButton(
           'assets/images/orderbooking.png',
           'Order Booking',
           () => Navigator.pushNamed(context, '/orderbooking'),
           buttonWidth,
           false,
-          Colors.blue,
+          Colors.indigo, // Changed to indigo
         ),
-       
         const SizedBox(height: 14),
         _buildFeatureButton(
           'assets/images/register.png',
@@ -258,138 +255,136 @@ class HomeScreen extends StatelessWidget {
           () => Navigator.pushNamed(context, '/registerOrders'),
           buttonWidth,
           true,
-          Colors.orange,
+          Colors.cyan, // Changed to cyan
         ),
         const SizedBox(height: 14),
-        if(UserSession.userType != 'C')...[
-        _buildFeatureButton(
-          'assets/images/report.png',
-          'Stock Report',
-          () => Navigator.pushNamed(context, '/stockReport'),
-          buttonWidth,
-          false,
-          Colors.purple,
-        ),
-        const SizedBox(height: 14),
+        if (UserSession.userType != 'C') ...[
+          _buildFeatureButton(
+            'assets/images/report.png',
+            'Stock Report',
+            () => Navigator.pushNamed(context, '/stockReport'),
+            buttonWidth,
+            false,
+            Colors.lightBlue, // Changed to light blue
+          ),
+          const SizedBox(height: 14),
         ],
-       
         _buildFeatureButton(
           'assets/images/dashboard.png',
           'Dashboard',
           () => Navigator.pushNamed(context, '/dashboard'),
           buttonWidth,
           true,
-          Colors.teal,
+          Colors.blueGrey, // Changed to blue-grey
         ),
-          const SizedBox(height: 14),
-       
-          _buildFeatureButton(
+        const SizedBox(height: 14),
+        _buildFeatureButton(
           'assets/images/team.png',
           'Team',
           () => Navigator.pushNamed(context, '/home'),
           buttonWidth,
           false,
-          Colors.pinkAccent,
+          Colors.blueAccent, // Changed to blue accent
         ),
       ],
     );
   }
 
-Widget _buildFeatureButton(
-  String imagePath,
-  String label,
-  VoidCallback onTap,
-  double width,
-  bool imageOnLeft,
-  Color bgColor,
-) {
-  return GestureDetector(
-    onTap: onTap,
-    child: Container(
-      width: width,
-      height: 95,
-      decoration: BoxDecoration(
-        color: bgColor.withOpacity(0.1), // Background for the entire container
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: imageOnLeft
-            ? [
-                // Image on left
-                Container(
-                  width: 100, // Square container for image
-                  height: 100,
-                  color: bgColor, // Full background color for image
-                  child: Center(
-                    child: Image.asset(
-                      imagePath,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-                // White vertical divider
-                Container(
-                  width: 4,
-                  height: double.infinity,
-                  color: Colors.white,
-                ),
-                // Text on right
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    child: Text(
-                      label,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.roboto(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: bgColor, // Text color set to bgColor
+  Widget _buildFeatureButton(
+    String imagePath,
+    String label,
+    VoidCallback onTap,
+    double width,
+    bool imageOnLeft,
+    Color bgColor,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: width,
+        height: 95,
+        decoration: BoxDecoration(
+          color: bgColor.withOpacity(0.1), // Background for the entire container
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: imageOnLeft
+              ? [
+                  // Image on left
+                  Container(
+                    width: 100, // Square container for image
+                    height: 100,
+                    color: bgColor, // Full background color for image
+                    child: Center(
+                      child: Image.asset(
+                        imagePath,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.contain,
                       ),
                     ),
                   ),
-                ),
-              ]
-            : [
-                // Text on left
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    child: Text(
-                      label,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.roboto(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: bgColor, // Text color set to bgColor
+                  // White vertical divider
+                  Container(
+                    width: 4,
+                    height: double.infinity,
+                    color: Colors.white,
+                  ),
+                  // Text on right
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      child: Text(
+                        label,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.roboto(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: bgColor, // Text color set to bgColor
+                        ),
                       ),
                     ),
                   ),
-                ),
-                // White vertical divider
-                Container(
-                  width: 4,
-                  height: double.infinity,
-                  color: Colors.white,
-                ),
-                // Image on right
-                Container(
-                  width: 100, // Square container for image
-                  height: 100,
-                  color: bgColor, // Full background color for image
-                  child: Center(
-                    child: Image.asset(
-                      imagePath,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.contain,
+                ]
+              : [
+                  // Text on left
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      child: Text(
+                        label,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.roboto(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: bgColor, // Text color set to bgColor
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  // White vertical divider
+                  Container(
+                    width: 4,
+                    height: double.infinity,
+                    color: Colors.white,
+                  ),
+                  // Image on right
+                  Container(
+                    width: 100, // Square container for image
+                    height: 100,
+                    color: bgColor, // Full background color for image
+                    child: Center(
+                      child: Image.asset(
+                        imagePath,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
