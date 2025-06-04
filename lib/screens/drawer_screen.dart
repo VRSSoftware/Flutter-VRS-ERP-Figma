@@ -101,7 +101,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
               ..._iconPaths.keys
                   .where((title) {
                     if (UserSession.userType != 'C') return true;
-                    return title != 'Stock Report' && title != 'Dashboard';
+                    return title != 'Stock Report';
                   })
                   .map(
                     (title) =>

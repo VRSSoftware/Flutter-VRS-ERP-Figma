@@ -19,12 +19,13 @@ class BottomNavigationWidget extends StatelessWidget {
       const BottomNavigationBarItem(icon: Icon(CupertinoIcons.home), label: 'Home'),
       const BottomNavigationBarItem(icon: Icon(CupertinoIcons.square_list_fill), label: 'Catalog'),
       const BottomNavigationBarItem(icon: Icon(CupertinoIcons.cart_fill_badge_plus), label: 'Order'),
+      const BottomNavigationBarItem(icon: Icon(CupertinoIcons.tray_full_fill), label: 'Dashboard'),
     ];
 
     if (UserSession.userType != 'C') {
       navItems.addAll([
         const BottomNavigationBarItem(icon: Icon(CupertinoIcons.today), label: 'Report'),
-        const BottomNavigationBarItem(icon: Icon(CupertinoIcons.tray_full_fill), label: 'Dashboard'),
+        // const BottomNavigationBarItem(icon: Icon(CupertinoIcons.tray_full_fill), label: 'Dashboard'),
       ]);
     }
 

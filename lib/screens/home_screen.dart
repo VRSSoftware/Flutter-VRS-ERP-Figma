@@ -272,7 +272,7 @@ class HomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         ],
-        if(UserSession.userType != 'C')...[
+        if(UserSession.userType == 'C')...[
         _buildFeatureButton(
           'assets/images/dashboard.png',
           'Dashboard',
