@@ -272,7 +272,7 @@ class HomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         ],
-        if(UserSession.userType == 'C')...[
+       
         _buildFeatureButton(
           'assets/images/dashboard.png',
           'Dashboard',
@@ -282,7 +282,7 @@ class HomeScreen extends StatelessWidget {
           Colors.teal,
         ),
           const SizedBox(height: 14),
-        ],
+       
           _buildFeatureButton(
           'assets/images/team.png',
           'Team',
