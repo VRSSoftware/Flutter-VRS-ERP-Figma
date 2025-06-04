@@ -57,6 +57,7 @@ dependencies:
   marquee: ^2.2.3
   font_awesome_flutter: ^10.7.0
   loading_animation_widget: ^1.2.0+4
+  url_launcher: ^6.3.0
   # installed_apps: ^1.6.0
   google_fonts: ^4.0.4
  # android_intent_plus: ^4.0.2

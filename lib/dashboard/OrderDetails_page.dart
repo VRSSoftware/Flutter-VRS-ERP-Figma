@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/dashboard/customerOrderDetailsPage.dart';
 import 'package:vrs_erp_figma/dashboard/orderStatus.dart';
-
+import 'package:url_launcher/url_launcher.dart';
 class OrderDetailsPage extends StatefulWidget {
   final List<Map<String, dynamic>> orderDetails;
   final DateTime fromDate;
@@ -22,7 +23,73 @@ class OrderDetailsPage extends StatefulWidget {
   State<OrderDetailsPage> createState() => _OrderDetailsPageState();
 }
 
+
+
 class _OrderDetailsPageState extends State<OrderDetailsPage> {
+
+  Future<void> _launchWhatsApp(String phoneNumber) async {
+  final whatsappUrl = "https://wa.me/$phoneNumber";
+  if (await canLaunch(whatsappUrl)) {
+    await launch(whatsappUrl);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not launch WhatsApp')),
+    );
+  }
+}
+
+Future<void> _makePhoneCall(String phoneNumber) async {
+  final phoneUrl = "tel:$phoneNumber";
+  if (await canLaunch(phoneUrl)) {
+    await launch(phoneUrl);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not make a call')),
+    );
+  }
+}  
+
+void _showContactOptions(BuildContext context, String phoneNumber) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+    ), 
+    builder: (context) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const FaIcon(
+              FontAwesomeIcons.whatsapp,
+              color: Colors.green,
+            ),
+            title: const Text('Message on WhatsApp'),
+            onTap: () {
+              Navigator.pop(context);
+              _launchWhatsApp(phoneNumber);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.call, color: Colors.blue),
+            title: const Text('Call'),
+            onTap: () {
+              Navigator.pop(context);
+              _makePhoneCall(phoneNumber);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.cancel, color: Colors.grey),
+            title: const Text('Cancel'),
+            onTap: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     int totalOrders = widget.orderDetails.fold(
@@ -137,16 +204,14 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
             children: [
               Row(
                 children: [
-                  _buildSummaryCard('Total Orders', totalOrders.toString()),
-                  const SizedBox(width: 8),
-                  _buildSummaryCard('Total Qty', totalQuantity.toString()),
-                  const SizedBox(width: 8),
-                  _buildSummaryCard(
-                    'Total Amount',
-                    '₹${totalAmount.toString()}',
-                  ),
+                  Expanded(child: _buildSummaryCard('Total Orders', '15')),
+                  SizedBox(width: 8),
+                  Expanded(child: _buildSummaryCard('Total Qty', '200')),
+                  SizedBox(width: 8),
+                  Expanded(child: _buildSummaryCard('Total Amount', '₹5000')),
                 ],
               ),
+
               const SizedBox(height: 20),
               ...widget.orderDetails.map((order) {
                 return Column(
@@ -190,118 +255,59 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     );
   }
 
-  // Widget _buildSummaryCard(String title, String value) {
-  //   return Expanded(
-  //     child: Container(
-  //       height: 90,
-  //       decoration: BoxDecoration(
-  //         color: Colors.white,
-  //         border: Border.all(color: Colors.grey.shade300),
-  //       ),
-  //       child: Padding(
-  //         padding: const EdgeInsets.all(10.0),
-  //         child: Column(
-  //           mainAxisAlignment: MainAxisAlignment.center,
-  //           children: [
-  //             Text(
-  //               title,
-  //               overflow: TextOverflow.visible,
-  //               style: const TextStyle(
-  //                 fontSize: 13,
-  //                 fontWeight: FontWeight.bold,
-  //               ),
-  //             ),
-  //             const SizedBox(height: 6),
-  //             Text(
-  //               value,
-  //               overflow: TextOverflow.visible,
-  //               style: const TextStyle(
-  //                 fontSize: 15,
-  //                 fontWeight: FontWeight.bold,
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
+  
   Widget _buildSummaryCard(String title, String value) {
-    // Determine colors based on card type
-    Color cardColor;
-    Color textColor;
     IconData iconData;
-
     switch (title) {
       case 'Total Orders':
-        cardColor = Colors.indigo.withOpacity(0.1);
-        textColor = Colors.indigo;
         iconData = Icons.receipt_long;
         break;
       case 'Total Qty':
-        cardColor = Colors.amber.withOpacity(0.1);
-        textColor = Colors.amber;
         iconData = Icons.format_list_numbered;
         break;
       case 'Total Amount':
-        cardColor = Colors.green.withOpacity(0.1);
-        textColor = Colors.green;
         iconData = Icons.currency_rupee;
         break;
       default:
-        cardColor = Colors.blueGrey.withOpacity(0.1);
-        textColor = Colors.blueGrey;
         iconData = Icons.info;
     }
 
-    return Expanded(
-      child: Container(
-        height: 115,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: Colors.blueGrey.shade100),
-          borderRadius: BorderRadius.circular(0),
-          // boxShadow: [
-          //   BoxShadow(
-          //     color: Colors.grey.withOpacity(0.1),
-          //     blurRadius: 3,
-          //     offset: const Offset(0, 2),
-          //   ),
-          // ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6.0),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(iconData, size: 20, color: textColor),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color.fromARGB(255, 182, 181, 181)!),
+        borderRadius: BorderRadius.circular(0),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(iconData, size: 20, color: Colors.blue[700]),
+            const SizedBox(height: 6),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
               ),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[700],
-                ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              value,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Colors.blue[900],
               ),
-              const SizedBox(height: 4),
-              Text(
-                title == 'Total Amount' ? '$value' : value,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
-                ),
-              ),
-            ],
-          ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );
@@ -322,7 +328,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                   customerName: order['customernamewithcity'] ?? '',
                   fromDate: widget.fromDate,
                   toDate: widget.toDate,
-                  orderType : widget.orderType
+                  orderType: widget.orderType,
                 ),
           ),
         );
@@ -429,29 +435,35 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                 ],
               ),
 
-              if (order['whatsappmobileno'] != null &&
-                  order['whatsappmobileno'].toString().isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Row(
-                    children: [
-                      const FaIcon(
-                        FontAwesomeIcons.whatsapp,
-                        size: 12,
-                        color: Colors.green,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        order['whatsappmobileno'].toString(),
-                        overflow: TextOverflow.visible,
-                        style: const TextStyle(
-                          color: Colors.green,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+          if (order['whatsappmobileno'] != null &&
+    order['whatsappmobileno'].toString().isNotEmpty)
+  Padding(
+    padding: const EdgeInsets.only(top: 10),
+    child: GestureDetector(
+      onTap: () => _showContactOptions(
+        context,
+        order['whatsappmobileno'].toString(),
+      ),
+      child: Row(
+        children: [
+          const FaIcon(
+            FontAwesomeIcons.whatsapp,
+            size: 12,
+            color: Colors.green,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            order['whatsappmobileno'].toString(),
+            overflow: TextOverflow.visible,
+            style: const TextStyle(
+              color: Colors.green,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    ),
+  ),
             ],
           ),
         ),
