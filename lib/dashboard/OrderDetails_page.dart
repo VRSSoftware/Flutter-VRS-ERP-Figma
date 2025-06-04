@@ -148,7 +148,7 @@ void _showContactOptions(BuildContext context, String phoneNumber) {
                   _handleWhatsAppShare();
                   break;
                 case 'view':
-                  _handleView();
+                 _handleView();
                   break;
               }
             },
@@ -336,8 +336,7 @@ Future<pw.Document> _generatePDF() async {
                           widget.orderDetails
                               .fold<int>(
                                   0,
-                                  (sum, item) =>
-                                      sum + (item['totalorder'] as int))
+                                  (sum, item) => sum + (item['totalorder'] as int))
                               .toString(),
                           style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                         ),
@@ -376,23 +375,55 @@ Future<pw.Document> _generatePDF() async {
   }
 
   Future<String> _savePDF(pw.Document pdf) async {
-    // Request storage permission (for Android)
-    if (Platform.isAndroid) {
-      var status = await Permission.storage.request();
-      if (!status.isGranted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Storage permission denied')),
-        );
-        return '';
+    String filePath = '';
+
+    try {
+      // Request storage permissions for Android
+      if (Platform.isAndroid) {
+        var status = await Permission.storage.request();
+        if (!status.isGranted) {
+          // For Android 13+, try manageExternalStorage if needed
+          status = await Permission.manageExternalStorage.request();
+          if (!status.isGranted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Storage permission denied')),
+            );
+            return '';
+          }
+        }
       }
+
+      // Determine the Downloads directory
+      Directory? downloadsDir;
+      if (Platform.isAndroid) {
+        // On Android, use the Downloads directory
+        downloadsDir = Directory('/storage/emulated/0/Download');
+        if (!await downloadsDir.exists()) {
+          // Fallback to getExternalStorageDirectory if Downloads folder doesn't exist
+          downloadsDir = await getExternalStorageDirectory();
+        }
+      } else if (Platform.isIOS) {
+        // On iOS, use the Documents directory (Downloads folder is restricted)
+        downloadsDir = await getApplicationDocumentsDirectory();
+      }
+
+      if (downloadsDir != null) {
+        final file = File(
+            '${downloadsDir.path}/SalesOrder_TotalOrderSummary_${DateTime.now().millisecondsSinceEpoch}.pdf');
+        await file.writeAsBytes(await pdf.save());
+        filePath = file.path;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unable to access Downloads directory')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving PDF: $e')),
+      );
     }
 
-    // Get the directory to save the PDF
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File(
-        '${directory.path}/SalesOrder_TotalOrderSummary_${DateTime.now().millisecondsSinceEpoch}.pdf');
-    await file.writeAsBytes(await pdf.save());
-    return file.path;
+    return filePath;
   }
 
   void _handleDownload() async {
@@ -401,7 +432,10 @@ Future<pw.Document> _generatePDF() async {
       final filePath = await _savePDF(pdf);
       if (filePath.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('PDF downloaded to $filePath')),
+          SnackBar(
+              content: Text(Platform.isAndroid
+                  ? 'PDF downloaded to Downloads folder: $filePath'
+                  : 'PDF saved to Documents: $filePath')),
         );
       }
     } catch (e) {
@@ -411,25 +445,32 @@ Future<pw.Document> _generatePDF() async {
     }
   }
 
-  void _handleView() async {
-    try {
-      final pdf = await _generatePDF();
-      final filePath = await _savePDF(pdf);
-      if (filePath.isNotEmpty) {
-        final result = await OpenFile.open(filePath);
-        if (result.type != ResultType.done) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error opening PDF: ${result.message}')),
-          );
-        }
-      }
-    } catch (e) {
+void _handleView() async {
+  try {
+    final pdf = await _generatePDF();
+    final bytes = await pdf.save();
+    
+    // Create a temporary file (optional, some PDF viewers can work with bytes directly)
+    final tempDir = await getTemporaryDirectory();
+    final tempFile = File('${tempDir.path}/temp_preview.pdf');
+    await tempFile.writeAsBytes(bytes);
+    
+    final result = await OpenFile.open(tempFile.path);
+    
+    if (result.type != ResultType.done) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error viewing PDF: $e')),
+        SnackBar(content: Text('Error opening PDF: ${result.message}')),
       );
     }
+    
+    // Optionally delete the temp file after viewing (or let the system handle it)
+    // tempFile.delete();
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error viewing PDF: $e')),
+    );
   }
-
+}
   void _handleWhatsAppShare() {
     // Implement WhatsApp share functionality (as before)
     ScaffoldMessenger.of(context).showSnackBar(
