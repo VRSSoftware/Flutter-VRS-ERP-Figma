@@ -62,36 +62,42 @@ void _showContactOptions(BuildContext context, String phoneNumber) {
     backgroundColor: Colors.white,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-    ), 
+    ),
+    isScrollControlled: true, // Ensures full height usage if needed
     builder: (context) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const FaIcon(
-              FontAwesomeIcons.whatsapp,
-              color: Colors.green,
-            ),
-            title: const Text('Message on WhatsApp'),
-            onTap: () {
-              Navigator.pop(context);
-              _launchWhatsApp(phoneNumber);
-            },
+      child: Padding(
+        padding: const EdgeInsets.only(top: 16, bottom: 24), // Top and bottom padding
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const FaIcon(
+                  FontAwesomeIcons.whatsapp,
+                  color: Colors.green,
+                ),
+                title: const Text('Message on WhatsApp'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _launchWhatsApp(phoneNumber);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.call, color: Colors.blue),
+                title: const Text('Call'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _makePhoneCall(phoneNumber);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.cancel, color: Colors.grey),
+                title: const Text('Cancel'),
+                onTap: () => Navigator.pop(context),
+              ),
+            ],
           ),
-          ListTile(
-            leading: const Icon(Icons.call, color: Colors.blue),
-            title: const Text('Call'),
-            onTap: () {
-              Navigator.pop(context);
-              _makePhoneCall(phoneNumber);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.cancel, color: Colors.grey),
-            title: const Text('Cancel'),
-            onTap: () => Navigator.pop(context),
-          ),
-        ],
+        ),
       ),
     ),
   );

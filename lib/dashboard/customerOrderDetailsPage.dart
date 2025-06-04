@@ -885,10 +885,12 @@
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:marquee/marquee.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/dashboard/data.dart';
 
@@ -1216,318 +1218,394 @@ class _CustomerOrderDetailsPageState extends State<CustomerOrderDetailsPage> {
     );
   }
 
-  Widget _buildOrderCard(Map<String, dynamic> order) {
-    String formattedDateTime = '';
-    try {
-      final date = DateFormat('yyyy-MM-dd').parse(order['OrderDate']);
-      formattedDateTime = DateFormat('dd/MM/yyyy HH:mm').format(date);
-    } catch (e) {
-      formattedDateTime =
-          '${order['OrderDate']} ${order['Created_Time'] ?? 'N/A'}';
-    }
-
-    String formattedDeliveryDate = '';
-    try {
-      final date = DateFormat('yyyy-MM-dd').parse(order['DlvDate']);
-      formattedDeliveryDate = DateFormat('dd/MM/yyyy').format(date);
-    } catch (e) {
-      formattedDeliveryDate = order['DlvDate'] ?? 'N/A';
-    }
-
-    Widget _buildTextWithMarquee(String text, TextStyle style) {
-      final maxWidth = MediaQuery.of(context).size.width / 5;
-      const int lengthThreshold = 12;
-      if (text.length > lengthThreshold) {
-        return SizedBox(
-          width: maxWidth,
-          height: 18.0,
-          child: Marquee(
-            text: text,
-            style: style,
-            scrollAxis: Axis.horizontal,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            blankSpace: 16.0,
-            velocity: 50.0,
-            pauseAfterRound: const Duration(seconds: 1),
-            startPadding: 8.0,
-            accelerationDuration: const Duration(seconds: 1),
-            accelerationCurve: Curves.linear,
-            decelerationDuration: const Duration(milliseconds: 500),
-            decelerationCurve: Curves.linear,
-          ),
-        );
-      }
-      return Text(text, style: style, overflow: TextOverflow.ellipsis);
-    }
-
-    Color deliveryColor;
-    String deliveryType = order['DeliveryType']?.toString() ?? 'N/A';
-    switch (deliveryType) {
-      case 'Approved':
-        deliveryColor = Colors.blue[700]!;
-        break;
-      case 'Partially Delivered':
-        deliveryColor = Colors.blue[400]!;
-        break;
-      case 'Delivered':
-        deliveryColor = Colors.blue[900]!;
-        break;
-      case 'Completed':
-        deliveryColor = Colors.blue[600]!;
-        break;
-      case 'Partially Completed':
-        deliveryColor = Colors.blue[300]!;
-        break;
-      default:
-        deliveryColor = Colors.grey[600]!;
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color.fromARGB(255, 196, 195, 195)!),
-        borderRadius: BorderRadius.circular(0),
-        // boxShadow: [
-        //   BoxShadow(
-        //     color: Colors.grey.withOpacity(0.1),
-        //     blurRadius: 3,
-        //     offset: const Offset(0, 1),
-        //   ),
-        // ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // FIRST ROW - Order No, Order Type, Delivery Type
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.receipt_long,
-                        size: 16,
-                        color: Colors.blue[700],
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: _buildTextWithMarquee(
-                          '${order['OrderNo'] ?? 'N/A'}',
-                          GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.blue[700],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Icon(Icons.category, size: 16, color: Colors.blue[700]),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: _buildTextWithMarquee(
-                          '${order['Order_Type'] ?? 'N/A'}',
-                          GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.blue[700],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6.0,
-                      vertical: 3.0,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[100],
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.local_shipping,
-                          size: 16,
-                          color: deliveryColor,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: _buildTextWithMarquee(
-                            deliveryType,
-                            GoogleFonts.poppins(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: deliveryColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // SECOND ROW - Qty, Amt, WhatsApp
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Text(
-                        'Qty: ',
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.blue[700],
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildTextWithMarquee(
-                          '${order['TotalQty'] ?? '0'}',
-                          GoogleFonts.poppins(
-                            fontSize: 11,
-                            color: Colors.blue[700],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Text(
-                        'Amt: ₹',
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.blue[700],
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildTextWithMarquee(
-                          '${order['TotalAmt'] ?? '0.00'}',
-                          GoogleFonts.poppins(
-                            fontSize: 11,
-                            color: Colors.blue[700],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Icon(Icons.phone, size: 11, color: Colors.blue[700]),
-                      const SizedBox(width: 3),
-                      Expanded(
-                        child: _buildTextWithMarquee(
-                          order['WhatsAppMobileNo']?.toString() != null &&
-                                  order['WhatsAppMobileNo']!
-                                      .toString()
-                                      .isNotEmpty
-                              ? '${order['WhatsAppMobileNo']}'
-                              : 'xxxxxxxxxx',
-                          GoogleFonts.poppins(
-                            fontSize: 11,
-                            color: Colors.blue[700],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            Row(
-              children: [
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: 'Ordered: ',
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey[800],
-                        ),
-                      ),
-                      TextSpan(
-                        text: formattedDateTime,
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold, // Bold value
-                          color: Colors.grey[800],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 18),
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: 'Delivery: ',
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey[800],
-                        ),
-                      ),
-                      TextSpan(
-                        text: formattedDeliveryDate,
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold, // Bold value
-                          color: Colors.grey[800],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-                _OrderPopupMenu(
-                  order: order,
-                  viewChecked: _orderViewChecked[order['OrderNo']] ?? false,
-                  onViewCheckedChanged: (value) {
-                    setState(() {
-                      _orderViewChecked[order['OrderNo']] = value;
-                    });
-                  },
-                  onDownload: () => _handleOrderDownload(order),
-                  onWhatsApp: () => _handleOrderWhatsAppShare(order),
-                  onView: () => _handleOrderView(order),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+  Future<void> _launchWhatsApp(String phoneNumber) async {
+  final whatsappUrl = "https://wa.me/$phoneNumber";
+  if (await canLaunch(whatsappUrl)) {
+    await launch(whatsappUrl);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not launch WhatsApp')),
     );
   }
+}
+
+Future<void> _makePhoneCall(String phoneNumber) async {
+  final phoneUrl = "tel:$phoneNumber";
+  if (await canLaunch(phoneUrl)) {
+    await launch(phoneUrl);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not make a call')),
+    );
+  }
+}
+
+void _showContactOptions(BuildContext context, String phoneNumber) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+    ),
+    isScrollControlled: true, // Ensures full height usage if needed
+    builder: (context) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 16, bottom: 24), // Top and bottom padding
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const FaIcon(
+                  FontAwesomeIcons.whatsapp,
+                  color: Colors.green,
+                ),
+                title: const Text('Message on WhatsApp'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _launchWhatsApp(phoneNumber);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.call, color: Colors.blue),
+                title: const Text('Call'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _makePhoneCall(phoneNumber);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.cancel, color: Colors.grey),
+                title: const Text('Cancel'),
+                onTap: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+
+Widget _buildOrderCard(Map<String, dynamic> order) {
+  String formattedDateTime = '';
+  try {
+    final date = DateFormat('yyyy-MM-dd').parse(order['OrderDate']);
+    formattedDateTime = DateFormat('dd/MM/yyyy HH:mm').format(date);
+  } catch (e) {
+    formattedDateTime =
+        '${order['OrderDate']} ${order['Created_Time'] ?? 'N/A'}';
+  }
+
+  String formattedDeliveryDate = '';
+  try {
+    final date = DateFormat('yyyy-MM-dd').parse(order['DlvDate']);
+    formattedDeliveryDate = DateFormat('dd/MM/yyyy').format(date);
+  } catch (e) {
+    formattedDeliveryDate = order['DlvDate'] ?? 'N/A';
+  }
+
+  Widget _buildTextWithMarquee(String text, TextStyle style) {
+    final maxWidth = MediaQuery.of(context).size.width / 5;
+    const int lengthThreshold = 12;
+    if (text.length > lengthThreshold) {
+      return SizedBox(
+        width: maxWidth,
+        height: 18.0,
+        child: Marquee(
+          text: text,
+          style: style,
+          scrollAxis: Axis.horizontal,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          blankSpace: 16.0,
+          velocity: 50.0,
+          pauseAfterRound: const Duration(seconds: 1),
+          startPadding: 8.0,
+          accelerationDuration: const Duration(seconds: 1),
+          accelerationCurve: Curves.linear,
+          decelerationDuration: const Duration(milliseconds: 500),
+          decelerationCurve: Curves.linear,
+        ),
+      );
+    }
+    return Text(text, style: style, overflow: TextOverflow.ellipsis);
+  }
+
+  Color deliveryColor;
+  String deliveryType = order['DeliveryType']?.toString() ?? 'N/A';
+  switch (deliveryType) {
+    case 'Approved':
+      deliveryColor = Colors.blue[700]!;
+      break;
+    case 'Partially Delivered':
+      deliveryColor = Colors.blue[400]!;
+      break;
+    case 'Delivered':
+      deliveryColor = Colors.blue[900]!;
+      break;
+    case 'Completed':
+      deliveryColor = Colors.blue[600]!;
+      break;
+    case 'Partially Completed':
+      deliveryColor = Colors.blue[300]!;
+      break;
+    default:
+      deliveryColor = Colors.grey[600]!;
+  }
+
+  return Container(
+    margin: const EdgeInsets.only(bottom: 12),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      border: Border.all(color: const Color.fromARGB(255, 196, 195, 195)),
+      borderRadius: BorderRadius.circular(0),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // FIRST ROW
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(Icons.receipt_long, size: 16, color: Colors.blue[700]),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: _buildTextWithMarquee(
+                        '${order['OrderNo'] ?? 'N/A'}',
+                        GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue[700],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(Icons.category, size: 16, color: Colors.blue[700]),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: _buildTextWithMarquee(
+                        '${order['Order_Type'] ?? 'N/A'}',
+                        GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue[700],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 3.0),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[100],
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.local_shipping, size: 16, color: deliveryColor),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: _buildTextWithMarquee(
+                          deliveryType,
+                          GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: deliveryColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+Row(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Expanded(
+      child: Row(
+        children: [
+          Text(
+            'Qty: ',
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: Colors.blue[700],
+            ),
+          ),
+          Expanded(
+            child: _buildTextWithMarquee(
+              '${order['TotalQty'] ?? '0'}',
+              GoogleFonts.poppins(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: Colors.blue[700],
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+    const SizedBox(width: 6),
+    Expanded(
+      child: Row(
+        children: [
+          Text(
+            'Amt: ₹',
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: Colors.blue[700],
+            ),
+          ),
+          Expanded(
+            child: _buildTextWithMarquee(
+              '${order['TotalAmt'] ?? '0.00'}',
+              GoogleFonts.poppins(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: Colors.blue[700],
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+    const SizedBox(width: 6),
+    Expanded(
+      child: (order['WhatsAppMobileNo'] != null &&
+              order['WhatsAppMobileNo'].toString().trim().isNotEmpty)
+          ? GestureDetector(
+              onTap: () => _showContactOptions(
+                context,
+                order['WhatsAppMobileNo'].toString(),
+              ),
+              child: Row(
+                children: [
+                  const FaIcon(FontAwesomeIcons.whatsapp,
+                      size: 12, color: Colors.green),
+                  const SizedBox(width: 3),
+                  Expanded(
+                    child: _buildTextWithMarquee(
+                      order['WhatsAppMobileNo'].toString(),
+                      GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          :     Row( children: [
+                  const FaIcon(FontAwesomeIcons.whatsapp,
+                      size: 12, color: Colors.green),
+                  const SizedBox(width: 3),
+                  Expanded(
+                    child: _buildTextWithMarquee(
+              'xxxxx xxxxx',
+              GoogleFonts.poppins(
+                fontSize: 11,
+                color: Colors.green,
+              ),
+            ),)
+            ],
+              ),
+    ),
+  ],
+),
+
+          const SizedBox(height: 8),
+
+
+          // FOURTH ROW - Ordered + Delivery Date + Popup Menu
+          Row(
+            children: [
+              RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Ordered: ',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    TextSpan(
+                      text: formattedDateTime,
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 18),
+              RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Delivery: ',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    TextSpan(
+                      text: formattedDeliveryDate,
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              _OrderPopupMenu(
+                order: order,
+                viewChecked: _orderViewChecked[order['OrderNo']] ?? false,
+                onViewCheckedChanged: (value) {
+                  setState(() {
+                    _orderViewChecked[order['OrderNo']] = value;
+                  });
+                },
+                onDownload: () => _handleOrderDownload(order),
+                onWhatsApp: () => _handleOrderWhatsAppShare(order),
+                onView: () => _handleOrderView(order),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
   void _handleOrderDownload(Map<String, dynamic> order) {
     ScaffoldMessenger.of(context).showSnackBar(
