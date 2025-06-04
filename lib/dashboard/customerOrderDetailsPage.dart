@@ -1243,44 +1243,60 @@ Future<void> _makePhoneCall(String phoneNumber) async {
 void _showContactOptions(BuildContext context, String phoneNumber) {
   showModalBottomSheet(
     context: context,
-    backgroundColor: Colors.white,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-    ),
-    isScrollControlled: true, // Ensures full height usage if needed
+    backgroundColor: Colors.transparent, // Make background transparent for rounded bottom
+    isScrollControlled: true,
     builder: (context) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.only(top: 16, bottom: 24), // Top and bottom padding
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const FaIcon(
-                  FontAwesomeIcons.whatsapp,
-                  color: Colors.green,
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(0), bottom: Radius.circular(0)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 16, bottom: 0),
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const FaIcon(FontAwesomeIcons.whatsapp, color: Colors.green),
+                    title: const Text('Message on WhatsApp'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _launchWhatsApp(phoneNumber);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.call, color: Colors.blue),
+                    title: const Text('Call'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _makePhoneCall(phoneNumber);
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[300],
+                    foregroundColor: Colors.black87,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(0),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
                 ),
-                title: const Text('Message on WhatsApp'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _launchWhatsApp(phoneNumber);
-                },
               ),
-              ListTile(
-                leading: const Icon(Icons.call, color: Colors.blue),
-                title: const Text('Call'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _makePhoneCall(phoneNumber);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.cancel, color: Colors.grey),
-                title: const Text('Cancel'),
-                onTap: () => Navigator.pop(context),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     ),
