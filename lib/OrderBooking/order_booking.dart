@@ -467,9 +467,11 @@ import 'package:provider/provider.dart';
 
 import 'package:vrs_erp_figma/OrderBooking/orderbooking_drawer.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/dashboard/orderStatus.dart';
 import 'package:vrs_erp_figma/models/CartModel.dart';
 import 'package:vrs_erp_figma/models/category.dart';
 import 'package:vrs_erp_figma/models/item.dart';
+import 'package:vrs_erp_figma/register/register.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
 import 'package:vrs_erp_figma/OrderBooking/barcode/barcodewidget.dart';
@@ -659,6 +661,17 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                 '/viewOrder',
                 arguments: {'barcode': showBarcodeWidget}, // Pass barcode state
               ).then((_) => _fetchCartCount());
+            },
+          ),
+
+              IconButton(
+            icon: const Icon(Icons.receipt_long, color: Colors.white, size: 24),
+            tooltip: 'My Orders',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) =>  RegisterPage()),
+              );
             },
           ),
           // Always show the three-dot menu
