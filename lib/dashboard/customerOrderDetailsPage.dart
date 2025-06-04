@@ -999,7 +999,7 @@ class _CustomerOrderDetailsPageState extends State<CustomerOrderDetailsPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
-          'Order Details',
+          'Customer Wise - Order Details',
           style: GoogleFonts.poppins(
             color: Colors.white,
             fontSize: 16,
