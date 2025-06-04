@@ -1863,37 +1863,38 @@ Widget build(BuildContext context) {
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(0),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 8,
-                        offset: Offset(0, 3),
-                      ),
-                    ],
+                    borderRadius: BorderRadius.circular(4),
+                    // boxShadow: const [
+                    //   BoxShadow(
+                    //     color: Colors.black12,
+                    //     blurRadius: 8,
+                    //     offset: Offset(0, 3),
+                    //   ),
+                    // ],
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Loading...',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black,
-                        ),
+                        child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Loading...',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      const CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: Colors.blue, // Non-nullable
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            ],
-          )
+                ],
+             )
         : SingleChildScrollView(
             padding: const EdgeInsets.all(12.0),
             child: Column(
