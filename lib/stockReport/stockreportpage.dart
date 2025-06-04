@@ -1119,13 +1119,14 @@ Widget _buildStyleTable(
         ),
       ),
       bottomNavigationBar: BottomNavigationWidget(
-        currentIndex: 3, // 👈 Highlight Order icon
+        currentIndex: 4, // 👈 Highlight Order icon
         onTap: (index) {
           if (index == 0) Navigator.pushNamed(context, '/home');
           if (index == 1) Navigator.pushNamed(context, '/catalog');
           if (index == 2) Navigator.pushNamed(context, '/orderbooking');
-          if (index == 3) return;
-          if (index == 4) Navigator.pushNamed(context, '/dashboard');
+           if (index == 3) Navigator.pushNamed(context, '/dashboard');
+          if (index == 4) return;
+         
         },
       ),
     );

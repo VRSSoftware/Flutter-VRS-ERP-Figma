@@ -519,7 +519,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
               elevation: 0,
               color: Colors.blue.withOpacity(0.2),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(5),
+                borderRadius: BorderRadius.circular(0),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -534,7 +534,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(0),
                           gradient: const LinearGradient(
                             colors: [
                               Color(0xFFB2EBF2),
@@ -793,7 +793,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
               elevation: 0,
               color: const Color(0xFFE0F7FA),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(5),
+                borderRadius: BorderRadius.circular(0),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -899,13 +899,14 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         ),
       ),
       bottomNavigationBar: BottomNavigationWidget(
-        currentIndex: 4,
+        currentIndex: 3,
         onTap: (index) {
           if (index == 0) Navigator.pushNamed(context, '/home');
           if (index == 1) Navigator.pushNamed(context, '/catalog');
           if (index == 2) Navigator.pushNamed(context, '/orderbooking');
-          if (index == 3) Navigator.pushNamed(context, '/stockReport');
-          if (index == 4) return;
+           if (index == 3) return;
+          if (index == 4) Navigator.pushNamed(context, '/stockReport');
+         
         },
       ),
     );
@@ -1088,7 +1089,7 @@ class __StatusCardState extends State<_StatusCard>
       child: Card(
         elevation: 0,
         color: widget.color,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Column(
