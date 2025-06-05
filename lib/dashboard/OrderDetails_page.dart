@@ -233,11 +233,14 @@ void _showContactOptions(BuildContext context, String phoneNumber) {
             children: [
               Row(
                 children: [
-                  Expanded(child: _buildSummaryCard('Total Orders', '15')),
+                  Expanded(child: _buildSummaryCard('Total Orders', totalOrders.toString())),
                   SizedBox(width: 8),
-                  Expanded(child: _buildSummaryCard('Total Qty', '200')),
+                  Expanded(child:  _buildSummaryCard('Total Qty', totalQuantity.toString())),
                   SizedBox(width: 8),
-                  Expanded(child: _buildSummaryCard('Total Amount', '₹5000')),
+                  Expanded(child:   _buildSummaryCard(
+                    'Total Amount',
+                    '₹${totalAmount.toString()}',
+                  )),
                 ],
               ),
 
