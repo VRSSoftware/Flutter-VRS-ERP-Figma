@@ -221,7 +221,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
   }
 
   Future<void> _fetchOrderSummary() async {
-    const String apiUrl =
+    final String apiUrl =
         '${AppConstants.BASE_URL}/orderRegister/order-details-dash';
     try {
       final body = jsonEncode({

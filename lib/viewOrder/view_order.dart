@@ -53,9 +53,9 @@ class _ViewOrderScreenState extends State<ViewOrderScreens> {
       url,
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
-        "coBrId": UserSession.coBrId??'',
-        "userId": UserSession.userName??'',
-        "fcYrId": UserSession.userFcYr??'',
+        "coBrId": UserSession.coBrId ?? '',
+        "userId": UserSession.userName ?? '',
+        "fcYrId": UserSession.userFcYr ?? '',
         "barcode": "false",
       }),
     );
@@ -73,10 +73,23 @@ class _ViewOrderScreenState extends State<ViewOrderScreens> {
     showDialog(context: context, builder: (_) => CustomerMasterDialog());
   }
 
-  String _getImageUrl(String fullImagePath) {
-    if (fullImagePath.startsWith('http')) return fullImagePath;
-    final imageName = fullImagePath.split('/').last.split('?').first;
-    return '${AppConstants.BASE_URL}/images/$imageName';
+  String _getImageUrl(String? fullImagePath) {
+    // If null or empty, return default no-image URL
+    if (fullImagePath == null || fullImagePath.isEmpty) {
+      return '${AppConstants.BASE_URL}/images/NoImage.jpg';
+    }
+
+    if (UserSession.onlineImage == '0') {
+      final imageName = fullImagePath.split('/').last.split('?').first;
+      if (imageName.isEmpty) {
+        return '${AppConstants.BASE_URL}/images/NoImage.jpg';
+      }
+      return '${AppConstants.BASE_URL}/images/$imageName';
+    } else if (UserSession.onlineImage == '1') {
+      return fullImagePath;
+    }
+    // fallback if onlineImage value is neither '0' nor '1'
+    return '${AppConstants.BASE_URL}/images/NoImage.jpg';
   }
 
   Widget _buildImageSection(String imageUrl) {

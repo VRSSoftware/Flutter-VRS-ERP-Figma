@@ -1010,13 +1010,33 @@ class _OrderStatusState extends State<OrderStatus> {
     }
   }
 
-  String _getImageUrl(dynamic catalog) {
-    if (catalog['Style_Image'].startsWith('http')) {
-      return catalog['Style_Image'];
+ String _getImageUrl(dynamic catalog) {
+  final imagePath = catalog['Style_Image'] ?? '';
+
+  if (imagePath.isEmpty) {
+    return '';
+  }
+
+  if (UserSession.onlineImage == '1') {
+    // If onlineImage == '1', treat Style_Image as full URL
+    return imagePath;
+  } else if (UserSession.onlineImage == '0') {
+    // If onlineImage == '0', extract image name and append base URL
+    if (imagePath.startsWith('http')) {
+      // Sometimes imagePath might already be a full URL even if onlineImage == '0'
+      return imagePath;
     }
-    final imageName = catalog['Style_Image'].split('/').last.split('?').first;
+    final imageName = imagePath.split('/').last.split('?').first;
+    if (imageName.isEmpty) {
+      return '';
+    }
     return '${AppConstants.BASE_URL}/images/$imageName';
   }
+
+  // Fallback
+  return '';
+}
+
 
   void clearFilters() {
     setState(() {

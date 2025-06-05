@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'dart:convert';
 
 import 'package:vrs_erp_figma/constants/app_constants.dart';
-import 'package:vrs_erp_figma/catalog/catalog_screen.dart';
 import 'package:vrs_erp_figma/screens/home_screen.dart';
 import 'package:vrs_erp_figma/screens/register_screen.dart';
+
+
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -33,6 +33,7 @@ class _LoginPageState extends State<LoginScreen> {
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String? isRegistered;
+
   @override
   void initState() {
     super.initState();
@@ -52,25 +53,15 @@ class _LoginPageState extends State<LoginScreen> {
     final url = '${AppConstants.BASE_URL}/users/cobr';
     try {
       final response = await http.get(Uri.parse(url));
-      print("Response Body: ${response.body}");
-
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         setState(() {
           _companies.clear();
-          _companies.addAll(
-            data.map((e) => e as Map<String, dynamic>).toList(),
-          );
-          _isLoadingCompanies = false;
-        });
-      } else {
-        print("Failed to load companies");
-        setState(() {
+          _companies.addAll(data.map((e) => e as Map<String, dynamic>).toList());
           _isLoadingCompanies = false;
         });
       }
     } catch (e) {
-      print('Error fetching companies: $e');
       setState(() {
         _isLoadingCompanies = false;
       });
@@ -81,65 +72,54 @@ class _LoginPageState extends State<LoginScreen> {
     final url = '${AppConstants.BASE_URL}/users/fcyr';
     try {
       final response = await http.get(Uri.parse(url));
-      print("Response Body: ${response.body}");
-
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         setState(() {
           _years.clear();
           _years.addAll(data.map((e) => e as Map<String, dynamic>).toList());
         });
-      } else {
-        print("Failed to load financial years");
+      }
+    } catch (e) {}
+  }
+
+  Future<void> fetchOnlineImageSetting() async {
+    try {
+      final response = await http.get(Uri.parse('${AppConstants.BASE_URL}/images/isOnlineImage'));
+      if (response.statusCode == 200) {
+        setState(() {
+          UserSession.onlineImage = response.body.trim();
+          print("Online Image Setting: ${UserSession.onlineImage}");
+        });
       }
     } catch (e) {
-      print('Error fetching financial years: $e');
+      print("Error fetching online image setting: $e");
     }
   }
 
   Future<void> login(BuildContext context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    // String? isRegistered = prefs.getString('isRegistered');
+
     if (isRegistered == '1') {
       if (_formKey.currentState?.validate() ?? false) {
         final url = '${AppConstants.BASE_URL}/users/login';
-
-        final Map<String, String> headers = {
-          'Content-Type': 'application/json',
-        };
-
+        final Map<String, String> headers = {'Content-Type': 'application/json'};
         final Map<String, String> body = {
           'userName': _usernameController.text.trim(),
           'userPwd': _passwordController.text.trim(),
         };
 
-        print(body.toString());
-
         try {
-          final response = await http.post(
-            Uri.parse(url),
-            headers: headers,
-            body: json.encode(body),
-          );
-
-          print("Response Status Code: ${response.statusCode}");
-          print("Response Body: ${response.body}");
-
+          final response = await http.post(Uri.parse(url), headers: headers, body: json.encode(body));
           if (response.statusCode == 200) {
-            final Map<String, dynamic> responseData = json.decode(
-              response.body,
-            );
-            print(_selectedCompany?["coBrId"]);
-            print(responseData?["userId"]);
+            final Map<String, dynamic> responseData = json.decode(response.body);
 
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setInt('userId', responseData?["userId"]);
+            await prefs.setInt('userId', responseData["userId"]);
             await prefs.setString('coBrId', _selectedCompany?["coBrId"]);
             await prefs.setString('userType', responseData["userType"]);
             await prefs.setString('userName', responseData["userName"]);
             await prefs.setString('userLedKey', responseData["ledKey"]);
 
-            UserSession.userId = responseData?["userId"];
+            UserSession.userId = responseData["userId"];
             UserSession.coBrId = _selectedCompany?["coBrId"];
             UserSession.userFcYr = _selectedYear?["fcYrId"];
             UserSession.userType = responseData["userType"];
@@ -147,8 +127,8 @@ class _LoginPageState extends State<LoginScreen> {
             UserSession.userLedKey = responseData["ledKey"];
             UserSession.name = responseData["name"];
 
-            if (responseData.containsKey('userName') &&
-                responseData['userName'] == _usernameController.text.trim()) {
+            if (responseData['userName'] == _usernameController.text.trim()) {
+              await fetchOnlineImageSetting(); // API CALL HERE
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => HomeScreen()),
@@ -157,11 +137,8 @@ class _LoginPageState extends State<LoginScreen> {
               _showPopupMessage(context, "Invalid Username or Password");
             }
           } else {
-            final Map<String, dynamic> errorResponse = json.decode(
-              response.body,
-            );
-            String errorMessage =
-                errorResponse['errorMessage'] ?? "An error occurred";
+            final Map<String, dynamic> errorResponse = json.decode(response.body);
+            String errorMessage = errorResponse['errorMessage'] ?? "An error occurred";
 
             if (errorMessage.contains('Invalid UserName')) {
               _showPopupMessage(context, "Invalid Username");
@@ -172,7 +149,6 @@ class _LoginPageState extends State<LoginScreen> {
             }
           }
         } catch (e) {
-          print('Error: $e');
           _showPopupMessage(context, "An error occurred. Please try again.");
         }
       } else {
@@ -187,10 +163,7 @@ class _LoginPageState extends State<LoginScreen> {
         }
       }
     } else {
-      _showPopupMessage(
-        context,
-        "You have to register first. Device not registerd",
-      );
+      _showPopupMessage(context, "You have to register first. Device not registered");
     }
   }
 
@@ -203,9 +176,7 @@ class _LoginPageState extends State<LoginScreen> {
           content: Text(message),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
               child: Text("OK"),
             ),
           ],
@@ -231,10 +202,9 @@ class _LoginPageState extends State<LoginScreen> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
-              physics:
-                  constraints.maxHeight < 600
-                      ? AlwaysScrollableScrollPhysics()
-                      : NeverScrollableScrollPhysics(),
+              physics: constraints.maxHeight < 600
+                  ? AlwaysScrollableScrollPhysics()
+                  : NeverScrollableScrollPhysics(),
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
@@ -275,74 +245,12 @@ class _LoginPageState extends State<LoginScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
                           child: Column(
                             children: [
-                              Text(
-                                "Login Now",
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                              Text("Login Now", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                               SizedBox(height: 8),
-                              _buildTextField(
-                                "User",
-                                "Enter your username",
-                                controller: _usernameController,
-                                focusNode: _usernameFocus,
-                                nextFocus: _passwordFocus,
-                                validator:
-                                    (value) =>
-                                        value == null || value.isEmpty
-                                            ? 'Username is required'
-                                            : null,
-                              ),
-                              _buildTextField(
-                                "Password",
-                                "Enter your password",
-                                obscureText: true,
-                                controller: _passwordController,
-                                focusNode: _passwordFocus,
-                                nextFocus: _companyFocus,
-                                validator:
-                                    (value) =>
-                                        value == null || value.isEmpty
-                                            ? 'Password is required'
-                                            : null,
-                              ),
-                              _buildDropdown(
-                                "Company",
-                                "Select your Company",
-                                items: _companies,
-                                value: _selectedCompany,
-                                focusNode: _companyFocus,
-                                nextFocus: _yearFocus,
-                                onChanged: (val) {
-                                  setState(() {
-                                    _selectedCompany = val;
-                                  });
-                                },
-                                validator:
-                                    (value) =>
-                                        value == null
-                                            ? 'Please select a company'
-                                            : null,
-                              ),
-                              _buildDropdown(
-                                "Year",
-                                "Select Year",
-                                items: _years,
-                                value: _selectedYear,
-                                focusNode: _yearFocus,
-                                onChanged: (val) {
-                                  setState(() {
-                                    _selectedYear = val;
-                                  });
-                                },
-                                validator:
-                                    (value) =>
-                                        value == null
-                                            ? 'Please select a year'
-                                            : null,
-                              ),
+                              _buildTextField("User", "Enter your username", controller: _usernameController, focusNode: _usernameFocus, nextFocus: _passwordFocus, validator: (value) => value == null || value.isEmpty ? 'Username is required' : null),
+                              _buildTextField("Password", "Enter your password", obscureText: true, controller: _passwordController, focusNode: _passwordFocus, nextFocus: _companyFocus, validator: (value) => value == null || value.isEmpty ? 'Password is required' : null),
+                              _buildDropdown("Company", "Select your Company", items: _companies, value: _selectedCompany, focusNode: _companyFocus, nextFocus: _yearFocus, onChanged: (val) => setState(() => _selectedCompany = val), validator: (value) => value == null ? 'Please select a company' : null),
+                              _buildDropdown("Year", "Select Year", items: _years, value: _selectedYear, focusNode: _yearFocus, onChanged: (val) => setState(() => _selectedYear = val), validator: (value) => value == null ? 'Please select a year' : null),
                               SizedBox(height: 8),
                               Container(
                                 width: double.infinity,
@@ -350,65 +258,35 @@ class _LoginPageState extends State<LoginScreen> {
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(30),
                                   gradient: LinearGradient(
-                                    colors: [
-                                      AppColors.primaryColor,
-                                      AppColors.maroon,
-                                    ],
+                                    colors: [AppColors.primaryColor, AppColors.maroon],
                                     begin: Alignment.centerLeft,
                                     end: Alignment.centerRight,
                                   ),
                                 ),
                                 child: ElevatedButton(
-                                  onPressed: () {
-                                    login(context);
-                                  },
+                                  onPressed: () => login(context),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.transparent,
                                     shadowColor: Colors.transparent,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30),
-                                    ),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                                   ),
-                                  child: Text(
-                                    "Log in",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.white,
-                                    ),
-                                  ),
+                                  child: Text("Log in", style: TextStyle(fontSize: 16, color: Colors.white)),
                                 ),
                               ),
                               isRegistered == '1'
                                   ? Container()
                                   : TextButton(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder:
-                                              (context) => RegisterScreen(),
+                                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => RegisterScreen())),
+                                      child: RichText(
+                                        text: TextSpan(
+                                          text: "New user? ",
+                                          style: TextStyle(color: Colors.black, fontSize: 14),
+                                          children: [
+                                            TextSpan(text: "Register here", style: TextStyle(color: AppColors.primaryColor, fontWeight: FontWeight.bold)),
+                                          ],
                                         ),
-                                      );
-                                    },
-                                    child: RichText(
-                                      text: TextSpan(
-                                        text: "New user? ",
-                                        style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 14,
-                                        ),
-                                        children: [
-                                          TextSpan(
-                                            text: "Register here",
-                                            style: TextStyle(
-                                              color: AppColors.primaryColor,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
                                       ),
                                     ),
-                                  ),
                             ],
                           ),
                         ),
@@ -425,26 +303,20 @@ class _LoginPageState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildTextField(
-    String label,
-    String hint, {
-    bool obscureText = false,
-    TextEditingController? controller,
-    String? Function(String?)? validator,
-    FocusNode? focusNode,
-    FocusNode? nextFocus,
-    bool isLastField = false,
-    TextInputAction textInputAction = TextInputAction.next,
-  }) {
+  Widget _buildTextField(String label, String hint,
+      {bool obscureText = false,
+      TextEditingController? controller,
+      String? Function(String?)? validator,
+      FocusNode? focusNode,
+      FocusNode? nextFocus,
+      bool isLastField = false,
+      TextInputAction textInputAction = TextInputAction.next}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
+          Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           SizedBox(height: 2),
           TextFormField(
             controller: controller,
@@ -452,40 +324,15 @@ class _LoginPageState extends State<LoginScreen> {
             obscureText: obscureText,
             textInputAction: textInputAction,
             onFieldSubmitted: (value) {
-              if (!isLastField) {
-                nextFocus?.requestFocus();
-              } else {
-                focusNode?.unfocus();
-              }
+              if (!isLastField) nextFocus?.requestFocus();
             },
             decoration: InputDecoration(
               hintText: hint,
               isDense: true,
-              contentPadding: EdgeInsets.symmetric(
-                vertical: 10,
-                horizontal: 12,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: AppColors.primaryColor,
-                  width: 2.0,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: AppColors.primaryColor,
-                  width: 3.0,
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: AppColors.primaryColor,
-                  width: 2.0,
-                ),
-              ),
+              contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppColors.primaryColor, width: 3.0)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0)),
               errorStyle: TextStyle(height: 0.7),
             ),
             validator: validator,
@@ -495,25 +342,19 @@ class _LoginPageState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildDropdown(
-    String label,
-    String hint, {
-    required List<Map<String, dynamic>> items,
-    required Map<String, dynamic>? value,
-    required Function(Map<String, dynamic>?) onChanged,
-    String? Function(Map<String, dynamic>?)? validator,
-    FocusNode? focusNode,
-    FocusNode? nextFocus,
-  }) {
+  Widget _buildDropdown(String label, String hint,
+      {required List<Map<String, dynamic>> items,
+      required Map<String, dynamic>? value,
+      required Function(Map<String, dynamic>?) onChanged,
+      String? Function(Map<String, dynamic>?)? validator,
+      FocusNode? focusNode,
+      FocusNode? nextFocus}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
+          Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           SizedBox(height: 2),
           DropdownButtonFormField<Map<String, dynamic>>(
             value: value,
@@ -521,51 +362,22 @@ class _LoginPageState extends State<LoginScreen> {
             isExpanded: true,
             decoration: InputDecoration(
               isDense: true,
-              contentPadding: EdgeInsets.symmetric(
-                vertical: 10,
-                horizontal: 12,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: AppColors.primaryColor,
-                  width: 2.0,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: AppColors.primaryColor,
-                  width: 3.0,
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: AppColors.primaryColor,
-                  width: 2.0,
-                ),
-              ),
+              contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppColors.primaryColor, width: 3.0)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0)),
               errorStyle: TextStyle(height: 0.7),
             ),
             hint: Text(hint, overflow: TextOverflow.ellipsis),
-            items:
-                items.map((item) {
-                  return DropdownMenuItem<Map<String, dynamic>>(
-                    value: item,
-                    child: Text(
-                      item.containsKey('coBr_name')
-                          ? item['coBr_name']
-                          : item['fcYrName'],
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  );
-                }).toList(),
+            items: items.map((item) {
+              return DropdownMenuItem<Map<String, dynamic>>(
+                value: item,
+                child: Text(item.containsKey('coBr_name') ? item['coBr_name'] : item['fcYrName'], overflow: TextOverflow.ellipsis),
+              );
+            }).toList(),
             onChanged: (val) {
               onChanged(val);
-              if (nextFocus != null) {
-                nextFocus.requestFocus();
-              }
+              if (nextFocus != null) nextFocus.requestFocus();
             },
             validator: validator,
           ),

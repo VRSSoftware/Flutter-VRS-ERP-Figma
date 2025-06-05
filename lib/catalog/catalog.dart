@@ -81,7 +81,7 @@ class _CatalogPageState extends State<CatalogPage> {
   int total = 0;
 
   // Pagination variables
-  int pageNo = 20;
+  int pageNo = 1;
   bool hasMore = true;
   bool isLoadingMore = false;
   final ScrollController _scrollController = ScrollController();
@@ -304,9 +304,9 @@ class _CatalogPageState extends State<CatalogPage> {
         isLoading = false;
         isLoadingMore = false;
         hasMore = fetchedHasMore;
-        if (catalogItems.isNotEmpty) {
-          total = catalogItems[0].total;
-        }
+        // if (catalogItems.isNotEmpty) {
+        //   total = catalogItems[0].total;
+        // }
       });
     } catch (e) {
       debugPrint('Failed to load catalog items: $e');
@@ -699,11 +699,12 @@ class _CatalogPageState extends State<CatalogPage> {
               ),
               child:
                   isLoading
-                      ?  Center(
-                              child: LoadingAnimationWidget.waveDots(
-                                color: AppColors.primaryColor,
-                                size: 30,
-                              ))
+                      ? Center(
+                        child: LoadingAnimationWidget.waveDots(
+                          color: AppColors.primaryColor,
+                          size: 30,
+                        ),
+                      )
                       : catalogItems.isEmpty
                       ? Center(child: Text("No Item Available"))
                       : LayoutBuilder(
@@ -766,11 +767,12 @@ class _CatalogPageState extends State<CatalogPage> {
       ),
       itemBuilder: (context, index) {
         if (index == filteredItems.length && isLoadingMore) {
-          return  Center(
-                              child: LoadingAnimationWidget.waveDots(
-                                color: AppColors.primaryColor,
-                                size: 30,
-                              ),);
+          return Center(
+            child: LoadingAnimationWidget.waveDots(
+              color: AppColors.primaryColor,
+              size: 30,
+            ),
+          );
         }
         final item = filteredItems[index];
         return GestureDetector(
@@ -795,11 +797,12 @@ class _CatalogPageState extends State<CatalogPage> {
       itemCount: filteredItems.length + (isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == filteredItems.length && isLoadingMore) {
-          return  Center(
-                              child: LoadingAnimationWidget.waveDots(
-                                color: AppColors.primaryColor,
-                                size: 30,
-                              ),);
+          return Center(
+            child: LoadingAnimationWidget.waveDots(
+              color: AppColors.primaryColor,
+              size: 30,
+            ),
+          );
         }
         final item = filteredItems[index];
         bool isSelected = selectedItems.contains(item);
@@ -1065,11 +1068,12 @@ class _CatalogPageState extends State<CatalogPage> {
       itemCount: filteredItems.length + (isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == filteredItems.length && isLoadingMore) {
-          return  Center(
-                              child: LoadingAnimationWidget.waveDots(
-                                color: AppColors.primaryColor,
-                                size: 30,
-                              ),);
+          return Center(
+            child: LoadingAnimationWidget.waveDots(
+              color: AppColors.primaryColor,
+              size: 30,
+            ),
+          );
         }
         final item = filteredItems[index];
         final isSelected = selectedItems.contains(item);
@@ -1680,11 +1684,19 @@ class _CatalogPageState extends State<CatalogPage> {
   }
 
   String _getImageUrl(Catalog catalog) {
-    if (catalog.fullImagePath.startsWith('http')) {
-      return catalog.fullImagePath;
+    if (UserSession.onlineImage == '1') {
+      // fullImagePath is already a full URL, return as is or empty string if null
+      return catalog.fullImagePath ?? '';
+    } else if (UserSession.onlineImage == '0') {
+      // Extract image name from fullImagePath safely
+      final fullPath = catalog.fullImagePath ?? '';
+      if (fullPath.isEmpty) return '';
+      final imageName = fullPath.split('/').last.split('?').first;
+      if (imageName.isEmpty) return '';
+      return '${AppConstants.BASE_URL}/images/$imageName';
     }
-    final imageName = catalog.fullImagePath.split('/').last.split('?').first;
-    return '${AppConstants.BASE_URL}/images/$imageName';
+    // Fallback for invalid onlineImage values
+    return '';
   }
 
   void _showFilterDialog() async {
@@ -1942,9 +1954,7 @@ class _CatalogPageState extends State<CatalogPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(0),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
           title: const Text('Enter Mobile Number'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -2169,7 +2179,7 @@ class _CatalogPageState extends State<CatalogPage> {
       );
       return;
     }
-    void _shareAsLink()  {
+    void _shareAsLink() {
       try {
         // Concatenate styleKey values with commas
         final styleKeys = selectedItems.map((item) => item.styleKey).join(',');
@@ -2211,11 +2221,11 @@ class _CatalogPageState extends State<CatalogPage> {
                   child: const Text('Close'),
                 ),
                 TextButton(
-                  onPressed: ()  {
+                  onPressed: () {
                     // ScaffoldMessenger.of(context).showSnackBar(
                     //   const SnackBar(content: Text('Link copied to clipboard')),
                     // );
-                     Clipboard.setData(ClipboardData(text: shareUrl));
+                    Clipboard.setData(ClipboardData(text: shareUrl));
                     // Navigator.pop(context); // Optional: close dialog after copy
                   },
                   child: const Text('Copy Link'),

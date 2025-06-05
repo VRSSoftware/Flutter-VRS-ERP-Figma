@@ -783,7 +783,7 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                                             arguments: {
                                               'itemKey': null,
                                               'itemSubGrpKey': category.itemSubGrpKey,
-                                              'itemName': category.itemSubGrpName,
+                                              'itemName': category.itemSubGrpName.trim(),
                                               'coBr': coBr,
                                               'fcYrId': fcYrId,
                                             },
@@ -894,7 +894,7 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                             '/orderpage',
                             arguments: {
                               'itemKey': item.itemKey,
-                              'itemName': item.itemName,
+                              'itemName': item.itemName.trim(),
                               'itemSubGrpKey': item.itemSubGrpKey,
                               'coBr': coBr,
                               'fcYrId': fcYrId,

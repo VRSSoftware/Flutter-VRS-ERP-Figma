@@ -652,7 +652,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                             arguments: {
                                               'itemKey': null,
                                               'itemSubGrpKey': category.itemSubGrpKey,
-                                              'itemName': category.itemSubGrpName,
+                                              'itemName': category.itemSubGrpName.trim(),
                                               'coBr': coBr,
                                               'fcYrId': fcYrId,
                                             },
@@ -781,7 +781,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                   arguments: {
                                     'itemKey': item.itemKey,
                                     'itemSubGrpKey': item.itemSubGrpKey,
-                                    'itemName': item.itemName,
+                                    'itemName': item.itemName.trim(),
                                     'coBr': coBr,
                                     'fcYrId': fcYrId,
                                   },

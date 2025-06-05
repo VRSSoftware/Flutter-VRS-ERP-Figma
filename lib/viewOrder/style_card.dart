@@ -112,10 +112,25 @@ class _StyleCardState extends State<StyleCard> {
     );
   }
 
-  String _getImageUrl(String fullImagePath) =>
-      fullImagePath.startsWith('http')
-          ? fullImagePath
-          : '${AppConstants.BASE_URL}/images/${fullImagePath.split('/').last.split('?').first}';
+  String _getImageUrl(String fullImagePath) {
+    if (UserSession.onlineImage == '0') {
+      final imageName = fullImagePath.split('/').last.split('?').first;
+      if (imageName.isEmpty) {
+        // Return default image if no valid image name found
+        return '${AppConstants.BASE_URL}/images/NoImage.jpg';
+      }
+      return '${AppConstants.BASE_URL}/images/$imageName';
+    } else if (UserSession.onlineImage == '1') {
+      if (fullImagePath.isEmpty) {
+        // Return default image if empty string
+        return '${AppConstants.BASE_URL}/images/NoImage.jpg';
+      }
+      // Return the full path as it is (assumed to be a valid URL)
+      return fullImagePath;
+    }
+    // Default fallback to no-image URL for invalid onlineImage values
+    return '${AppConstants.BASE_URL}/images/NoImage.jpg';
+  }
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
@@ -380,17 +395,17 @@ class _StyleCardState extends State<StyleCard> {
     );
 
     if (confirmed != true) return;
-     String sCode =  widget.styleCode;
-    String bCode= "";
-    if(sCode.contains('---')){
-    List<String> parts = widget.styleCode.split('---');
-    sCode = parts[0];
-    bCode = parts[1];
+    String sCode = widget.styleCode;
+    String bCode = "";
+    if (sCode.contains('---')) {
+      List<String> parts = widget.styleCode.split('---');
+      sCode = parts[0];
+      bCode = parts[1];
     }
     final payload = {
-      "userId": UserSession.userName??'',
-      "coBrId": UserSession.coBrId??'',
-      "fcYrId": UserSession.userFcYr??'',
+      "userId": UserSession.userName ?? '',
+      "coBrId": UserSession.coBrId ?? '',
+      "fcYrId": UserSession.userFcYr ?? '',
       "data": {
         "designcode": sCode,
         "mrp": '0',
@@ -400,7 +415,7 @@ class _StyleCardState extends State<StyleCard> {
         "Note": noteController.text,
         "color": "",
         "Qty": " ",
-        "cobrid": UserSession.userName??'',
+        "cobrid": UserSession.userName ?? '',
         "user": "admin",
         "barcode": bCode,
       },
@@ -450,20 +465,20 @@ class _StyleCardState extends State<StyleCard> {
     List<String> updatedData = [];
 
     debugPrint('Submitting update for styleCode: ${widget.styleCode}');
-     String sCode =  widget.styleCode;
-    String bCode= "";
-    if(sCode.contains('---')){
-    List<String> parts = widget.styleCode.split('---');
-    sCode = parts[0];
-    bCode = parts[1];
+    String sCode = widget.styleCode;
+    String bCode = "";
+    if (sCode.contains('---')) {
+      List<String> parts = widget.styleCode.split('---');
+      sCode = parts[0];
+      bCode = parts[1];
     }
     // Create the initial payload for the first API call
     final initialPayload = {
-      "userId": UserSession.userName??'',
-      "coBrId": UserSession.coBrId??'',
-      "fcYrId": UserSession.userFcYr??'',
+      "userId": UserSession.userName ?? '',
+      "coBrId": UserSession.coBrId ?? '',
+      "fcYrId": UserSession.userFcYr ?? '',
       "data": {
-        "designcode":sCode,
+        "designcode": sCode,
         "mrp": '0',
         "WSP": '0',
         "size": '',
@@ -471,7 +486,7 @@ class _StyleCardState extends State<StyleCard> {
         "Note": noteController.text,
         "color": "",
         "Qty": " ",
-        "cobrid": UserSession.coBrId??'',
+        "cobrid": UserSession.coBrId ?? '',
         "user": "admin",
         "barcode": bCode,
       },
@@ -526,9 +541,9 @@ class _StyleCardState extends State<StyleCard> {
             bCode = parts[1];
           }
           final payload = {
-            "userId": UserSession.userName??'',
-            "coBrId": UserSession.coBrId??'',
-            "fcYrId": UserSession.userFcYr??'',
+            "userId": UserSession.userName ?? '',
+            "coBrId": UserSession.coBrId ?? '',
+            "fcYrId": UserSession.userFcYr ?? '',
             "data": {
               "designcode": sCode,
               "mrp": sizeDetails[size]?['mrp']?.toStringAsFixed(0) ?? '0',
@@ -538,9 +553,9 @@ class _StyleCardState extends State<StyleCard> {
               "Note": noteController.text,
               "color": shade,
               "Qty": qty,
-              "cobrid": UserSession.coBrId??'',
+              "cobrid": UserSession.coBrId ?? '',
               "user": "admin",
-              "barcode":bCode,
+              "barcode": bCode,
             },
             "typ": 0,
           };

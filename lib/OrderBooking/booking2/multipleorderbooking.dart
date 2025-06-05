@@ -39,9 +39,13 @@ class CatalogItem {
 
 class MultiCatalogBookingPage extends StatefulWidget {
   final List<Catalog> catalogs;
-    final VoidCallback onSuccess; // Add this line
+  final VoidCallback onSuccess; // Add this line
 
-  const MultiCatalogBookingPage({super.key, required this.catalogs,   required this.onSuccess, });
+  const MultiCatalogBookingPage({
+    super.key,
+    required this.catalogs,
+    required this.onSuccess,
+  });
 
   @override
   State<MultiCatalogBookingPage> createState() =>
@@ -61,9 +65,9 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
   Map<String, bool> isLoadingMap = {};
   Map<String, List<String>> copiedRowsMap = {};
 
-  String userId = UserSession.userName??'';
-  String coBrId = UserSession.coBrId??'';
-  String fcYrId = UserSession.userFcYr??'';
+  String userId = UserSession.userName ?? '';
+  String coBrId = UserSession.coBrId ?? '';
+  String fcYrId = UserSession.userFcYr ?? '';
   bool stockWise = true;
   int maxSizes = 0;
   bool isLoading = true;
@@ -126,14 +130,15 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
             for (var size in uniqueSizes) {
               final match = items.firstWhere(
                 (item) => item.shadeName == color && item.sizeName == size,
-                orElse: () => CatalogItem(
-                  styleCode: catalog.styleCode,
-                  shadeName: color,
-                  sizeName: size,
-                  clQty: 0,
-                  mrp: tempSizeMrpMap[size] ?? 0,
-                  wsp: tempSizeWspMap[size] ?? 0,
-                ),
+                orElse:
+                    () => CatalogItem(
+                      styleCode: catalog.styleCode,
+                      shadeName: color,
+                      sizeName: size,
+                      clQty: 0,
+                      mrp: tempSizeMrpMap[size] ?? 0,
+                      wsp: tempSizeWspMap[size] ?? 0,
+                    ),
               );
               final controller = TextEditingController();
               controller.addListener(() => setState(() {}));
@@ -348,11 +353,16 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
   }
 
   String _getImageUrl(Catalog catalog) {
-    if (catalog.fullImagePath.startsWith('http')) {
-      return catalog.fullImagePath;
+    final path = catalog.fullImagePath ?? '';
+    if (UserSession.onlineImage == '0') {
+      final imageName = path.split('/').last.split('?').first;
+      return imageName.isEmpty
+          ? ''
+          : '${AppConstants.BASE_URL}/images/$imageName';
+    } else if (UserSession.onlineImage == '1') {
+      return path;
     }
-    final imageName = catalog.fullImagePath.split('/').last.split('?').first;
-    return '${AppConstants.BASE_URL}/images/$imageName';
+    return '';
   }
 
   @override
@@ -378,17 +388,26 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
                 children: [
                   Text(
                     'Total: ₹${getTotalAmountAllStyles().toStringAsFixed(2)}',
-                    style: GoogleFonts.roboto(color: Colors.white, fontSize: 12),
+                    style: GoogleFonts.roboto(
+                      color: Colors.white,
+                      fontSize: 12,
+                    ),
                   ),
                   const VerticalDivider(color: Colors.white, thickness: 1),
                   Text(
                     'Total Item: ${getTotalItems()}',
-                    style: GoogleFonts.roboto(color: Colors.white, fontSize: 12),
+                    style: GoogleFonts.roboto(
+                      color: Colors.white,
+                      fontSize: 12,
+                    ),
                   ),
                   const VerticalDivider(color: Colors.white, thickness: 1),
                   Text(
                     'Total Qty: ${getTotalQtyAllStyles()}',
-                    style: GoogleFonts.roboto(color: Colors.white, fontSize: 12),
+                    style: GoogleFonts.roboto(
+                      color: Colors.white,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -396,21 +415,22 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
           ),
         ),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : widget.catalogs.isEmpty
+      body:
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : widget.catalogs.isEmpty
               ? const Center(child: Text("No items selected"))
               : SingleChildScrollView(
-                  child: Column(
-                    children: List.generate(widget.catalogs.length, (index) {
-                      final catalog = widget.catalogs[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 24),
-                        child: _buildItemBookingSection(context, catalog),
-                      );
-                    }),
-                  ),
+                child: Column(
+                  children: List.generate(widget.catalogs.length, (index) {
+                    final catalog = widget.catalogs[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      child: _buildItemBookingSection(context, catalog),
+                    );
+                  }),
                 ),
+              ),
       bottomNavigationBar: _buildBottomBar(),
     );
   }
@@ -477,13 +497,16 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
                                       child: Container(
                                         width: double.infinity,
                                         padding: const EdgeInsets.symmetric(
-                                            vertical: 12),
-                                        margin:
-                                            const EdgeInsets.only(bottom: 10),
+                                          vertical: 12,
+                                        ),
+                                        margin: const EdgeInsets.only(
+                                          bottom: 10,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: Colors.blue,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         alignment: Alignment.center,
                                         child: const Text(
@@ -495,18 +518,23 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
                                     GestureDetector(
                                       onTap: () {
                                         Navigator.of(dialogContext).pop();
-                                        _copySizeQtyInAllShade(catalog.styleCode);
+                                        _copySizeQtyInAllShade(
+                                          catalog.styleCode,
+                                        );
                                       },
                                       child: Container(
                                         width: double.infinity,
                                         padding: const EdgeInsets.symmetric(
-                                            vertical: 12),
-                                        margin:
-                                            const EdgeInsets.only(bottom: 10),
+                                          vertical: 12,
+                                        ),
+                                        margin: const EdgeInsets.only(
+                                          bottom: 10,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: Colors.blue,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         alignment: Alignment.center,
                                         child: const Text(
@@ -519,16 +547,19 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
                                       onTap: () {
                                         Navigator.of(dialogContext).pop();
                                         _copySizeQtyToOtherStyles(
-                                            catalog.styleCode);
+                                          catalog.styleCode,
+                                        );
                                       },
                                       child: Container(
                                         width: double.infinity,
                                         padding: const EdgeInsets.symmetric(
-                                            vertical: 12),
+                                          vertical: 12,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: Colors.green,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         alignment: Alignment.center,
                                         child: const Text(
@@ -580,7 +611,10 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     child: Text(
                       'Amt: ${getTotalAmount(catalog.styleCode).toStringAsFixed(0)}',
                       style: const TextStyle(
@@ -648,7 +682,11 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
                   sizes,
                 ),
                 _buildHeaderRow(catalog.styleCode, sizes),
-                for (var i = 0; i < (colorsMap[catalog.styleCode]?.length ?? 0); i++)
+                for (
+                  var i = 0;
+                  i < (colorsMap[catalog.styleCode]?.length ?? 0);
+                  i++
+                )
                   _buildQuantityRow(
                     catalog,
                     colorsMap[catalog.styleCode]![i],
@@ -694,9 +732,10 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: widget.catalogs.any((c) => getTotalQty(c.styleCode) > 0)
-                ? _submitAllOrders
-                : null,
+            onPressed:
+                widget.catalogs.any((c) => getTotalQty(c.styleCode) > 0)
+                    ? _submitAllOrders
+                    : null,
           ),
           ElevatedButton.icon(
             icon: const Icon(Icons.close, color: AppColors.primaryColor),
@@ -838,7 +877,8 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
                                 child: Container(
                                   width: double.infinity,
                                   padding: const EdgeInsets.symmetric(
-                                      vertical: 12),
+                                    vertical: 12,
+                                  ),
                                   margin: const EdgeInsets.only(bottom: 10),
                                   decoration: BoxDecoration(
                                     color: Colors.blue,
@@ -870,7 +910,8 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
                                 child: Container(
                                   width: double.infinity,
                                   padding: const EdgeInsets.symmetric(
-                                      vertical: 12),
+                                    vertical: 12,
+                                  ),
                                   margin: const EdgeInsets.only(bottom: 10),
                                   decoration: BoxDecoration(
                                     color: Colors.blue,
@@ -888,11 +929,13 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
                                   Navigator.of(context).pop();
                                   final copiedRow =
                                       copiedRowsMap[catalog.styleCode] ?? [];
-                                  for (int j = 0;
-                                      j <
-                                          (sizesMap[catalog.styleCode]?.length ??
-                                              0);
-                                      j++) {
+                                  for (
+                                    int j = 0;
+                                    j <
+                                        (sizesMap[catalog.styleCode]?.length ??
+                                            0);
+                                    j++
+                                  ) {
                                     controllersMap[catalog
                                             .styleCode]?[color]?[sizesMap[catalog
                                             .styleCode]![j]]
@@ -903,7 +946,8 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
                                 child: Container(
                                   width: double.infinity,
                                   padding: const EdgeInsets.symmetric(
-                                      vertical: 12),
+                                    vertical: 12,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.green,
                                     borderRadius: BorderRadius.circular(8),
@@ -940,18 +984,20 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
           if (index < sizes.length) {
             final size = sizes[index];
             final controller = controllersMap[catalog.styleCode]?[color]?[size];
-            final originalQty = catalogItemsMap[catalog.styleCode]
+            final originalQty =
+                catalogItemsMap[catalog.styleCode]
                     ?.firstWhere(
                       (item) =>
                           item.shadeName == color && item.sizeName == size,
-                      orElse: () => CatalogItem(
-                        styleCode: catalog.styleCode,
-                        shadeName: color,
-                        sizeName: size,
-                        clQty: 0,
-                        mrp: sizeMrpMap[catalog.styleCode]?[size] ?? 0,
-                        wsp: sizeWspMap[catalog.styleCode]?[size] ?? 0,
-                      ),
+                      orElse:
+                          () => CatalogItem(
+                            styleCode: catalog.styleCode,
+                            shadeName: color,
+                            sizeName: size,
+                            clQty: 0,
+                            mrp: sizeMrpMap[catalog.styleCode]?[size] ?? 0,
+                            wsp: sizeWspMap[catalog.styleCode]?[size] ?? 0,
+                          ),
                     )
                     .clQty ??
                 0;
@@ -984,181 +1030,195 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
     );
   }
 
-Future<void> _submitAllOrders() async {
-  List<Future<http.Response>> apiCalls = [];
-  List<String> apiCallStyles = [];
-  final cartModel = Provider.of<CartModel>(context, listen: false);
-  Set<String> processedStyles = {};
+  Future<void> _submitAllOrders() async {
+    List<Future<http.Response>> apiCalls = [];
+    List<String> apiCallStyles = [];
+    final cartModel = Provider.of<CartModel>(context, listen: false);
+    Set<String> processedStyles = {};
 
-  for (var catalog in widget.catalogs) {
-    final controllers = controllersMap[catalog.styleCode];
-    final noteController = noteControllersMap[catalog.styleCode];
-    final styleCode = styleCodeMap[catalog.styleCode] ?? '';
-    final sizes = sizesMap[catalog.styleCode] ?? [];
+    for (var catalog in widget.catalogs) {
+      final controllers = controllersMap[catalog.styleCode];
+      final noteController = noteControllersMap[catalog.styleCode];
+      final styleCode = styleCodeMap[catalog.styleCode] ?? '';
+      final sizes = sizesMap[catalog.styleCode] ?? [];
 
-    // Skip if the item is already in the cart
-    if (cartModel.addedItems.contains(styleCode)) {
-      continue;
-    }
+      // Skip if the item is already in the cart
+      if (cartModel.addedItems.contains(styleCode)) {
+        continue;
+      }
 
-    if (controllers != null) {
-      for (var colorEntry in controllers.entries) {
-        String color = colorEntry.key;
-        for (var sizeEntry in colorEntry.value.entries) {
-          String size = sizeEntry.key;
-          String qty = sizeEntry.value.text;
-          if (qty.isNotEmpty &&
-              int.tryParse(qty) != null &&
-              int.parse(qty) > 0) {
-            final payload = {
-              "userId": userId,
-              "coBrId": coBrId,
-              "fcYrId": fcYrId,
-              "data": {
-                "designcode": styleCode,
-                "mrp":
-                    sizeMrpMap[catalog.styleCode]?[size]?.toStringAsFixed(0) ??
-                        '0',
-                "WSP":
-                    sizeWspMap[catalog.styleCode]?[size]?.toStringAsFixed(0) ??
-                        '0',
-                "size": size,
-                "TotQty": getTotalQty(catalog.styleCode).toString(),
-                "Note": noteController?.text ?? '',
-                "color": color,
-                "Qty": qty,
-                "cobrid": coBrId,
-                "user": userId.toLowerCase(),
-                "barcode": "",
-              },
-              "typ": 0,
-            };
+      if (controllers != null) {
+        for (var colorEntry in controllers.entries) {
+          String color = colorEntry.key;
+          for (var sizeEntry in colorEntry.value.entries) {
+            String size = sizeEntry.key;
+            String qty = sizeEntry.value.text;
+            if (qty.isNotEmpty &&
+                int.tryParse(qty) != null &&
+                int.parse(qty) > 0) {
+              final payload = {
+                "userId": userId,
+                "coBrId": coBrId,
+                "fcYrId": fcYrId,
+                "data": {
+                  "designcode": styleCode,
+                  "mrp":
+                      sizeMrpMap[catalog.styleCode]?[size]?.toStringAsFixed(
+                        0,
+                      ) ??
+                      '0',
+                  "WSP":
+                      sizeWspMap[catalog.styleCode]?[size]?.toStringAsFixed(
+                        0,
+                      ) ??
+                      '0',
+                  "size": size,
+                  "TotQty": getTotalQty(catalog.styleCode).toString(),
+                  "Note": noteController?.text ?? '',
+                  "color": color,
+                  "Qty": qty,
+                  "cobrid": coBrId,
+                  "user": userId.toLowerCase(),
+                  "barcode": "",
+                },
+                "typ": 0,
+              };
 
-            apiCalls.add(
-              http.post(
-                Uri.parse(
-                  '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
+              apiCalls.add(
+                http.post(
+                  Uri.parse(
+                    '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
+                  ),
+                  headers: {'Content-Type': 'application/json'},
+                  body: jsonEncode(payload),
                 ),
-                headers: {'Content-Type': 'application/json'},
-                body: jsonEncode(payload),
-              ),
-            );
-            apiCallStyles.add(styleCode);
+              );
+              apiCallStyles.add(styleCode);
+            }
           }
         }
       }
     }
-  }
 
-  if (apiCalls.isEmpty) {
-    if (mounted) {
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text("Warning"),
-          content: const Text("No new items with valid quantities to submit."),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
-            ),
-          ],
-        ),
-      );
+    if (apiCalls.isEmpty) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder:
+              (_) => AlertDialog(
+                title: const Text("Warning"),
+                content: const Text(
+                  "No new items with valid quantities to submit.",
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("OK"),
+                  ),
+                ],
+              ),
+        );
+      }
+      return;
     }
-    return;
-  }
 
-  try {
-    final responses = await Future.wait(apiCalls);
-    final successfulStyles = <String>{};
+    try {
+      final responses = await Future.wait(apiCalls);
+      final successfulStyles = <String>{};
 
-    for (int i = 0; i < responses.length; i++) {
-      final response = responses[i];
-      if (response.statusCode == 200) {
-        try {
-          // Try parsing as JSON first
-          final responseBody = jsonDecode(response.body);
-          if (responseBody is Map<String, dynamic> && responseBody['success'] == true) {
-            successfulStyles.add(apiCallStyles[i]);
-            cartModel.addItem(apiCallStyles[i]);
+      for (int i = 0; i < responses.length; i++) {
+        final response = responses[i];
+        if (response.statusCode == 200) {
+          try {
+            // Try parsing as JSON first
+            final responseBody = jsonDecode(response.body);
+            if (responseBody is Map<String, dynamic> &&
+                responseBody['success'] == true) {
+              successfulStyles.add(apiCallStyles[i]);
+              cartModel.addItem(apiCallStyles[i]);
+            }
+          } catch (e) {
+            // Handle plain text "Success" response
+            if (response.body.trim() == "Success") {
+              successfulStyles.add(apiCallStyles[i]);
+              cartModel.addItem(apiCallStyles[i]);
+            } else {
+              print(
+                'Failed to parse response for style ${apiCallStyles[i]}: $e, response: ${response.body}',
+              );
+            }
           }
-        } catch (e) {
-          // Handle plain text "Success" response
-          if (response.body.trim() == "Success") {
-            successfulStyles.add(apiCallStyles[i]);
-            cartModel.addItem(apiCallStyles[i]);
-          } else {
-            print('Failed to parse response for style ${apiCallStyles[i]}: $e, response: ${response.body}');
-          }
+        } else {
+          print(
+            'API call failed for style ${apiCallStyles[i]}: ${response.statusCode}, response: ${response.body}',
+          );
+        }
+      }
+
+      if (successfulStyles.isNotEmpty) {
+        cartModel.updateCount(cartModel.count + successfulStyles.length);
+        processedStyles = successfulStyles;
+        widget.onSuccess();
+
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder:
+                (_) => AlertDialog(
+                  title: const Text("Success"),
+                  content: Text(
+                    "Successfully submitted ${successfulStyles.length} item${successfulStyles.length > 1 ? 's' : ''}.",
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.pop(context);
+                      },
+                      // Pop only the dialog
+                      child: const Text("OK"),
+                    ),
+                  ],
+                ),
+          );
         }
       } else {
-        print('API call failed for style ${apiCallStyles[i]}: ${response.statusCode}, response: ${response.body}');
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder:
+                (_) => AlertDialog(
+                  title: const Text("Error"),
+                  content: const Text("No items were successfully submitted."),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("OK"),
+                    ),
+                  ],
+                ),
+          );
+        }
       }
-    }
-
-    if (successfulStyles.isNotEmpty) {
-      cartModel.updateCount(cartModel.count + successfulStyles.length);
-      processedStyles = successfulStyles;
-      widget.onSuccess();
-
+    } catch (e) {
       if (mounted) {
         showDialog(
           context: context,
-          builder: (_) => AlertDialog(
-            title: const Text("Success"),
-            content: Text(
-              "Successfully submitted ${successfulStyles.length} item${successfulStyles.length > 1 ? 's' : ''}.",
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                   Navigator.pop(context);
-                    Navigator.pop(context);
-
-                },
-                // Pop only the dialog
-                child: const Text("OK"),
+          builder:
+              (_) => AlertDialog(
+                title: const Text("Error"),
+                content: Text("Failed to submit orders: $e"),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("OK"),
+                  ),
+                ],
               ),
-            ],
-          ),
         );
       }
-    } else {
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text("Error"),
-            content: const Text("No items were successfully submitted."),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("OK"),
-              ),
-            ],
-          ),
-        );
-      }
-    }
-  } catch (e) {
-    if (mounted) {
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text("Error"),
-          content: Text("Failed to submit orders: $e"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
-            ),
-          ],
-        ),
-      );
     }
   }
-}
 }
 
 class _TableHeaderCell extends StatelessWidget {
@@ -1204,10 +1264,11 @@ class _TableHeaderCell extends StatelessWidget {
 class _DiagonalLinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.grey.shade400
-      ..strokeWidth = 1
-      ..style = PaintingStyle.stroke;
+    final paint =
+        Paint()
+          ..color = Colors.grey.shade400
+          ..strokeWidth = 1
+          ..style = PaintingStyle.stroke;
     canvas.drawLine(Offset.zero, Offset(size.width, size.height), paint);
   }
 

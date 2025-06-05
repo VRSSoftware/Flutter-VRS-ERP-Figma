@@ -114,10 +114,28 @@ class OrderStatusCard extends StatelessWidget {
     );
   }
 
-  String _getImageUrl(String imagePath) =>
-      imagePath.startsWith('http')
-          ? imagePath
-          : '${AppConstants.BASE_URL}/images/${imagePath.split('/').last.split('?').first}';
+  // String _getImageUrl(String imagePath) =>
+  //     imagePath.startsWith('http')
+  //         ? imagePath
+  //         : '${AppConstants.BASE_URL}/images/${imagePath.split('/').last.split('?').first}';
+
+  String _getImageUrl(String imagePath) {
+    if (imagePath.isEmpty) {
+      return '';
+    }
+
+    if (UserSession.onlineImage == '0') {
+      final imageName = imagePath.split('/').last.split('?').first;
+      if (imageName.isEmpty) {
+        return '';
+      }
+      return '${AppConstants.BASE_URL}/images/$imageName';
+    } else if (UserSession.onlineImage == '1') {
+      return imagePath;
+    }
+
+    return '';
+  }
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
@@ -137,107 +155,110 @@ class OrderStatusCard extends StatelessWidget {
     );
   }
 
-Widget _buildOrderTable(BuildContext context) {
-  final Map<String, List<dynamic>> groupedItems = {};
-  for (var item in items) {
-    final color = item['Color'] ?? 'Unknown';
-    groupedItems.putIfAbsent(color, () => []).add(item);
-  }
+  Widget _buildOrderTable(BuildContext context) {
+    final Map<String, List<dynamic>> groupedItems = {};
+    for (var item in items) {
+      final color = item['Color'] ?? 'Unknown';
+      groupedItems.putIfAbsent(color, () => []).add(item);
+    }
 
-  // Dynamically build table rows
-  final List<TableRow> tableRows = [];
+    // Dynamically build table rows
+    final List<TableRow> tableRows = [];
 
-  // Table header
-  tableRows.add(
-    TableRow(
-      decoration: BoxDecoration(color: Colors.grey.shade100),
-      children: [
-        _buildTableHeader('Shade'),
-        _buildTableHeader('Size'),
-        _buildTableHeader('Party'),
-        _buildTableHeader('Order Qty'),
-        _buildTableHeader('Delv Qty'),
-        _buildTableHeader('Settle Qty'),
-        _buildTableHeader('Pending Qty'),
-        _buildTableHeader('Order No'),
-      ],
-    ),
-  );
+    // Table header
+    tableRows.add(
+      TableRow(
+        decoration: BoxDecoration(color: Colors.grey.shade100),
+        children: [
+          _buildTableHeader('Shade'),
+          _buildTableHeader('Size'),
+          _buildTableHeader('Party'),
+          _buildTableHeader('Order Qty'),
+          _buildTableHeader('Delv Qty'),
+          _buildTableHeader('Settle Qty'),
+          _buildTableHeader('Pending Qty'),
+          _buildTableHeader('Order No'),
+        ],
+      ),
+    );
 
-  final entries = groupedItems.entries.toList();
-  for (int groupIndex = 0; groupIndex < entries.length; groupIndex++) {
-    final entry = entries[groupIndex];
-    final isLastGroup = groupIndex == entries.length - 1;
+    final entries = groupedItems.entries.toList();
+    for (int groupIndex = 0; groupIndex < entries.length; groupIndex++) {
+      final entry = entries[groupIndex];
+      final isLastGroup = groupIndex == entries.length - 1;
 
-    for (int i = 0; i < entry.value.length; i++) {
-      final item = entry.value[i];
-      tableRows.add(
-        TableRow(
-          children: [
-            if (i == 0)
-              TableCell(
-                verticalAlignment: TableCellVerticalAlignment.middle,
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Text(
-                    entry.key,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: _getColorCode(entry.key),
+      for (int i = 0; i < entry.value.length; i++) {
+        final item = entry.value[i];
+        tableRows.add(
+          TableRow(
+            children: [
+              if (i == 0)
+                TableCell(
+                  verticalAlignment: TableCellVerticalAlignment.middle,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Text(
+                      entry.key,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: _getColorCode(entry.key),
+                      ),
                     ),
                   ),
-                ),
-              )
-            else
-              const SizedBox(),
-            _buildTableCell(item['Size'] ?? ''),
-            _buildTableCell(item['Party'] ?? ''),
-            _buildTableCell(item['OrderQty']?.toString() ?? '0'),
-            _buildTableCell(item['DelvQty']?.toString() ?? '0'),
-            _buildTableCell(item['SettleQty']?.toString() ?? '0'),
-            _buildTableCell(item['PendingQty']?.toString() ?? '0'),
-            _buildTableCell(item['OrderNo'] ?? ''),
-          ],
-        ),
-      );
-    }
-
-    if (!isLastGroup) {
-      tableRows.add(
-        TableRow(
-          children: List.generate(
-            8,
-            (_) => Container(height: 1, color: const Color.fromARGB(255, 124, 124, 124)),
+                )
+              else
+                const SizedBox(),
+              _buildTableCell(item['Size'] ?? ''),
+              _buildTableCell(item['Party'] ?? ''),
+              _buildTableCell(item['OrderQty']?.toString() ?? '0'),
+              _buildTableCell(item['DelvQty']?.toString() ?? '0'),
+              _buildTableCell(item['SettleQty']?.toString() ?? '0'),
+              _buildTableCell(item['PendingQty']?.toString() ?? '0'),
+              _buildTableCell(item['OrderNo'] ?? ''),
+            ],
           ),
-        ),
-      );
-    }
-  }
+        );
+      }
 
-  return SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: ConstrainedBox(
-      constraints: BoxConstraints(
-        minWidth: MediaQuery.of(context).size.width - 64,
+      if (!isLastGroup) {
+        tableRows.add(
+          TableRow(
+            children: List.generate(
+              8,
+              (_) => Container(
+                height: 1,
+                color: const Color.fromARGB(255, 124, 124, 124),
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: MediaQuery.of(context).size.width - 64,
+        ),
+        child: Table(
+          border: TableBorder.all(color: Colors.grey.shade300, width: 1),
+          columnWidths: const {
+            0: FixedColumnWidth(100),
+            1: FixedColumnWidth(80),
+            2: FixedColumnWidth(120),
+            3: FixedColumnWidth(80),
+            4: FixedColumnWidth(80),
+            5: FixedColumnWidth(80),
+            6: FixedColumnWidth(80),
+            7: FixedColumnWidth(100),
+          },
+          children: tableRows,
+        ),
       ),
-      child: Table(
-        border: TableBorder.all(color: Colors.grey.shade300, width: 1),
-        columnWidths: const {
-          0: FixedColumnWidth(100),
-          1: FixedColumnWidth(80),
-          2: FixedColumnWidth(120),
-          3: FixedColumnWidth(80),
-          4: FixedColumnWidth(80),
-          5: FixedColumnWidth(80),
-          6: FixedColumnWidth(80),
-          7: FixedColumnWidth(100),
-        },
-        children: tableRows,
-      ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildTableHeader(String text) {
     return TableCell(
