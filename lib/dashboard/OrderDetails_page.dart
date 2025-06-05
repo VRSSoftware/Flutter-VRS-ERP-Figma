@@ -12,6 +12,7 @@ import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/dashboard/customerOrderDetailsPage.dart';
 import 'package:vrs_erp_figma/dashboard/orderStatus.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 class OrderDetailsPage extends StatefulWidget {
   final List<Map<String, dynamic>> orderDetails;
   final DateTime fromDate;
@@ -30,94 +31,99 @@ class OrderDetailsPage extends StatefulWidget {
   State<OrderDetailsPage> createState() => _OrderDetailsPageState();
 }
 
-
-
 class _OrderDetailsPageState extends State<OrderDetailsPage> {
-
   Future<void> _launchWhatsApp(String phoneNumber) async {
-  final whatsappUrl = "https://wa.me/$phoneNumber";
-  if (await canLaunch(whatsappUrl)) {
-    await launch(whatsappUrl);
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Could not launch WhatsApp')),
-    );
+    final whatsappUrl = "https://wa.me/$phoneNumber";
+    if (await canLaunch(whatsappUrl)) {
+      await launch(whatsappUrl);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not launch WhatsApp')),
+      );
+    }
   }
-}
 
-Future<void> _makePhoneCall(String phoneNumber) async {
-  final phoneUrl = "tel:$phoneNumber";
-  if (await canLaunch(phoneUrl)) {
-    await launch(phoneUrl);
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Could not make a call')),
-    );
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final phoneUrl = "tel:$phoneNumber";
+    if (await canLaunch(phoneUrl)) {
+      await launch(phoneUrl);
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not make a call')));
+    }
   }
-}  
 
-void _showContactOptions(BuildContext context, String phoneNumber) {
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: Colors.transparent, // Make background transparent for rounded bottom
-    isScrollControlled: true,
-    builder: (context) => SafeArea(
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(0), bottom: Radius.circular(0)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 16, bottom: 0),
+  void _showContactOptions(BuildContext context, String phoneNumber) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor:
+          Colors.transparent, // Make background transparent for rounded bottom
+      isScrollControlled: true,
+      builder:
+          (context) => SafeArea(
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(0),
+                  bottom: Radius.circular(0),
+                ),
+              ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  ListTile(
-                    leading: const FaIcon(FontAwesomeIcons.whatsapp, color: Colors.green),
-                    title: const Text('Message on WhatsApp'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _launchWhatsApp(phoneNumber);
-                    },
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16, bottom: 0),
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: const FaIcon(
+                            FontAwesomeIcons.whatsapp,
+                            color: Colors.green,
+                          ),
+                          title: const Text('Message on WhatsApp'),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _launchWhatsApp(phoneNumber);
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.call, color: Colors.blue),
+                          title: const Text('Call'),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _makePhoneCall(phoneNumber);
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.call, color: Colors.blue),
-                    title: const Text('Call'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _makePhoneCall(phoneNumber);
-                    },
+                  const Divider(height: 1),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[300],
+                          foregroundColor: Colors.black87,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(0),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[300],
-                    foregroundColor: Colors.black87,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(0),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
+          ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -170,7 +176,7 @@ void _showContactOptions(BuildContext context, String phoneNumber) {
                   _handleWhatsAppShare();
                   break;
                 case 'view':
-                 _handleView();
+                  _handleView();
                   break;
               }
             },
@@ -233,14 +239,26 @@ void _showContactOptions(BuildContext context, String phoneNumber) {
             children: [
               Row(
                 children: [
-                  Expanded(child: _buildSummaryCard('Total Orders', totalOrders.toString())),
+                  Expanded(
+                    child: _buildSummaryCard(
+                      'Total Orders',
+                      totalOrders.toString(),
+                    ),
+                  ),
                   SizedBox(width: 8),
-                  Expanded(child:  _buildSummaryCard('Total Qty', totalQuantity.toString())),
+                  Expanded(
+                    child: _buildSummaryCard(
+                      'Total Qty',
+                      totalQuantity.toString(),
+                    ),
+                  ),
                   SizedBox(width: 8),
-                  Expanded(child:   _buildSummaryCard(
-                    'Total Amount',
-                    '₹${totalAmount.toString()}',
-                  )),
+                  Expanded(
+                    child: _buildSummaryCard(
+                      'Total Amount',
+                      '₹${totalAmount.toString()}',
+                    ),
+                  ),
                 ],
               ),
 
@@ -260,7 +278,7 @@ void _showContactOptions(BuildContext context, String phoneNumber) {
     );
   }
 
-Future<pw.Document> _generatePDF() async {
+  Future<pw.Document> _generatePDF() async {
     final pdf = pw.Document();
 
     pdf.addPage(
@@ -269,17 +287,30 @@ Future<pw.Document> _generatePDF() async {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Text(
-                'VRS Software Pvt Ltd',
-                style: pw.TextStyle(
-                  fontSize: 16,
-                  fontWeight: pw.FontWeight.bold,
+              // First row - Company name centered
+              pw.Center(
+                child: pw.Text(
+                  'VRS Software Pvt Ltd',
+                  style: pw.TextStyle(
+                    fontSize: 16,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
                 ),
               ),
-              pw.Text(
-                'Print Date: ${DateTime.now().toString().substring(0, 19)}',
-                style: const pw.TextStyle(fontSize: 12),
+
+              pw.SizedBox(height: 10),
+
+              // Second row - Print date right-aligned
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.end,
+                children: [
+                  pw.Text(
+                    'Print Date: ${DateTime.now().toString().substring(0, 19)}',
+                    style: const pw.TextStyle(fontSize: 12),
+                  ),
+                ],
               ),
+
               pw.SizedBox(height: 20),
               pw.Table(
                 border: pw.TableBorder.all(),
@@ -291,7 +322,9 @@ Future<pw.Document> _generatePDF() async {
                 },
                 children: [
                   pw.TableRow(
-                    decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                    decoration: const pw.BoxDecoration(
+                      color: PdfColors.grey200,
+                    ),
                     children: [
                       pw.Padding(
                         padding: const pw.EdgeInsets.all(8),
@@ -346,7 +379,9 @@ Future<pw.Document> _generatePDF() async {
                     );
                   }).toList(),
                   pw.TableRow(
-                    decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                    decoration: const pw.BoxDecoration(
+                      color: PdfColors.grey200,
+                    ),
                     children: [
                       pw.Padding(
                         padding: const pw.EdgeInsets.all(8),
@@ -360,8 +395,10 @@ Future<pw.Document> _generatePDF() async {
                         child: pw.Text(
                           widget.orderDetails
                               .fold<int>(
-                                  0,
-                                  (sum, item) => sum + (item['totalorder'] as int))
+                                0,
+                                (sum, item) =>
+                                    sum + (item['totalorder'] as int),
+                              )
                               .toString(),
                           style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                         ),
@@ -371,7 +408,9 @@ Future<pw.Document> _generatePDF() async {
                         child: pw.Text(
                           widget.orderDetails
                               .fold<int>(
-                                  0, (sum, item) => sum + (item['totalqty'] as int))
+                                0,
+                                (sum, item) => sum + (item['totalqty'] as int),
+                              )
                               .toString(),
                           style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                         ),
@@ -381,7 +420,9 @@ Future<pw.Document> _generatePDF() async {
                         child: pw.Text(
                           widget.orderDetails
                               .fold<int>(
-                                  0, (sum, item) => sum + (item['totalamt'] as int))
+                                0,
+                                (sum, item) => sum + (item['totalamt'] as int),
+                              )
                               .toString(),
                           style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                         ),
@@ -434,7 +475,8 @@ Future<pw.Document> _generatePDF() async {
 
       if (downloadsDir != null) {
         final file = File(
-            '${downloadsDir.path}/SalesOrder_TotalOrderSummary_${DateTime.now().millisecondsSinceEpoch}.pdf');
+          '${downloadsDir.path}/SalesOrder_TotalOrderSummary_${DateTime.now().millisecondsSinceEpoch}.pdf',
+        );
         await file.writeAsBytes(await pdf.save());
         filePath = file.path;
       } else {
@@ -443,9 +485,9 @@ Future<pw.Document> _generatePDF() async {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving PDF: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error saving PDF: $e')));
     }
 
     return filePath;
@@ -458,44 +500,48 @@ Future<pw.Document> _generatePDF() async {
       if (filePath.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(Platform.isAndroid
+            content: Text(
+              Platform.isAndroid
                   ? 'PDF downloaded to Downloads folder: $filePath'
-                  : 'PDF saved to Documents: $filePath')),
+                  : 'PDF saved to Documents: $filePath',
+            ),
+          ),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error downloading PDF: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error downloading PDF: $e')));
     }
   }
 
-void _handleView() async {
-  try {
-    final pdf = await _generatePDF();
-    final bytes = await pdf.save();
-    
-    // Create a temporary file (optional, some PDF viewers can work with bytes directly)
-    final tempDir = await getTemporaryDirectory();
-    final tempFile = File('${tempDir.path}/temp_preview.pdf');
-    await tempFile.writeAsBytes(bytes);
-    
-    final result = await OpenFile.open(tempFile.path);
-    
-    if (result.type != ResultType.done) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error opening PDF: ${result.message}')),
-      );
+  void _handleView() async {
+    try {
+      final pdf = await _generatePDF();
+      final bytes = await pdf.save();
+
+      // Create a temporary file (optional, some PDF viewers can work with bytes directly)
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/temp_preview.pdf');
+      await tempFile.writeAsBytes(bytes);
+
+      final result = await OpenFile.open(tempFile.path);
+
+      if (result.type != ResultType.done) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error opening PDF: ${result.message}')),
+        );
+      }
+
+      // Optionally delete the temp file after viewing (or let the system handle it)
+      // tempFile.delete();
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error viewing PDF: $e')));
     }
-    
-    // Optionally delete the temp file after viewing (or let the system handle it)
-    // tempFile.delete();
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error viewing PDF: $e')),
-    );
   }
-}
+
   void _handleWhatsAppShare() {
     // Implement WhatsApp share functionality (as before)
     ScaffoldMessenger.of(context).showSnackBar(
@@ -505,7 +551,6 @@ void _handleView() async {
     );
   }
 
-  
   Widget _buildSummaryCard(String title, String value) {
     IconData iconData;
     switch (title) {
@@ -685,35 +730,36 @@ void _handleView() async {
                 ],
               ),
 
-          if (order['whatsappmobileno'] != null &&
-    order['whatsappmobileno'].toString().isNotEmpty)
-  Padding(
-    padding: const EdgeInsets.only(top: 10),
-    child: GestureDetector(
-      onTap: () => _showContactOptions(
-        context,
-        order['whatsappmobileno'].toString(),
-      ),
-      child: Row(
-        children: [
-          const FaIcon(
-            FontAwesomeIcons.whatsapp,
-            size: 12,
-            color: Colors.green,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            order['whatsappmobileno'].toString(),
-            overflow: TextOverflow.visible,
-            style: const TextStyle(
-              color: Colors.green,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    ),
-  ),
+              if (order['whatsappmobileno'] != null &&
+                  order['whatsappmobileno'].toString().isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: GestureDetector(
+                    onTap:
+                        () => _showContactOptions(
+                          context,
+                          order['whatsappmobileno'].toString(),
+                        ),
+                    child: Row(
+                      children: [
+                        const FaIcon(
+                          FontAwesomeIcons.whatsapp,
+                          size: 12,
+                          color: Colors.green,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          order['whatsappmobileno'].toString(),
+                          overflow: TextOverflow.visible,
+                          style: const TextStyle(
+                            color: Colors.green,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
