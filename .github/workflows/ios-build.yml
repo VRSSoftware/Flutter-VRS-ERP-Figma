@@ -13,43 +13,48 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v3
 
-      - name: Set up Ruby (for Cocoapods if needed)
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.13.0' # Change to your Flutter version
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Set up Ruby (for CocoaPods)
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.1'
 
-      - name: Install dependencies via Cocoapods
+      - name: Install CocoaPods (if Podfile exists)
         run: |
-          cd ios
-          pod install
-        if: exists('ios/Podfile')
+          if [ -f ios/Podfile ]; then
+            cd ios
+            pod install
+          else
+            echo "No Podfile found. Skipping pod install."
+          fi
 
       - name: Set up Xcode version
-        run: sudo xcode-select -s /Applications/Xcode_15.2.app  # Adjust version as needed
+        run: sudo xcode-select -s /Applications/Xcode_15.2.app
 
       - name: Build the iOS app
         run: |
-          xcodebuild -workspace YourApp.xcworkspace \
-                     -scheme YourApp \
-                     -sdk iphoneos \
-                     -configuration Release \
-                     clean build
+          flutter build ios --release --no-codesign
 
-      # Optional: Export .ipa file
       - name: Archive and export IPA
         run: |
-          xcodebuild -workspace YourApp.xcworkspace \
-                     -scheme YourApp \
+          xcodebuild -workspace ios/Runner.xcworkspace \
+                     -scheme Runner \
                      -sdk iphoneos \
                      -configuration Release \
-                     -archivePath $PWD/build/YourApp.xcarchive archive
+                     -archivePath $PWD/build/Runner.xcarchive archive
 
           xcodebuild -exportArchive \
-                     -archivePath $PWD/build/YourApp.xcarchive \
+                     -archivePath $PWD/build/Runner.xcarchive \
                      -exportOptionsPlist ios/ExportOptions.plist \
                      -exportPath $PWD/build
 
-      # Optional: Upload artifact
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v3
         with:
