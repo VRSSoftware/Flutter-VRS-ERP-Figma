@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:vrs_erp_figma/OrderBooking/booking2/booking2.dart';
@@ -659,7 +660,12 @@ class _OrderPageState extends State<OrderPage> {
                 ),
                 child:
                     isLoading
-                        ? Center(child: CircularProgressIndicator())
+                        ? Center(
+                              child: LoadingAnimationWidget.waveDots(
+                                color: AppColors.primaryColor,
+                                size: 30,
+                              ),
+                            )
                         : hasError
                         ? Center(
                           child: Column(

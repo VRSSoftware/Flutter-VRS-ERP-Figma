@@ -194,115 +194,268 @@ class _LoginPageState extends State<LoginScreen> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: constraints.maxHeight < 600
-                  ? AlwaysScrollableScrollPhysics()
-                  : NeverScrollableScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.max,
-                      children: [
-                        Stack(
-                          alignment: Alignment.bottomCenter,
-                          clipBehavior: Clip.none,
+  // @override
+  // Widget build(BuildContext context) {
+  //   return Scaffold(
+  //     resizeToAvoidBottomInset: false,
+  //     body: SafeArea(
+  //       child: LayoutBuilder(
+  //         builder: (context, constraints) {
+  //           return SingleChildScrollView(
+  //             physics: constraints.maxHeight < 600
+  //                 ? AlwaysScrollableScrollPhysics()
+  //                 : NeverScrollableScrollPhysics(),
+  //             child: ConstrainedBox(
+  //               constraints: BoxConstraints(minHeight: constraints.maxHeight),
+  //               child: IntrinsicHeight(
+  //                 child: Form(
+  //                   key: _formKey,
+  //                   child: Column(
+  //                     mainAxisSize: MainAxisSize.max,
+  //                     children: [
+  //                       Stack(
+  //                         alignment: Alignment.bottomCenter,
+  //                         clipBehavior: Clip.none,
+  //                         children: [
+  //                           Image.asset(
+  //                             "assets/images/background.png",
+  //                             width: double.infinity,
+  //                             height: constraints.maxHeight * 0.23,
+  //                             fit: BoxFit.cover,
+  //                           ),
+  //                           Positioned(
+  //                             bottom: -40,
+  //                             child: CircleAvatar(
+  //                               radius: 50,
+  //                               backgroundColor: Colors.white,
+  //                               child: ClipOval(
+  //                                 child: Image.asset(
+  //                                   "assets/images/logo.png",
+  //                                   width: 300,
+  //                                   height: 350,
+  //                                   fit: BoxFit.contain,
+  //                                 ),
+  //                               ),
+  //                             ),
+  //                           ),
+  //                         ],
+  //                       ),
+  //                       SizedBox(height: 50),
+  //                       Padding(
+  //                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
+  //                         child: Column(
+  //                           children: [
+  //                             Text("Login Now", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+  //                             SizedBox(height: 8),
+  //                             _buildTextField("User", "Enter your username", controller: _usernameController, focusNode: _usernameFocus, nextFocus: _passwordFocus, validator: (value) => value == null || value.isEmpty ? 'Username is required' : null),
+  //                             _buildTextField("Password", "Enter your password", obscureText: true, controller: _passwordController, focusNode: _passwordFocus, nextFocus: _companyFocus, validator: (value) => value == null || value.isEmpty ? 'Password is required' : null),
+  //                             _buildDropdown("Company", "Select your Company", items: _companies, value: _selectedCompany, focusNode: _companyFocus, nextFocus: _yearFocus, onChanged: (val) => setState(() => _selectedCompany = val), validator: (value) => value == null ? 'Please select a company' : null),
+  //                             _buildDropdown("Year", "Select Year", items: _years, value: _selectedYear, focusNode: _yearFocus, onChanged: (val) => setState(() => _selectedYear = val), validator: (value) => value == null ? 'Please select a year' : null),
+  //                             SizedBox(height: 8),
+  //                             Container(
+  //                               width: double.infinity,
+  //                               height: 45,
+  //                               decoration: BoxDecoration(
+  //                                 borderRadius: BorderRadius.circular(30),
+  //                                 gradient: LinearGradient(
+  //                                   colors: [AppColors.primaryColor, AppColors.maroon],
+  //                                   begin: Alignment.centerLeft,
+  //                                   end: Alignment.centerRight,
+  //                                 ),
+  //                               ),
+  //                               child: ElevatedButton(
+  //                                 onPressed: () => login(context),
+  //                                 style: ElevatedButton.styleFrom(
+  //                                   backgroundColor: Colors.transparent,
+  //                                   shadowColor: Colors.transparent,
+  //                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+  //                                 ),
+  //                                 child: Text("Log in", style: TextStyle(fontSize: 16, color: Colors.white)),
+  //                               ),
+  //                             ),
+  //                             isRegistered == '1'
+  //                                 ? Container()
+  //                                 : TextButton(
+  //                                     onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => RegisterScreen())),
+  //                                     child: RichText(
+  //                                       text: TextSpan(
+  //                                         text: "New user? ",
+  //                                         style: TextStyle(color: Colors.black, fontSize: 14),
+  //                                         children: [
+  //                                           TextSpan(text: "Register here", style: TextStyle(color: AppColors.primaryColor, fontWeight: FontWeight.bold)),
+  //                                         ],
+  //                                       ),
+  //                                     ),
+  //                                   ),
+  //                           ],
+  //                         ),
+  //                       ),
+  //                       Spacer(),
+  //                     ],
+  //                   ),
+  //                 ),
+  //               ),
+  //             ),
+  //           );
+  //         },
+  //       ),
+  //     ),
+  //   );
+  // }
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    resizeToAvoidBottomInset: false,
+    body: SafeArea(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: constraints.maxHeight < 600
+                ? AlwaysScrollableScrollPhysics()
+                : NeverScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.center, // Center the form vertically
+                    children: [
+                      Stack(
+                        alignment: Alignment.bottomCenter,
+                        clipBehavior: Clip.none,
+                        children: [
+                          Image.asset(
+                            "assets/images/background.png",
+                            width: double.infinity,
+                            height: constraints.maxHeight * 0.23,
+                            fit: BoxFit.cover,
+                          ),
+                          Positioned(
+                            bottom: -40,
+                            child: CircleAvatar(
+                              radius: 50,
+                              backgroundColor: Colors.white,
+                              child: ClipOval(
+                                child: Image.asset(
+                                  "assets/images/logo.png",
+                                  width: 300,
+                                  height: 350,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 50),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Column(
                           children: [
-                            Image.asset(
-                              "assets/images/background.png",
+                            Text(
+                              "Login Now",
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 8),
+                            _buildTextField(
+                              "User",
+                              "Enter your username",
+                              controller: _usernameController,
+                              focusNode: _usernameFocus,
+                              nextFocus: _passwordFocus,
+                              validator: (value) =>
+                                  value == null || value.isEmpty ? 'Username is required' : null,
+                            ),
+                            _buildTextField(
+                              "Password",
+                              "Enter your password",
+                              obscureText: true,
+                              controller: _passwordController,
+                              focusNode: _passwordFocus,
+                              nextFocus: _companyFocus,
+                              validator: (value) =>
+                                  value == null || value.isEmpty ? 'Password is required' : null,
+                            ),
+                            _buildDropdown(
+                              "Company",
+                              "Select your Company",
+                              items: _companies,
+                              value: _selectedCompany,
+                              focusNode: _companyFocus,
+                              nextFocus: _yearFocus,
+                              onChanged: (val) => setState(() => _selectedCompany = val),
+                              validator: (value) => value == null ? 'Please select a company' : null,
+                            ),
+                            _buildDropdown(
+                              "Year",
+                              "Select Year",
+                              items: _years,
+                              value: _selectedYear,
+                              focusNode: _yearFocus,
+                              onChanged: (val) => setState(() => _selectedYear = val),
+                              validator: (value) => value == null ? 'Please select a year' : null,
+                            ),
+                            SizedBox(height: 8),
+                            Container(
                               width: double.infinity,
-                              height: constraints.maxHeight * 0.23,
-                              fit: BoxFit.cover,
-                            ),
-                            Positioned(
-                              bottom: -40,
-                              child: CircleAvatar(
-                                radius: 50,
-                                backgroundColor: Colors.white,
-                                child: ClipOval(
-                                  child: Image.asset(
-                                    "assets/images/logo.png",
-                                    width: 300,
-                                    height: 350,
-                                    fit: BoxFit.contain,
-                                  ),
+                              height: 45,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(0),
+                                gradient: LinearGradient(
+                                  colors: [AppColors.primaryColor, AppColors.maroon],
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                ),
+                              ),
+                              child: ElevatedButton(
+                                onPressed: () => login(context),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
+                                ),
+                                child: Text(
+                                  "Log in",
+                                  style: TextStyle(fontSize: 16, color: Colors.white),
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                        SizedBox(height: 50),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Column(
-                            children: [
-                              Text("Login Now", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                              SizedBox(height: 8),
-                              _buildTextField("User", "Enter your username", controller: _usernameController, focusNode: _usernameFocus, nextFocus: _passwordFocus, validator: (value) => value == null || value.isEmpty ? 'Username is required' : null),
-                              _buildTextField("Password", "Enter your password", obscureText: true, controller: _passwordController, focusNode: _passwordFocus, nextFocus: _companyFocus, validator: (value) => value == null || value.isEmpty ? 'Password is required' : null),
-                              _buildDropdown("Company", "Select your Company", items: _companies, value: _selectedCompany, focusNode: _companyFocus, nextFocus: _yearFocus, onChanged: (val) => setState(() => _selectedCompany = val), validator: (value) => value == null ? 'Please select a company' : null),
-                              _buildDropdown("Year", "Select Year", items: _years, value: _selectedYear, focusNode: _yearFocus, onChanged: (val) => setState(() => _selectedYear = val), validator: (value) => value == null ? 'Please select a year' : null),
-                              SizedBox(height: 8),
-                              Container(
-                                width: double.infinity,
-                                height: 45,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(30),
-                                  gradient: LinearGradient(
-                                    colors: [AppColors.primaryColor, AppColors.maroon],
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                  ),
-                                ),
-                                child: ElevatedButton(
-                                  onPressed: () => login(context),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                                  ),
-                                  child: Text("Log in", style: TextStyle(fontSize: 16, color: Colors.white)),
-                                ),
-                              ),
-                              isRegistered == '1'
-                                  ? Container()
-                                  : TextButton(
-                                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => RegisterScreen())),
-                                      child: RichText(
-                                        text: TextSpan(
-                                          text: "New user? ",
-                                          style: TextStyle(color: Colors.black, fontSize: 14),
-                                          children: [
-                                            TextSpan(text: "Register here", style: TextStyle(color: AppColors.primaryColor, fontWeight: FontWeight.bold)),
-                                          ],
-                                        ),
+                            isRegistered == '1'
+                                ? Container()
+                                : TextButton(
+                                    onPressed: () => Navigator.push(
+                                        context, MaterialPageRoute(builder: (context) => RegisterScreen())),
+                                    child: RichText(
+                                      text: TextSpan(
+                                        text: "New user? ",
+                                        style: TextStyle(color: Colors.black, fontSize: 14),
+                                        children: [
+                                          TextSpan(
+                                            text: "Register here",
+                                            style: TextStyle(
+                                                color: AppColors.primaryColor, fontWeight: FontWeight.bold),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                            ],
-                          ),
+                                  ),
+                          ],
                         ),
-                        Spacer(),
-                      ],
-                    ),
+                      ),
+                      // Removed Spacer() to allow centering
+                    ],
                   ),
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
-    );
-  }
-
+    ),
+  );
+}
   Widget _buildTextField(String label, String hint,
       {bool obscureText = false,
       TextEditingController? controller,
@@ -330,9 +483,9 @@ class _LoginPageState extends State<LoginScreen> {
               hintText: hint,
               isDense: true,
               contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppColors.primaryColor, width: 3.0)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(0), borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(0), borderSide: BorderSide(color: AppColors.primaryColor, width: 3.0)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(0), borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0)),
               errorStyle: TextStyle(height: 0.7),
             ),
             validator: validator,
@@ -363,9 +516,9 @@ class _LoginPageState extends State<LoginScreen> {
             decoration: InputDecoration(
               isDense: true,
               contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppColors.primaryColor, width: 3.0)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(0), borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(0), borderSide: BorderSide(color: AppColors.primaryColor, width: 3.0)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(0), borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0)),
               errorStyle: TextStyle(height: 0.7),
             ),
             hint: Text(hint, overflow: TextOverflow.ellipsis),

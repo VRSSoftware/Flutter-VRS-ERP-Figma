@@ -649,57 +649,64 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
     );
   }
 
-  Widget _buildCatalogTable(Catalog catalog) {
-    final sizes = sizesMap[catalog.styleCode] ?? [];
-    final requiredTableWidth = 100 + (80 * maxSizes);
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade500),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minWidth: requiredTableWidth.toDouble()),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.vertical,
-            child: Table(
-              border: TableBorder.symmetric(
-                inside: BorderSide(color: Colors.grey.shade400, width: 1),
-              ),
-              columnWidths: _buildColumnWidths(),
-              children: [
-                _buildPriceRow(
-                  "MRP",
-                  sizeMrpMap[catalog.styleCode] ?? {},
-                  FontWeight.w600,
-                  sizes,
-                ),
-                _buildPriceRow(
-                  "WSP",
-                  sizeWspMap[catalog.styleCode] ?? {},
-                  FontWeight.w400,
-                  sizes,
-                ),
-                _buildHeaderRow(catalog.styleCode, sizes),
-                for (
-                  var i = 0;
-                  i < (colorsMap[catalog.styleCode]?.length ?? 0);
-                  i++
-                )
-                  _buildQuantityRow(
-                    catalog,
-                    colorsMap[catalog.styleCode]![i],
-                    i,
-                    sizes,
-                  ),
-              ],
+Widget _buildCatalogTable(Catalog catalog) {
+  final sizes = sizesMap[catalog.styleCode] ?? [];
+  final screenWidth = MediaQuery.of(context).size.width;
+
+  // Minimum table width: base column + 80px per size
+  final baseTableWidth = 100 + (80 * sizes.length);
+  // Use max(screen width, baseTableWidth) to ensure responsive scroll on small screens
+  final requiredTableWidth = screenWidth > baseTableWidth
+      ? screenWidth
+      : baseTableWidth.toDouble();
+
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    decoration: BoxDecoration(
+      border: Border.all(color: Colors.grey.shade500),
+      borderRadius: BorderRadius.circular(0),
+    ),
+    child: SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minWidth: requiredTableWidth),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: Table(
+            border: TableBorder.symmetric(
+              inside: BorderSide(color: Colors.grey.shade400, width: 1),
             ),
+            columnWidths: _buildColumnWidths(),
+            children: [
+              _buildPriceRow(
+                "MRP",
+                sizeMrpMap[catalog.styleCode] ?? {},
+                FontWeight.w600,
+                sizes,
+              ),
+              _buildPriceRow(
+                "WSP",
+                sizeWspMap[catalog.styleCode] ?? {},
+                FontWeight.w400,
+                sizes,
+              ),
+              _buildHeaderRow(catalog.styleCode, sizes),
+              for (var i = 0;
+                  i < (colorsMap[catalog.styleCode]?.length ?? 0);
+                  i++)
+                _buildQuantityRow(
+                  catalog,
+                  colorsMap[catalog.styleCode]![i],
+                  i,
+                  sizes,
+                ),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Map<int, TableColumnWidth> _buildColumnWidths() {
     const baseWidth = 100.0;
@@ -710,14 +717,36 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
     };
   }
 
-  Widget _buildBottomBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: Colors.white,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          ElevatedButton.icon(
+Widget _buildBottomBar() {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    color: Colors.white,
+    child: Row(
+      children: [
+          // Cancel button
+        Expanded(
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.close, color: AppColors.primaryColor),
+            label: const Text(
+              'Cancel',
+              style: TextStyle(fontSize: 16, color: AppColors.primaryColor),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(0),
+                side: const BorderSide(color: AppColors.primaryColor, width: 2),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+            const SizedBox(width: 16), // Space between buttons
+        // Submit All button
+        Expanded(
+          child: ElevatedButton.icon(
             icon: const Icon(Icons.add, color: Colors.white),
             label: const Text(
               'Submit All',
@@ -729,34 +758,23 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
                       ? AppColors.primaryColor
                       : Colors.grey,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(0),
               ),
+              padding: const EdgeInsets.symmetric(vertical: 16),
             ),
-            onPressed:
-                widget.catalogs.any((c) => getTotalQty(c.styleCode) > 0)
-                    ? _submitAllOrders
-                    : null,
+            onPressed: widget.catalogs.any((c) => getTotalQty(c.styleCode) > 0)
+                ? _submitAllOrders
+                : null,
           ),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.close, color: AppColors.primaryColor),
-            label: const Text(
-              'Cancel',
-              style: TextStyle(fontSize: 16, color: AppColors.primaryColor),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(color: AppColors.primaryColor, width: 2),
-              ),
-            ),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+
+    
+
+ 
+      ],
+    ),
+  );
+}
 
   TableRow _buildPriceRow(
     String label,

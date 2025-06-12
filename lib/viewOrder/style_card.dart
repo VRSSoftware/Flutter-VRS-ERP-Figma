@@ -225,7 +225,7 @@ class _StyleCardState extends State<StyleCard> {
 
   TableRow _buildHeaderRow(List<String> sizes) {
     return TableRow(
-      decoration: BoxDecoration(color: Colors.grey.shade100),
+      decoration: BoxDecoration(color: const  Color.fromARGB(255, 236, 212, 204)),
       children: [
         const TableCell(
           verticalAlignment: TableCellVerticalAlignment.middle,
@@ -364,7 +364,7 @@ class _StyleCardState extends State<StyleCard> {
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: color),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(0),
           ),
           padding: const EdgeInsets.symmetric(vertical: 16),
         ),

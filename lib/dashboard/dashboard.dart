@@ -899,14 +899,13 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         ),
       ),
       bottomNavigationBar: BottomNavigationWidget(
-        currentIndex: 3,
+        currentIndex: 3, // 👈 Highlight Order icon
         onTap: (index) {
           if (index == 0) Navigator.pushNamed(context, '/home');
           if (index == 1) Navigator.pushNamed(context, '/catalog');
           if (index == 2) Navigator.pushNamed(context, '/orderbooking');
-           if (index == 3) return;
-          if (index == 4) Navigator.pushNamed(context, '/stockReport');
-         
+          if (index == 3) return;
+         if (index == 4) Navigator.pushNamed(context, '/stockReport');
         },
       ),
     );

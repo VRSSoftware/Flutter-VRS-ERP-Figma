@@ -593,6 +593,8 @@
 //   }
 // }
 
+
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dropdown_search/dropdown_search.dart';
@@ -645,7 +647,7 @@ class _OrderStatusState extends State<OrderStatus> {
       'selectedSize': <KeyName>[],
       'selectedStatus': KeyName(key: 'all', name: 'All'),
       'groupBy': KeyName(key: 'cust', name: 'Customer'),
-      'withImage': false,
+      'withImage': true,
     };
     _fetchCategories();
     _fetchProducts();
@@ -830,6 +832,22 @@ class _OrderStatusState extends State<OrderStatus> {
                 : result is List
                 ? result
                 : [];
+          
+
+             for (var item in flattenedResult) {
+      final colorCode = item['Color']?.toString();
+      if (colorCode != null && colorCode.isNotEmpty) {
+        try {
+          var shade = _shades.firstWhere((s) => s.shadeKey == colorCode);
+          item['ColorName'] = shade.shadeName;
+        } catch (e) {
+          item['ColorName'] = 'NA';
+        }
+      } else {
+        item['ColorName'] = 'NA';
+      }
+    }
+
         // Client-side filtering for API issue
         List<dynamic> filteredResult =
             flattenedResult.where((item) {

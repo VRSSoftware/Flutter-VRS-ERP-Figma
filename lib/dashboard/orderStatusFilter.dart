@@ -630,6 +630,7 @@
 //   }
 // }
 
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dropdown_search/dropdown_search.dart';
@@ -704,19 +705,38 @@ class _OrderStatusFilterPageState extends State<OrderStatusFilterPage> {
   @override
   void initState() {
     super.initState();
-    setState(() {
-      fromDate = Orderstatusfilterdata.fromDate;
-      toDate = Orderstatusfilterdata.toDate;
-      selectedBrand = Orderstatusfilterdata.selectedBrand!;
-      selectedStyle = Orderstatusfilterdata.selectedStyle!;
-      selectedShade = Orderstatusfilterdata.selectedShade!;
-      selectedSize = Orderstatusfilterdata.selectedSize!;
-      selectedStatus = Orderstatusfilterdata.selectedStatus;
-      groupBy = Orderstatusfilterdata.groupBy;
-      withImage = Orderstatusfilterdata.withImage!;
-      selectedDateRange = Orderstatusfilterdata.selectedDateRange;
-    });
-
+    // setState(() {
+    //   fromDate = Orderstatusfilterdata.fromDate;
+    //   toDate = Orderstatusfilterdata.toDate;
+    //   selectedBrand = Orderstatusfilterdata.selectedBrand!;
+    //   selectedStyle = Orderstatusfilterdata.selectedStyle!;
+    //   selectedShade = Orderstatusfilterdata.selectedShade!;
+    //   selectedSize = Orderstatusfilterdata.selectedSize!;
+    //   selectedStatus = Orderstatusfilterdata.selectedStatus;
+    //   groupBy = Orderstatusfilterdata.groupBy;
+    //   withImage = Orderstatusfilterdata.withImage!;
+    //   selectedDateRange = Orderstatusfilterdata.selectedDateRange;
+   
+   
+    // });
+  fromDate = widget.filters['fromDate'] as DateTime?;
+  toDate = widget.filters['toDate'] as DateTime?;
+  selectedBrand = widget.filters['selectedBrand'] as List<KeyName>? ?? [];
+  selectedStyle = widget.filters['selectedStyle'] as List<KeyName>? ?? [];
+  selectedShade = widget.filters['selectedShade'] as List<KeyName>? ?? [];
+  selectedSize = widget.filters['selectedSize'] as List<KeyName>? ?? [];
+  selectedStatus = widget.filters['selectedStatus'] as KeyName? ??
+      widget.statusList.firstWhere(
+        (s) => s.key == 'all',
+        orElse: () => widget.statusList[0],
+      );
+  groupBy = widget.filters['groupBy'] as KeyName? ??
+      widget.groupByOptions.firstWhere(
+        (g) => g.key == 'cust',
+        orElse: () => widget.groupByOptions[0],
+      );
+  withImage = widget.filters['withImage'] as bool? ?? false;
+  selectedDateRange = widget.filters['selectedDateRange'] as String? ?? 'Custom';
     // Initialize with passed filters
     //fromDate = widget.filters['fromDate'] as DateTime?;
     //toDate = widget.filters['toDate'] as DateTime?;

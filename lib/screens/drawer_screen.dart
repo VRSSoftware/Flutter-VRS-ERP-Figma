@@ -300,6 +300,8 @@
 //     );
 //   }
 // }
+
+
 import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/screens/login_screen.dart'; // Import your LoginScreen
@@ -382,45 +384,42 @@ class _DrawerScreenState extends State<DrawerScreen> {
     Navigator.pushReplacementNamed(context, route);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // Get screen size and orientation
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isLargeScreen = screenWidth > 600; // Tablets and desktops
-    final drawerWidthFactor = isLargeScreen ? 0.3 : 0.6; // Adjust drawer width
+ @override
+Widget build(BuildContext context) {
+  final screenWidth = MediaQuery.of(context).size.width;
+  final isLargeScreen = screenWidth > 600;
+  final drawerWidth = screenWidth * (isLargeScreen ? 0.3 : 0.65); // Responsive drawer width
 
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: FractionallySizedBox(
-        widthFactor: drawerWidthFactor.clamp(0.3, 0.8), // Responsive width
-        child: Drawer(
-          child: SafeArea( // Respect notches and status bars
-            child: SingleChildScrollView( // Allow scrolling for small screens
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: isLargeScreen ? 48 : 24), // Dynamic spacing
-                  _buildUserProfile(),
-                  const Divider(),
-                  ..._iconPaths.keys
-                      .where((title) {
-                        if (UserSession.userType != 'C') return true;
-                        return title != 'Stock Report';
-                      })
-                      .map(
-                        (title) => _buildDrawerItem(title, _getRouteFromSection(title)),
-                      ),
-                  const Divider(),
-                  _buildLogoutButton(),
-                  SizedBox(height: isLargeScreen ? 32 : 16), // Bottom padding
-                ],
-              ),
+  return Align(
+    alignment: Alignment.centerLeft,
+    child: SizedBox(
+      width: drawerWidth.clamp(260.0, 400.0), // Clamp for better limits
+      child: Drawer(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: isLargeScreen ? 48 : 24),
+                _buildUserProfile(),
+                const Divider(),
+                ..._iconPaths.keys
+                    .where((title) {
+                      if (UserSession.userType != 'C') return true;
+                      return title != 'Stock Report';
+                    })
+                    .map((title) => _buildDrawerItem(title, _getRouteFromSection(title))),
+                const Divider(),
+                _buildLogoutButton(),
+                SizedBox(height: isLargeScreen ? 32 : 16),
+              ],
             ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   String _getRouteFromSection(String section) {
     switch (section) {
@@ -461,14 +460,14 @@ class _DrawerScreenState extends State<DrawerScreen> {
           vertical: isLargeScreen ? 8 : 4,
         ),
         child: InkWell(
-          borderRadius: BorderRadius.circular(8), // Softer corners for better UX
+          borderRadius: BorderRadius.circular(0), // Softer corners for better UX
           onTap: () => _navigateTo(title, route),
           child: Container(
             decoration: BoxDecoration(
               color: isSelected || isHovered
                   ? const Color.fromARGB(255, 206, 222, 240)
                   : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(0),
             ),
             child: ListTile(
               contentPadding: EdgeInsets.symmetric(
@@ -567,7 +566,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
           vertical: isLargeScreen ? 8 : 4,
         ),
         child: InkWell(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(0),
           onTap: () {
             Navigator.pop(context);
             Navigator.pushReplacementNamed(context, '/login');
@@ -577,7 +576,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
               color: hoveredSection == 'Logout'
                   ? const Color.fromARGB(255, 222, 187, 231)
                   : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(0),
             ),
             child: ListTile(
               contentPadding: EdgeInsets.symmetric(
