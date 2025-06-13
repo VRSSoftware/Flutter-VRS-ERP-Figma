@@ -50,6 +50,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
   List<KeyName> statesList = [];
   List<KeyName> citiesList = [];
   bool isLoadingLedgers = true;
+  bool isLoading = false;
   bool isLoadingSalesperson = true;
 
   @override
@@ -221,6 +222,9 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
   }
 
   Future<void> _fetchOrderSummary() async {
+    setState(() {
+      isLoading = true;
+    });
     final String apiUrl =
         '${AppConstants.BASE_URL}/orderRegister/order-details-dash';
     try {
@@ -283,6 +287,9 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
           ),
         );
       }
+      setState(() {
+        isLoading = false;
+      });
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -336,7 +343,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
         ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView(
+      body: isLoading ? const Center(child: CircularProgressIndicator()) : SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -581,46 +588,6 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                       ),
                     ),
 
-                    // GestureDetector(
-                    //   //onTap: onTotalOrderTap,
-                    //   onTap: () {
-
-                    //   },
-                    //   child: Row(
-                    //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    //     children: [
-                    //       Column(
-                    //         crossAxisAlignment: CrossAxisAlignment.start,
-                    //         children: [
-                    //           Text(
-                    //             'TOTAL ORDER',
-                    //             style: GoogleFonts.quando(
-                    //               fontSize: 16,
-                    //               fontWeight: FontWeight.bold,
-                    //               color: Colors.deepPurple,
-                    //             ),
-                    //           ),
-                    //           const SizedBox(height: 8),
-                    //           Text(
-                    //             orderDocCount,
-                    //             style: GoogleFonts.poppins(
-                    //               fontSize: 24,
-                    //               fontWeight: FontWeight.bold,
-                    //               color: Colors.deepPurple,
-                    //             ),
-                    //           ),
-                    //           Text(
-                    //             'Qty: ${double.parse(orderQty).toStringAsFixed(0)}',
-                    //             style: GoogleFonts.poppins(
-                    //               fontSize: 14,
-                    //               color: Colors.deepPurple,
-                    //             ),
-                    //           ),
-                    //         ],
-                    //       ),
-                    //     ],
-                    //   ),
-                    // ),
                     const SizedBox(height: 16),
                     // Row 1: Pending, Packed
                     Row(
@@ -681,112 +648,6 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                 ),
               ),
             ),
-
-            // Card(
-            //   elevation: 0,
-            //   color: Colors.blue.withOpacity(0.2),
-            //   shape: RoundedRectangleBorder(
-            //     borderRadius: BorderRadius.circular(5),
-            //   ),
-            //   child: Padding(
-            //     padding: const EdgeInsets.all(16.0),
-            //     child: Column(
-            //       crossAxisAlignment: CrossAxisAlignment.start,
-            //       children: [
-            //         Row(
-            //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //           children: [
-            //             Column(
-            //               crossAxisAlignment: CrossAxisAlignment.start,
-            //               children: [
-            //                 Text(
-            //                   'TOTAL ORDER',
-            //                   style: GoogleFonts.quando(
-            //                     fontSize: 16,
-            //                     fontWeight: FontWeight.bold,
-            //                     color: Colors.deepPurple,
-            //                   ),
-            //                 ),
-            //                 const SizedBox(height: 8),
-            //                 Text(
-            //                   orderDocCount,
-            //                   style: GoogleFonts.poppins(
-            //                     fontSize: 24,
-            //                     fontWeight: FontWeight.bold,
-            //                     color: Colors.deepPurple,
-            //                   ),
-            //                 ),
-            //                 Text(
-            //                   'Qty: ${double.parse(orderQty).toStringAsFixed(0)}',
-            //                   style: GoogleFonts.poppins(
-            //                     fontSize: 14,
-            //                     color: Colors.deepPurple,
-            //                   ),
-            //                 ),
-            //               ],
-            //             ),
-            //           ],
-            //         ),
-            //         const SizedBox(height: 16),
-            //         // Row 1: Pending, Packed
-            //         Row(
-            //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //           children: [
-            //             Expanded(
-            //               child: _buildStatusCard(
-            //                 title: 'PENDING',
-            //                 count: pendingDocCount,
-            //                 qty: pendingQty,
-            //                 progress: pendingProgress,
-            //                 color: const Color(0xFFE6F0FA),
-            //                 icon: Icons.hourglass_empty,
-            //               ),
-            //             ),
-            //             const SizedBox(width: 16),
-            //             Expanded(
-            //               child: _buildStatusCard(
-            //                 title: 'PACKED',
-            //                 count: packedDocCount,
-            //                 qty: packedQty,
-            //                 progress: packedProgress,
-            //                 color: const Color(0xFFE8F5E9),
-            //                 icon: Icons.check_circle,
-            //               ),
-            //             ),
-            //           ],
-            //         ),
-            //         const SizedBox(height: 16),
-            //         // Row 2: Cancelled, Invoiced
-            //         Row(
-            //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //           children: [
-            //             Expanded(
-            //               child: _buildStatusCard(
-            //                 title: 'CANCELLED',
-            //                 count: cancelledDocCount,
-            //                 qty: cancelledQty,
-            //                 progress: cancelledProgress,
-            //                 color: const Color(0xFFFFE6E6),
-            //                 icon: Icons.cancel,
-            //               ),
-            //             ),
-            //             const SizedBox(width: 16),
-            //             Expanded(
-            //               child: _buildStatusCard(
-            //                 title: 'INVOICED',
-            //                 count: invoicedDocCount,
-            //                 qty: invoicedQty,
-            //                 progress: invoicedProgress,
-            //                 color: const Color(0xFFF3E8FF),
-            //                 icon: Icons.receipt,
-            //               ),
-            //             ),
-            //           ],
-            //         ),
-            //       ],
-            //     ),
-            //   ),
-            // ),
             const SizedBox(height: 32),
             // Inventory Summary Box
             Card(
@@ -912,6 +773,9 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
   }
 
   Future<void> _showOrderDetails(String orderType) async {
+    setState(() {
+      isLoading = true;
+    });
     try {
       String formattedOrderType = orderType
           .split(' ')
@@ -981,6 +845,9 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
           ),
         );
       }
+      setState(() {
+        isLoading = false;
+      });
     } catch (e) {
       ScaffoldMessenger.of(
         context,

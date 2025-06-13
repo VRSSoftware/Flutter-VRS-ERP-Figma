@@ -150,6 +150,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       'coBrId': UserSession.coBrId ?? '',
       'fcYrId': UserSession.userFcYr ?? '',
       'data2': orderDataJson.toString(),
+      'barcode': barcodeMode.toString(),
     };
 
     try {

@@ -175,6 +175,7 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
           ),
           // onPressed: _searchBarcode2,
           onPressed: () {
+            print(_barcodeController.text.trim());
             showDialog(
               context: context,
               builder:
