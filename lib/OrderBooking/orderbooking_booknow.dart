@@ -775,7 +775,11 @@ class _OrderPageState extends State<OrderPage> {
       itemCount: filteredItems.length + (isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == filteredItems.length && isLoadingMore) {
-          return Center(child: CircularProgressIndicator());
+          return Center(
+                              child: LoadingAnimationWidget.waveDots(
+                                color: AppColors.primaryColor,
+                                size: 30,
+                              ));
         }
         final item = catalogItems[index];
         final isSelected = selectedItems.contains(item);
