@@ -115,7 +115,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && response.body == "Device successfully installed and activated.") {
         // Save deviceId to SharedPreferences upon successful registration
         if (deviceId != null) {
           await _saveDeviceIdToPrefs(deviceId!);

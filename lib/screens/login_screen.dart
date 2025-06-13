@@ -46,6 +46,8 @@ class _LoginPageState extends State<LoginScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       isRegistered = prefs.getString('isRegistered');
+      // isRegistered = '1';
+
     });
   }
 

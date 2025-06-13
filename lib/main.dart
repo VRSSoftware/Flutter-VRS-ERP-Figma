@@ -71,8 +71,8 @@ class MyApp extends StatelessWidget {
         '/drawer': (context) => DrawerScreen(),
       },
 
-      home: LoginScreen(),
-      // home: SplashScreen(),
+      // home: LoginScreen(),
+      home: SplashScreen(),
     );
   }
 }
