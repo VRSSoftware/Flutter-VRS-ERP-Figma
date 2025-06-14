@@ -15,6 +15,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vrs_erp_figma/catalog/dotIndicatorDesign.dart';
 import 'package:vrs_erp_figma/catalog/download_options.dart';
 import 'package:vrs_erp_figma/catalog/filter.dart';
 import 'package:vrs_erp_figma/catalog/image_zoom1.dart';
@@ -761,14 +762,12 @@ Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
       }
       final item = filteredItems[index];
       bool isSelected = selectedItems.contains(item);
-      List<String> shades = item.shadeName != null && item.shadeName.isNotEmpty
+      List<String> shades = item.shadeName.isNotEmpty
           ? item.shadeName.split(',').map((shade) => shade.trim()).toList()
           : [];
       final imageUrls = _getImageUrl(item);
       print('Image URLs before use: $imageUrls');
-      final imageUrl = imageUrls.isNotEmpty && imageUrls[0].isNotEmpty
-          ? imageUrls[0]
-          : ''; // Select first URL or empty string
+      final ValueNotifier<int> currentImageIndex = ValueNotifier<int>(0);
 
       return GestureDetector(
         onDoubleTap: () {
@@ -832,36 +831,46 @@ Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
                                 constraints: BoxConstraints(
                                   maxHeight: maxImageHeight,
                                 ),
-                                child: SizedBox(
-                                  height: maxImageHeight,
-                                  width: double.infinity,
-                                  child: Center(
-                                    child: imageUrl.isNotEmpty
-                                        ? Image.network(
-                                            imageUrl,
-                                            fit: BoxFit.contain,
+                                child: imageUrls.isNotEmpty &&
+                                        imageUrls[0].isNotEmpty
+                                    ? Stack(
+                                        children: [
+                                          SizedBox(
+                                            height: maxImageHeight,
                                             width: double.infinity,
-                                            errorBuilder: (
-                                              context,
-                                              error,
-                                              stackTrace,
-                                            ) {
-                                              return Container(
-                                                color: Colors.grey.shade300,
-                                                child: const Center(
-                                                  child: Icon(Icons.error),
-                                                ),
-                                              );
-                                            },
-                                          )
-                                        : Container(
-                                            color: Colors.grey.shade300,
-                                            child: const Center(
-                                              child: Icon(Icons.image_not_supported),
+                                            child: PageView.builder(
+                                              itemCount: imageUrls.length,
+                                              onPageChanged: (index) {
+                                                currentImageIndex.value = index;
+                                              },
+                                              itemBuilder: (context, index) {
+                                                final imageUrl =
+                                                    imageUrls[index];
+                                                return _buildSingleImage(
+                                                    imageUrl, maxImageHeight);
+                                              },
                                             ),
                                           ),
-                                  ),
-                                ),
+                                          if (imageUrls.length > 1)
+                                            Positioned(
+                                              bottom: 8,
+                                              left: 0,
+                                              right: 0,
+                                              child: ValueListenableBuilder<int>(
+                                                valueListenable:
+                                                    currentImageIndex,
+                                                builder:
+                                                    (context, index, child) {
+                                                  return DotIndicator(
+                                                    count: imageUrls.length,
+                                                    currentIndex: index,
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                        ],
+                                      )
+                                    : _buildSingleImage('', maxImageHeight),
                               );
                             },
                           ),
@@ -882,7 +891,8 @@ Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
                                   1: FixedColumnWidth(8),
                                   2: FlexColumnWidth(),
                                 },
-                                defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                                defaultVerticalAlignment:
+                                    TableCellVerticalAlignment.middle,
                                 children: [
                                   TableRow(
                                     children: [
@@ -913,7 +923,8 @@ Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
                                         ),
                                       ],
                                     ),
-                                  if (showShades && shades.isNotEmpty) _buildSpacerRow(),
+                                  if (showShades && shades.isNotEmpty)
+                                    _buildSpacerRow(),
                                   if (showMRP)
                                     TableRow(
                                       children: [
@@ -952,7 +963,8 @@ Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
                                         ),
                                       ],
                                     ),
-                                  if (item.sizeName.isNotEmpty && showSizes) _buildSpacerRow(),
+                                  if (item.sizeName.isNotEmpty && showSizes)
+                                    _buildSpacerRow(),
                                   if (showProduct)
                                     TableRow(
                                       children: [
@@ -973,7 +985,8 @@ Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
                                         SingleChildScrollView(
                                           scrollDirection: Axis.horizontal,
                                           child: Text(
-                                            item.remark?.trim().isNotEmpty == true
+                                            item.remark?.trim().isNotEmpty ==
+                                                    true
                                                 ? item.remark!
                                                 : '--',
                                             style: _valueTextStyle(),
@@ -1010,10 +1023,12 @@ Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
               ],
             ),
           ),
-        )  );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
+
 Widget _buildExpandedView(bool isLargeScreen) {
   final filteredItems = _getFilteredItems();
   return ListView.builder(
@@ -1033,9 +1048,7 @@ Widget _buildExpandedView(bool isLargeScreen) {
       final shades = item.shadeName.split(',').map((s) => s.trim()).toList();
       final imageUrls = _getImageUrl(item);
       print('Image URLs: $imageUrls');
-      final imageUrl = imageUrls.isNotEmpty && imageUrls[0].isNotEmpty
-          ? imageUrls[0]
-          : ''; // Select first URL or empty string
+      final ValueNotifier<int> currentImageIndex = ValueNotifier<int>(0);
 
       return GestureDetector(
         onDoubleTap: () {
@@ -1083,24 +1096,42 @@ Widget _buildExpandedView(bool isLargeScreen) {
                             maxHeight: maxImageHeight,
                             minHeight: constraints.maxWidth,
                           ),
-                          child: imageUrl.isNotEmpty
-                              ? Image.network(
-                                  imageUrl,
-                                  fit: BoxFit.contain,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      color: Colors.grey.shade300,
-                                      child: const Center(child: Icon(Icons.error)),
-                                    );
-                                  },
+                          child: imageUrls.isNotEmpty && imageUrls[0].isNotEmpty
+                              ? Stack(
+                                  children: [
+                                    SizedBox(
+                                      height: maxImageHeight,
+                                      width: double.infinity,
+                                      child: PageView.builder(
+                                        itemCount: imageUrls.length,
+                                        onPageChanged: (index) {
+                                          currentImageIndex.value = index;
+                                        },
+                                        itemBuilder: (context, index) {
+                                          final imageUrl = imageUrls[index];
+                                          return _buildSingleImage(
+                                              imageUrl, maxImageHeight);
+                                        },
+                                      ),
+                                    ),
+                                    if (imageUrls.length > 1)
+                                      Positioned(
+                                        bottom: 8,
+                                        left: 0,
+                                        right: 0,
+                                        child: ValueListenableBuilder<int>(
+                                          valueListenable: currentImageIndex,
+                                          builder: (context, index, child) {
+                                            return DotIndicator(
+                                              count: imageUrls.length,
+                                              currentIndex: index,
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                  ],
                                 )
-                              : Container(
-                                  color: Colors.grey.shade300,
-                                  child: const Center(
-                                      child: Icon(Icons.image_not_supported)),
-                                ),
+                              : _buildSingleImage('', maxImageHeight),
                         );
                       },
                     ),
@@ -1113,7 +1144,8 @@ Widget _buildExpandedView(bool isLargeScreen) {
                         1: FixedColumnWidth(8),
                         2: FlexColumnWidth(),
                       },
-                      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                      defaultVerticalAlignment:
+                          TableCellVerticalAlignment.middle,
                       children: [
                         TableRow(
                           children: [
@@ -1198,7 +1230,8 @@ Widget _buildExpandedView(bool isLargeScreen) {
                               ),
                             ],
                           ),
-                        if (item.sizeName.isNotEmpty && showSizes) _buildSpacerRow(),
+                        if (item.sizeName.isNotEmpty && showSizes)
+                          _buildSpacerRow(),
                         if (showProduct)
                           TableRow(
                             children: [
@@ -1257,10 +1290,11 @@ Widget _buildExpandedView(bool isLargeScreen) {
                 ),
             ],
           ),
-       ) );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
   Widget _buildLabelText(String label) {
     return Padding(
       padding: const EdgeInsets.only(right: 5),
@@ -1357,6 +1391,7 @@ Widget _buildItemCard(Catalog item, bool isLargeScreen) {
   List<String> shades = item.shadeName.split(',').map((s) => s.trim()).toList();
   final imageUrls = _getImageUrl(item);
   print('Image URLs before use: $imageUrls');
+  final ValueNotifier<int> currentImageIndex = ValueNotifier<int>(0);
 
   return GestureDetector(
     onDoubleTap: () {
@@ -1396,32 +1431,48 @@ Widget _buildItemCard(Catalog item, bool isLargeScreen) {
                     final maxImageHeight = constraints.maxWidth * 1.2;
                     return ConstrainedBox(
                       constraints: BoxConstraints(maxHeight: maxImageHeight),
-                      child: imageUrls.length == 1 && imageUrls[0].isNotEmpty
-                          ? _buildSingleImage(imageUrls[0], maxImageHeight)
-                          : SizedBox(
-                              height: maxImageHeight,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: imageUrls.length,
-                                itemBuilder: (context, index) {
-                                  final imageUrl = imageUrls[index];
-                                  return SizedBox(
-                                    width: constraints.maxWidth,
-                                    child: _buildSingleImage(
-                                        imageUrl, maxImageHeight),
-                                  );
-                                },
-                              ),
-                            ),
+                      child: imageUrls.isNotEmpty && imageUrls[0].isNotEmpty
+                          ? Stack(
+                              children: [
+                                SizedBox(
+                                  height: maxImageHeight,
+                                  child: PageView.builder(
+                                    itemCount: imageUrls.length,
+                                    onPageChanged: (index) {
+                                      currentImageIndex.value = index;
+                                    },
+                                    itemBuilder: (context, index) {
+                                      final imageUrl = imageUrls[index];
+                                      return _buildSingleImage(
+                                          imageUrl, maxImageHeight);
+                                    },
+                                  ),
+                                ),
+                                if (imageUrls.length > 1)
+                                  Positioned(
+                                    bottom: 8,
+                                    left: 0,
+                                    right: 0,
+                                    child: ValueListenableBuilder<int>(
+                                      valueListenable: currentImageIndex,
+                                      builder: (context, index, child) {
+                                        return DotIndicator(
+                                          count: imageUrls.length,
+                                          currentIndex: index,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                              ],
+                            )
+                          : _buildSingleImage('', maxImageHeight),
                     );
                   },
                 ),
-             
               ),
               Padding(
                 padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
                 child: Table(
-                  // Table content remains unchanged
                   columnWidths: const {
                     0: IntrinsicColumnWidth(),
                     1: FixedColumnWidth(8),
@@ -1506,8 +1557,7 @@ Widget _buildItemCard(Catalog item, bool isLargeScreen) {
                           ),
                         ],
                       ),
-                    if (item.sizeName.isNotEmpty && showSizes)
-                      _buildSpacerRow(),
+                    if (item.sizeName.isNotEmpty && showSizes) _buildSpacerRow(),
                     if (showProduct)
                       TableRow(
                         children: [
@@ -1563,9 +1613,9 @@ Widget _buildItemCard(Catalog item, bool isLargeScreen) {
             ),
         ],
       ),
-   ) );
-  }
-
+    ),
+  );
+}
   Widget _buildSingleImage(String imageUrl, double maxHeight) {
     return SizedBox(
       height: maxHeight,
@@ -1684,6 +1734,7 @@ Widget _buildItemCard(Catalog item, bool isLargeScreen) {
   // }
 
 List<String> _getImageUrl(Catalog catalog) {
+  
   final shadeImages = catalog.shadeImages ?? '';
   final fullImagePath = catalog.fullImagePath ?? '';
   print('ShadeImages for catalog ${catalog.styleCode}: $shadeImages');
