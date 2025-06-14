@@ -61,6 +61,10 @@ class _LoginPageState extends State<LoginScreen> {
           _companies.clear();
           _companies.addAll(data.map((e) => e as Map<String, dynamic>).toList());
           _isLoadingCompanies = false;
+
+          if(_companies.isNotEmpty && _companies.length == 1){
+            _selectedCompany = _companies[0];
+          }
         });
       }
     } catch (e) {
@@ -80,6 +84,9 @@ class _LoginPageState extends State<LoginScreen> {
           _years.clear();
           _years.addAll(data.map((e) => e as Map<String, dynamic>).toList());
         });
+        if(_years.isNotEmpty && _years.length == 1){
+          _selectedYear = _years[0];
+        }
       }
     } catch (e) {}
   }
