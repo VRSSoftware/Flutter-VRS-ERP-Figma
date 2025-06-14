@@ -883,7 +883,7 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                           side: BorderSide(color: Colors.grey.shade300),
                           backgroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(0), // curve 12
+                            borderRadius: BorderRadius.circular(0), 
                           ),
                         ),
                         onPressed: () {
@@ -901,12 +901,12 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                             },
                           ).then((_) => _fetchCartCount());
                         },
-                        child: Text( // Remove SingleChildScrollView for consistent alignment
+                        child: Text( 
                           item.itemName,
-                          textAlign: TextAlign.center, // Center text
+                          textAlign: TextAlign.center, 
                           style: const TextStyle(
                             color: Colors.black87,
-                            fontSize: 14, // Consistent font size
+                            fontSize: 14,
                           ),
                         ),
                       ),

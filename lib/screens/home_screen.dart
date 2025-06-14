@@ -116,7 +116,7 @@
 //         decoration: BoxDecoration(
           
 //        color: Colors.white,
-//           borderRadius: BorderRadius.circular(12),
+//           borderRadius: BorderRadius.circular(0),
 //           border: Border.all(color: AppColors.primaryColor, width: 2),
         
 //         ),
@@ -168,21 +168,249 @@
 //   }
 // }
 
+//===============================================design 2============================================================
+// import 'package:flutter/material.dart';
+// import 'package:google_fonts/google_fonts.dart';
+// import 'package:vrs_erp_figma/constants/app_constants.dart';
+// import 'package:vrs_erp_figma/screens/drawer_screen.dart';
+// import 'package:vrs_erp_figma/widget/bottom_navbar.dart';
+
+// class HomeScreen extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: Colors.white,
+//       drawer: DrawerScreen(),
+//       appBar: AppBar(
+//         title: Text('Home', style: GoogleFonts.roboto(color: AppColors.white)),
+//         backgroundColor: AppColors.primaryColor,
+//         elevation: 1,
+//         leading: Builder(
+//           builder: (context) => IconButton(
+//             icon: Icon(Icons.menu, color: AppColors.white),
+//             onPressed: () => Scaffold.of(context).openDrawer(),
+//           ),
+//         ),
+//       ),
+//       body: Padding(
+//         padding: const EdgeInsets.symmetric(horizontal: 16.0),
+//         child: LayoutBuilder(
+//           builder: (context, constraints) {
+//             return SingleChildScrollView(
+//               child: ConstrainedBox(
+//                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
+//                 child: IntrinsicHeight(
+//                   child: Column(
+//                     children: [
+//                       const SizedBox(height: 20),
+//                       _buildMainButtons(context, constraints.maxWidth),
+//                     ],
+//                   ),
+//                 ),
+//               ),
+//             );
+//           },
+//         ),
+//       ),
+//       bottomNavigationBar: BottomNavigationWidget(
+//         currentIndex: 0,
+//         onTap: (index) {
+//           if (index == 0) return;
+//           if (index == 1) Navigator.pushNamed(context, '/catalog');
+//           if (index == 2) Navigator.pushNamed(context, '/orderbooking');
+//           if (index == 3) Navigator.pushNamed(context, '/stockReport');
+//           if (index == 4) Navigator.pushNamed(context, '/dashboard');
+//           if (index == 5) Navigator.pushNamed(context, '/orderRegister');
+//         },
+//       ),
+//     );
+//   }
+
+//   Widget _buildMainButtons(BuildContext context, double screenWidth) {
+//     final buttonWidth = screenWidth;
+
+//     return Column(
+//       children: [
+//         _buildFeatureButton(
+//           'assets/images/catalog.png',
+//           'Catalog',
+//           () => Navigator.pushNamed(context, '/catalog'),
+//           buttonWidth,
+//           true,
+//           Colors.blue, // Changed to blue
+//         ),
+//         const SizedBox(height: 14),
+//         _buildFeatureButton(
+//           'assets/images/orderbooking.png',
+//           'Order Booking',
+//           () => Navigator.pushNamed(context, '/orderbooking'),
+//           buttonWidth,
+//           false,
+//           Colors.indigo, // Changed to indigo
+//         ),
+//         const SizedBox(height: 14),
+//         _buildFeatureButton(
+//           'assets/images/register.png',
+//           'Order Register',
+//           () => Navigator.pushNamed(context, '/registerOrders'),
+//           buttonWidth,
+//           true,
+//           Colors.cyan, // Changed to cyan
+//         ),
+//         const SizedBox(height: 14),
+//         if (UserSession.userType != 'C') ...[
+//           _buildFeatureButton(
+//             'assets/images/report.png',
+//             'Stock Report',
+//             () => Navigator.pushNamed(context, '/stockReport'),
+//             buttonWidth,
+//             false,
+//             Colors.lightBlue, // Changed to light blue
+//           ),
+//           const SizedBox(height: 14),
+//         ],
+//         _buildFeatureButton(
+//           'assets/images/dashboard.png',
+//           'Dashboard',
+//           () => Navigator.pushNamed(context, '/dashboard'),
+//           buttonWidth,
+//           true,
+//           Colors.blueGrey, // Changed to blue-grey
+//         ),
+//         const SizedBox(height: 14),
+//         _buildFeatureButton(
+//           'assets/images/team.png',
+//           'Team',
+//           () => Navigator.pushNamed(context, '/home'),
+//           buttonWidth,
+//           false,
+//           Colors.blueAccent, // Changed to blue accent
+//         ),
+//       ],
+//     );
+//   }
+
+//   Widget _buildFeatureButton(
+//     String imagePath,
+//     String label,
+//     VoidCallback onTap,
+//     double width,
+//     bool imageOnLeft,
+//     Color bgColor,
+//   ) {
+//     return GestureDetector(
+//       onTap: onTap,
+//       child: Container(
+//         width: width,
+//         height: 95,
+//         decoration: BoxDecoration(
+//           color: bgColor.withOpacity(0.1), // Background for the entire container
+//         ),
+//         child: Row(
+//           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//           children: imageOnLeft
+//               ? [
+//                   // Image on left
+//                   Container(
+//                     width: 100, // Square container for image
+//                     height: 100,
+//                     color: bgColor, // Full background color for image
+//                     child: Center(
+//                       child: Image.asset(
+//                         imagePath,
+//                         width: 80,
+//                         height: 80,
+//                         fit: BoxFit.contain,
+//                       ),
+//                     ),
+//                   ),
+//                   // White vertical divider
+//                   Container(
+//                     width: 4,
+//                     height: double.infinity,
+//                     color: Colors.white,
+//                   ),
+//                   // Text on right
+//                   Expanded(
+//                     child: Padding(
+//                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+//                       child: Text(
+//                         label,
+//                         textAlign: TextAlign.center,
+//                         style: GoogleFonts.roboto(
+//                           fontSize: 16,
+//                           fontWeight: FontWeight.bold,
+//                           color: bgColor, // Text color set to bgColor
+//                         ),
+//                       ),
+//                     ),
+//                   ),
+//                 ]
+//               : [
+//                   // Text on left
+//                   Expanded(
+//                     child: Padding(
+//                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+//                       child: Text(
+//                         label,
+//                         textAlign: TextAlign.center,
+//                         style: GoogleFonts.roboto(
+//                           fontSize: 16,
+//                           fontWeight: FontWeight.bold,
+//                           color: bgColor, // Text color set to bgColor
+//                         ),
+//                       ),
+//                     ),
+//                   ),
+//                   // White vertical divider
+//                   Container(
+//                     width: 4,
+//                     height: double.infinity,
+//                     color: Colors.white,
+//                   ),
+//                   // Image on right
+//                   Container(
+//                     width: 100, // Square container for image
+//                     height: 100,
+//                     color: bgColor, // Full background color for image
+//                     child: Center(
+//                       child: Image.asset(
+//                         imagePath,
+//                         width: 80,
+//                         height: 80,
+//                         fit: BoxFit.contain,
+//                       ),
+//                     ),
+//                   ),
+//                 ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+//============================================================design 3================================================
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:google_fonts/google_fonts.dart'; // Add this import
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/widget/bottom_navbar.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String? selectedFeature; // Track the selected feature button
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       drawer: DrawerScreen(),
       appBar: AppBar(
-        title: Text('Home', style: GoogleFonts.roboto(color: AppColors.white)),
+        title: Text('Home', style: TextStyle(color: AppColors.white)),
         backgroundColor: AppColors.primaryColor,
         elevation: 1,
         leading: Builder(
@@ -193,7 +421,7 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 20.0),
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
@@ -202,7 +430,6 @@ class HomeScreen extends StatelessWidget {
                 child: IntrinsicHeight(
                   child: Column(
                     children: [
-                      const SizedBox(height: 20),
                       _buildMainButtons(context, constraints.maxWidth),
                     ],
                   ),
@@ -216,174 +443,190 @@ class HomeScreen extends StatelessWidget {
         currentIndex: 0,
         onTap: (index) {
           if (index == 0) return;
-          if (index == 1) Navigator.pushNamed(context, '/catalog');
-          if (index == 2) Navigator.pushNamed(context, '/orderbooking');
-          if (index == 3) Navigator.pushNamed(context, '/stockReport');
-          if (index == 4) Navigator.pushNamed(context, '/dashboard');
-          if (index == 5) Navigator.pushNamed(context, '/orderRegister');
+          if (index == 1) {
+            setState(() => selectedFeature = 'Catalog');
+            Navigator.pushNamed(context, '/catalog');
+          } else if (index == 2) {
+            setState(() => selectedFeature = 'Order Booking');
+            Navigator.pushNamed(context, '/orderbooking');
+          } else if (index == 3) {
+            setState(() => selectedFeature = 'Stock Report');
+            Navigator.pushNamed(context, '/stockReport');
+          } else if (index == 4) {
+            setState(() => selectedFeature = 'Dashboard');
+            Navigator.pushNamed(context, '/dashboard');
+          } else if (index == 5) {
+            setState(() => selectedFeature = 'Order Register');
+            Navigator.pushNamed(context, '/orderRegister');
+          }
         },
       ),
     );
   }
 
   Widget _buildMainButtons(BuildContext context, double screenWidth) {
-    final buttonWidth = screenWidth;
+    final crossAxisCount = screenWidth > 600 ? 3 : 2;
+    final spacing = 14.0;
+    final totalSpacing = (crossAxisCount - 1) * spacing;
+    final buttonWidth = (screenWidth - 32 - totalSpacing) / crossAxisCount;
 
-    return Column(
-      children: [
-        _buildFeatureButton(
-          'assets/images/catalog.png',
-          'Catalog',
-          () => Navigator.pushNamed(context, '/catalog'),
-          buttonWidth,
-          true,
-          Colors.blue, // Changed to blue
-        ),
-        const SizedBox(height: 14),
-        _buildFeatureButton(
-          'assets/images/orderbooking.png',
-          'Order Booking',
-          () => Navigator.pushNamed(context, '/orderbooking'),
-          buttonWidth,
-          false,
-          Colors.indigo, // Changed to indigo
-        ),
-        const SizedBox(height: 14),
-        _buildFeatureButton(
-          'assets/images/register.png',
-          'Order Register',
-          () => Navigator.pushNamed(context, '/registerOrders'),
-          buttonWidth,
-          true,
-          Colors.cyan, // Changed to cyan
-        ),
-        const SizedBox(height: 14),
-        if (UserSession.userType != 'C') ...[
+    return Center(
+      child: Wrap(
+        spacing: spacing,
+        runSpacing: spacing,
+        alignment: WrapAlignment.center,
+        children: [
           _buildFeatureButton(
+            context,
+            'assets/images/orderbooking.png',
+            'Order Booking',
+            () {
+              setState(() => selectedFeature = 'Order Booking');
+              Navigator.pushNamed(context, '/orderbooking');
+            },
+            buttonWidth,
+          ),
+          _buildFeatureButton(
+            context,
+            'assets/images/catalog.png',
+            'Catalog',
+            () {
+              setState(() => selectedFeature = 'Catalog');
+              Navigator.pushNamed(context, '/catalog');
+            },
+            buttonWidth,
+          ),
+          _buildFeatureButton(
+            context,
+            'assets/images/register.png',
+            'Order Register',
+            () {
+              setState(() => selectedFeature = 'Order Register');
+              Navigator.pushNamed(context, '/registerOrders');
+            },
+            buttonWidth,
+          ),
+          _buildFeatureButton(
+            context,
             'assets/images/report.png',
             'Stock Report',
-            () => Navigator.pushNamed(context, '/stockReport'),
+            () {
+              setState(() => selectedFeature = 'Stock Report');
+              Navigator.pushNamed(context, '/stockReport');
+            },
             buttonWidth,
-            false,
-            Colors.lightBlue, // Changed to light blue
           ),
-          const SizedBox(height: 14),
+          _buildFeatureButton(
+            context,
+            'assets/images/dashboard.png',
+            'Dashboard',
+            () {
+              setState(() => selectedFeature = 'Dashboard');
+              Navigator.pushNamed(context, '/dashboard');
+            },
+            buttonWidth,
+          ),
         ],
-        _buildFeatureButton(
-          'assets/images/dashboard.png',
-          'Dashboard',
-          () => Navigator.pushNamed(context, '/dashboard'),
-          buttonWidth,
-          true,
-          Colors.blueGrey, // Changed to blue-grey
-        ),
-        const SizedBox(height: 14),
-        _buildFeatureButton(
-          'assets/images/team.png',
-          'Team',
-          () => Navigator.pushNamed(context, '/home'),
-          buttonWidth,
-          false,
-          Colors.blueAccent, // Changed to blue accent
-        ),
-      ],
+      ),
     );
   }
 
   Widget _buildFeatureButton(
+    BuildContext context,
     String imagePath,
     String label,
     VoidCallback onTap,
     double width,
-    bool imageOnLeft,
-    Color bgColor,
   ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: width,
-        height: 95,
-        decoration: BoxDecoration(
-          color: bgColor.withOpacity(0.1), // Background for the entire container
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: imageOnLeft
-              ? [
-                  // Image on left
-                  Container(
-                    width: 100, // Square container for image
-                    height: 100,
-                    color: bgColor, // Full background color for image
-                    child: Center(
-                      child: Image.asset(
-                        imagePath,
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.contain,
+    final isLargeScreen = MediaQuery.of(context).size.width > 600;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: StatefulBuilder(
+        builder: (context, setState) {
+          bool isHovered = false;
+          final isSelected = selectedFeature == label;
+
+          return MouseRegion(
+            onEnter: (_) => setState(() => isHovered = true),
+            onExit: (_) => setState(() => isHovered = false),
+            child: GestureDetector(
+              onTap: onTap,
+              child: AnimatedContainer(
+                duration: Duration(milliseconds: 200),
+                width: width,
+                decoration: BoxDecoration(
+                  color: isSelected || isHovered
+                      ? const Color.fromARGB(255, 206, 222, 240)
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(0),
+                  border: Border.all(color: AppColors.primaryColor, width: 1),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isLargeScreen ? 16 : 8,
+                        vertical: isLargeScreen ? 12 : 8,
+                      ),
+                      child: Column(
+                        children: [
+                          Image.asset(
+                            imagePath,
+                            width: isLargeScreen ? 50 : 40,
+                            height: isLargeScreen ? 50 : 40,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(
+                                Icons.broken_image,
+                                size: isLargeScreen ? 50 : 40,
+                                color: isSelected || isHovered
+                                    ? AppColors.primaryColor
+                                    : Colors.grey[800],
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            label,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.montserrat( 
+                            fontSize: isLargeScreen ? 14 : 13,
+                              fontWeight: FontWeight.normal,
+                              color: isSelected || isHovered
+                                  ? AppColors.primaryColor
+                                  : Colors.grey[800],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  // White vertical divider
-                  Container(
-                    width: 4,
-                    height: double.infinity,
-                    color: Colors.white,
-                  ),
-                  // Text on right
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    Container(
+                      width: double.infinity,
+                      color: isSelected || isHovered
+                          ? AppColors.primaryColor
+                          : const Color(0xFFE91E63),
+                      padding: EdgeInsets.symmetric(
+                        vertical: isLargeScreen ? 6 : 4,
+                      ),
                       child: Text(
-                        label,
+                        'View Details',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.roboto(
-                          fontSize: 16,
+                        style: GoogleFonts.poppins( // Apply Poppins font
+                          fontSize: isLargeScreen ? 12 : 10,
                           fontWeight: FontWeight.bold,
-                          color: bgColor, // Text color set to bgColor
+                          color: isSelected || isHovered
+                              ? Colors.white
+                              : Colors.white,
                         ),
                       ),
                     ),
-                  ),
-                ]
-              : [
-                  // Text on left
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                      child: Text(
-                        label,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.roboto(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: bgColor, // Text color set to bgColor
-                        ),
-                      ),
-                    ),
-                  ),
-                  // White vertical divider
-                  Container(
-                    width: 4,
-                    height: double.infinity,
-                    color: Colors.white,
-                  ),
-                  // Image on right
-                  Container(
-                    width: 100, // Square container for image
-                    height: 100,
-                    color: bgColor, // Full background color for image
-                    child: Center(
-                      child: Image.asset(
-                        imagePath,
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                ],
-        ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

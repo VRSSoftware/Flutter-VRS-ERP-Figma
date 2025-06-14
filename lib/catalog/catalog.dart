@@ -221,101 +221,56 @@ class _CatalogPageState extends State<CatalogPage> {
     }
   }
 
-  Future<void> _fetchCatalogItems() async {
-    try {
-      if (pageNo == 1) {
-        setState(() {
-          catalogItems = [];
-          isLoading = true;
-          hasMore = true;
-        });
-      } else {
-        setState(() {
-          isLoadingMore = true;
-        });
-      }
-
-      final result = await ApiService.fetchCatalogItem(
-        itemSubGrpKey: itemSubGrpKey!,
-        itemKey: itemKey,
-        cobr: coBr!,
-        sortBy: sortBy,
-        styleKey:
-            selectedStyles.length == 1 ? selectedStyles[0].styleKey : null,
-        shadeKey:
-            selectedShades.isEmpty
-                ? null
-                : selectedShades.map((s) => s.shadeKey).join(','),
-        sizeKey:
-            selectedSize.isEmpty
-                ? null
-                : selectedSize.map((s) => s.itemSizeKey).join(','),
-        fromMRP: fromMRP == "" ? null : fromMRP,
-        toMRP: toMRP == "" ? null : toMRP,
-        fromDate: fromDate == "" ? null : fromDate,
-        toDate: toDate == "" ? null : toDate,
-        brandKey: selectedBrands.isEmpty ? null : selectedBrands[0].brandKey,
-        pageNo: pageNo,
-      );
-
-      int status = result["statusCode"];
-      final items = result["catalogs"] as List<Catalog>;
-
-      // Check if there are more pages
-      bool fetchedHasMore = items.length >= pageSize;
-
-      double? wspFrom = double.tryParse(WSPfrom);
-      double? wspTo = double.tryParse(WSPto);
-
-      List<Catalog> wspFilteredCatalogs = items;
-
-      if (wspFrom != null && wspTo != null) {
-        wspFilteredCatalogs =
-            wspFilteredCatalogs
-                .where(
-                  (catalog) => catalog.wsp >= wspFrom && catalog.wsp <= wspTo,
-                )
-                .toList();
-      } else if (wspFrom != null) {
-        wspFilteredCatalogs =
-            wspFilteredCatalogs
-                .where((catalog) => catalog.wsp >= wspFrom)
-                .toList();
-      } else if (wspTo != null) {
-        wspFilteredCatalogs =
-            wspFilteredCatalogs
-                .where((catalog) => catalog.wsp <= wspTo)
-                .toList();
-      }
-
-      if (selectedStyles.isNotEmpty) {
-        final selectedStyleKeys =
-            selectedStyles.map((style) => style.styleKey).toSet();
-        wspFilteredCatalogs =
-            wspFilteredCatalogs
-                .where(
-                  (catalog) => selectedStyleKeys.contains(catalog.styleKey),
-                )
-                .toList();
-      }
-
+Future<void> _fetchCatalogItems() async {
+  try {
+    if (pageNo == 1) {
       setState(() {
-        catalogItems.addAll(wspFilteredCatalogs);
-        isLoading = false;
-        isLoadingMore = false;
-        hasMore = fetchedHasMore;
-        // if (catalogItems.isNotEmpty) {
-        //   total = catalogItems[0].total;
-        // }
+        catalogItems = [];
+        isLoading = true;
+        hasMore = true;
       });
-    } catch (e) {
-      debugPrint('Failed to load catalog items: $e');
+    } else {
       setState(() {
-        isLoading = false;
-        isLoadingMore = false;
+        isLoadingMore = true;
       });
     }
+
+    final result = await ApiService.fetchCatalogItem(
+      itemSubGrpKey: itemSubGrpKey!,
+      itemKey: itemKey,
+      cobr: coBr!,
+      sortBy: sortBy,
+      styleKey: selectedStyles.length == 1 ? selectedStyles[0].styleKey : null,
+      shadeKey: selectedShades.isEmpty ? null : selectedShades.map((s) => s.shadeKey).join(','),
+      sizeKey: selectedSize.isEmpty ? null : selectedSize.map((s) => s.itemSizeKey).join(','),
+      fromMRP: fromMRP == "" ? null : fromMRP,
+      toMRP: toMRP == "" ? null : toMRP,
+      fromDate: fromDate == "" ? null : fromDate,
+      toDate: toDate == "" ? null : toDate,
+      brandKey: selectedBrands.isEmpty ? null : selectedBrands[0].brandKey,
+      pageNo: pageNo,
+    );
+
+    print('Full API Response: ${jsonEncode(result)}'); // Log raw JSON
+    final List<Catalog> items = result["catalogs"] as List<Catalog>;
+    print('Catalog Items: ${items.map((e) => {'styleCode': e.styleCode, 'ShadeImages': e.shadeImages, 'fullImagePath': e.fullImagePath ?? ''}).toList()}');
+
+    setState(() {
+      catalogItems.addAll(items);
+      total = result["total"] ?? items.length; // Adjust based on API response
+      isLoading = false;
+      isLoadingMore = false;
+      hasMore = items.length >= pageSize;
+    });
+  } catch (e) {
+    debugPrint('Failed to load catalog items: $e');
+    setState(() {
+      isLoading = false;
+      isLoadingMore = false;
+    });
   }
+}
+ 
   // Future<void> _fetchStylesByItemGrpKey(String itemKey) async {
   //   try {
   //     final fetchedStyles = await ApiService.fetchStylesByItem(itemKey);
@@ -789,495 +744,251 @@ class _CatalogPageState extends State<CatalogPage> {
     return 0.4;
   }
 
-  Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
-    final filteredItems = _getFilteredItems();
+Widget _buildListView(BoxConstraints constraints, bool isLargeScreen) {
+  final filteredItems = _getFilteredItems();
 
-    return ListView.builder(
-      controller: _scrollController,
-      itemCount: filteredItems.length + (isLoadingMore ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index == filteredItems.length && isLoadingMore) {
-          return Center(
-            child: LoadingAnimationWidget.waveDots(
-              color: AppColors.primaryColor,
-              size: 30,
-            ),
-          );
-        }
-        final item = filteredItems[index];
-        bool isSelected = selectedItems.contains(item);
-        List<String> shades =
-            item.shadeName != null && item.shadeName.isNotEmpty
-                ? item.shadeName
-                    .split(',')
-                    .map((shade) => shade.trim())
-                    .toList()
-                    .cast<String>()
-                : [];
-
-        return GestureDetector(
-          onDoubleTap: () {
-            _openImageZoom1(
-              context,
-              item,
-              showShades: showShades,
-              showMRP: showMRP,
-              showWSP: showWSP,
-              showSizes: showSizes,
-              showProduct: showProduct,
-              showRemark: showRemark,
-              isLargeScreen: isLargeScreen,
-            );
-          },
-          onLongPress: () => _toggleItemSelection(item),
-          onTap: () {
-            if (selectedItems.isNotEmpty) _toggleItemSelection(item);
-          },
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            child: Card(
-              elevation: isSelected ? 8 : 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(0),
-              ),
-              color: isSelected ? Colors.blue.shade50 : Colors.white,
-              child: Stack(
-                children: [
-                  Positioned(
-                    top: 0,
-                    bottom: 0,
-                    left: 0,
-                    child: Container(
-                      width: 8,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryColor,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(0),
-                          bottomLeft: Radius.circular(0),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(isLargeScreen ? 12.0 : 8.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Flexible(
-                          flex: 2,
-                          child: ClipRRect(
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(0),
-                              topRight: Radius.circular(0),
-                            ),
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                final maxImageHeight =
-                                    constraints.maxWidth * 1.2;
-                                return ConstrainedBox(
-                                  constraints: BoxConstraints(
-                                    maxHeight: maxImageHeight,
-                                  ),
-                                  child: SizedBox(
-                                    height: maxImageHeight,
-                                    width: double.infinity,
-                                    child: Center(
-                                      child: Image.network(
-                                        _getImageUrl(item),
-                                        fit: BoxFit.contain,
-                                        width: double.infinity,
-                                        errorBuilder: (
-                                          context,
-                                          error,
-                                          stackTrace,
-                                        ) {
-                                          return Container(
-                                            color: Colors.grey.shade300,
-                                            child: const Center(
-                                              child: Icon(Icons.error),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: isLargeScreen ? 16 : 8),
-                        Flexible(
-                          flex: 5,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Padding(
-                                padding: EdgeInsets.all(
-                                  isLargeScreen ? 16 : 12,
-                                ),
-                                child: Table(
-                                  columnWidths: const {
-                                    0: IntrinsicColumnWidth(),
-                                    1: FixedColumnWidth(8),
-                                    2: FlexColumnWidth(),
-                                  },
-                                  defaultVerticalAlignment:
-                                      TableCellVerticalAlignment.middle,
-                                  children: [
-                                    TableRow(
-                                      children: [
-                                        _buildLabelText('Design'),
-                                        const Text(':'),
-                                        Text(
-                                          item.styleCodeWithcount,
-                                          style: TextStyle(
-                                            color: Colors.red,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: isLargeScreen ? 20 : 16,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    _buildSpacerRow(),
-                                    if (showShades && shades.isNotEmpty)
-                                      TableRow(
-                                        children: [
-                                          _buildLabelText('Shade'),
-                                          const Text(':'),
-                                          Text(
-                                            shades.join(', '),
-                                            style: TextStyle(
-                                              fontSize: isLargeScreen ? 14 : 13,
-                                              color: Colors.grey[700],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    if (showShades && shades.isNotEmpty)
-                                      _buildSpacerRow(),
-                                    if (showMRP)
-                                      TableRow(
-                                        children: [
-                                          _buildLabelText('MRP'),
-                                          const Text(':'),
-                                          Text(
-                                            item.mrp.toStringAsFixed(2),
-                                            style: _valueTextStyle(),
-                                          ),
-                                        ],
-                                      ),
-                                    if (showMRP) _buildSpacerRow(),
-                                    if (showWSP)
-                                      TableRow(
-                                        children: [
-                                          _buildLabelText('WSP'),
-                                          const Text(':'),
-                                          Text(
-                                            item.wsp.toStringAsFixed(2),
-                                            style: _valueTextStyle(),
-                                          ),
-                                        ],
-                                      ),
-                                    if (showWSP) _buildSpacerRow(),
-                                    if (item.sizeName.isNotEmpty && showSizes)
-                                      TableRow(
-                                        children: [
-                                          _buildLabelText('Size'),
-                                          const Text(':'),
-                                          SingleChildScrollView(
-                                            scrollDirection: Axis.horizontal,
-                                            child: Text(
-                                              _getSizeText(item),
-                                              style: _valueTextStyle(),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    if (item.sizeName.isNotEmpty && showSizes)
-                                      _buildSpacerRow(),
-                                    if (showProduct)
-                                      TableRow(
-                                        children: [
-                                          _buildLabelText('Product'),
-                                          const Text(':'),
-                                          Text(
-                                            item.itemName,
-                                            style: _valueTextStyle(),
-                                          ),
-                                        ],
-                                      ),
-                                    if (showProduct) _buildSpacerRow(),
-                                    if (showRemark)
-                                      TableRow(
-                                        children: [
-                                          _buildLabelText('Remark'),
-                                          const Text(':'),
-                                          SingleChildScrollView(
-                                            scrollDirection: Axis.horizontal,
-                                            child: Text(
-                                              item.remark?.trim().isNotEmpty ==
-                                                      true
-                                                  ? item.remark!
-                                                  : '--',
-                                              style: _valueTextStyle(),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (isSelected)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.check_circle,
-                          color: AppColors.primaryColor,
-                          size: 24,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+  return ListView.builder(
+    controller: _scrollController,
+    itemCount: filteredItems.length + (isLoadingMore ? 1 : 0),
+    itemBuilder: (context, index) {
+      if (index == filteredItems.length && isLoadingMore) {
+        return Center(
+          child: LoadingAnimationWidget.waveDots(
+            color: AppColors.primaryColor,
+            size: 30,
           ),
         );
-      },
-    );
-  }
+      }
+      final item = filteredItems[index];
+      bool isSelected = selectedItems.contains(item);
+      List<String> shades = item.shadeName != null && item.shadeName.isNotEmpty
+          ? item.shadeName.split(',').map((shade) => shade.trim()).toList()
+          : [];
+      final imageUrls = _getImageUrl(item);
+      print('Image URLs before use: $imageUrls');
+      final imageUrl = imageUrls.isNotEmpty && imageUrls[0].isNotEmpty
+          ? imageUrls[0]
+          : ''; // Select first URL or empty string
 
-  Widget _buildExpandedView(bool isLargeScreen) {
-    final filteredItems = _getFilteredItems();
-    return ListView.builder(
-      controller: _scrollController,
-      itemCount: filteredItems.length + (isLoadingMore ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index == filteredItems.length && isLoadingMore) {
-          return Center(
-            child: LoadingAnimationWidget.waveDots(
-              color: AppColors.primaryColor,
-              size: 30,
-            ),
+      return GestureDetector(
+        onDoubleTap: () {
+          _openImageZoom1(
+            context,
+            item,
+            showShades: showShades,
+            showMRP: showMRP,
+            showWSP: showWSP,
+            showSizes: showSizes,
+            showProduct: showProduct,
+            showRemark: showRemark,
+            isLargeScreen: isLargeScreen,
           );
-        }
-        final item = filteredItems[index];
-        final isSelected = selectedItems.contains(item);
-        final shades = item.shadeName.split(',').map((s) => s.trim()).toList();
-
-        return GestureDetector(
-          onDoubleTap: () {
-            _openImageZoom1(
-              context,
-              item,
-              showShades: showShades,
-              showMRP: showMRP,
-              showWSP: showWSP,
-              showSizes: showSizes,
-              showProduct: showProduct,
-              showRemark: showRemark,
-              isLargeScreen: isLargeScreen,
-            );
-          },
-          onLongPress: () => _toggleItemSelection(item),
-          onTap: () {
-            if (selectedItems.isNotEmpty) _toggleItemSelection(item);
-          },
+        },
+        onLongPress: () => _toggleItemSelection(item),
+        onTap: () {
+          if (selectedItems.isNotEmpty) _toggleItemSelection(item);
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 8),
           child: Card(
             elevation: isSelected ? 8 : 4,
-            margin: EdgeInsets.symmetric(
-              vertical: 8,
-              horizontal: isLargeScreen ? 16 : 8,
-            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(0),
             ),
             color: isSelected ? Colors.blue.shade50 : Colors.white,
             child: Stack(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
+                Positioned(
+                  top: 0,
+                  bottom: 0,
+                  left: 0,
+                  child: Container(
+                    width: 8,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(0),
-                        topRight: Radius.circular(0),
-                      ),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final maxImageHeight = constraints.maxWidth * 1.2;
-                          return ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxHeight: maxImageHeight,
-                              minHeight: constraints.maxWidth,
-                            ),
-                            child: Image.network(
-                              _getImageUrl(item),
-                              fit: BoxFit.contain,
-                              width: double.infinity,
-                              height: double.infinity,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  color: Colors.grey.shade300,
-                                  child: const Center(child: Icon(Icons.error)),
-                                );
-                              },
-                            ),
-                          );
-                        },
+                        bottomLeft: Radius.circular(0),
                       ),
                     ),
-                    Padding(
-                      padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
-                      child: Table(
-                        columnWidths: const {
-                          0: IntrinsicColumnWidth(),
-                          1: FixedColumnWidth(8),
-                          2: FlexColumnWidth(),
-                        },
-                        defaultVerticalAlignment:
-                            TableCellVerticalAlignment.middle,
-                        children: [
-                          TableRow(
-                            children: [
-                              Text(
-                                'Design',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              const Text(':'),
-                              Text(
-                                item.styleCodeWithcount,
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: isLargeScreen ? 20 : 16,
-                                ),
-                              ),
-                            ],
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(isLargeScreen ? 12.0 : 8.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Flexible(
+                        flex: 2,
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(0),
+                            topRight: Radius.circular(0),
                           ),
-                          _buildSpacerRow(),
-                          if (showShades && shades.isNotEmpty)
-                            TableRow(
-                              children: [
-                                Text(
-                                  'Shade',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final maxImageHeight = constraints.maxWidth * 1.2;
+                              return ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxHeight: maxImageHeight,
                                 ),
-                                const Text(':'),
-                                Text(
-                                  shades.join(', '),
-                                  style: TextStyle(
-                                    fontSize: isLargeScreen ? 14 : 13,
-                                    color: Colors.grey[700],
+                                child: SizedBox(
+                                  height: maxImageHeight,
+                                  width: double.infinity,
+                                  child: Center(
+                                    child: imageUrl.isNotEmpty
+                                        ? Image.network(
+                                            imageUrl,
+                                            fit: BoxFit.contain,
+                                            width: double.infinity,
+                                            errorBuilder: (
+                                              context,
+                                              error,
+                                              stackTrace,
+                                            ) {
+                                              return Container(
+                                                color: Colors.grey.shade300,
+                                                child: const Center(
+                                                  child: Icon(Icons.error),
+                                                ),
+                                              );
+                                            },
+                                          )
+                                        : Container(
+                                            color: Colors.grey.shade300,
+                                            child: const Center(
+                                              child: Icon(Icons.image_not_supported),
+                                            ),
+                                          ),
                                   ),
                                 ),
-                              ],
-                            ),
-                          if (showShades && shades.isNotEmpty)
-                            _buildSpacerRow(),
-                          if (showMRP)
-                            TableRow(
-                              children: [
-                                Text(
-                                  'MRP',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                const Text(':'),
-                                Text(
-                                  item.mrp.toStringAsFixed(2),
-                                  style: _valueTextStyle(),
-                                ),
-                              ],
-                            ),
-                          if (showMRP) _buildSpacerRow(),
-                          if (showWSP)
-                            TableRow(
-                              children: [
-                                Text(
-                                  'WSP',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                const Text(':'),
-                                Text(
-                                  item.wsp.toStringAsFixed(2),
-                                  style: _valueTextStyle(),
-                                ),
-                              ],
-                            ),
-                          if (showWSP) _buildSpacerRow(),
-                          if (item.sizeName.isNotEmpty && showSizes)
-                            TableRow(
-                              children: [
-                                Text(
-                                  'Size',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                const Text(':'),
-                                SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: Text(
-                                    _getSizeText(item),
-                                    style: _valueTextStyle(),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          if (item.sizeName.isNotEmpty && showSizes)
-                            _buildSpacerRow(),
-                          if (showProduct)
-                            TableRow(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 5),
-                                  child: Text(
-                                    'Product',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                const Text(':'),
-                                Text(item.itemName, style: _valueTextStyle()),
-                              ],
-                            ),
-                          if (showProduct) _buildSpacerRow(),
-                          if (showRemark)
-                            TableRow(
-                              children: [
-                                Text(
-                                  'Remark',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                const Text(':'),
-                                SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: Text(
-                                    item.remark?.trim().isNotEmpty == true
-                                        ? item.remark!
-                                        : '--',
-                                    style: _valueTextStyle(),
-                                  ),
-                                ),
-                              ],
-                            ),
-                        ],
+                              );
+                            },
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                      SizedBox(width: isLargeScreen ? 16 : 8),
+                      Flexible(
+                        flex: 5,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
+                              child: Table(
+                                columnWidths: const {
+                                  0: IntrinsicColumnWidth(),
+                                  1: FixedColumnWidth(8),
+                                  2: FlexColumnWidth(),
+                                },
+                                defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                                children: [
+                                  TableRow(
+                                    children: [
+                                      _buildLabelText('Design'),
+                                      const Text(':'),
+                                      Text(
+                                        item.styleCodeWithcount,
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: isLargeScreen ? 20 : 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  _buildSpacerRow(),
+                                  if (showShades && shades.isNotEmpty)
+                                    TableRow(
+                                      children: [
+                                        _buildLabelText('Shade'),
+                                        const Text(':'),
+                                        Text(
+                                          shades.join(', '),
+                                          style: TextStyle(
+                                            fontSize: isLargeScreen ? 14 : 13,
+                                            color: Colors.grey[700],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  if (showShades && shades.isNotEmpty) _buildSpacerRow(),
+                                  if (showMRP)
+                                    TableRow(
+                                      children: [
+                                        _buildLabelText('MRP'),
+                                        const Text(':'),
+                                        Text(
+                                          item.mrp.toStringAsFixed(2),
+                                          style: _valueTextStyle(),
+                                        ),
+                                      ],
+                                    ),
+                                  if (showMRP) _buildSpacerRow(),
+                                  if (showWSP)
+                                    TableRow(
+                                      children: [
+                                        _buildLabelText('WSP'),
+                                        const Text(':'),
+                                        Text(
+                                          item.wsp.toStringAsFixed(2),
+                                          style: _valueTextStyle(),
+                                        ),
+                                      ],
+                                    ),
+                                  if (showWSP) _buildSpacerRow(),
+                                  if (item.sizeName.isNotEmpty && showSizes)
+                                    TableRow(
+                                      children: [
+                                        _buildLabelText('Size'),
+                                        const Text(':'),
+                                        SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: Text(
+                                            _getSizeText(item),
+                                            style: _valueTextStyle(),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  if (item.sizeName.isNotEmpty && showSizes) _buildSpacerRow(),
+                                  if (showProduct)
+                                    TableRow(
+                                      children: [
+                                        _buildLabelText('Product'),
+                                        const Text(':'),
+                                        Text(
+                                          item.itemName,
+                                          style: _valueTextStyle(),
+                                        ),
+                                      ],
+                                    ),
+                                  if (showProduct) _buildSpacerRow(),
+                                  if (showRemark)
+                                    TableRow(
+                                      children: [
+                                        _buildLabelText('Remark'),
+                                        const Text(':'),
+                                        SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: Text(
+                                            item.remark?.trim().isNotEmpty == true
+                                                ? item.remark!
+                                                : '--',
+                                            style: _valueTextStyle(),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 if (isSelected)
                   Positioned(
@@ -1299,11 +1010,257 @@ class _CatalogPageState extends State<CatalogPage> {
               ],
             ),
           ),
-        );
+        )  );
       },
     );
   }
+Widget _buildExpandedView(bool isLargeScreen) {
+  final filteredItems = _getFilteredItems();
+  return ListView.builder(
+    controller: _scrollController,
+    itemCount: filteredItems.length + (isLoadingMore ? 1 : 0),
+    itemBuilder: (context, index) {
+      if (index == filteredItems.length && isLoadingMore) {
+        return Center(
+          child: LoadingAnimationWidget.waveDots(
+            color: AppColors.primaryColor,
+            size: 30,
+          ),
+        );
+      }
+      final item = filteredItems[index];
+      final isSelected = selectedItems.contains(item);
+      final shades = item.shadeName.split(',').map((s) => s.trim()).toList();
+      final imageUrls = _getImageUrl(item);
+      print('Image URLs: $imageUrls');
+      final imageUrl = imageUrls.isNotEmpty && imageUrls[0].isNotEmpty
+          ? imageUrls[0]
+          : ''; // Select first URL or empty string
 
+      return GestureDetector(
+        onDoubleTap: () {
+          _openImageZoom1(
+            context,
+            item,
+            showShades: showShades,
+            showMRP: showMRP,
+            showWSP: showWSP,
+            showSizes: showSizes,
+            showProduct: showProduct,
+            showRemark: showRemark,
+            isLargeScreen: isLargeScreen,
+          );
+        },
+        onLongPress: () => _toggleItemSelection(item),
+        onTap: () {
+          if (selectedItems.isNotEmpty) _toggleItemSelection(item);
+        },
+        child: Card(
+          elevation: isSelected ? 8 : 4,
+          margin: EdgeInsets.symmetric(
+            vertical: 8,
+            horizontal: isLargeScreen ? 16 : 8,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(0),
+          ),
+          color: isSelected ? Colors.blue.shade50 : Colors.white,
+          child: Stack(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(0),
+                      topRight: Radius.circular(0),
+                    ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final maxImageHeight = constraints.maxWidth * 1.2;
+                        return ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: maxImageHeight,
+                            minHeight: constraints.maxWidth,
+                          ),
+                          child: imageUrl.isNotEmpty
+                              ? Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.contain,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: Colors.grey.shade300,
+                                      child: const Center(child: Icon(Icons.error)),
+                                    );
+                                  },
+                                )
+                              : Container(
+                                  color: Colors.grey.shade300,
+                                  child: const Center(
+                                      child: Icon(Icons.image_not_supported)),
+                                ),
+                        );
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
+                    child: Table(
+                      columnWidths: const {
+                        0: IntrinsicColumnWidth(),
+                        1: FixedColumnWidth(8),
+                        2: FlexColumnWidth(),
+                      },
+                      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                      children: [
+                        TableRow(
+                          children: [
+                            Text(
+                              'Design',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const Text(':'),
+                            Text(
+                              item.styleCodeWithcount,
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                                fontSize: isLargeScreen ? 20 : 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                        _buildSpacerRow(),
+                        if (showShades && shades.isNotEmpty)
+                          TableRow(
+                            children: [
+                              Text(
+                                'Shade',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              const Text(':'),
+                              Text(
+                                shades.join(', '),
+                                style: TextStyle(
+                                  fontSize: isLargeScreen ? 14 : 13,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                        if (showShades && shades.isNotEmpty) _buildSpacerRow(),
+                        if (showMRP)
+                          TableRow(
+                            children: [
+                              Text(
+                                'MRP',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              const Text(':'),
+                              Text(
+                                item.mrp.toStringAsFixed(2),
+                                style: _valueTextStyle(),
+                              ),
+                            ],
+                          ),
+                        if (showMRP) _buildSpacerRow(),
+                        if (showWSP)
+                          TableRow(
+                            children: [
+                              Text(
+                                'WSP',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              const Text(':'),
+                              Text(
+                                item.wsp.toStringAsFixed(2),
+                                style: _valueTextStyle(),
+                              ),
+                            ],
+                          ),
+                        if (showWSP) _buildSpacerRow(),
+                        if (item.sizeName.isNotEmpty && showSizes)
+                          TableRow(
+                            children: [
+                              Text(
+                                'Size',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              const Text(':'),
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Text(
+                                  _getSizeText(item),
+                                  style: _valueTextStyle(),
+                                ),
+                              ),
+                            ],
+                          ),
+                        if (item.sizeName.isNotEmpty && showSizes) _buildSpacerRow(),
+                        if (showProduct)
+                          TableRow(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(right: 5),
+                                child: Text(
+                                  'Product',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              const Text(':'),
+                              Text(item.itemName, style: _valueTextStyle()),
+                            ],
+                          ),
+                        if (showProduct) _buildSpacerRow(),
+                        if (showRemark)
+                          TableRow(
+                            children: [
+                              Text(
+                                'Remark',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              const Text(':'),
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Text(
+                                  item.remark?.trim().isNotEmpty == true
+                                      ? item.remark!
+                                      : '--',
+                                  style: _valueTextStyle(),
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if (isSelected)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.check_circle,
+                      color: AppColors.primaryColor,
+                      size: 24,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+       ) );
+      },
+    );
+  }
   Widget _buildLabelText(String label) {
     return Padding(
       padding: const EdgeInsets.only(right: 5),
@@ -1371,7 +1328,7 @@ class _CatalogPageState extends State<CatalogPage> {
       MaterialPageRoute(
         builder:
             (context) => ImageZoomScreen1(
-              imageUrl: _getImageUrl(item),
+              imageUrls: _getImageUrl(item),
               item: item,
               showShades: showShades,
               showMRP: showMRP,
@@ -1385,227 +1342,254 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
-  void _openImageZoom(BuildContext context, Catalog item) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ImageZoomScreen(imageUrl: _getImageUrl(item)),
-      ),
-    );
-  }
+ void _openImageZoom(BuildContext context, Catalog item) {
+  final imageUrls = _getImageUrl(item);
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => ImageZoomScreen(imageUrls: imageUrls),
+    ),
+  );
+}
 
-  Widget _buildItemCard(Catalog item, bool isLargeScreen) {
-    bool isSelected = selectedItems.contains(item);
-    List<String> shades =
-        item.shadeName.split(',').map((s) => s.trim()).toList();
+Widget _buildItemCard(Catalog item, bool isLargeScreen) {
+  bool isSelected = selectedItems.contains(item);
+  List<String> shades = item.shadeName.split(',').map((s) => s.trim()).toList();
+  final imageUrls = _getImageUrl(item);
+  print('Image URLs before use: $imageUrls');
 
-    return GestureDetector(
-      onDoubleTap: () {
-        _openImageZoom1(
-          context,
-          item,
-          showShades: showShades,
-          showMRP: showMRP,
-          showWSP: showWSP,
-          showSizes: showSizes,
-          showProduct: showProduct,
-          showRemark: showRemark,
-          isLargeScreen: isLargeScreen,
-        );
-      },
-      onLongPress: () => _toggleItemSelection(item),
-      onTap: () {
-        if (selectedItems.isNotEmpty) _toggleItemSelection(item);
-      },
-      child: Card(
-        elevation: isSelected ? 8 : 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
-        color: isSelected ? Colors.blue.shade50 : Colors.white,
-        child: Stack(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(0),
-                    topRight: Radius.circular(0),
-                  ),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final maxImageHeight = constraints.maxWidth * 1.2;
-                      return ConstrainedBox(
-                        constraints: BoxConstraints(maxHeight: maxImageHeight),
-                        child: SizedBox(
-                          height: maxImageHeight,
-                          width: double.infinity,
-                          child: Center(
-                            child: Image.network(
-                              _getImageUrl(item),
-                              fit: BoxFit.contain,
-                              width: double.infinity,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  color: Colors.grey.shade300,
-                                  child: const Center(child: Icon(Icons.error)),
-                                );
-                              },
+  return GestureDetector(
+    onDoubleTap: () {
+      _openImageZoom1(
+        context,
+        item,
+        showShades: showShades,
+        showMRP: showMRP,
+        showWSP: showWSP,
+        showSizes: showSizes,
+        showProduct: showProduct,
+        showRemark: showRemark,
+        isLargeScreen: isLargeScreen,
+      );
+    },
+    onLongPress: () => _toggleItemSelection(item),
+    onTap: () {
+      if (selectedItems.isNotEmpty) _toggleItemSelection(item);
+    },
+    child: Card(
+      elevation: isSelected ? 8 : 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
+      color: isSelected ? Colors.blue.shade50 : Colors.white,
+      child: Stack(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(0),
+                  topRight: Radius.circular(0),
+                ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final maxImageHeight = constraints.maxWidth * 1.2;
+                    return ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: maxImageHeight),
+                      child: imageUrls.length == 1 && imageUrls[0].isNotEmpty
+                          ? _buildSingleImage(imageUrls[0], maxImageHeight)
+                          : SizedBox(
+                              height: maxImageHeight,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: imageUrls.length,
+                                itemBuilder: (context, index) {
+                                  final imageUrl = imageUrls[index];
+                                  return SizedBox(
+                                    width: constraints.maxWidth,
+                                    child: _buildSingleImage(
+                                        imageUrl, maxImageHeight),
+                                  );
+                                },
+                              ),
+                            ),
+                    );
+                  },
+                ),
+             
+              ),
+              Padding(
+                padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
+                child: Table(
+                  // Table content remains unchanged
+                  columnWidths: const {
+                    0: IntrinsicColumnWidth(),
+                    1: FixedColumnWidth(8),
+                    2: FlexColumnWidth(),
+                  },
+                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                  children: [
+                    TableRow(
+                      children: [
+                        _buildLabelText('Design'),
+                        const Text(':'),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Text(
+                            item.styleCodeWithcount,
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                              fontSize: isLargeScreen ? 20 : 16,
                             ),
                           ),
                         ),
-                      );
-                    },
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
-                  child: Table(
-                    columnWidths: const {
-                      0: IntrinsicColumnWidth(),
-                      1: FixedColumnWidth(8),
-                      2: FlexColumnWidth(),
-                    },
-                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                    children: [
+                      ],
+                    ),
+                    _buildSpacerRow(),
+                    if (showShades && shades.isNotEmpty)
                       TableRow(
                         children: [
-                          _buildLabelText('Design'),
+                          _buildLabelText('Shade'),
                           const Text(':'),
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Text(
-                              item.styleCodeWithcount,
+                              shades.join(', '),
                               style: TextStyle(
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                                fontSize: isLargeScreen ? 20 : 16,
+                                fontSize: isLargeScreen ? 14 : 13,
+                                color: Colors.grey[700],
                               ),
                             ),
                           ),
                         ],
                       ),
-                      _buildSpacerRow(),
-                      if (showShades && shades.isNotEmpty)
-                        TableRow(
-                          children: [
-                            _buildLabelText('Shade'),
-                            const Text(':'),
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Text(
-                                shades.join(', '),
-                                style: TextStyle(
-                                  fontSize: isLargeScreen ? 14 : 13,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      if (showShades && shades.isNotEmpty) _buildSpacerRow(),
-                      if (showMRP)
-                        TableRow(
-                          children: [
-                            _buildLabelText('MRP'),
-                            const Text(':'),
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Text(
-                                item.mrp.toStringAsFixed(2),
-                                style: _valueTextStyle(),
-                              ),
-                            ),
-                          ],
-                        ),
-                      if (showMRP) _buildSpacerRow(),
-                      if (showWSP)
-                        TableRow(
-                          children: [
-                            _buildLabelText('WSP'),
-                            const Text(':'),
-                            Text(
-                              item.wsp.toStringAsFixed(2),
+                    if (showShades && shades.isNotEmpty) _buildSpacerRow(),
+                    if (showMRP)
+                      TableRow(
+                        children: [
+                          _buildLabelText('MRP'),
+                          const Text(':'),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Text(
+                              item.mrp.toStringAsFixed(2),
                               style: _valueTextStyle(),
                             ),
-                          ],
-                        ),
-                      if (showWSP) _buildSpacerRow(),
-                      if (item.sizeName.isNotEmpty && showSizes)
-                        TableRow(
-                          children: [
-                            _buildLabelText('Size'),
-                            const Text(':'),
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Text(
-                                _getSizeText(item),
-                                style: _valueTextStyle(),
-                              ),
+                          ),
+                        ],
+                      ),
+                    if (showMRP) _buildSpacerRow(),
+                    if (showWSP)
+                      TableRow(
+                        children: [
+                          _buildLabelText('WSP'),
+                          const Text(':'),
+                          Text(
+                            item.wsp.toStringAsFixed(2),
+                            style: _valueTextStyle(),
+                          ),
+                        ],
+                      ),
+                    if (showWSP) _buildSpacerRow(),
+                    if (item.sizeName.isNotEmpty && showSizes)
+                      TableRow(
+                        children: [
+                          _buildLabelText('Size'),
+                          const Text(':'),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Text(
+                              _getSizeText(item),
+                              style: _valueTextStyle(),
                             ),
-                          ],
-                        ),
-                      if (item.sizeName.isNotEmpty && showSizes)
-                        _buildSpacerRow(),
-                      if (showProduct)
-                        TableRow(
-                          children: [
-                            _buildLabelText('Product'),
-                            const Text(':'),
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Text(
-                                item.itemName,
-                                style: _valueTextStyle(),
-                              ),
+                          ),
+                        ],
+                      ),
+                    if (item.sizeName.isNotEmpty && showSizes)
+                      _buildSpacerRow(),
+                    if (showProduct)
+                      TableRow(
+                        children: [
+                          _buildLabelText('Product'),
+                          const Text(':'),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Text(
+                              item.itemName,
+                              style: _valueTextStyle(),
                             ),
-                          ],
-                        ),
-                      if (showProduct) _buildSpacerRow(),
-                      if (showRemark)
-                        TableRow(
-                          children: [
-                            _buildLabelText('Remark'),
-                            const Text(':'),
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Text(
-                                item.remark?.trim().isNotEmpty == true
-                                    ? item.remark!
-                                    : '--',
-                                style: _valueTextStyle(),
-                              ),
+                          ),
+                        ],
+                      ),
+                    if (showProduct) _buildSpacerRow(),
+                    if (showRemark)
+                      TableRow(
+                        children: [
+                          _buildLabelText('Remark'),
+                          const Text(':'),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Text(
+                              item.remark?.trim().isNotEmpty == true
+                                  ? item.remark!
+                                  : '--',
+                              style: _valueTextStyle(),
                             ),
-                          ],
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            if (isSelected)
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.check_circle,
-                    color: AppColors.primaryColor,
-                    size: 24,
-                  ),
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
               ),
-          ],
-        ),
+            ],
+          ),
+          if (isSelected)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.check_circle,
+                  color: AppColors.primaryColor,
+                  size: 24,
+                ),
+              ),
+            ),
+        ],
+      ),
+   ) );
+  }
+
+  Widget _buildSingleImage(String imageUrl, double maxHeight) {
+    return SizedBox(
+      height: maxHeight,
+      width: double.infinity,
+      child: Center(
+        child: imageUrl.isNotEmpty
+            ? Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                width: double.infinity,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey.shade300,
+                    child: const Center(child: Icon(Icons.error)),
+                  );
+                },
+              )
+            : Container(
+                color: Colors.grey.shade300,
+                child: const Center(child: Icon(Icons.image_not_supported)),
+              ),
       ),
     );
   }
-
   Widget _buildBottomButtons(bool isLargeScreen) {
     return SafeArea(
       child: Container(
@@ -1683,22 +1667,52 @@ class _CatalogPageState extends State<CatalogPage> {
     return catalogItems;
   }
 
-  String _getImageUrl(Catalog catalog) {
-    if (UserSession.onlineImage == '1') {
-      // fullImagePath is already a full URL, return as is or empty string if null
-      return catalog.fullImagePath ?? '';
-    } else if (UserSession.onlineImage == '0') {
-      // Extract image name from fullImagePath safely
-      final fullPath = catalog.fullImagePath ?? '';
-      if (fullPath.isEmpty) return '';
-      final imageName = fullPath.split('/').last.split('?').first;
-      if (imageName.isEmpty) return '';
-      return '${AppConstants.BASE_URL}/images/$imageName';
+  // String _getImageUrl(Catalog catalog) {
+  //   if (UserSession.onlineImage == '1') {
+  //     // fullImagePath is already a full URL, return as is or empty string if null
+  //     return catalog.fullImagePath ?? '';
+  //   } else if (UserSession.onlineImage == '0') {
+  //     // Extract image name from fullImagePath safely
+  //     final fullPath = catalog.fullImagePath ?? '';
+  //     if (fullPath.isEmpty) return '';
+  //     final imageName = fullPath.split('/').last.split('?').first;
+  //     if (imageName.isEmpty) return '';
+  //     return '${AppConstants.BASE_URL}/images/$imageName';
+  //   }
+  //   // Fallback for invalid onlineImage values
+  //   return '';
+  // }
+
+List<String> _getImageUrl(Catalog catalog) {
+  final shadeImages = catalog.shadeImages ?? '';
+  final fullImagePath = catalog.fullImagePath ?? '';
+  print('ShadeImages for catalog ${catalog.styleCode}: $shadeImages');
+  print('fullImagePath for catalog ${catalog.styleCode}: $fullImagePath');
+  print('Base URL: ${AppConstants.BASE_URL}');
+
+  if (shadeImages.isNotEmpty) {
+    final imageEntries = shadeImages.split(',').map((entry) => entry.trim()).toList();
+    List<String> imageUrls = [];
+    for (var entry in imageEntries) {
+      final parts = entry.split(':');
+      if (parts.length < 2) continue;
+      final path = parts.sublist(1).join(':').trim();
+      if (path.isEmpty) continue;
+      final fileName = path.split('/').last.split('\\').last;
+      if (fileName.isEmpty) continue;
+      final url = '${AppConstants.BASE_URL}/images/$fileName';
+      imageUrls.add(url);
     }
-    // Fallback for invalid onlineImage values
-    return '';
+    return imageUrls.isEmpty ? [''] : imageUrls;
+  } else if (fullImagePath.isNotEmpty) {
+    final fileName = fullImagePath.split('/').last.split('?').first;
+    if (fileName.isEmpty) return [''];
+    final url = '${AppConstants.BASE_URL}/images/$fileName';
+    return [url];
   }
 
+  return [''];
+}
   void _showFilterDialog() async {
     final result = await Navigator.push(
       context,
@@ -1778,128 +1792,129 @@ class _CatalogPageState extends State<CatalogPage> {
     }
   }
 
-  Future<void> _shareSelectedItemsPDF({
-    required String shareType,
-    bool includeDesign = true,
-    bool includeShade = true,
-    bool includeRate = true,
-    bool includeWsp = true,
-    bool includeSize = true,
-    bool includeSizeMrp = true,
-    bool includeSizeWsp = true,
-    bool includeProduct = true,
-    bool includeRemark = true,
-  }) async {
-    if (selectedItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select items to share')),
-      );
-      return;
-    }
-
-    try {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 16),
-              Text('Sharing PDF .....'),
-            ],
-          ),
-          duration: Duration(seconds: 1),
-        ),
-      );
-
-      final tempDir = await getTemporaryDirectory();
-      final apiUrl = '${AppConstants.BASE_URL}/pdf/generate';
-      List<Map<String, dynamic>> catalogItems = [];
-
-      final requestBody = {
-        "company": "VRS Software",
-        "createdBy": "admin",
-        "mobile": "",
-        "catalogItems":
-            selectedItems.map((item) {
-              Map<String, dynamic> catalogItem = {
-                'fullImagePath': item.fullImagePath,
-              };
-              if (includeDesign) catalogItem['design'] = item.styleCode;
-              if (includeShade) catalogItem['shade'] = item.shadeName;
-              if (includeRate) catalogItem['rate'] = item.mrp;
-              if (includeWsp) catalogItem['wsp'] = item.wsp;
-              if (includeSize) {
-                if (includeSizeMrp && includeSizeWsp) {
-                  catalogItem['sizeDetailsWithoutWSp'] =
-                      item.sizeDetailsWithoutWSp ?? '';
-                } else if (!includeSizeMrp && !includeSizeWsp) {
-                  catalogItem['onlySizes'] = item.onlySizes ?? '';
-                } else {
-                  catalogItem['sizeWithMrp'] = item.sizeWithMrp ?? '';
-                }
-              }
-              if (includeProduct) catalogItem['product'] = item.itemName;
-              if (includeRemark) catalogItem['remark'] = item.remark;
-              return catalogItem;
-            }).toList(),
-      };
-
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(requestBody),
-      );
-
-      if (response.statusCode == 200) {
-        final file = File(
-          '${tempDir.path}/catalog_${DateTime.now().millisecondsSinceEpoch}.pdf',
-        );
-        await file.writeAsBytes(response.bodyBytes);
-
-        await Share.shareXFiles([
-          XFile(file.path),
-        ], subject: 'Catalog PDF from VRS ERP');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to generate PDF: ${response.statusCode}'),
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to share items: ${e.toString()}')),
-      );
-    }
+ Future<void> _shareSelectedItemsPDF({
+  required String shareType,
+  bool includeDesign = true,
+  bool includeShade = true,
+  bool includeRate = true,
+  bool includeWsp = true,
+  bool includeSize = true,
+  bool includeSizeMrp = true,
+  bool includeSizeWsp = true,
+  bool includeProduct = true,
+  bool includeRemark = true,
+}) async {
+  if (selectedItems.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please select items to share')),
+    );
+    return;
   }
 
-  Future<void> _shareSelectedWhatsApp({
-    required String shareType,
-    bool includeDesign = true,
-    bool includeShade = true,
-    bool includeRate = true,
-    bool includeSize = true,
-    bool includeProduct = true,
-    bool includeRemark = true,
-    bool includeLabel = false,
-  }) async {
-    if (selectedItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select items to share')),
-      );
-      return;
+  try {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Sharing PDF .....'),
+          ],
+        ),
+        duration: Duration(seconds: 1),
+      ),
+    );
+
+    final tempDir = await getTemporaryDirectory();
+    final apiUrl = '${AppConstants.BASE_URL}/pdf/generate';
+    List<Map<String, dynamic>> catalogItems = [];
+
+    for (var item in selectedItems) {
+      final imageUrls = _getImageUrl(item);
+      for (var imageUrl in imageUrls) {
+        if (imageUrl.isEmpty) continue;
+        Map<String, dynamic> catalogItem = {
+          'fullImagePath': imageUrl,
+        };
+        if (includeDesign) catalogItem['design'] = item.styleCode;
+        if (includeShade) catalogItem['shade'] = item.shadeName;
+        if (includeRate) catalogItem['rate'] = item.mrp;
+        if (includeWsp) catalogItem['wsp'] = item.wsp;
+        if (includeSize) {
+          if (includeSizeMrp && includeSizeWsp) {
+            catalogItem['sizeDetailsWithoutWSp'] = item.sizeDetailsWithoutWSp ?? '';
+          } else if (!includeSizeMrp && !includeSizeWsp) {
+            catalogItem['onlySizes'] = item.onlySizes ?? '';
+          } else {
+            catalogItem['sizeWithMrp'] = item.sizeWithMrp ?? '';
+          }
+        }
+        if (includeProduct) catalogItem['product'] = item.itemName;
+        if (includeRemark) catalogItem['remark'] = item.remark;
+        catalogItems.add(catalogItem);
+      }
     }
 
-    try {
-      String mobileNo = await _showMobileNumberDialog();
+    final requestBody = {
+      "company": "VRS Software",
+      "createdBy": "admin",
+      "mobile": "",
+      "catalogItems": catalogItems,
+    };
 
-      if (mobileNo.isNotEmpty) {
-        for (var item in selectedItems) {
-          String url =
-              item.fullImagePath.contains("http://") ||
-                      item.fullImagePath.contains("https://")
-                  ? item.fullImagePath
-                  : '${AppConstants.BASE_URL}/images${item.fullImagePath}';
+    final response = await http.post(
+      Uri.parse(apiUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(requestBody),
+    );
+
+    if (response.statusCode == 200) {
+      final file = File(
+        '${tempDir.path}/catalog_${DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
+      await file.writeAsBytes(response.bodyBytes);
+
+      await Share.shareXFiles([
+        XFile(file.path),
+      ], subject: 'Catalog PDF from VRS ERP');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to generate PDF: ${response.statusCode}'),
+        ),
+      );
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to share items: ${e.toString()}')),
+    );
+  }
+}
+Future<void> _shareSelectedWhatsApp({
+  required String shareType,
+  bool includeDesign = true,
+  bool includeShade = true,
+  bool includeRate = true,
+  bool includeSize = true,
+  bool includeProduct = true,
+  bool includeRemark = true,
+  bool includeLabel = false,
+}) async {
+  if (selectedItems.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please select items to share')),
+    );
+    return;
+  }
+
+  try {
+    String mobileNo = await _showMobileNumberDialog();
+
+    if (mobileNo.isNotEmpty) {
+      for (var item in selectedItems) {
+        final imageUrls = _getImageUrl(item);
+        for (var url in imageUrls) {
+          if (url.isEmpty) continue;
           final response = await http.get(Uri.parse(url));
 
           if (response.statusCode == 200) {
@@ -1923,13 +1938,10 @@ class _CatalogPageState extends State<CatalogPage> {
               caption: caption,
             );
 
-            if (result) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Images sent successfully...')),
+            if (!result) {
+              print(
+                "Failed to send image for ${item.itemName}.",
               );
-              setState(() {
-                selectedItems = [];
-              });
             }
           } else {
             print(
@@ -1938,14 +1950,20 @@ class _CatalogPageState extends State<CatalogPage> {
           }
         }
       }
-    } catch (e) {
-      print(e.toString());
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to share items: ${e.toString()}')),
+        const SnackBar(content: Text('Images sent successfully...')),
       );
+      setState(() {
+        selectedItems = [];
+      });
     }
+  } catch (e) {
+    print(e.toString());
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to share items: ${e.toString()}')),
+    );
   }
-
+}
   Future<String> _showMobileNumberDialog() async {
     TextEditingController controller = TextEditingController();
 
@@ -2046,122 +2064,127 @@ class _CatalogPageState extends State<CatalogPage> {
     }
   }
 
-  Future<void> _shareSelectedItems({
-    required String shareType,
-    bool includeDesign = true,
-    bool includeShade = true,
-    bool includeRate = true,
-    bool includeWsp = true,
-    bool includeSize = true,
-    bool includeSizeMrp = true,
-    bool includeSizeWsp = true,
-    bool includeProduct = true,
-    bool includeRemark = true,
-  }) async {
-    if (selectedItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select items to share')),
-      );
-      return;
-    }
+Future<void> _shareSelectedItems({
+  required String shareType,
+  bool includeDesign = true,
+  bool includeShade = true,
+  bool includeRate = true,
+  bool includeWsp = true,
+  bool includeSize = true,
+  bool includeSizeMrp = true,
+  bool includeSizeWsp = true,
+  bool includeProduct = true,
+  bool includeRemark = true,
+}) async {
+  if (selectedItems.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please select items to share')),
+    );
+    return;
+  }
 
-    try {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 16),
-              Text('Preparing items for sharing...'),
-            ],
-          ),
-          duration: Duration(seconds: 1),
+  try {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Preparing items for sharing...'),
+          ],
         ),
-      );
+        duration: Duration(seconds: 1),
+      ),
+    );
 
-      final List<Map<String, String>> catalogItems =
-          selectedItems.map((item) {
-            String sizeValue = '';
-            if (includeSize) {
-              if (includeSizeMrp && includeSizeWsp) {
-                sizeValue = item.sizeDetailsWithoutWSp ?? '';
-              } else if (!includeSizeMrp && !includeSizeWsp) {
-                sizeValue = item.onlySizes ?? '';
-              } else {
-                sizeValue = item.sizeWithMrp ?? '';
-              }
-            }
+    final List<Map<String, String>> catalogItems = [];
+    for (var item in selectedItems) {
+      final imageUrls = _getImageUrl(item);
+      print('Image URLs before use: $imageUrls');
 
-            return {
-              'fullImagePath': _getImageUrl(item),
-              'design': includeDesign ? item.styleCode : '',
-              'shade': includeShade ? item.shadeName : '',
-              'rate': includeRate ? item.mrp.toString() : '',
-              'wsp': includeWsp ? item.wsp.toString() : '',
-              'size': sizeValue,
-              'product': includeProduct ? item.itemName : '',
-              'remark': includeRemark ? item.remark : '',
-            };
-          }).toList();
-
-      final response = await http.post(
-        Uri.parse('${AppConstants.BASE_URL}/image/generate-and-share'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'catalogItems': catalogItems,
-          'includeDesign': includeDesign,
-          'includeShade': includeShade,
-          'includeRate': includeRate,
-          'includeWsp': includeWsp,
-          'includeSize': includeSize,
-          'includeProduct': includeProduct,
-          'includeRemark': includeRemark,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body) as List;
-        final tempDir = await getTemporaryDirectory();
-        List<String> filePaths = [];
-
-        for (var imageData in responseData) {
-          try {
-            final imageBytes = base64Decode(imageData['image']);
-            final file = File(
-              '${tempDir.path}/share_${DateTime.now().millisecondsSinceEpoch}.jpg',
-            );
-            await file.writeAsBytes(imageBytes);
-            filePaths.add(file.path);
-          } catch (e) {
-            print('Error saving image: $e');
+      for (var imageUrl in imageUrls) {
+        if (imageUrl.isEmpty) continue;
+        String sizeValue = '';
+        if (includeSize) {
+          if (includeSizeMrp && includeSizeWsp) {
+            sizeValue = item.sizeDetailsWithoutWSp ?? '';
+          } else if (!includeSizeMrp && !includeSizeWsp) {
+            sizeValue = item.onlySizes ?? '';
+          } else {
+            sizeValue = item.sizeWithMrp ?? '';
           }
         }
 
-        if (filePaths.isNotEmpty) {
-          await Share.shareFiles(filePaths);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Image Share Successfully')),
+        catalogItems.add({
+          'fullImagePath': imageUrl,
+          'design': includeDesign ? item.styleCode : '',
+          'shade': includeShade ? item.shadeName : '',
+          'rate': includeRate ? item.mrp.toString() : '',
+          'wsp': includeWsp ? item.wsp.toString() : '',
+          'size': sizeValue,
+          'product': includeProduct ? item.itemName : '',
+          'remark': includeRemark ? item.remark : '',
+        });
+      }
+    }
+
+    final response = await http.post(
+      Uri.parse('${AppConstants.BASE_URL}/image/generate-and-share'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'catalogItems': catalogItems,
+        'includeDesign': includeDesign,
+        'includeShade': includeShade,
+        'includeRate': includeRate,
+        'includeWsp': includeWsp,
+        'includeSize': includeSize,
+        'includeProduct': includeProduct,
+        'includeRemark': includeRemark,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body) as List;
+      final tempDir = await getTemporaryDirectory();
+      List<String> filePaths = [];
+
+      for (var imageData in responseData) {
+        try {
+          final imageBytes = base64Decode(imageData['image']);
+          final file = File(
+            '${tempDir.path}/share_${DateTime.now().millisecondsSinceEpoch}.jpg',
           );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No valid images to share')),
-          );
+          await file.writeAsBytes(imageBytes);
+          filePaths.add(file.path);
+        } catch (e) {
+          print('Error saving image: $e');
         }
+      }
+
+      if (filePaths.isNotEmpty) {
+        await Share.shareFiles(filePaths);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Images shared successfully')),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to generate images: ${response.statusCode}'),
-          ),
+          const SnackBar(content: Text('No valid images to share')),
         );
       }
-    } catch (e) {
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to share items: ${e.toString()}')),
+        SnackBar(
+          content: Text('Failed to generate images: ${response.statusCode}'),
+        ),
       );
-      print('Error in _shareSelectedItems: $e');
     }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to share items: ${e.toString()}')),
+    );
+    print('Error in _shareSelectedItems: $e');
   }
-
+}
   void _toggleItemSelection(Catalog item) {
     setState(() {
       if (selectedItems.contains(item)) {
@@ -2370,60 +2393,64 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
-  Future<void> _handleDownloadOption(
-    String option, {
-    bool includeDesign = true,
-    bool includeShade = true,
-    bool includeRate = true,
-    bool includeWsp = true,
-    bool includeSize = true,
-    bool includeSizeMrp = true,
-    bool includeSizeWsp = true,
-    bool includeProduct = true,
-    bool includeRemark = true,
-  }) async {
-    if (selectedItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select items to download')),
-      );
-      return;
+Future<void> _handleDownloadOption(
+  String option, {
+  bool includeDesign = true,
+  bool includeShade = true,
+  bool includeRate = true,
+  bool includeWsp = true,
+  bool includeSize = true,
+  bool includeSizeMrp = true,
+  bool includeSizeWsp = true,
+  bool includeProduct = true,
+  bool includeRemark = true,
+}) async {
+  if (selectedItems.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please select items to download')),
+    );
+    return;
+  }
+
+  try {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Preparing download...'),
+          ],
+        ),
+        duration: Duration(seconds: 1),
+      ),
+    );
+
+    Directory? downloadsDir;
+    if (Platform.isAndroid) {
+      downloadsDir = Directory('/storage/emulated/0/Download');
+      if (!await downloadsDir.exists()) {
+        downloadsDir = await getExternalStorageDirectory();
+      }
+    } else {
+      downloadsDir = await getApplicationDocumentsDirectory();
     }
 
-    try {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 16),
-              Text('Preparing download...'),
-            ],
-          ),
-          duration: Duration(seconds: 1),
-        ),
-      );
+    final now = DateTime.now();
+    final timestamp =
+        '${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}';
 
-      Directory? downloadsDir;
-      if (Platform.isAndroid) {
-        downloadsDir = Directory('/storage/emulated/0/Download');
-        if (!await downloadsDir.exists()) {
-          downloadsDir = await getExternalStorageDirectory();
-        }
-      } else {
-        downloadsDir = await getApplicationDocumentsDirectory();
-      }
+    if (option == 'pdf') {
+      final apiUrl = '${AppConstants.BASE_URL}/pdf/generate';
+      List<Map<String, dynamic>> catalogItems = [];
 
-      final now = DateTime.now();
-      final timestamp =
-          '${now.year}${now.month}${now.day}_${now.hour}${now.minute}${now.second}';
-
-      if (option == 'pdf') {
-        final apiUrl = '${AppConstants.BASE_URL}/pdf/generate';
-        List<Map<String, dynamic>> catalogItems = [];
-
-        for (var item in selectedItems) {
+      for (var item in selectedItems) {
+        final imageUrls = _getImageUrl(item);
+        print('Image URLs before use: $imageUrls');
+        for (var imageUrl in imageUrls) {
+          if (imageUrl.isEmpty) continue;
           Map<String, dynamic> catalogItem = {
-            'fullImagePath': item.fullImagePath,
+            'fullImagePath': imageUrl,
           };
           if (includeDesign) catalogItem['design'] = item.styleCode;
           if (includeShade) catalogItem['shade'] = item.shadeName;
@@ -2431,8 +2458,7 @@ class _CatalogPageState extends State<CatalogPage> {
           if (includeWsp) catalogItem['wsp'] = item.wsp;
           if (includeSize) {
             if (includeSizeMrp && includeSizeWsp) {
-              catalogItem['sizeDetailsWithoutWSp'] =
-                  item.sizeDetailsWithoutWSp ?? '';
+              catalogItem['sizeDetailsWithoutWSp'] = item.sizeDetailsWithoutWSp ?? '';
             } else if (!includeSizeMrp && !includeSizeWsp) {
               catalogItem['onlySizes'] = item.onlySizes ?? '';
             } else {
@@ -2443,119 +2469,132 @@ class _CatalogPageState extends State<CatalogPage> {
           if (includeRemark) catalogItem['remark'] = item.remark;
           catalogItems.add(catalogItem);
         }
+      }
 
-        final requestBody = {
-          "company": "VRS Software",
-          "createdBy": "admin",
-          "mobile": "",
-          "catalogItems": catalogItems,
-        };
+      final requestBody = {
+        "company": "VRS Software",
+        "createdBy": "admin",
+        "mobile": "",
+        "catalogItems": catalogItems,
+      };
 
-        final response = await http.post(
-          Uri.parse(apiUrl),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(requestBody),
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        final pdfFile = File('${downloadsDir?.path}/catalog_$timestamp.pdf');
+        await pdfFile.writeAsBytes(response.bodyBytes);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PDF downloaded to ${pdfFile.path}')),
         );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to generate PDF: ${response.statusCode}'),
+          ),
+        );
+      }
+    } else if (option == 'image') {
+      final List<Map<String, String>> catalogItems = [];
+      for (var item in selectedItems) {
+        final imageUrls = _getImageUrl(item);
+        print('Image URLs before use: $imageUrls');
+        for (var imageUrl in imageUrls) {
+          if (imageUrl.isEmpty) continue;
+          String sizeValue = '';
+          if (includeSize) {
+            if (includeSizeMrp && includeSizeWsp) {
+              sizeValue = item.sizeDetailsWithoutWSp ?? '';
+            } else if (!includeSizeMrp && !includeSizeWsp) {
+              sizeValue = item.onlySizes ?? '';
+            } else {
+              sizeValue = item.sizeWithMrp ?? '';
+            }
+          }
 
-        if (response.statusCode == 200) {
-          final pdfFile = File('${downloadsDir?.path}/catalog_$timestamp.pdf');
-          await pdfFile.writeAsBytes(response.bodyBytes);
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('PDF downloaded to ${pdfFile.path}')),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to generate PDF: ${response.statusCode}'),
-            ),
-          );
+          catalogItems.add({
+            'fullImagePath': imageUrl,
+            'design': includeDesign ? item.styleCode : '',
+            'shade': includeShade ? item.shadeName : '',
+            'rate': includeRate ? item.mrp.toString() : '',
+            'wsp': includeWsp ? item.wsp.toString() : '',
+            'size': sizeValue,
+            'product': includeProduct ? item.itemName : '',
+            'remark': includeRemark ? item.remark : '',
+          });
         }
-      } else if (option == 'image') {
-        final List<Map<String, String>> catalogItems =
-            selectedItems.map((item) {
-              String sizeValue = '';
-              if (includeSize) {
-                if (includeSizeMrp && includeSizeWsp) {
-                  sizeValue = item.sizeDetailsWithoutWSp ?? '';
-                } else if (!includeSizeMrp && !includeSizeWsp) {
-                  sizeValue = item.onlySizes ?? '';
-                } else {
-                  sizeValue = item.sizeWithMrp ?? '';
-                }
-              }
+      }
 
-              return {
-                'fullImagePath': _getImageUrl(item),
-                'design': includeDesign ? item.styleCode : '',
-                'shade': includeShade ? item.shadeName : '',
-                'rate': includeRate ? item.mrp.toString() : '',
-                'wsp': includeWsp ? item.wsp.toString() : '',
-                'size': sizeValue,
-                'product': includeProduct ? item.itemName : '',
-                'remark': includeRemark ? item.remark : '',
-              };
-            }).toList();
+      final response = await http.post(
+        Uri.parse('${AppConstants.BASE_URL}/image/generate-and-share'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'catalogItems': catalogItems,
+          'includeDesign': includeDesign,
+          'includeShade': includeShade,
+          'includeRate': includeRate,
+          'includeWsp': includeWsp,
+          'includeSize': includeSize,
+          'includeProduct': includeProduct,
+          'includeRemark': includeRemark,
+        }),
+      );
 
-        final response = await http.post(
-          Uri.parse('${AppConstants.BASE_URL}/image/generate-and-share'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'catalogItems': catalogItems,
-            'includeDesign': includeDesign,
-            'includeShade': includeShade,
-            'includeRate': includeRate,
-            'includeWsp': includeWsp,
-            'includeSize': includeSize,
-            'includeProduct': includeProduct,
-            'includeRemark': includeRemark,
-          }),
-        );
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body) as List;
+        int count = 1;
+        int successCount = 0;
+        int imageIndex = 0;
 
-        if (response.statusCode == 200) {
-          final responseData = jsonDecode(response.body) as List;
-          int count = 1;
-          int successCount = 0;
-
-          for (var imageData in responseData) {
+        for (var item in selectedItems) {
+          final imageUrls = _getImageUrl(item);
+          print('Image URLs before use: $imageUrls');
+          for (var _ in imageUrls) {
+            if (imageIndex >= responseData.length) break;
             try {
+              final imageData = responseData[imageIndex];
               final imageBytes = base64Decode(imageData['image']);
-              final item = selectedItems[count - 1];
               final finalFile = File(
                 '${downloadsDir?.path}/catalog_${item.styleCode}_${count}_$timestamp.jpg',
               );
               await finalFile.writeAsBytes(imageBytes);
               successCount++;
               count++;
+              imageIndex++;
             } catch (e) {
               print('Error saving image: $e');
+              imageIndex++;
             }
           }
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '$successCount images downloaded to Downloads folder',
-              ),
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Failed to generate images: ${response.statusCode}',
-              ),
-            ),
-          );
         }
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Download failed: ${e.toString()}')),
-      );
-    }
-  }
 
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '$successCount images downloaded to Downloads folder',
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to generate images: ${response.statusCode}',
+            ),
+          ),
+        );
+      }
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Download failed: ${e.toString()}')),
+    );
+  }
+}
   void _showDownloadOptions() {
     if (selectedItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
