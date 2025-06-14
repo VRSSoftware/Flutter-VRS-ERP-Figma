@@ -25,7 +25,7 @@ class Catalog {
   final String onlySizes;
   final String sizeWithWsp;
   final String createdDate;
-  final String ShadeImages;
+  final String shadeImages;
   final int total;
 
 
@@ -57,7 +57,7 @@ class Catalog {
     this.onlySizes='',
     this.sizeWithWsp='',
     this.createdDate='',
-    this.ShadeImages='',
+    this.shadeImages='',
   });
 
   factory Catalog.fromJson(Map<String, dynamic> json) {
@@ -89,7 +89,7 @@ class Catalog {
        onlySizes: json['onlySizes'] ?? '',
        sizeWithWsp: json['sizeWithWsp'] ?? '',
        createdDate: json['createdDate'] ?? '',
-       ShadeImages: json['ShadeImages'] ?? '',
+       shadeImages: json['shadeImages'] ?? '',
     );
   }
 
@@ -121,7 +121,7 @@ class Catalog {
       'onlySizes':onlySizes,
       'sizeWithWsp':sizeWithWsp,
       'createdDate':createdDate,
-      'ShadeImages':ShadeImages,
+      'shadeImages':shadeImages,
     };
   }
 }
