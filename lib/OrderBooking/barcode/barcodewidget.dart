@@ -207,6 +207,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/OrderBooking/barcode/barcode_scanner.dart';
+import 'package:vrs_erp_figma/OrderBooking/barcode/bookonBarcode2.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/OrderBooking/barcode/bookOnBarcode.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
@@ -299,7 +300,13 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
         ),
         child: SizedBox(
           width: double.infinity,
-          child: CatalogBookingTableBarcode(
+          // child: CatalogBookingTableBarcode(
+          //   barcode: barcode,
+          //   onSuccess: () {
+          //     Navigator.pop(context);
+          //   },
+          // ),
+          child: BookOnBarcode2(
             barcode: barcode,
             onSuccess: () {
               Navigator.pop(context);
