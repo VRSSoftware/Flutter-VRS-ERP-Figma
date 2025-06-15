@@ -203,8 +203,6 @@
 //   }
 // }
 
-
-
 import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/OrderBooking/barcode/barcode_scanner.dart';
 import 'package:vrs_erp_figma/OrderBooking/barcode/bookonBarcode2.dart';
@@ -234,6 +232,7 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
     'Shades': true,
     'StyleCode': true,
   };
+  String? _currentBarcode;
 
   @override
   void dispose() {
@@ -249,20 +248,19 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
           title: const Text('Select Fields to Show'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
-            children:
-                _filters.keys.map((key) {
-                  return CheckboxListTile(
-                    title: Text(key),
-                    value: _filters[key],
-                    onChanged: (bool? value) {
-                      setState(() {
-                        _filters[key] = value ?? true;
-                      });
-                      Navigator.pop(context);
-                      _showFilterPopup(context);
-                    },
-                  );
-                }).toList(),
+            children: _filters.keys.map((key) {
+              return CheckboxListTile(
+                title: Text(key),
+                value: _filters[key],
+                onChanged: (bool? value) {
+                  setState(() {
+                    _filters[key] = value ?? true;
+                  });
+                  Navigator.pop(context);
+                  _showFilterPopup(context);
+                },
+              );
+            }).toList(),
           ),
           actions: [
             TextButton(
@@ -275,7 +273,6 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
     );
   }
 
-  // MODIFIED: Auto-open dialog after scan
   Future<void> _scanBarcode() async {
     final barcode = await Navigator.push<String>(
       context,
@@ -285,149 +282,148 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
     if (barcode != null && barcode.isNotEmpty) {
       setState(() {
         _barcodeController.text = barcode;
+        _currentBarcode = barcode;
       });
-      // Automatically open booking dialog after scan
-      _openBookingDialog(barcode);
     }
   }
-  // NEW METHOD: Unified dialog opening logic
-  void _openBookingDialog(String barcode) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(0),
-        ),
-        child: SizedBox(
-          width: double.infinity,
-          // child: CatalogBookingTableBarcode(
-          //   barcode: barcode,
-          //   onSuccess: () {
-          //     Navigator.pop(context);
-          //   },
-          // ),
-          child: BookOnBarcode2(
-            barcode: barcode,
-            onSuccess: () {
-              Navigator.pop(context);
-            },
-          ),
-        ),
-      ),
-    );
+
+  void _showBookingScreen(String barcode) {
+    setState(() {
+      _currentBarcode = barcode;
+    });
+  }
+
+  void _clearBookingScreen() {
+    setState(() {
+      _currentBarcode = null;
+      _barcodeController.clear();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                controller: _barcodeController,
-                decoration: InputDecoration(
-                  labelText: "Enter Barcode",
-                  labelStyle: const TextStyle(fontSize: 14),
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 6.0,
-                    horizontal: 14.0,
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFFF6F8FA),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(0),
-                    borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(0),
-                    borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _barcodeController,
+                    decoration: InputDecoration(
+                      labelText: "Enter Barcode",
+                      labelStyle: const TextStyle(fontSize: 14),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 6.0,
+                        horizontal: 14.0,
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFFF6F8FA),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(0),
+                        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(0),
+                        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            GestureDetector(
-              onTap: _scanBarcode,
-              child: Image.asset(
-                'assets/images/barcode.png',
-                width: 40,
-                height: 40,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-   ElevatedButton(
-  style: ElevatedButton.styleFrom(
-    backgroundColor: AppColors.primaryColor,
-    minimumSize: const Size(80, 40),
-    padding: const EdgeInsets.symmetric(horizontal: 20),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(0),
-    ),
-  ),
-  onPressed: () {
-    final barcode = _barcodeController.text.trim();
-    if (barcode.isEmpty) {
-      // Show alert if barcode is empty
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text("Missing Barcode"),
-          content: const Text("Please enter or scan a barcode first"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
-            ),
-          ],
-        ),
-      );
-    } else {
-      // Use unified dialog opening method
-      _openBookingDialog(barcode);
-    }
-  },
-  child: const Text("Search", style: TextStyle(color: Colors.white)),
-),
-        const SizedBox(height: 12),
-        // Original results display remains unchanged
-        if (_barcodeResults.isNotEmpty) ...[
-          const SizedBox(height: 20),
-          const Text("Barcode Results:", style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 10),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              columns: [
-                if (_filters['StyleCode'] == true) 
-                  const DataColumn(label: Text("Style Code")),
-                if (_filters['WSP'] == true)
-                  const DataColumn(label: Text("WSP")),
-                if (_filters['Sizes'] == true)
-                  const DataColumn(label: Text("Size")),
-                if (_filters['Shades'] == true)
-                  const DataColumn(label: Text("Shade")),
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: _scanBarcode,
+                  child: Image.asset(
+                    'assets/images/barcode.png',
+                    width: 40,
+                    height: 40,
+                  ),
+                ),
               ],
-              rows: _barcodeResults.map((result) {
-                return DataRow(cells: [
-                  if (_filters['StyleCode'] == true)
-                    DataCell(Text(result['StyleCode']?.toString() ?? '')),
-                  if (_filters['WSP'] == true)
-                    DataCell(Text(result['WSP']?.toString() ?? '')),
-                  if (_filters['Sizes'] == true)
-                    DataCell(Text(result['Size']?.toString() ?? '')),
-                  if (_filters['Shades'] == true)
-                    DataCell(Text(result['Shade']?.toString() ?? '')),
-                ]);
-              }).toList(),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                minimumSize: const Size(80, 40),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(0),
+                ),
+              ),
+              onPressed: () {
+                final barcode = _barcodeController.text.trim();
+                if (barcode.isEmpty) {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text("Missing Barcode"),
+                      content: const Text("Please enter or scan a barcode first"),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text("OK"),
+                        ),
+                      ],
+                    ),
+                  );
+                } else {
+                  _showBookingScreen(barcode);
+                }
+              },
+              child: const Text("Search", style: TextStyle(color: Colors.white)),
+            ),
+          ),
+          const SizedBox(height: 12), // Added vertical space
+          if (_currentBarcode != null)
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.6, // Constrain height
+              child: BookOnBarcode2(
+                barcode: _currentBarcode!,
+                onSuccess: _clearBookingScreen,
+              ),
+            ),
+          if (_barcodeResults.isNotEmpty) ...[
+            const Padding(
+              padding: EdgeInsets.all(12.0),
+              child: Text("Barcode Results:", style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                columns: [
+                  if (_filters['StyleCode'] == true)
+                    const DataColumn(label: Text("Style Code")),
+                  if (_filters['WSP'] == true)
+                    const DataColumn(label: Text("WSP")),
+                  if (_filters['Sizes'] == true)
+                    const DataColumn(label: Text("Size")),
+                  if (_filters['Shades'] == true)
+                    const DataColumn(label: Text("Shade")),
+                ],
+                rows: _barcodeResults.map((result) {
+                  return DataRow(cells: [
+                    if (_filters['StyleCode'] == true)
+                      DataCell(Text(result['StyleCode']?.toString() ?? '')),
+                    if (_filters['WSP'] == true)
+                      DataCell(Text(result['WSP']?.toString() ?? '')),
+                    if (_filters['Sizes'] == true)
+                      DataCell(Text(result['Size']?.toString() ?? '')),
+                    if (_filters['Shades'] == true)
+                      DataCell(Text(result['Shade']?.toString() ?? '')),
+                  ]);
+                }).toList(),
+              ),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }
