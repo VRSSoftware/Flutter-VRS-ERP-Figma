@@ -1758,20 +1758,20 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
 
     if (apiCalls.isEmpty) {
       if (mounted) {
-        showDialog(
-          context: context,
-          builder:
-              (_) => AlertDialog(
-                title: const Text("Warning"),
-                content: const Text("No new items to submit."),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text("OK"),
-                  ),
-                ],
-              ),
-        );
+        // showDialog(
+        //   context: context,
+        //   builder:
+        //       (_) => AlertDialog(
+        //         title: const Text("Warning"),
+        //         content: const Text("No new items to submit."),
+        //         actions: [
+        //           TextButton(
+        //             onPressed: () => Navigator.pop(context),
+        //             child: const Text("OK"),
+        //           ),
+        //         ],
+        //       ),
+        // );
       }
       return;
     }
@@ -1812,25 +1812,26 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
         widget.onSuccess();
 
         if (mounted) {
-          showDialog(
-            context: context,
-            builder:
-                (_) => AlertDialog(
-                  title: const Text("Success"),
-                  content: Text(
-                    "Successfully submitted ${successfulStyles.length} item${successfulStyles.length > 1 ? 's' : ''}",
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.pop(context);
-                      },
-                      child: const Text("OK"),
-                    ),
-                  ],
-                ),
-          );
+          // showDialog(
+          //   context: context,
+          //   builder:
+          //       (_) => AlertDialog(
+          //         title: const Text("Success"),
+          //         content: Text(
+          //           "Successfully submitted ${successfulStyles.length} item${successfulStyles.length > 1 ? 's' : ''}",
+          //         ),
+          //         actions: [
+          //           TextButton(
+          //             onPressed: () {
+          //               print("ssss");
+          //               Navigator.pop(context);
+          //               Navigator.pop(context);
+          //             },
+          //             child: const Text("OK"),
+          //           ),
+          //         ],
+          //       ),
+          // );
         }
       } else {
         if (mounted) {
