@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -78,7 +77,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
     super.dispose();
   }
 
-Future<void> _loadOrderDetails() async {
+  Future<void> _loadOrderDetails() async {
     setState(() {
       isLoading = true;
     });
@@ -88,7 +87,7 @@ Future<void> _loadOrderDetails() async {
 
     if (catalogItems.isNotEmpty) {
       setState(() {
-        hasData = true; // Data was fetched successfully
+        hasData = true;
       });
 
       final styleGroups = <String, List<CatalogItem>>{};
@@ -154,7 +153,7 @@ Future<void> _loadOrderDetails() async {
           shadeImages: '',
         );
 
-      final matrix = <List<String>>[];
+        final matrix = <List<String>>[];
         for (var shade in uniqueShades) {
           final row = <String>[];
           for (var size in uniqueSizes) {
@@ -200,10 +199,10 @@ Future<void> _loadOrderDetails() async {
                 wsp: items.first.wsp,
               ),
             );
-            quantities[styleCode]![shade]![size] = 1; // Initialize to 1
+            quantities[styleCode]![shade]![size] = 1;
             final controllerKey = '$styleCode-$shade-$size';
             final controller = TextEditingController(
-              text: '1', // Default to 1
+              text: '1',
             );
             controller.addListener(() => setState(() {}));
             _controllers[controllerKey] = controller;
@@ -212,7 +211,7 @@ Future<void> _loadOrderDetails() async {
       }
     } else {
       setState(() {
-        hasData = false; // No data fetched
+        hasData = false;
       });
     }
 
@@ -221,13 +220,12 @@ Future<void> _loadOrderDetails() async {
       isLoading = false;
     });
 
-    // Return false to indicate no data was fetched
     if (!hasData && mounted) {
       Navigator.pop(context, false);
     }
   }
 
-Future<List<CatalogItem>> fetchCatalogData() async {
+  Future<List<CatalogItem>> fetchCatalogData() async {
     final String apiUrl =
         '${AppConstants.BASE_URL}/orderBooking/GetBarcodeDetails';
     final Map<String, dynamic> requestBody = {
@@ -258,7 +256,6 @@ Future<List<CatalogItem>> fetchCatalogData() async {
     return [];
   }
 
-
   int _getQuantity(String styleKey, String shade, String size) {
     return quantities[styleKey]?[shade]?[size] ?? 0;
   }
@@ -285,39 +282,38 @@ Future<List<CatalogItem>> fetchCatalogData() async {
     Navigator.pop(context);
   }
 
-  void _copyStyleQuantities(
-    String sourceStyleKey,
-    Set<String> targetStyleKeys,
-  ) {
-    final sourceQuantities = quantities[sourceStyleKey] ?? {};
+  void _copyFirstSizeQuantity(String styleKey, String shade, List<String> sizes) {
+    if (sizes.isEmpty) return;
+    final firstSize = sizes.first;
+    final firstQuantity = _getQuantity(styleKey, shade, firstSize);
     setState(() {
-      for (var targetStyleKey in targetStyleKeys) {
-        final targetCatalogOrder = catalogOrderList.firstWhere(
-          (order) => order.catalog.styleKey == targetStyleKey,
-        );
-        final targetShades = selectedColors2[targetStyleKey] ?? {};
-        final validSizes = targetCatalogOrder.orderMatrix.sizes;
-
-        quantities[targetStyleKey] ??= {};
-        for (var sourceShade in sourceQuantities.keys) {
-          if (targetShades.contains(sourceShade)) {
-            quantities[targetStyleKey]!.putIfAbsent(sourceShade, () => {});
-            sourceQuantities[sourceShade]!.forEach((size, quantity) {
-              if (validSizes.contains(size)) {
-                quantities[targetStyleKey]![sourceShade]![size] = quantity;
-                final controllerKey = '$targetStyleKey-$sourceShade-$size';
-                if (_controllers.containsKey(controllerKey)) {
-                  _controllers[controllerKey]!.text = quantity.toString();
-                }
-              }
-            });
-          }
+      for (var size in sizes) {
+        _setQuantity(styleKey, shade, size, firstQuantity);
+        final controllerKey = '$styleKey-$shade-$size';
+        if (_controllers.containsKey(controllerKey)) {
+          _controllers[controllerKey]!.text = firstQuantity.toString();
         }
       }
     });
   }
 
-Future<void> _submitAllOrders() async {
+  void _multiplyFirstSizeQuantity(String styleKey, String shade, List<String> sizes, int multiplier) {
+    if (sizes.isEmpty) return;
+    final firstSize = sizes.first;
+    final firstQuantity = _getQuantity(styleKey, shade, firstSize);
+    final multipliedQuantity = firstQuantity * multiplier;
+    setState(() {
+      for (var size in sizes) {
+        _setQuantity(styleKey, shade, size, multipliedQuantity);
+        final controllerKey = '$styleKey-$shade-$size';
+        if (_controllers.containsKey(controllerKey)) {
+          _controllers[controllerKey]!.text = multipliedQuantity.toString();
+        }
+      }
+    });
+  }
+
+  Future<void> _submitAllOrders() async {
     List<Future<http.Response>> apiCalls = [];
     List<String> apiCallStyles = [];
     final cartModel = Provider.of<CartModel>(context, listen: false);
@@ -408,7 +404,7 @@ Future<void> _submitAllOrders() async {
       if (successfulLineItems > 0) {
         cartModel.updateCount(cartModel.count + successfulLineItems);
         widget.onSuccess();
-        Navigator.pop(context, true); // Return true on successful submission
+        Navigator.pop(context, true);
       } else {
         if (mounted) {
           showDialog(
@@ -588,133 +584,133 @@ Future<void> _submitAllOrders() async {
     return total;
   }
 
- Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
-  final catalog = catalogOrder.catalog;
-  final Set<String> selectedColors = selectedColors2[catalog.styleKey] ?? {};
+  Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
+    final catalog = catalogOrder.catalog;
+    final Set<String> selectedColors = selectedColors2[catalog.styleKey] ?? {};
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            GestureDetector(
-              onDoubleTap: () {
-                final imageUrl = catalog.fullImagePath.contains("http")
-                    ? catalog.fullImagePath
-                    : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}';
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ImageZoomScreen1(
-                      imageUrls: [imageUrl],
-                      item: catalog,
-                      showShades: true,
-                      showMRP: true,
-                      showWSP: true,
-                      showSizes: true,
-                      showProduct: true,
-                      showRemark: true,
-                      isLargeScreen: MediaQuery.of(context).size.width > 600,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GestureDetector(
+                onDoubleTap: () {
+                  final imageUrl = catalog.fullImagePath.contains("http")
+                      ? catalog.fullImagePath
+                      : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}';
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ImageZoomScreen1(
+                        imageUrls: [imageUrl],
+                        item: catalog,
+                        showShades: true,
+                        showMRP: true,
+                        showWSP: true,
+                        showSizes: true,
+                        showProduct: true,
+                        showRemark: true,
+                        isLargeScreen: MediaQuery.of(context).size.width > 600,
+                      ),
                     ),
-                  ),
-                );
-              },
-              child: Container(
-                height: 160,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(4.0),
-                ),
+                  );
+                },
                 child: Container(
-                  width: MediaQuery.of(context).size.width * 0.3,
-                  child: AspectRatio(
-                    aspectRatio: 3 / 4,
-                    child: Image.network(
-                      catalog.fullImagePath.contains("http")
-                          ? catalog.fullImagePath
-                          : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}',
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Icon(Icons.error, size: 60),
+                  height: 160,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(4.0),
+                  ),
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.3,
+                    child: AspectRatio(
+                      aspectRatio: 3 / 4,
+                      child: Image.network(
+                        catalog.fullImagePath.contains("http")
+                            ? catalog.fullImagePath
+                            : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.error, size: 60),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    catalog.styleCode,
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.red.shade900,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      catalog.styleCode,
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.red.shade900,
+                      ),
                     ),
-                  ),
-                  Text(
-                    catalog.shadeName,
-                    style: GoogleFonts.roboto(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: Colors.blue.shade900,
+                    Text(
+                      catalog.shadeName,
+                      style: GoogleFonts.roboto(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.blue.shade900,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Table(
-                    columnWidths: const {
-                      0: FixedColumnWidth(100),
-                      1: FixedColumnWidth(10),
-                      2: FlexColumnWidth(100),
-                    },
-                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                    children: [
-                      _buildTableRow(
-                        'Remark',
-                        catalog.remark.isNotEmpty ? catalog.remark : 'N/A',
-                      ),
-                      _buildTableRow('Stk Type', 'Ready'),
-                      _buildTableRow(
-                        'Stock Qty',
-                        _calculateStockQuantity(catalog.styleKey).toString(),
-                        valueColor: Colors.green[700],
-                      ),
-                      _buildTableRow(
-                        'Order Qty',
-                        _calculateCatalogQuantity(catalog.styleKey).toString(),
-                        valueColor: Colors.orange[800],
-                      ),
-                      _buildTableRow(
-                        'Order Amount',
-                        _calculateCatalogPrice(catalog.styleKey)
-                            .toStringAsFixed(2),
-                        valueColor: Colors.purple[800],
-                      ),
-                    ],
-                  ),
-                ],
+                    const SizedBox(height: 6),
+                    Table(
+                      columnWidths: const {
+                        0: FixedColumnWidth(100),
+                        1: FixedColumnWidth(10),
+                        2: FlexColumnWidth(100),
+                      },
+                      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                      children: [
+                        _buildTableRow(
+                          'Remark',
+                          catalog.remark.isNotEmpty ? catalog.remark : 'N/A',
+                        ),
+                        _buildTableRow('Stk Type', 'Ready'),
+                        _buildTableRow(
+                          'Stock Qty',
+                          _calculateStockQuantity(catalog.styleKey).toString(),
+                          valueColor: Colors.green[700],
+                        ),
+                        _buildTableRow(
+                          'Order Qty',
+                          _calculateCatalogQuantity(catalog.styleKey).toString(),
+                          valueColor: Colors.orange[800],
+                        ),
+                        _buildTableRow(
+                          'Order Amount',
+                          _calculateCatalogPrice(catalog.styleKey)
+                              .toStringAsFixed(2),
+                          valueColor: Colors.purple[800],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-      const SizedBox(height: 15),
-      ...selectedColors.map(
-        (color) => Column(
-          children: [
-            _buildColorSection(catalogOrder, color),
-            const SizedBox(height: 15),
-          ],
+        const SizedBox(height: 15),
+        ...selectedColors.map(
+          (color) => Column(
+            children: [
+              _buildColorSection(catalogOrder, color),
+              const SizedBox(height: 15),
+            ],
+          ),
         ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 
   TableRow _buildTableRow(String label, String value, {Color? valueColor}) {
     return TableRow(
@@ -805,6 +801,7 @@ Future<void> _submitAllOrders() async {
   Widget _buildColorSection(CatalogOrderData catalogOrder, String shade) {
     final sizes = catalogOrder.orderMatrix.sizes;
     final styleKey = catalogOrder.catalog.styleKey;
+    final TextEditingController multiplierController = TextEditingController();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -838,6 +835,7 @@ Future<void> _submitAllOrders() async {
                               fontSize: 14,
                               color: Colors.red.shade900,
                             ),
+                          //Rank: 0,
                           ),
                           const SizedBox(width: 4),
                           IconButton(
@@ -849,29 +847,68 @@ Future<void> _submitAllOrders() async {
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
                             onPressed: () async {
-                              final result = await showDialog<Set<String>>(
+                              final choice = await showDialog<String>(
                                 context: context,
-                                builder: (context) => CopyToStylesDialog(
-                                  styleKeys: catalogOrderList
-                                      .map((order) => order.catalog.styleKey)
-                                      .where(
-                                        (key) =>
-                                            key != catalogOrder.catalog.styleKey,
-                                      )
-                                      .toList(),
-                                  styleCodes: catalogOrderList
-                                      .map((order) => order.catalog.styleCode)
-                                      .toList(),
-                                  sourceStyleKey: catalogOrder.catalog.styleKey,
-                                  sourceStyleCode: catalogOrder.catalog.styleCode,
+                                builder: (context) => AlertDialog(
+                                  title: Text('Quantity Options', style: GoogleFonts.poppins()),
+                                  content: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      ListTile(
+                                        title: Text('Copy qty to all sizes', style: GoogleFonts.montserrat()),
+                                        onTap: () => Navigator.pop(context, 'copy'),
+                                      ),
+                                      ListTile(
+                                        title: Text('Multiply qty * value to all sizes', style: GoogleFonts.montserrat()),
+                                        onTap: () => Navigator.pop(context, 'multiply'),
+                                      ),
+                                    ],
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text('Cancel', style: GoogleFonts.montserrat()),
+                                    ),
+                                  ],
                                 ),
-                              );
-
-                              if (result != null && result.isNotEmpty) {
-                                _copyStyleQuantities(
-                                  catalogOrder.catalog.styleKey,
-                                  result,
                                 );
+                              if (choice == 'copy') {
+                                _copyFirstSizeQuantity(styleKey, shade, sizes);
+                              } else if (choice == 'multiply') {
+                                final multiplier = await showDialog<int>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: Text('Multiply Quantity', style: GoogleFonts.poppins()),
+                                    content: TextField(
+                                      controller: multiplierController,
+                                      keyboardType: TextInputType.number,
+                                      decoration: InputDecoration(
+                                        labelText: 'Enter multiplier',
+                                        border: OutlineInputBorder(),
+                                      ),
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly,
+                                        LengthLimitingTextInputFormatter(4),
+                                      ],
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: Text('Cancel', style: GoogleFonts.montserrat()),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          final value = int.tryParse(multiplierController.text) ?? 1;
+                                          Navigator.pop(context, value);
+                                        },
+                                        child: Text('OK', style: GoogleFonts.montserrat()),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (multiplier != null && multiplier > 0) {
+                                  _multiplyFirstSizeQuantity(styleKey, shade, sizes, multiplier);
+                                }
                               }
                             },
                           ),
@@ -972,7 +1009,7 @@ Future<void> _submitAllOrders() async {
       final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
       rate = matrixData[0];
       wsp = matrixData.length > 1 ? matrixData[1] : '0';
-      stock = matrixData.length > 2 ? matrixData[2] : '0'; // clQty as hint
+      stock = matrixData.length > 2 ? matrixData[2] : '0';
     }
 
     int quantity = _getQuantity(styleKey, shade, size);
@@ -980,7 +1017,7 @@ Future<void> _submitAllOrders() async {
     final controllerKey = '$styleKey-$shade-$size';
     final controller = _controllers.putIfAbsent(
       controllerKey,
-      () => TextEditingController(text: '0'), // Always default to 0
+      () => TextEditingController(text: '0'),
     );
 
     if (controller.text != quantity.toString()) {
@@ -1016,10 +1053,10 @@ Future<void> _submitAllOrders() async {
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                      hintText: stock, // Show clQty as hint
+                      hintText: stock,
                       hintStyle: GoogleFonts.roboto(
                         fontSize: 14,
-                        color: Colors.grey.shade500, // Grey color for hint
+                        color: Colors.grey.shade500,
                       ),
                     ),
                     style: GoogleFonts.roboto(fontSize: 14),
@@ -1067,88 +1104,4 @@ Future<void> _submitAllOrders() async {
           ),
         ),
       );
-}
-
-class CopyToStylesDialog extends StatefulWidget {
-  final List<String> styleKeys;
-  final List<String> styleCodes;
-  final String sourceStyleKey;
-  final String sourceStyleCode;
-
-  const CopyToStylesDialog({
-    Key? key,
-    required this.styleKeys,
-    required this.styleCodes,
-    required this.sourceStyleKey,
-    required this.sourceStyleCode,
-  }) : super(key: key);
-
-  @override
-  _CopyToStylesDialogState createState() => _CopyToStylesDialogState();
-}
-
-class _CopyToStylesDialogState extends State<CopyToStylesDialog> {
-  late Set<String> _selectedStyleKeys;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedStyleKeys = widget.styleKeys.toSet();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      title: Text('Copy Qty to Other Styles', style: GoogleFonts.poppins()),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: Text(
-                'Copying from: ${widget.sourceStyleCode}',
-                style: GoogleFonts.roboto(fontWeight: FontWeight.bold),
-              ),
-            ),
-            const Divider(),
-            ...widget.styleKeys.asMap().entries.map((entry) {
-              final index = entry.key;
-              final styleKey = entry.value;
-              final styleCode = widget.styleCodes[index];
-              return CheckboxListTile(
-                title: Text(styleCode, style: GoogleFonts.roboto()),
-                value: _selectedStyleKeys.contains(styleKey),
-                onChanged: (bool? value) {
-                  setState(() {
-                    if (value == true) {
-                      _selectedStyleKeys.add(styleKey);
-                    } else {
-                      _selectedStyleKeys.remove(styleKey);
-                    }
-                  });
-                },
-              );
-            }).toList(),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text('Cancel', style: GoogleFonts.montserrat()),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context, _selectedStyleKeys);
-          },
-          child: Text('OK', style: GoogleFonts.montserrat()),
-        ),
-      ],
-    );
-  }
 }
