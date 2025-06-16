@@ -60,6 +60,44 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
     });
   }
 
+double _calculateTotalAmount() {
+  double total = 0.0;
+  _styleManager.controllers.forEach((style, shades) {
+    final itemsForStyle = _styleManager.groupedItems[style] ?? [];
+    shades.forEach((shade, sizes) {
+      sizes.forEach((size, controller) {
+        final qty = int.tryParse(controller.text) ?? 0;
+        final item = itemsForStyle.firstWhere(
+          (item) =>
+              (item['shadeName']?.toString() ?? '') == shade &&
+              (item['sizeName']?.toString() ?? '') == size,
+          orElse: () => {},
+        );
+        if (item.isNotEmpty) {
+          final mrp = (item['mrp'] as num?)?.toDouble() ?? 0.0;
+          total += qty * mrp;
+        }
+      });
+    });
+  });
+  return total;
+}
+
+int _calculateTotalItems() {
+  return _styleManager.groupedItems.length;
+}
+
+int _calculateTotalQuantity() {
+  int total = 0;
+  _styleManager.controllers.forEach((style, shades) {
+    shades.forEach((shade, sizes) {
+      sizes.forEach((size, controller) {
+        total += int.tryParse(controller.text) ?? 0;
+      });
+    });
+  });
+  return total;
+}
   Future<void> _loadBookingTypes() async {
     try {
       final rawData = await ApiService.fetchBookingTypes(
@@ -595,21 +633,74 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
     );
   }
 
-  AppBar _buildAppBar() {
-    return AppBar(
-      title: const Text(
-        'View Order Barcode',
-        style: TextStyle(color: Colors.white),
+AppBar _buildAppBar() {
+  return AppBar(
+    title: const Text(
+      'View Order Barcode',
+      style: TextStyle(color: Colors.white),
+    ),
+    backgroundColor: AppColors.primaryColor,
+    elevation: 1,
+    leading: IconButton(
+      icon: const Icon(Icons.arrow_back, color: Colors.white),
+      onPressed: () => Navigator.pop(context),
+    ),
+    bottom: PreferredSize(
+      preferredSize: const Size.fromHeight(48.0), // Adjusted height for better spacing
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        color: AppColors.primaryColor, // Consistent with AppBar background
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Flexible(
+              child: Text(
+                'Total: ₹${_calculateTotalAmount().toStringAsFixed(2)}',
+                style: GoogleFonts.roboto(
+                  color: Colors.white,
+                  fontSize: 12, // Smaller font for better fit
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Container(
+              width: 1,
+              height: 20,
+              color: Colors.white.withOpacity(0.5), // Softer divider color
+              margin: const EdgeInsets.symmetric(horizontal: 8.0),
+            ),
+            Flexible(
+              child: Text(
+                'Items: ${_calculateTotalItems()}',
+                style: GoogleFonts.roboto(
+                  color: Colors.white,
+                  fontSize: 12,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Container(
+              width: 1,
+              height: 20,
+              color: Colors.white.withOpacity(0.5),
+              margin: const EdgeInsets.symmetric(horizontal: 8.0),
+            ),
+            Flexible(
+              child: Text(
+                'Qty: ${_calculateTotalQuantity()}',
+                style: GoogleFonts.roboto(
+                  color: Colors.white,
+                  fontSize: 12,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
-      backgroundColor: AppColors.primaryColor,
-      elevation: 1,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
-        onPressed: () => Navigator.pop(context),
-      ),
-    );
-  }
-
+    ),
+  );
+}
   void _handlePartySelection(String? val, String? key) async {
     if (key == null) return;
     _orderControllers.selectedPartyKey = key;
