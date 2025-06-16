@@ -1224,17 +1224,19 @@ class StyleCard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Align(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            catalog.styleCode,
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.red.shade900,
-                            ),
-                          ),
-                        ),
+                       Align(
+  alignment: Alignment.topLeft,
+  child: Text(
+    catalog.styleCode,
+    style: GoogleFonts.poppins(
+      fontWeight: FontWeight.bold,
+      fontSize: 14.5 ,
+      color: Colors.red.shade900,
+    ),
+    maxLines: 1, // Restrict to one line
+    overflow: TextOverflow.ellipsis, // Add ellipsis for overflow
+  ),
+),
                         IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () {
