@@ -1,3 +1,4 @@
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -151,15 +152,14 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
           for (var size in uniqueSizes) {
             final item = items.firstWhere(
               (i) => i.shadeName == shade && i.sizeName == size,
-              orElse:
-                  () => CatalogItem(
-                    styleCode: styleCode,
-                    shadeName: shade,
-                    sizeName: size,
-                    clQty: 1,
-                    mrp: items.first.mrp,
-                    wsp: items.first.wsp,
-                  ),
+              orElse: () => CatalogItem(
+                styleCode: styleCode,
+                shadeName: shade,
+                sizeName: size,
+                clQty: items.first.clQty,
+                mrp: items.first.mrp,
+                wsp: items.first.wsp,
+              ),
             );
             row.add('${item.mrp},${item.wsp},${item.clQty}');
           }
@@ -183,20 +183,19 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
           for (var size in uniqueSizes) {
             final item = items.firstWhere(
               (i) => i.shadeName == shade && i.sizeName == size,
-              orElse:
-                  () => CatalogItem(
-                    styleCode: styleCode,
-                    shadeName: shade,
-                    sizeName: size,
-                    clQty: items.first.clQty,
-                    mrp: items.first.mrp,
-                    wsp: items.first.wsp,
-                  ),
+              orElse: () => CatalogItem(
+                styleCode: styleCode,
+                shadeName: shade,
+                sizeName: size,
+                clQty: items.first.clQty,
+                mrp: items.first.mrp,
+                wsp: items.first.wsp,
+              ),
             );
-            quantities[styleCode]![shade]![size] = item.clQty;
+            quantities[styleCode]![shade]![size] = 1; // Initialize to 0
             final controllerKey = '$styleCode-$shade-$size';
             final controller = TextEditingController(
-              text: item.clQty.toString(),
+              text: '1', // Default to 0
             );
             controller.addListener(() => setState(() {}));
             _controllers[controllerKey] = controller;
@@ -264,7 +263,6 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
       _controllers.removeWhere((key, _) => key.contains('$styleKey-'));
     });
 
-    // Pop the current screen after deletion
     Navigator.pop(context);
   }
 
@@ -409,17 +407,16 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
         if (mounted) {
           showDialog(
             context: context,
-            builder:
-                (_) => AlertDialog(
-                  title: const Text("Error"),
-                  content: const Text("No items were successfully submitted"),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text("OK"),
-                    ),
-                  ],
+            builder: (_) => AlertDialog(
+              title: const Text("Error"),
+              content: const Text("No items were successfully submitted"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("OK"),
                 ),
+              ],
+            ),
           );
         }
       }
@@ -427,17 +424,16 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
       if (mounted) {
         showDialog(
           context: context,
-          builder:
-              (_) => AlertDialog(
-                title: const Text("Error"),
-                content: Text("Failed to submit orders: $e"),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text("OK"),
-                  ),
-                ],
+          builder: (_) => AlertDialog(
+            title: const Text("Error"),
+            content: Text("Failed to submit orders: $e"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("OK"),
               ),
+            ],
+          ),
         );
       }
     }
@@ -457,9 +453,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
-        // Wrap body in Column to show barcode above content
         children: [
-          // START: Added barcode display container
           Container(
             padding: const EdgeInsets.all(12),
             color: Colors.white,
@@ -485,72 +479,69 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
               ],
             ),
           ),
-          // END: Added barcode display container
           Expanded(
-            // Wrap existing body in Expanded
-            child:
-                isLoading
-                    ? Stack(
-                      children: [
-                        Container(color: Colors.black.withOpacity(0.2)),
-                        Center(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(4),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 8,
-                                  offset: Offset(0, 3),
+            child: isLoading
+                ? Stack(
+                    children: [
+                      Container(color: Colors.black.withOpacity(0.2)),
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(4),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 8,
+                                offset: Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Text(
+                                'Please Wait...',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black,
                                 ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Text(
-                                  'Please Wait...',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black,
-                                  ),
+                              ),
+                              SizedBox(width: 12),
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
                                 ),
-                                SizedBox(width: 12),
-                                SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2.5,
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
+                      ),
+                    ],
+                  )
+                : SingleChildScrollView(
+                    padding:
+                        const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ...catalogOrderList.map(
+                          (catalogOrder) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [buildOrderItem(catalogOrder, context)],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
                       ],
-                    )
-                     : SingleChildScrollView(
-    padding: const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 12.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ...catalogOrderList.map(
-          (catalogOrder) => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [buildOrderItem(catalogOrder, context)],
-          ),
-        ),
-        const SizedBox(height: 20),
-      ],
-    ),
-),
-
+                    ),
+                  ),
           ),
         ],
       ),
@@ -581,10 +572,8 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
           final sizeIndex = matrix.sizes.indexOf(size.trim());
           if (sizeIndex == -1) continue;
           final rate =
-              double.tryParse(
-                matrix.matrix[shadeIndex][sizeIndex].split(',')[0],
-              ) ??
-              0;
+              double.tryParse(matrix.matrix[shadeIndex][sizeIndex].split(',')[0]) ??
+                  0;
           final quantity = quantities[styleKey]![shade]![size]!;
           total += rate * quantity;
         }
@@ -605,7 +594,6 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Image Section
               Container(
                 height: 160,
                 decoration: BoxDecoration(
@@ -621,16 +609,13 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
                           ? catalog.fullImagePath
                           : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}',
                       fit: BoxFit.cover,
-                      errorBuilder:
-                          (context, error, stackTrace) =>
-                              const Icon(Icons.error, size: 60),
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.error, size: 60),
                     ),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
-
-              // Details Section in Table format
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -658,16 +643,13 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
                       ),
                     ),
                     const SizedBox(height: 6),
-
-                    // Table format for perfect colon alignment
                     Table(
                       columnWidths: const {
-                        0: FixedColumnWidth(100), // label
-                        1: FixedColumnWidth(10), // colon
-                        2: FlexColumnWidth(100), // value
+                        0: FixedColumnWidth(100),
+                        1: FixedColumnWidth(10),
+                        2: FlexColumnWidth(100),
                       },
-                      defaultVerticalAlignment:
-                          TableCellVerticalAlignment.middle,
+                      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                       children: [
                         _buildTableRow(
                           'Remark',
@@ -681,16 +663,12 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
                         ),
                         _buildTableRow(
                           'Order Qty',
-                          _calculateCatalogQuantity(
-                            catalog.styleKey,
-                          ).toString(),
+                          _calculateCatalogQuantity(catalog.styleKey).toString(),
                           valueColor: Colors.orange[800],
                         ),
                         _buildTableRow(
                           'Order Amount',
-                          _calculateCatalogPrice(
-                            catalog.styleKey,
-                          ).toStringAsFixed(2),
+                          _calculateCatalogPrice(catalog.styleKey).toStringAsFixed(2),
                           valueColor: Colors.purple[800],
                         ),
                       ],
@@ -701,10 +679,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
             ],
           ),
         ),
-
         const SizedBox(height: 15),
-
-        // Render selected color sections
         ...selectedColors.map(
           (color) => Column(
             children: [
@@ -737,7 +712,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Align(
-            alignment: Alignment.centerLeft, // ✅ Fix: Left-align value
+            alignment: Alignment.centerLeft,
             child: Text(
               value,
               style: GoogleFonts.roboto(
@@ -767,16 +742,8 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
     for (var catalogOrder in catalogOrderList) {
       if (catalogOrder.catalog.styleKey == styleKey) {
         final matrix = catalogOrder.orderMatrix;
-        for (
-          var shadeIndex = 0;
-          shadeIndex < matrix.shades.length;
-          shadeIndex++
-        ) {
-          for (
-            var sizeIndex = 0;
-            sizeIndex < matrix.sizes.length;
-            sizeIndex++
-          ) {
+        for (var shadeIndex = 0; shadeIndex < matrix.shades.length; shadeIndex++) {
+          for (var sizeIndex = 0; sizeIndex < matrix.sizes.length; sizeIndex++) {
             final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
             final stock =
                 int.tryParse(matrixData.length > 2 ? matrixData[2] : '0') ?? 0;
@@ -800,10 +767,8 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
             final sizeIndex = matrix.sizes.indexOf(size?.trim() ?? '');
             if (sizeIndex == -1) continue;
             final rate =
-                double.tryParse(
-                  matrix.matrix[shadeIndex][sizeIndex].split(',')[0],
-                ) ??
-                0;
+                double.tryParse(matrix.matrix[shadeIndex][sizeIndex].split(',')[0]) ??
+                    0;
             final quantity = quantities[styleKey]![shade]![size]!;
             total += rate * quantity;
           }
@@ -830,7 +795,6 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
               Row(
                 children: [
                   _buildHeader("Size", 1),
-
                   Expanded(
                     flex: 2,
                     child: Container(
@@ -863,34 +827,20 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
                             onPressed: () async {
                               final result = await showDialog<Set<String>>(
                                 context: context,
-                                builder:
-                                    (context) => CopyToStylesDialog(
-                                      styleKeys:
-                                          catalogOrderList
-                                              .map(
-                                                (order) =>
-                                                    order.catalog.styleKey,
-                                              )
-                                              .where(
-                                                (key) =>
-                                                    key !=
-                                                    catalogOrder
-                                                        .catalog
-                                                        .styleKey,
-                                              )
-                                              .toList(),
-                                      styleCodes:
-                                          catalogOrderList
-                                              .map(
-                                                (order) =>
-                                                    order.catalog.styleCode,
-                                              )
-                                              .toList(),
-                                      sourceStyleKey:
-                                          catalogOrder.catalog.styleKey,
-                                      sourceStyleCode:
-                                          catalogOrder.catalog.styleCode,
-                                    ),
+                                builder: (context) => CopyToStylesDialog(
+                                  styleKeys: catalogOrderList
+                                      .map((order) => order.catalog.styleKey)
+                                      .where(
+                                        (key) =>
+                                            key != catalogOrder.catalog.styleKey,
+                                      )
+                                      .toList(),
+                                  styleCodes: catalogOrderList
+                                      .map((order) => order.catalog.styleCode)
+                                      .toList(),
+                                  sourceStyleKey: catalogOrder.catalog.styleKey,
+                                  sourceStyleCode: catalogOrder.catalog.styleCode,
+                                ),
                               );
 
                               if (result != null && result.isNotEmpty) {
@@ -918,9 +868,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
             ],
           ),
         ),
-
         const SizedBox(height: 16),
-
         Row(
           children: [
             Expanded(
@@ -932,31 +880,25 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-                onPressed:
-                    () => _deleteStyle(
-                      catalogOrder.catalog.styleKey,
-                    ), // Updated to call _deleteStyle
+                onPressed: () => _deleteStyle(catalogOrder.catalog.styleKey),
                 child: Text(
                   'CANCEL',
                   style: GoogleFonts.montserrat(color: Colors.black),
                 ),
               ),
             ),
-            const SizedBox(width: 10), // space between buttons
+            const SizedBox(width: 10),
             Expanded(
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
-                      _calculateTotalQuantity() > 0
-                          ? Colors.green
-                          : Colors.grey,
+                      _calculateTotalQuantity() > 0 ? Colors.green : Colors.grey,
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.zero,
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-                onPressed:
-                    _calculateTotalQuantity() > 0 ? _submitAllOrders : null,
+                onPressed: _calculateTotalQuantity() > 0 ? _submitAllOrders : null,
                 child: Text(
                   'CONFIRM',
                   style: GoogleFonts.montserrat(color: Colors.white),
@@ -970,23 +912,23 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
   }
 
   Widget _buildHeader(String text, int flex) => Expanded(
-    flex: flex,
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      decoration: BoxDecoration(
-        border: Border(right: BorderSide(color: Colors.grey.shade300)),
-      ),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: GoogleFonts.lora(
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-          color: Colors.red.shade900,
+        flex: flex,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          decoration: BoxDecoration(
+            border: Border(right: BorderSide(color: Colors.grey.shade300)),
+          ),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.lora(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              color: Colors.red.shade900,
+            ),
+          ),
         ),
-      ),
-    ),
-  );
+      );
 
   Widget _buildSizeRow(
     CatalogOrderData catalogOrder,
@@ -1006,20 +948,15 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
       final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
       rate = matrixData[0];
       wsp = matrixData.length > 1 ? matrixData[1] : '0';
-      stock = matrixData.length > 2 ? matrixData[2] : '0'; // Stock from clQty
+      stock = matrixData.length > 2 ? matrixData[2] : '0'; // clQty as hint
     }
 
-    // Get current quantity and apply default if it's 0
     int quantity = _getQuantity(styleKey, shade, size);
-    if (quantity == 0) {
-      quantity = 1;
-      _setQuantity(styleKey, shade, size, 1);
-    }
 
     final controllerKey = '$styleKey-$shade-$size';
     final controller = _controllers.putIfAbsent(
       controllerKey,
-      () => TextEditingController(text: quantity.toString()),
+      () => TextEditingController(text: '0'), // Always default to 0
     );
 
     if (controller.text != quantity.toString()) {
@@ -1040,7 +977,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
               children: [
                 IconButton(
                   onPressed: () {
-                    final newQuantity = quantity > 1 ? quantity - 1 : 1;
+                    final newQuantity = quantity > 0 ? quantity - 1 : 0;
                     _setQuantity(styleKey, shade, size, newQuantity);
                     controller.text = newQuantity.toString();
                   },
@@ -1052,9 +989,14 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
                     controller: controller,
                     textAlign: TextAlign.center,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 8),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                      hintText: stock, // Show clQty as hint
+                      hintStyle: GoogleFonts.roboto(
+                        fontSize: 14,
+                        color: Colors.grey.shade500, // Grey color for hint
+                      ),
                     ),
                     style: GoogleFonts.roboto(fontSize: 14),
                     inputFormatters: [
@@ -1063,7 +1005,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
                     ],
                     onChanged: (value) {
                       final newQuantity =
-                          int.tryParse(value.isEmpty ? '1' : value) ?? 1;
+                          int.tryParse(value.isEmpty ? '0' : value) ?? 0;
                       _setQuantity(styleKey, shade, size, newQuantity);
                     },
                   ),
@@ -1082,25 +1024,25 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
         ),
         _buildCell(rate, 1),
         _buildCell(wsp, 1),
-        _buildCell(stock, 1), // Displays stock (clQty)
+        _buildCell(stock, 1),
       ],
     );
   }
 
   Widget _buildCell(String text, int flex) => Expanded(
-    flex: flex,
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      decoration: BoxDecoration(
-        border: Border(right: BorderSide(color: Colors.grey.shade300)),
-      ),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: GoogleFonts.roboto(fontSize: 14),
-      ),
-    ),
-  );
+        flex: flex,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          decoration: BoxDecoration(
+            border: Border(right: BorderSide(color: Colors.grey.shade300)),
+          ),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.roboto(fontSize: 14),
+          ),
+        ),
+      );
 }
 
 class CopyToStylesDialog extends StatefulWidget {
