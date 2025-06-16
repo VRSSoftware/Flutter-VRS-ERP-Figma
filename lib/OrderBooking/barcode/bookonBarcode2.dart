@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:vrs_erp_figma/catalog/image_zoom1.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/CartModel.dart';
 import 'package:vrs_erp_figma/models/CatalogOrderData.dart';
@@ -443,7 +444,7 @@ Future<void> _submitAllOrders() async {
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -587,19 +588,41 @@ Future<void> _submitAllOrders() async {
     return total;
   }
 
-  Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
-    final catalog = catalogOrder.catalog;
-    final Set<String> selectedColors = selectedColors2[catalog.styleKey] ?? {};
+ Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
+  final catalog = catalogOrder.catalog;
+  final Set<String> selectedColors = selectedColors2[catalog.styleKey] ?? {};
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            GestureDetector(
+              onDoubleTap: () {
+                final imageUrl = catalog.fullImagePath.contains("http")
+                    ? catalog.fullImagePath
+                    : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}';
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ImageZoomScreen1(
+                      imageUrls: [imageUrl],
+                      item: catalog,
+                      showShades: true,
+                      showMRP: true,
+                      showWSP: true,
+                      showSizes: true,
+                      showProduct: true,
+                      showRemark: true,
+                      isLargeScreen: MediaQuery.of(context).size.width > 600,
+                    ),
+                  ),
+                );
+              },
+              child: Container(
                 height: 160,
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey),
@@ -620,82 +643,78 @@ Future<void> _submitAllOrders() async {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        catalog.styleCode,
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.red.shade900,
-                        ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    catalog.styleCode,
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.red.shade900,
+                    ),
+                  ),
+                  Text(
+                    catalog.shadeName,
+                    style: GoogleFonts.roboto(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Colors.blue.shade900,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Table(
+                    columnWidths: const {
+                      0: FixedColumnWidth(100),
+                      1: FixedColumnWidth(10),
+                      2: FlexColumnWidth(100),
+                    },
+                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                    children: [
+                      _buildTableRow(
+                        'Remark',
+                        catalog.remark.isNotEmpty ? catalog.remark : 'N/A',
                       ),
-                    ),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        catalog.shadeName,
-                        style: GoogleFonts.roboto(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: Colors.blue.shade900,
-                        ),
+                      _buildTableRow('Stk Type', 'Ready'),
+                      _buildTableRow(
+                        'Stock Qty',
+                        _calculateStockQuantity(catalog.styleKey).toString(),
+                        valueColor: Colors.green[700],
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Table(
-                      columnWidths: const {
-                        0: FixedColumnWidth(100),
-                        1: FixedColumnWidth(10),
-                        2: FlexColumnWidth(100),
-                      },
-                      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                      children: [
-                        _buildTableRow(
-                          'Remark',
-                          catalog.remark.isNotEmpty ? catalog.remark : 'N/A',
-                        ),
-                        _buildTableRow('Stk Type', 'Ready'),
-                        _buildTableRow(
-                          'Stock Qty',
-                          _calculateStockQuantity(catalog.styleKey).toString(),
-                          valueColor: Colors.green[700],
-                        ),
-                        _buildTableRow(
-                          'Order Qty',
-                          _calculateCatalogQuantity(catalog.styleKey).toString(),
-                          valueColor: Colors.orange[800],
-                        ),
-                        _buildTableRow(
-                          'Order Amount',
-                          _calculateCatalogPrice(catalog.styleKey).toStringAsFixed(2),
-                          valueColor: Colors.purple[800],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                      _buildTableRow(
+                        'Order Qty',
+                        _calculateCatalogQuantity(catalog.styleKey).toString(),
+                        valueColor: Colors.orange[800],
+                      ),
+                      _buildTableRow(
+                        'Order Amount',
+                        _calculateCatalogPrice(catalog.styleKey)
+                            .toStringAsFixed(2),
+                        valueColor: Colors.purple[800],
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-        const SizedBox(height: 15),
-        ...selectedColors.map(
-          (color) => Column(
-            children: [
-              _buildColorSection(catalogOrder, color),
-              const SizedBox(height: 15),
-            ],
-          ),
+      ),
+      const SizedBox(height: 15),
+      ...selectedColors.map(
+        (color) => Column(
+          children: [
+            _buildColorSection(catalogOrder, color),
+            const SizedBox(height: 15),
+          ],
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
   TableRow _buildTableRow(String label, String value, {Color? valueColor}) {
     return TableRow(

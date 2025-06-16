@@ -388,10 +388,28 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
 
   void _updateTotals() {
     int totalQty = 0;
+    double totalAmt = 0.0; // Use double for currency
+
     _styleManager.controllers.forEach((style, shades) {
+      final itemsForStyle = _styleManager.groupedItems[style] ?? [];
+
       shades.forEach((shade, sizes) {
         sizes.forEach((size, controller) {
-          totalQty += int.tryParse(controller.text) ?? 0;
+          final qty = int.tryParse(controller.text) ?? 0;
+          totalQty += qty;
+
+          // Find the item to get MRP
+          final item = itemsForStyle.firstWhere(
+            (item) =>
+                (item['shadeName']?.toString() ?? '') == shade &&
+                (item['sizeName']?.toString() ?? '') == size,
+            orElse: () => {},
+          );
+
+          if (item.isNotEmpty) {
+            final mrp = (item['mrp'] as num?)?.toDouble() ?? 0.0;
+            totalAmt += qty * mrp;
+          }
         });
       });
     });
@@ -399,6 +417,9 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
     _orderControllers.totalQty.text = totalQty.toString();
     _orderControllers.totalItem.text =
         _styleManager.groupedItems.length.toString();
+    _orderControllers.totalAmt.text = totalAmt.toStringAsFixed(
+      2,
+    ); // Format to 2 decimal places
     setState(() {});
   }
 
@@ -659,6 +680,7 @@ class _OrderControllers {
   final remark = TextEditingController();
   final totalItem = TextEditingController(text: '0');
   final totalQty = TextEditingController(text: '0');
+  final totalAmt = TextEditingController(text: '0');
 
   String? selectedParty;
   String? selectedPartyKey;
@@ -1184,7 +1206,7 @@ class StyleCard extends StatelessWidget {
             children: [
               _buildColorSection(catalogOrder, color),
               const SizedBox(height: 8),
-                            Row(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
@@ -1439,10 +1461,10 @@ class StyleCard extends StatelessWidget {
                           int.tryParse(value.isEmpty ? '0' : value) ?? 0;
                       if (quantities[shade] != null) {
                         quantities[shade]![size] = newQuantity;
-                       // onUpdate();
-                      //  setState(() {
-                        
-                      //  });
+                        // onUpdate();
+                        //  setState(() {
+
+                        //  });
                       }
                     },
                   ),
@@ -1585,7 +1607,7 @@ class StyleCard extends StatelessWidget {
       },
     );
   }
-  
+
   Future<void> _submitUpdate(BuildContext context) async {
     // Calculate total quantity
     int totalQty = _calculateCatalogQuantity();
@@ -1640,10 +1662,9 @@ class StyleCard extends StatelessWidget {
         );
         return;
       }
-      
+
       // Process shade/size quantities (typ: 0)
       if (quantities.isNotEmpty) {
-
         final shadeMap = quantities;
         bool allSuccessful = true;
 
@@ -1901,6 +1922,13 @@ class _OrderFormState extends State<_OrderForm> {
             widget.controllers.totalQty,
             readOnly: true,
           ),
+        ),
+        // Add Total Amount field below the row
+        buildTextField(
+          context,
+          "Total Amount (₹)",
+          widget.controllers.totalAmt,
+          readOnly: true,
         ),
         Row(
           children: [

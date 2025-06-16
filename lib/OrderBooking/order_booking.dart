@@ -595,106 +595,166 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                 ),
               ),
         automaticallyImplyLeading: false,
-        actions: [
-          // Show filter icon only in barcode mode
-          if (showBarcodeWidget)
-            // IconButton(
-            //   icon: const Icon(Icons.filter_list, color: Colors.white),
-            //   onPressed: () {
-            //     final overlay = Overlay.of(context);
-            //     final renderBox = context.findRenderObject() as RenderBox;
-            //     final position = renderBox.localToGlobal(Offset.zero);
+        // actions: [
+        //   // Show filter icon only in barcode mode
+        //   if (showBarcodeWidget)
+        //     // IconButton(
+        //     //   icon: const Icon(Icons.filter_list, color: Colors.white),
+        //     //   onPressed: () {
+        //     //     final overlay = Overlay.of(context);
+        //     //     final renderBox = context.findRenderObject() as RenderBox;
+        //     //     final position = renderBox.localToGlobal(Offset.zero);
 
-            //     late OverlayEntry entry;
+        //     //     late OverlayEntry entry;
 
-            //     entry = OverlayEntry(
-            //       builder: (context) => Positioned(
-            //         top: position.dy + kToolbarHeight,
-            //         right: 16,
-            //         child: Material(
-            //           color: Colors.transparent,
-            //           child: FilterMenuWidget(
-            //             initialFilters: _activeFilters,
-            //             onApply: (newFilters) {
-            //               _updateFilters(newFilters);
-            //               entry.remove();
-            //             },
-            //             onCancel: () => entry.remove(),
-            //           ),
-            //         ),
-            //       ),
-            //     );
+        //     //     entry = OverlayEntry(
+        //     //       builder: (context) => Positioned(
+        //     //         top: position.dy + kToolbarHeight,
+        //     //         right: 16,
+        //     //         child: Material(
+        //     //           color: Colors.transparent,
+        //     //           child: FilterMenuWidget(
+        //     //             initialFilters: _activeFilters,
+        //     //             onApply: (newFilters) {
+        //     //               _updateFilters(newFilters);
+        //     //               entry.remove();
+        //     //             },
+        //     //             onCancel: () => entry.remove(),
+        //     //           ),
+        //     //         ),
+        //     //       ),
+        //     //     );
 
-            //     overlay.insert(entry);
-            //   },
-            // ),
+        //     //     overlay.insert(entry);
+        //     //   },
+        //     // ),
 
-          // Cart Icon for both modes
-          IconButton(
-            icon: Stack(
-              children: [
-                const Icon(CupertinoIcons.cart_badge_plus, color: Colors.white),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(0),
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 14,
-                      minHeight: 14,
-                    ),
-                    child: Text(
-                      '${cartModel.count}',
-                      style: const TextStyle(color: Colors.white, fontSize: 8),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-              ],
+        //   // Cart Icon for both modes
+        //   IconButton(
+        //     icon: Stack(
+        //       children: [
+        //         const Icon(CupertinoIcons.cart_badge_plus, color: Colors.white),
+        //         Positioned(
+        //           right: 0,
+        //           top: 0,
+        //           child: Container(
+        //             padding: const EdgeInsets.all(2),
+        //             decoration: BoxDecoration(
+        //               color: Colors.red,
+        //               borderRadius: BorderRadius.circular(0),
+        //             ),
+        //             constraints: const BoxConstraints(
+        //               minWidth: 14,
+        //               minHeight: 14,
+        //             ),
+        //             child: Text(
+        //               '${cartModel.count}',
+        //               style: const TextStyle(color: Colors.white, fontSize: 8),
+        //               textAlign: TextAlign.center,
+        //             ),
+        //           ),
+        //         ),
+        //       ],
+        //     ),
+        //     onPressed: () {
+        //       if(showBarcodeWidget){
+        //         Navigator.pushNamed(
+        //           context,
+        //           '/viewOrder2',
+        //           arguments: {'barcode': showBarcodeWidget}, // Pass barcode state
+        //         ).then((_) => _fetchCartCount());
+        //       }else{
+        //       Navigator.pushNamed(
+        //         context,
+        //         '/viewOrder',
+        //         arguments: {'barcode': showBarcodeWidget}, // Pass barcode state
+        //       ).then((_) => _fetchCartCount());
+        //       }
+        //     },
+        //   ),
+
+        //       IconButton(
+        //     icon: const Icon(Icons.receipt_long, color: Colors.white, size: 24),
+        //     tooltip: 'My Orders',
+        //     onPressed: () {
+        //       Navigator.push(
+        //         context,
+        //         MaterialPageRoute(builder: (context) =>  RegisterPage()),
+        //       );
+        //     },
+        //   ),
+        //   // Always show the three-dot menu
+        //   // Builder(
+        //   //   builder: (context) => IconButton(
+        //   //     icon: const Icon(Icons.more_vert, color: Colors.white),
+        //   //     onPressed: () {
+        //   //       final RenderBox button = context.findRenderObject() as RenderBox;
+        //   //       final Offset position = button.localToGlobal(Offset.zero);
+        //   //       showOrderMenu(context, position);
+        //   //     },
+        //   //   ),
+        //   // ),
+        // ],
+      actions: [
+  // Cart Icon for both modes (Order Booking and Barcode)
+  IconButton(
+    icon: Stack(
+      children: [
+        const Icon(CupertinoIcons.cart_badge_plus, color: Colors.white),
+        if (cartModel.count >= 0)
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              constraints: const BoxConstraints(
+                minWidth: 14,
+                minHeight: 14,
+              ),
+              child: Text(
+                '${cartModel.count}',
+                style: const TextStyle(color: Colors.white, fontSize: 8),
+                textAlign: TextAlign.center,
+              ),
             ),
-            onPressed: () {
-              if(showBarcodeWidget){
-                Navigator.pushNamed(
-                  context,
-                  '/viewOrder2',
-                  arguments: {'barcode': showBarcodeWidget}, // Pass barcode state
-                ).then((_) => _fetchCartCount());
-              }else{
-              Navigator.pushNamed(
-                context,
-                '/viewOrder',
-                arguments: {'barcode': showBarcodeWidget}, // Pass barcode state
-              ).then((_) => _fetchCartCount());
-              }
-            },
           ),
+      ],
+    ),
+    onPressed: () {
+      if (showBarcodeWidget) {
+        Navigator.pushNamed(
+          context,
+          '/viewOrder2',
+          arguments: {'barcode': showBarcodeWidget},
+        ).then((_) => _fetchCartCount());
+      } else {
+        Navigator.pushNamed(
+          context,
+          '/viewOrder',
+          arguments: {'barcode': showBarcodeWidget},
+        ).then((_) => _fetchCartCount());
+      }
+    },
+  ),
 
-              IconButton(
-            icon: const Icon(Icons.receipt_long, color: Colors.white, size: 24),
-            tooltip: 'My Orders',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) =>  RegisterPage()),
-              );
-            },
-          ),
-          // Always show the three-dot menu
-          // Builder(
-          //   builder: (context) => IconButton(
-          //     icon: const Icon(Icons.more_vert, color: Colors.white),
-          //     onPressed: () {
-          //       final RenderBox button = context.findRenderObject() as RenderBox;
-          //       final Offset position = button.localToGlobal(Offset.zero);
-          //       showOrderMenu(context, position);
-          //     },
-          //   ),
-          // ),
-        ],
+  // Orders icon
+  IconButton(
+    icon: const Icon(Icons.receipt_long, color: Colors.white, size: 24),
+    tooltip: 'My Orders',
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => RegisterPage()),
+      );
+    },
+  ),
+],
+
+      
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0), // Reduced padding
