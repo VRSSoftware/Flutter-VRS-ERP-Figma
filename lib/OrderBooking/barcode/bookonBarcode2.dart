@@ -43,10 +43,12 @@ class CatalogItem {
 class BookOnBarcode2 extends StatefulWidget {
   final String barcode;
   final VoidCallback onSuccess;
+  final VoidCallback onCancel;
   const BookOnBarcode2({
     Key? key,
     required this.barcode,
     required this.onSuccess,
+    required this.onCancel,
   }) : super(key: key);
 
   @override
@@ -278,6 +280,7 @@ Future<List<CatalogItem>> fetchCatalogData() async {
       _controllers.removeWhere((key, _) => key.contains('$styleKey-'));
     });
 
+    widget.onCancel();
     Navigator.pop(context);
   }
 

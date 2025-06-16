@@ -210,10 +210,7 @@ import 'package:vrs_erp_figma/constants/app_constants.dart';
 class BarcodeWiseWidget extends StatefulWidget {
   final ValueChanged<String> onFilterPressed;
 
-  const BarcodeWiseWidget({
-    super.key,
-    required this.onFilterPressed,
-  });
+  const BarcodeWiseWidget({super.key, required this.onFilterPressed});
 
   @override
   State<BarcodeWiseWidget> createState() => _BarcodeWiseWidgetState();
@@ -259,19 +256,20 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
           title: const Text('Select Fields to Show'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
-            children: _filters.keys.map((key) {
-              return CheckboxListTile(
-                title: Text(key),
-                value: _filters[key],
-                onChanged: (bool? value) {
-                  setState(() {
-                    _filters[key] = value ?? true;
-                  });
-                  Navigator.pop(context);
-                  _showFilterPopup(context);
-                },
-              );
-            }).toList(),
+            children:
+                _filters.keys.map((key) {
+                  return CheckboxListTile(
+                    title: Text(key),
+                    value: _filters[key],
+                    onChanged: (bool? value) {
+                      setState(() {
+                        _filters[key] = value ?? true;
+                      });
+                      Navigator.pop(context);
+                      _showFilterPopup(context);
+                    },
+                  );
+                }).toList(),
           ),
           actions: [
             TextButton(
@@ -303,14 +301,22 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
 
   void _validateAndNavigate(String barcode) async {
     if (barcode.isEmpty) {
-      _showAlertDialog(context, 'Missing Barcode', 'Please enter or scan a barcode first.');
+      _showAlertDialog(
+        context,
+        'Missing Barcode',
+        'Please enter or scan a barcode first.',
+      );
       return;
     }
 
     String upperBarcode = barcode.toUpperCase();
     print("Checking barcode: $upperBarcode, addedItems: $addedItems");
     if (addedItems.contains(upperBarcode)) {
-      _showAlertDialog(context, 'Already Added', 'This barcode is already added');
+      _showAlertDialog(
+        context,
+        'Already Added',
+        'This barcode is already added',
+      );
       return;
     }
 
@@ -318,17 +324,24 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => BookOnBarcode2(
-          barcode: upperBarcode,
-          onSuccess: () {
-            setState(() {
-              addedItems.add(upperBarcode);
-              print("Added barcode: $upperBarcode, addedItems: $addedItems");
-              _barcodeController.clear();
-              _noDataFound = false; // Reset no data flag on success
-            });
-          },
-        ),
+        builder:
+            (context) => BookOnBarcode2(
+              barcode: upperBarcode,
+              onSuccess: () {
+                setState(() {
+                  addedItems.add(upperBarcode);
+                  print(
+                    "Added barcode: $upperBarcode, addedItems: $addedItems",
+                  );
+                  _barcodeController.clear();
+                  _noDataFound = false; // Reset no data flag on success
+                });
+              },
+              onCancel: () {
+                _barcodeController
+                    .clear(); // This will clear the barcode text field
+              },
+            ),
       ),
     );
 
@@ -347,16 +360,17 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
   void _showAlertDialog(BuildContext context, String title, String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+      builder:
+          (context) => AlertDialog(
+            title: Text(title),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -407,7 +421,10 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12.0,
+              vertical: 12.0,
+            ),
             child: Center(
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -421,7 +438,10 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
                 onPressed: () {
                   _validateAndNavigate(_barcodeController.text.trim());
                 },
-                child: const Text("Search", style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  "Search",
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ),
           ),
@@ -444,7 +464,10 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
           if (_barcodeResults.isNotEmpty) ...[
             const Padding(
               padding: EdgeInsets.all(12.0),
-              child: Text("Barcode Results:", style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(
+                "Barcode Results:",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -459,18 +482,23 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
                   if (_filters['Shades'] == true)
                     const DataColumn(label: Text("Shade")),
                 ],
-                rows: _barcodeResults.map((result) {
-                  return DataRow(cells: [
-                    if (_filters['StyleCode'] == true)
-                      DataCell(Text(result['StyleCode']?.toString() ?? '')),
-                    if (_filters['WSP'] == true)
-                      DataCell(Text(result['WSP']?.toString() ?? '')),
-                    if (_filters['Sizes'] == true)
-                      DataCell(Text(result['Size']?.toString() ?? '')),
-                    if (_filters['Shades'] == true)
-                      DataCell(Text(result['Shade']?.toString() ?? '')),
-                  ]);
-                }).toList(),
+                rows:
+                    _barcodeResults.map((result) {
+                      return DataRow(
+                        cells: [
+                          if (_filters['StyleCode'] == true)
+                            DataCell(
+                              Text(result['StyleCode']?.toString() ?? ''),
+                            ),
+                          if (_filters['WSP'] == true)
+                            DataCell(Text(result['WSP']?.toString() ?? '')),
+                          if (_filters['Sizes'] == true)
+                            DataCell(Text(result['Size']?.toString() ?? '')),
+                          if (_filters['Shades'] == true)
+                            DataCell(Text(result['Shade']?.toString() ?? '')),
+                        ],
+                      );
+                    }).toList(),
               ),
             ),
           ],
