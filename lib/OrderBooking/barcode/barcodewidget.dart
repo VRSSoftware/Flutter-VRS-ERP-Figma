@@ -202,10 +202,6 @@
 //     );
 //   }
 // }
-
-
-
-
 import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/OrderBooking/barcode/barcode_scanner.dart';
 import 'package:vrs_erp_figma/OrderBooking/barcode/bookonBarcode2.dart';
@@ -233,11 +229,11 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
     'Shades': true,
     'StyleCode': true,
   };
+  bool _noDataFound = false; // New state variable for no data
 
   @override
   void initState() {
     super.initState();
-    // Convert input to uppercase
     _barcodeController.addListener(() {
       final text = _barcodeController.text.toUpperCase();
       if (_barcodeController.text != text) {
@@ -288,55 +284,66 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
     );
   }
 
-Future<void> _scanBarcode() async {
-  final barcode = await Navigator.push<String>(
-    context,
-    MaterialPageRoute(builder: (context) => BarcodeScannerScreen()),
-  );
+  Future<void> _scanBarcode() async {
+    final barcode = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (context) => BarcodeScannerScreen()),
+    );
 
-  if (barcode != null && barcode.isNotEmpty) {
-    final upperBarcode = barcode.toUpperCase();
-    setState(() {
-      _barcodeController.text = upperBarcode;
-    });
+    if (barcode != null && barcode.isNotEmpty) {
+      final upperBarcode = barcode.toUpperCase();
+      setState(() {
+        _barcodeController.text = upperBarcode;
+        _noDataFound = false; // Reset no data flag
+      });
 
-    // Automatically navigate without pressing search
-    _validateAndNavigate(upperBarcode);
-  }
-}
-
-void _validateAndNavigate(String barcode) {
-  if (barcode.isEmpty) {
-    _showAlertDialog(context, 'Missing Barcode', 'Please enter or scan a barcode first.');
-    return;
+      _validateAndNavigate(upperBarcode);
+    }
   }
 
-  String upperBarcode = barcode.toUpperCase();
-  print("Checking barcode: $upperBarcode, addedItems: $addedItems");
-  if (addedItems.contains(upperBarcode)) {
-    print("Duplicate barcode found: $upperBarcode");
-    _showAlertDialog(context, 'Already Added', 'This barcode is already added in view cart.');
-    return;
-  }
+  void _validateAndNavigate(String barcode) async {
+    if (barcode.isEmpty) {
+      _showAlertDialog(context, 'Missing Barcode', 'Please enter or scan a barcode first.');
+      return;
+    }
 
-  print("Navigating to BookOnBarcode2 with barcode: $upperBarcode");
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => BookOnBarcode2(
-        barcode: upperBarcode,
-        onSuccess: () {
-          setState(() {
-            addedItems.add(upperBarcode);
-            print("Added barcode: $upperBarcode, addedItems: $addedItems");
-            _barcodeController.clear();
-          });
-          Navigator.pop(context);
-        },
+    String upperBarcode = barcode.toUpperCase();
+    print("Checking barcode: $upperBarcode, addedItems: $addedItems");
+    if (addedItems.contains(upperBarcode)) {
+      _showAlertDialog(context, 'Already Added', 'This barcode is already added');
+      return;
+    }
+
+    print("Navigating to BookOnBarcode2 with barcode: $upperBarcode");
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BookOnBarcode2(
+          barcode: upperBarcode,
+          onSuccess: () {
+            setState(() {
+              addedItems.add(upperBarcode);
+              print("Added barcode: $upperBarcode, addedItems: $addedItems");
+              _barcodeController.clear();
+              _noDataFound = false; // Reset no data flag on success
+            });
+          },
+        ),
       ),
-    ),
-  );
-}
+    );
+
+    // Check the result from BookOnBarcode2
+    if (result == false) {
+      setState(() {
+        _noDataFound = true; // Set no data flag
+      });
+    } else {
+      setState(() {
+        _noDataFound = false; // Reset no data flag
+      });
+    }
+  }
+
   void _showAlertDialog(BuildContext context, String title, String message) {
     showDialog(
       context: context,
@@ -418,6 +425,21 @@ void _validateAndNavigate(String barcode) {
               ),
             ),
           ),
+          // Show "No Data Found" message if applicable
+          if (_noDataFound)
+            const Padding(
+              padding: EdgeInsets.all(12.0),
+              child: Center(
+                child: Text(
+                  "No Data Found",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+            ),
           // Only show results if _barcodeResults is not empty
           if (_barcodeResults.isNotEmpty) ...[
             const Padding(

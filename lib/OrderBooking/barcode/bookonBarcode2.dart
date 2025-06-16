@@ -58,6 +58,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
   Map<String, Set<String>> selectedColors2 = {};
   Map<String, Map<String, Map<String, int>>> quantities = {};
   bool isLoading = true;
+  bool hasData = false;
   final Map<String, TextEditingController> _controllers = {};
   String barcode = '';
 
@@ -74,7 +75,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
     super.dispose();
   }
 
-  Future<void> _loadOrderDetails() async {
+Future<void> _loadOrderDetails() async {
     setState(() {
       isLoading = true;
     });
@@ -83,6 +84,10 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
     final List<CatalogOrderData> tempList = [];
 
     if (catalogItems.isNotEmpty) {
+      setState(() {
+        hasData = true; // Data was fetched successfully
+      });
+
       final styleGroups = <String, List<CatalogItem>>{};
       for (var item in catalogItems) {
         styleGroups.putIfAbsent(item.styleCode, () => []).add(item);
@@ -146,7 +151,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
           shadeImages: '',
         );
 
-        final matrix = <List<String>>[];
+      final matrix = <List<String>>[];
         for (var shade in uniqueShades) {
           final row = <String>[];
           for (var size in uniqueSizes) {
@@ -192,25 +197,34 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
                 wsp: items.first.wsp,
               ),
             );
-            quantities[styleCode]![shade]![size] = 1; // Initialize to 0
+            quantities[styleCode]![shade]![size] = 1; // Initialize to 1
             final controllerKey = '$styleCode-$shade-$size';
             final controller = TextEditingController(
-              text: '1', // Default to 0
+              text: '1', // Default to 1
             );
             controller.addListener(() => setState(() {}));
             _controllers[controllerKey] = controller;
           }
         }
       }
+    } else {
+      setState(() {
+        hasData = false; // No data fetched
+      });
     }
 
     setState(() {
       catalogOrderList = tempList;
       isLoading = false;
     });
+
+    // Return false to indicate no data was fetched
+    if (!hasData && mounted) {
+      Navigator.pop(context, false);
+    }
   }
 
-  Future<List<CatalogItem>> fetchCatalogData() async {
+Future<List<CatalogItem>> fetchCatalogData() async {
     final String apiUrl =
         '${AppConstants.BASE_URL}/orderBooking/GetBarcodeDetails';
     final Map<String, dynamic> requestBody = {
@@ -240,6 +254,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
     }
     return [];
   }
+
 
   int _getQuantity(String styleKey, String shade, String size) {
     return quantities[styleKey]?[shade]?[size] ?? 0;
@@ -298,7 +313,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
     });
   }
 
-  Future<void> _submitAllOrders() async {
+Future<void> _submitAllOrders() async {
     List<Future<http.Response>> apiCalls = [];
     List<String> apiCallStyles = [];
     final cartModel = Provider.of<CartModel>(context, listen: false);
@@ -307,10 +322,6 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
       final catalog = catalogOrder.catalog;
       final matrix = catalogOrder.orderMatrix;
       final styleCode = catalog.styleCode;
-
-      if (cartModel.addedItems.contains(styleCode)) {
-        continue;
-      }
 
       final quantityMap = quantities[catalog.styleKey];
       if (quantityMap != null) {
@@ -371,38 +382,29 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
 
     try {
       final responses = await Future.wait(apiCalls);
-      final successfulStyles = <String>{};
+      int successfulLineItems = 0;
 
-      for (int i = 0; i < responses.length; i++) {
-        final response = responses[i];
+      for (final response in responses) {
         if (response.statusCode == 200) {
           try {
             final responseBody = jsonDecode(response.body);
-            if (responseBody is Map<String, dynamic> &&
-                responseBody['success'] == true) {
-              successfulStyles.add(apiCallStyles[i]);
-              cartModel.addItem(apiCallStyles[i]);
+            if (responseBody is Map<String, dynamic> && responseBody['success'] == true) {
+              successfulLineItems++;
+            } else if (response.body.trim() == "Success") {
+              successfulLineItems++;
             }
           } catch (e) {
             if (response.body.trim() == "Success") {
-              successfulStyles.add(apiCallStyles[i]);
-              cartModel.addItem(apiCallStyles[i]);
-            } else {
-              print(
-                'Failed to parse response for style ${apiCallStyles[i]}: $e, response: ${response.body}',
-              );
+              successfulLineItems++;
             }
           }
-        } else {
-          print(
-            'API call failed for style ${apiCallStyles[i]}: ${response.statusCode}, response: ${response.body}',
-          );
         }
       }
 
-      if (successfulStyles.isNotEmpty) {
-        cartModel.updateCount(cartModel.count + successfulStyles.length);
+      if (successfulLineItems > 0) {
+        cartModel.updateCount(cartModel.count + successfulLineItems);
         widget.onSuccess();
+        Navigator.pop(context, true); // Return true on successful submission
       } else {
         if (mounted) {
           showDialog(
@@ -438,14 +440,14 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
       }
     }
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
-          'Order Booking',
+          'Order Booking - BarcodeWise',
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.blue,

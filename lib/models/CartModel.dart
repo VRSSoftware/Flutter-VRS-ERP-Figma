@@ -24,7 +24,6 @@ class CartModel extends ChangeNotifier {
 
   void reset() {
     _count = 0;
-    _addedItems.clear();
     notifyListeners();
   }
 
