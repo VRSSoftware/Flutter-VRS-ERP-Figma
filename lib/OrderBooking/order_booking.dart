@@ -598,36 +598,36 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
         actions: [
           // Show filter icon only in barcode mode
           if (showBarcodeWidget)
-            IconButton(
-              icon: const Icon(Icons.filter_list, color: Colors.white),
-              onPressed: () {
-                final overlay = Overlay.of(context);
-                final renderBox = context.findRenderObject() as RenderBox;
-                final position = renderBox.localToGlobal(Offset.zero);
+            // IconButton(
+            //   icon: const Icon(Icons.filter_list, color: Colors.white),
+            //   onPressed: () {
+            //     final overlay = Overlay.of(context);
+            //     final renderBox = context.findRenderObject() as RenderBox;
+            //     final position = renderBox.localToGlobal(Offset.zero);
 
-                late OverlayEntry entry;
+            //     late OverlayEntry entry;
 
-                entry = OverlayEntry(
-                  builder: (context) => Positioned(
-                    top: position.dy + kToolbarHeight,
-                    right: 16,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: FilterMenuWidget(
-                        initialFilters: _activeFilters,
-                        onApply: (newFilters) {
-                          _updateFilters(newFilters);
-                          entry.remove();
-                        },
-                        onCancel: () => entry.remove(),
-                      ),
-                    ),
-                  ),
-                );
+            //     entry = OverlayEntry(
+            //       builder: (context) => Positioned(
+            //         top: position.dy + kToolbarHeight,
+            //         right: 16,
+            //         child: Material(
+            //           color: Colors.transparent,
+            //           child: FilterMenuWidget(
+            //             initialFilters: _activeFilters,
+            //             onApply: (newFilters) {
+            //               _updateFilters(newFilters);
+            //               entry.remove();
+            //             },
+            //             onCancel: () => entry.remove(),
+            //           ),
+            //         ),
+            //       ),
+            //     );
 
-                overlay.insert(entry);
-              },
-            ),
+            //     overlay.insert(entry);
+            //   },
+            // ),
 
           // Cart Icon for both modes
           IconButton(
@@ -684,16 +684,16 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
             },
           ),
           // Always show the three-dot menu
-          Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.more_vert, color: Colors.white),
-              onPressed: () {
-                final RenderBox button = context.findRenderObject() as RenderBox;
-                final Offset position = button.localToGlobal(Offset.zero);
-                showOrderMenu(context, position);
-              },
-            ),
-          ),
+          // Builder(
+          //   builder: (context) => IconButton(
+          //     icon: const Icon(Icons.more_vert, color: Colors.white),
+          //     onPressed: () {
+          //       final RenderBox button = context.findRenderObject() as RenderBox;
+          //       final Offset position = button.localToGlobal(Offset.zero);
+          //       showOrderMenu(context, position);
+          //     },
+          //   ),
+          // ),
         ],
       ),
       body: Padding(

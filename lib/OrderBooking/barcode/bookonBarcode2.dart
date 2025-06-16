@@ -263,6 +263,9 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
       quantities.remove(styleKey);
       _controllers.removeWhere((key, _) => key.contains('$styleKey-'));
     });
+
+    // Pop the current screen after deletion
+    Navigator.pop(context);
   }
 
   void _copyStyleQuantities(
@@ -439,81 +442,120 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
       }
     }
   }
-@override
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: Colors.white,
-    appBar: AppBar(
-      title: const Text(
-        'Order Booking',
-        style: TextStyle(color: Colors.white),
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text(
+          'Order Booking',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.blue,
+        elevation: 2,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      backgroundColor: Colors.blue, // You can replace this with AppColors.primaryColor
-      elevation: 2,
-      iconTheme: const IconThemeData(color: Colors.white),
-    ),
-    body: isLoading
-        ? Stack(
-            children: [
-              Container(color: Colors.black.withOpacity(0.2)),
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(4),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 8,
-                        offset: Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Text(
-                        'Please Wait...',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black,
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2.5),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          )
-        : SingleChildScrollView(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: Column(
+        // Wrap body in Column to show barcode above content
+        children: [
+          // START: Added barcode display container
+          Container(
+            padding: const EdgeInsets.all(12),
+            color: Colors.white,
+            child: Row(
               children: [
-                const SizedBox(height: 10),
-                ...catalogOrderList.map(
-                  (catalogOrder) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [buildOrderItem(catalogOrder, context)],
+                const Text(
+                  "Barcode:",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(width: 10),
+                Text(
+                  widget.barcode,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red.shade900,
+                  ),
+                ),
               ],
             ),
           ),
-  );
-}
+          // END: Added barcode display container
+          Expanded(
+            // Wrap existing body in Expanded
+            child:
+                isLoading
+                    ? Stack(
+                      children: [
+                        Container(color: Colors.black.withOpacity(0.2)),
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 8,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Text(
+                                  'Please Wait...',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                SizedBox(width: 12),
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                     : SingleChildScrollView(
+    padding: const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 12.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ...catalogOrderList.map(
+          (catalogOrder) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [buildOrderItem(catalogOrder, context)],
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
+    ),
+),
+
+          ),
+        ],
+      ),
+    );
+  }
 
   int _calculateTotalQuantity() {
     int total = 0;
@@ -551,124 +593,130 @@ Widget build(BuildContext context) {
     return total;
   }
 
-Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
-  final catalog = catalogOrder.catalog;
-  final Set<String> selectedColors = selectedColors2[catalog.styleKey] ?? {};
+  Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
+    final catalog = catalogOrder.catalog;
+    final Set<String> selectedColors = selectedColors2[catalog.styleKey] ?? {};
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image Section
-            Container(
-              height: 160,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(4.0),
-              ),
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.3,
-                child: AspectRatio(
-                  aspectRatio: 3 / 4,
-                  child: Image.network(
-                    catalog.fullImagePath.contains("http")
-                        ? catalog.fullImagePath
-                        : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.error, size: 60),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image Section
+              Container(
+                height: 160,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(4.0),
+                ),
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.3,
+                  child: AspectRatio(
+                    aspectRatio: 3 / 4,
+                    child: Image.network(
+                      catalog.fullImagePath.contains("http")
+                          ? catalog.fullImagePath
+                          : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}',
+                      fit: BoxFit.cover,
+                      errorBuilder:
+                          (context, error, stackTrace) =>
+                              const Icon(Icons.error, size: 60),
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
+              const SizedBox(width: 12),
 
-            // Details Section in Table format
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      catalog.styleCode,
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.red.shade900,
+              // Details Section in Table format
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        catalog.styleCode,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.red.shade900,
+                        ),
                       ),
                     ),
-                  ),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      catalog.shadeName,
-                      style: GoogleFonts.roboto(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: Colors.blue.shade900,
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        catalog.shadeName,
+                        style: GoogleFonts.roboto(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Colors.blue.shade900,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
+                    const SizedBox(height: 6),
 
-                  // Table format for perfect colon alignment
-                  Table(
-                    columnWidths: const {
-                      0: FixedColumnWidth(100), // label
-                      1: FixedColumnWidth(10), // colon
-                      2: FlexColumnWidth(100), // value
-                    },
-                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                    children: [
-                      _buildTableRow(
-                        'Remark',
-                        catalog.remark.isNotEmpty ? catalog.remark : 'N/A',
-                      ),
-                      _buildTableRow('Stk Type', 'Ready'),
-                      _buildTableRow(
-                        'Stock Qty',
-                        _calculateStockQuantity(catalog.styleKey).toString(),
-                        valueColor: Colors.green[700],
-                      ),
-                      _buildTableRow(
-                        'Order Qty',
-                        _calculateCatalogQuantity(catalog.styleKey).toString(),
-                        valueColor: Colors.orange[800],
-                      ),
-                      _buildTableRow(
-                        'Order Amount',
-                        _calculateCatalogPrice(catalog.styleKey).toStringAsFixed(2),
-                        valueColor: Colors.purple[800],
-                      ),
-                    ],
-                  ),
-                ],
+                    // Table format for perfect colon alignment
+                    Table(
+                      columnWidths: const {
+                        0: FixedColumnWidth(100), // label
+                        1: FixedColumnWidth(10), // colon
+                        2: FlexColumnWidth(100), // value
+                      },
+                      defaultVerticalAlignment:
+                          TableCellVerticalAlignment.middle,
+                      children: [
+                        _buildTableRow(
+                          'Remark',
+                          catalog.remark.isNotEmpty ? catalog.remark : 'N/A',
+                        ),
+                        _buildTableRow('Stk Type', 'Ready'),
+                        _buildTableRow(
+                          'Stock Qty',
+                          _calculateStockQuantity(catalog.styleKey).toString(),
+                          valueColor: Colors.green[700],
+                        ),
+                        _buildTableRow(
+                          'Order Qty',
+                          _calculateCatalogQuantity(
+                            catalog.styleKey,
+                          ).toString(),
+                          valueColor: Colors.orange[800],
+                        ),
+                        _buildTableRow(
+                          'Order Amount',
+                          _calculateCatalogPrice(
+                            catalog.styleKey,
+                          ).toStringAsFixed(2),
+                          valueColor: Colors.purple[800],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
 
-      const SizedBox(height: 15),
+        const SizedBox(height: 15),
 
-      // Render selected color sections
-      ...selectedColors.map(
-        (color) => Column(
-          children: [
-            _buildColorSection(catalogOrder, color),
-            const SizedBox(height: 15),
-          ],
+        // Render selected color sections
+        ...selectedColors.map(
+          (color) => Column(
+            children: [
+              _buildColorSection(catalogOrder, color),
+              const SizedBox(height: 15),
+            ],
+          ),
         ),
-      ),
-    ],
-  );
-}
- 
+      ],
+    );
+  }
+
   TableRow _buildTableRow(String label, String value, {Color? valueColor}) {
     return TableRow(
       children: [
@@ -703,32 +751,43 @@ Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
       ],
     );
   }
-int _calculateCatalogQuantity(String styleKey) {
-  int total = 0;
-  for (var shade in quantities[styleKey]?.keys ?? []) {
-    for (var size in quantities[styleKey]![shade]!.keys) {
-      total += quantities[styleKey]![shade]![size]!;
-    }
-  }
-  return total;
-}
 
-int _calculateStockQuantity(String styleKey) {
-  int total = 0;
-  for (var catalogOrder in catalogOrderList) {
-    if (catalogOrder.catalog.styleKey == styleKey) {
-      final matrix = catalogOrder.orderMatrix;
-      for (var shadeIndex = 0; shadeIndex < matrix.shades.length; shadeIndex++) {
-        for (var sizeIndex = 0; sizeIndex < matrix.sizes.length; sizeIndex++) {
-          final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
-          final stock = int.tryParse(matrixData.length > 2 ? matrixData[2] : '0') ?? 0;
-          total += stock;
+  int _calculateCatalogQuantity(String styleKey) {
+    int total = 0;
+    for (var shade in quantities[styleKey]?.keys ?? []) {
+      for (var size in quantities[styleKey]![shade]!.keys) {
+        total += quantities[styleKey]![shade]![size]!;
+      }
+    }
+    return total;
+  }
+
+  int _calculateStockQuantity(String styleKey) {
+    int total = 0;
+    for (var catalogOrder in catalogOrderList) {
+      if (catalogOrder.catalog.styleKey == styleKey) {
+        final matrix = catalogOrder.orderMatrix;
+        for (
+          var shadeIndex = 0;
+          shadeIndex < matrix.shades.length;
+          shadeIndex++
+        ) {
+          for (
+            var sizeIndex = 0;
+            sizeIndex < matrix.sizes.length;
+            sizeIndex++
+          ) {
+            final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
+            final stock =
+                int.tryParse(matrixData.length > 2 ? matrixData[2] : '0') ?? 0;
+            total += stock;
+          }
         }
       }
     }
+    return total;
   }
-  return total;
-}
+
   double _calculateCatalogPrice(String styleKey) {
     double total = 0;
     for (var catalogOrder in catalogOrderList) {
@@ -754,137 +813,161 @@ int _calculateStockQuantity(String styleKey) {
     return total;
   }
 
-Widget _buildColorSection(CatalogOrderData catalogOrder, String shade) {
-  final sizes = catalogOrder.orderMatrix.sizes;
-  final styleKey = catalogOrder.catalog.styleKey;
+  Widget _buildColorSection(CatalogOrderData catalogOrder, String shade) {
+    final sizes = catalogOrder.orderMatrix.sizes;
+    final styleKey = catalogOrder.catalog.styleKey;
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: Column(
-          children: [
-            Divider(height: 1, color: Colors.grey.shade300),
-            Row(
-              children: [
-                _buildHeader("Size", 1),
-                
-                Expanded(
-      flex: 2,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          border: Border(right: BorderSide(color: Colors.grey.shade300)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              "Qty",
-              style: GoogleFonts.roboto(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color:Colors.red.shade900
-              ),
-            ),
-            const SizedBox(width: 4),
-            IconButton(
-              icon: const Icon(
-                Icons.copy,
-                size: 16,
-                color: Colors.grey,
-              ),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              onPressed: () async {
-                final result = await showDialog<Set<String>>(
-                  context: context,
-                  builder: (context) => CopyToStylesDialog(
-                    styleKeys: catalogOrderList
-                        .map((order) => order.catalog.styleKey)
-                        .where((key) => key != catalogOrder.catalog.styleKey)
-                        .toList(),
-                    styleCodes: catalogOrderList
-                        .map((order) => order.catalog.styleCode)
-                        .toList(),
-                    sourceStyleKey: catalogOrder.catalog.styleKey,
-                    sourceStyleCode: catalogOrder.catalog.styleCode,
-                  ),
-                );
-
-                if (result != null && result.isNotEmpty) {
-                  _copyStyleQuantities(
-                    catalogOrder.catalog.styleKey,
-                    result,
-                  );
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    ),
-                _buildHeader("MRP", 1),
-                _buildHeader("WSP", 1),
-                _buildHeader("Stock", 1),
-              ],
-            ),
-            Divider(height: 1, color: Colors.grey.shade300),
-            for (var size in sizes) ...[
-              _buildSizeRow(catalogOrder, shade, size),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Column(
+            children: [
               Divider(height: 1, color: Colors.grey.shade300),
+              Row(
+                children: [
+                  _buildHeader("Size", 1),
+
+                  Expanded(
+                    flex: 2,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          right: BorderSide(color: Colors.grey.shade300),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Qty",
+                            style: GoogleFonts.roboto(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.red.shade900,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.copy,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: () async {
+                              final result = await showDialog<Set<String>>(
+                                context: context,
+                                builder:
+                                    (context) => CopyToStylesDialog(
+                                      styleKeys:
+                                          catalogOrderList
+                                              .map(
+                                                (order) =>
+                                                    order.catalog.styleKey,
+                                              )
+                                              .where(
+                                                (key) =>
+                                                    key !=
+                                                    catalogOrder
+                                                        .catalog
+                                                        .styleKey,
+                                              )
+                                              .toList(),
+                                      styleCodes:
+                                          catalogOrderList
+                                              .map(
+                                                (order) =>
+                                                    order.catalog.styleCode,
+                                              )
+                                              .toList(),
+                                      sourceStyleKey:
+                                          catalogOrder.catalog.styleKey,
+                                      sourceStyleCode:
+                                          catalogOrder.catalog.styleCode,
+                                    ),
+                              );
+
+                              if (result != null && result.isNotEmpty) {
+                                _copyStyleQuantities(
+                                  catalogOrder.catalog.styleKey,
+                                  result,
+                                );
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  _buildHeader("MRP", 1),
+                  _buildHeader("WSP", 1),
+                  _buildHeader("Stock", 1),
+                ],
+              ),
+              Divider(height: 1, color: Colors.grey.shade300),
+              for (var size in sizes) ...[
+                _buildSizeRow(catalogOrder, shade, size),
+                Divider(height: 1, color: Colors.grey.shade300),
+              ],
             ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[300],
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.zero,
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onPressed:
+                    () => _deleteStyle(
+                      catalogOrder.catalog.styleKey,
+                    ), // Updated to call _deleteStyle
+                child: Text(
+                  'CANCEL',
+                  style: GoogleFonts.montserrat(color: Colors.black),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10), // space between buttons
+            Expanded(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      _calculateTotalQuantity() > 0
+                          ? Colors.green
+                          : Colors.grey,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.zero,
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onPressed:
+                    _calculateTotalQuantity() > 0 ? _submitAllOrders : null,
+                child: Text(
+                  'CONFIRM',
+                  style: GoogleFonts.montserrat(color: Colors.white),
+                ),
+              ),
+            ),
           ],
         ),
-      ),
-
-const SizedBox(height: 16),
-     
-  Row(
-        children: [
-          Expanded(
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[300],
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.zero,
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              onPressed: () => _deleteStyle(catalogOrder.catalog.styleKey), // Updated to call _deleteStyle
-              child: Text(
-                'CANCEL',
-                style: GoogleFonts.montserrat(color: Colors.black),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10), // space between buttons
-          Expanded(
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _calculateTotalQuantity() > 0
-                    ? Colors.green
-                    : Colors.grey,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.zero,
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              onPressed: _calculateTotalQuantity() > 0 ? _submitAllOrders : null,
-              child: Text(
-                'CONFIRM',
-                style: GoogleFonts.montserrat(color: Colors.white),
-              ),
-            ),
-          ),
-        ],
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 
   Widget _buildHeader(String text, int flex) => Expanded(
     flex: flex,
@@ -905,104 +988,105 @@ const SizedBox(height: 16),
     ),
   );
 
-Widget _buildSizeRow(
-  CatalogOrderData catalogOrder,
-  String shade,
-  String size,
-) {
-  final matrix = catalogOrder.orderMatrix;
-  final shadeIndex = matrix.shades.indexOf(shade.trim());
-  final sizeIndex = matrix.sizes.indexOf(size?.trim() ?? '');
-  final styleKey = catalogOrder.catalog.styleKey;
+  Widget _buildSizeRow(
+    CatalogOrderData catalogOrder,
+    String shade,
+    String size,
+  ) {
+    final matrix = catalogOrder.orderMatrix;
+    final shadeIndex = matrix.shades.indexOf(shade.trim());
+    final sizeIndex = matrix.sizes.indexOf(size?.trim() ?? '');
+    final styleKey = catalogOrder.catalog.styleKey;
 
-  String rate = '';
-  String stock = '0';
-  String wsp = '0';
+    String rate = '';
+    String stock = '0';
+    String wsp = '0';
 
-  if (shadeIndex != -1 && sizeIndex != -1) {
-    final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
-    rate = matrixData[0];
-    wsp = matrixData.length > 1 ? matrixData[1] : '0';
-    stock = matrixData.length > 2 ? matrixData[2] : '0'; // Stock from clQty
-  }
+    if (shadeIndex != -1 && sizeIndex != -1) {
+      final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
+      rate = matrixData[0];
+      wsp = matrixData.length > 1 ? matrixData[1] : '0';
+      stock = matrixData.length > 2 ? matrixData[2] : '0'; // Stock from clQty
+    }
 
-  // Get current quantity and apply default if it's 0
-  int quantity = _getQuantity(styleKey, shade, size);
-  if (quantity == 0) {
-    quantity = 1;
-    _setQuantity(styleKey, shade, size, 1);
-  }
+    // Get current quantity and apply default if it's 0
+    int quantity = _getQuantity(styleKey, shade, size);
+    if (quantity == 0) {
+      quantity = 1;
+      _setQuantity(styleKey, shade, size, 1);
+    }
 
-  final controllerKey = '$styleKey-$shade-$size';
-  final controller = _controllers.putIfAbsent(
-    controllerKey,
-    () => TextEditingController(text: quantity.toString()),
-  );
+    final controllerKey = '$styleKey-$shade-$size';
+    final controller = _controllers.putIfAbsent(
+      controllerKey,
+      () => TextEditingController(text: quantity.toString()),
+    );
 
-  if (controller.text != quantity.toString()) {
-    controller.text = quantity.toString();
-  }
+    if (controller.text != quantity.toString()) {
+      controller.text = quantity.toString();
+    }
 
-  return Row(
-    children: [
-      _buildCell(size, 1),
-      Expanded(
-        flex: 2,
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border(right: BorderSide(color: Colors.grey.shade300)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                onPressed: () {
-                  final newQuantity = quantity > 1 ? quantity - 1 : 1;
-                  _setQuantity(styleKey, shade, size, newQuantity);
-                  controller.text = newQuantity.toString();
-                },
-                icon: const Icon(Icons.remove, size: 20),
-              ),
-              SizedBox(
-                width: 18,
-                child: TextField(
-                  controller: controller,
-                  textAlign: TextAlign.center,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 8),
-                  ),
-                  style: GoogleFonts.roboto(fontSize: 14),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(4),
-                  ],
-                  onChanged: (value) {
-                    final newQuantity =
-                        int.tryParse(value.isEmpty ? '1' : value) ?? 1;
+    return Row(
+      children: [
+        _buildCell(size, 1),
+        Expanded(
+          flex: 2,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(right: BorderSide(color: Colors.grey.shade300)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  onPressed: () {
+                    final newQuantity = quantity > 1 ? quantity - 1 : 1;
                     _setQuantity(styleKey, shade, size, newQuantity);
+                    controller.text = newQuantity.toString();
                   },
+                  icon: const Icon(Icons.remove, size: 20),
                 ),
-              ),
-              IconButton(
-                onPressed: () {
-                  final newQuantity = quantity + 1;
-                  _setQuantity(styleKey, shade, size, newQuantity);
-                  controller.text = newQuantity.toString();
-                },
-                icon: const Icon(Icons.add, size: 20),
-              ),
-            ],
+                SizedBox(
+                  width: 18,
+                  child: TextField(
+                    controller: controller,
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    style: GoogleFonts.roboto(fontSize: 14),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(4),
+                    ],
+                    onChanged: (value) {
+                      final newQuantity =
+                          int.tryParse(value.isEmpty ? '1' : value) ?? 1;
+                      _setQuantity(styleKey, shade, size, newQuantity);
+                    },
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    final newQuantity = quantity + 1;
+                    _setQuantity(styleKey, shade, size, newQuantity);
+                    controller.text = newQuantity.toString();
+                  },
+                  icon: const Icon(Icons.add, size: 20),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-      _buildCell(rate, 1),
-      _buildCell(wsp, 1),
-      _buildCell(stock, 1), // Displays stock (clQty)
-    ],
-  );
-}
+        _buildCell(rate, 1),
+        _buildCell(wsp, 1),
+        _buildCell(stock, 1), // Displays stock (clQty)
+      ],
+    );
+  }
+
   Widget _buildCell(String text, int flex) => Expanded(
     flex: flex,
     child: Container(

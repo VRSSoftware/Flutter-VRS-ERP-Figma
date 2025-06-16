@@ -203,6 +203,9 @@
 //   }
 // }
 
+
+
+
 import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/OrderBooking/barcode/barcode_scanner.dart';
 import 'package:vrs_erp_figma/OrderBooking/barcode/bookonBarcode2.dart';
@@ -285,18 +288,22 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
     );
   }
 
-  Future<void> _scanBarcode() async {
-    final barcode = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(builder: (context) => BarcodeScannerScreen()),
-    );
+Future<void> _scanBarcode() async {
+  final barcode = await Navigator.push<String>(
+    context,
+    MaterialPageRoute(builder: (context) => BarcodeScannerScreen()),
+  );
 
-    if (barcode != null && barcode.isNotEmpty) {
-      setState(() {
-        _barcodeController.text = barcode.toUpperCase();
-      });
-    }
+  if (barcode != null && barcode.isNotEmpty) {
+    final upperBarcode = barcode.toUpperCase();
+    setState(() {
+      _barcodeController.text = upperBarcode;
+    });
+
+    // Automatically navigate without pressing search
+    _validateAndNavigate(upperBarcode);
   }
+}
 
 void _validateAndNavigate(String barcode) {
   if (barcode.isEmpty) {

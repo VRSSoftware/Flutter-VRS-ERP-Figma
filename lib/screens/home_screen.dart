@@ -391,7 +391,7 @@
 //============================================================design 3================================================
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart'; // Add this import
+import 'package:google_fonts/google_fonts.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/widget/bottom_navbar.dart';
@@ -553,8 +553,9 @@ class _HomeScreenState extends State<HomeScreen> {
             child: GestureDetector(
               onTap: onTap,
               child: AnimatedContainer(
-                duration: Duration(milliseconds: 200),
+                duration: const Duration(milliseconds: 200),
                 width: width,
+                height: isLargeScreen ? 120 : 100,
                 decoration: BoxDecoration(
                   color: isSelected || isHovered
                       ? const Color.fromARGB(255, 206, 222, 240)
@@ -563,16 +564,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   border: Border.all(color: AppColors.primaryColor, width: 1),
                 ),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isLargeScreen ? 16 : 8,
-                        vertical: isLargeScreen ? 12 : 8,
-                      ),
-                      child: Column(
-                        children: [
-                          Image.asset(
+                    Expanded(
+                      child: Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isLargeScreen ? 16 : 8,
+                          ),
+                          child: Image.asset(
                             imagePath,
                             width: isLargeScreen ? 50 : 40,
                             height: isLargeScreen ? 50 : 40,
@@ -586,38 +585,27 @@ class _HomeScreenState extends State<HomeScreen> {
                               );
                             },
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            label,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat( 
-                            fontSize: isLargeScreen ? 14 : 13,
-                              fontWeight: FontWeight.normal,
-                              color: isSelected || isHovered
-                                  ? AppColors.primaryColor
-                                  : Colors.grey[800],
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                     Container(
                       width: double.infinity,
+                      height: isLargeScreen ? 30 : 25,
                       color: isSelected || isHovered
                           ? AppColors.primaryColor
                           : const Color(0xFFE91E63),
                       padding: EdgeInsets.symmetric(
                         vertical: isLargeScreen ? 6 : 4,
                       ),
-                      child: Text(
-                        'View Details',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.poppins( // Apply Poppins font
-                          fontSize: isLargeScreen ? 12 : 10,
-                          fontWeight: FontWeight.bold,
-                          color: isSelected || isHovered
-                              ? Colors.white
-                              : Colors.white,
+                      child: Center(
+                        child: Text(
+                          label,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: isLargeScreen ? 12 : 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
