@@ -18,6 +18,7 @@ import 'package:vrs_erp_figma/screens/splash_screen.dart';
 import 'package:vrs_erp_figma/stockReport/stockreportpage.dart';
 import 'package:vrs_erp_figma/viewOrder/view_order.dart';
 import 'package:vrs_erp_figma/viewOrder/view_order_screen.dart';
+import 'package:vrs_erp_figma/viewOrder/view_order_screen_barcode.dart';
 
 void main() {
   runApp(
@@ -61,8 +62,9 @@ class MyApp extends StatelessWidget {
         '/catalogpage': (context) => CatalogPage(),
         '/orderbooking': (context) => OrderBookingScreen(),
         '/orderpage': (context) => OrderPage(),
-        '/viewOrder': (context) => ViewOrderScreen(),
         '/viewOrders': (context) => ViewOrderScreens(),
+        '/viewOrder': (context) => ViewOrderScreen(),
+        '/viewOrder2': (context) => ViewOrderScreenBarcode(),
         '/registerOrders': (context) => RegisterPage(),
         '/stockReport': (context) => StockReportPage(),
         '/dashboard': (context) => OrderSummaryPage(),

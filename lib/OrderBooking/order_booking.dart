@@ -463,6 +463,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 
 import 'package:vrs_erp_figma/OrderBooking/orderbooking_drawer.dart';
@@ -656,11 +657,19 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
               ],
             ),
             onPressed: () {
+              if(showBarcodeWidget){
+                Navigator.pushNamed(
+                  context,
+                  '/viewOrder2',
+                  arguments: {'barcode': showBarcodeWidget}, // Pass barcode state
+                ).then((_) => _fetchCartCount());
+              }else{
               Navigator.pushNamed(
                 context,
                 '/viewOrder',
                 arguments: {'barcode': showBarcodeWidget}, // Pass barcode state
               ).then((_) => _fetchCartCount());
+              }
             },
           ),
 
