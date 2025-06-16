@@ -1267,7 +1267,8 @@ class StyleCard extends StatelessWidget {
         total += stock;
       }
     }
-    return total;
+    // return total;
+    return 0;
   }
 
   double _calculateCatalogPrice() {
@@ -1381,7 +1382,8 @@ class StyleCard extends StatelessWidget {
       final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
       rate = matrixData[0];
       wsp = matrixData.length > 1 ? matrixData[1] : '0';
-      stock = matrixData.length > 2 ? matrixData[2] : '0';
+      // stock = matrixData.length > 2 ? matrixData[2] : '0';
+      stock = '0';
       controller = styleManager.controllers[styleCode]?[shade]?[size];
     }
 
