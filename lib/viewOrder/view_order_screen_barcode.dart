@@ -47,7 +47,8 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       if (args != null && args.containsKey('barcode')) {
         barcodeMode = args['barcode'] as bool;
       }
@@ -61,15 +62,20 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
 
   Future<void> _loadBookingTypes() async {
     try {
-      final rawData = await ApiService.fetchBookingTypes(coBrId: UserSession.coBrId ?? '');
+      final rawData = await ApiService.fetchBookingTypes(
+        coBrId: UserSession.coBrId ?? '',
+      );
       setState(() {
-        _bookingTypes = (rawData as List)
-            .map((json) => Item(
-                  itemKey: json['key'],
-                  itemName: json['name'],
-                  itemSubGrpKey: '',
-                ))
-            .toList();
+        _bookingTypes =
+            (rawData as List)
+                .map(
+                  (json) => Item(
+                    itemKey: json['key'],
+                    itemName: json['name'],
+                    itemSubGrpKey: '',
+                  ),
+                )
+                .toList();
       });
     } catch (e) {
       print('Failed to load booking types: $e');
@@ -87,12 +93,15 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as List;
         setState(() {
-          paymentTerms = data
-              .map((e) => PytTermDisc(
-                    key: e['pytTermDiscKey']?.toString() ?? '',
-                    name: e['pytTermDiscName']?.toString() ?? '',
-                  ))
-              .toList();
+          paymentTerms =
+              data
+                  .map(
+                    (e) => PytTermDisc(
+                      key: e['pytTermDiscKey']?.toString() ?? '',
+                      name: e['pytTermDiscName']?.toString() ?? '',
+                    ),
+                  )
+                  .toList();
         });
       } else {
         print('API Error: ${response.statusCode}');
@@ -102,7 +111,10 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
     }
   }
 
-  Future<void> fetchAndMapConsignees({required String key, required String CoBrId}) async {
+  Future<void> fetchAndMapConsignees({
+    required String key,
+    required String CoBrId,
+  }) async {
     try {
       Map<String, dynamic> responseMap = await ApiService.fetchConsinees(
         key: key,
@@ -112,7 +124,10 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
       if (responseMap['statusCode'] == 200) {
         if (responseMap['result'] is List) {
           setState(() {
-            consignees = responseMap['result'].map((e) => Consignee.fromJson(e)).toList();
+            consignees =
+                responseMap['result']
+                    .map((e) => Consignee.fromJson(e))
+                    .toList();
           });
         }
       } else {
@@ -131,7 +146,8 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
       barcode: "true",
     );
 
-    if (salesOrderData.isNotEmpty && salesOrderData.containsKey('salesOrderNo')) {
+    if (salesOrderData.isNotEmpty &&
+        salesOrderData.containsKey('salesOrderNo')) {
       String salesOrderNo = salesOrderData['salesOrderNo'];
       _orderControllers.orderNo.text = salesOrderNo;
       print('Sales Order Number: $salesOrderNo');
@@ -151,25 +167,33 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
 
     try {
       final response = await http.post(
-        Uri.parse('${AppConstants.BASE_URL}/orderBooking/InsertFinalsalesorder'),
+        Uri.parse(
+          '${AppConstants.BASE_URL}/orderBooking/InsertFinalsalesorder',
+        ),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
 
       if (response.statusCode == 200) {
         print('Success: ${response.body}');
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Order saved successfully')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Order saved successfully')));
         return response.statusCode.toString();
       } else {
         print('Error: ${response.statusCode}');
         print('Response Body: ${response.body}');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save order: ${response.statusCode}')),
+          SnackBar(
+            content: Text('Failed to save order: ${response.statusCode}'),
+          ),
         );
       }
     } catch (e) {
       print('Error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error saving order: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error saving order: $e')));
     }
     return "fail";
   }
@@ -210,10 +234,13 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
         quantities[styleKey]![shade] = {};
         for (var size in sizes) {
           final item = items.firstWhere(
-            (i) => (i['shadeName']?.toString() ?? '') == shade && (i['sizeName']?.toString() ?? '') == size,
+            (i) =>
+                (i['shadeName']?.toString() ?? '') == shade &&
+                (i['sizeName']?.toString() ?? '') == size,
             orElse: () => {'clqty': '0'},
           );
-          quantities[styleKey]![shade]![size] = int.tryParse(item['clqty']?.toString() ?? '0') ?? 0;
+          quantities[styleKey]![shade]![size] =
+              int.tryParse(item['clqty']?.toString() ?? '0') ?? 0;
         }
       }
     }
@@ -246,7 +273,9 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
 
   String calculateDueDate() {
     final paymentDays = _additionalInfo['paymentdays'];
-    if (paymentDays != null && paymentDays is String && int.tryParse(paymentDays) != null) {
+    if (paymentDays != null &&
+        paymentDays is String &&
+        int.tryParse(paymentDays) != null) {
       return calculateFutureDateFromString(paymentDays);
     }
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -270,21 +299,38 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
       "remark": _orderControllers.remark.text,
       "consignee": _additionalInfo['consignee'] ?? '',
       "station": _additionalInfo['station'] ?? '',
-      "paymentterms": _additionalInfo['paymentterms'] ?? _orderControllers.pytTermDiscKey ?? '',
-      "paymentdays": _additionalInfo['paymentdays'] ?? _orderControllers.creditPeriod?.toString() ?? '0',
+      "paymentterms":
+          _additionalInfo['paymentterms'] ??
+          _orderControllers.pytTermDiscKey ??
+          '',
+      "paymentdays":
+          _additionalInfo['paymentdays'] ??
+          _orderControllers.creditPeriod?.toString() ??
+          '0',
       "duedate": calculateDueDate(),
       "refno": _additionalInfo['refno'] ?? '',
       "date": '',
       "bookingtype": _additionalInfo['bookingtype'] ?? '',
-      "salesman": _additionalInfo['salesman'] ?? _orderControllers.salesPersonKey ?? '',
-      "items": _styleManager.groupedItems.entries.map((entry) {
-        return entry.value.map((item) {
-          return {
-            ...item,
-            'clqty': _styleManager.controllers[entry.key]?[item['shadeName']]?[item['sizeName']]?.text ?? '0',
-          };
-        }).toList();
-      }).toList().expand((i) => i).toList(),
+      "salesman":
+          _additionalInfo['salesman'] ?? _orderControllers.salesPersonKey ?? '',
+      "items":
+          _styleManager.groupedItems.entries
+              .map((entry) {
+                return entry.value.map((item) {
+                  return {
+                    ...item,
+                    'clqty':
+                        _styleManager
+                            .controllers[entry
+                                .key]?[item['shadeName']]?[item['sizeName']]
+                            ?.text ??
+                        '0',
+                  };
+                }).toList();
+              })
+              .toList()
+              .expand((i) => i)
+              .toList(),
     };
 
     final orderDataJson = jsonEncode(orderData);
@@ -296,43 +342,47 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
       if (statusCode == "200") {
         showDialog(
           context: context,
-          builder: (context) => AlertDialog(
-            title: Text('Order Saved'),
-            content: Text('Order ${_orderControllers.orderNo.text} saved successfully'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PdfViewerScreen(
-                        orderNo: _orderControllers.orderNo.text,
-                        whatsappNo: _orderControllers.whatsAppMobileNo,
-                      ),
-                    ),
-                  );
-                },
-                child: Text('View PDF'),
+          builder:
+              (context) => AlertDialog(
+                title: Text('Order Saved'),
+                content: Text(
+                  'Order ${_orderControllers.orderNo.text} saved successfully',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => PdfViewerScreen(
+                                orderNo: _orderControllers.orderNo.text,
+                                whatsappNo: _orderControllers.whatsAppMobileNo,
+                              ),
+                        ),
+                      );
+                    },
+                    child: Text('View PDF'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => HomeScreen()),
+                      );
+                    },
+                    child: Text('Done'),
+                  ),
+                ],
               ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => HomeScreen()),
-                  );
-                },
-                child: Text('Done'),
-              ),
-            ],
-          ),
         );
       }
     } catch (e) {
       print('Error during order saving: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving order: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error saving order: $e')));
     }
   }
 
@@ -347,7 +397,8 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
     });
 
     _orderControllers.totalQty.text = totalQty.toString();
-    _orderControllers.totalItem.text = _styleManager.groupedItems.length.toString();
+    _orderControllers.totalItem.text =
+        _styleManager.groupedItems.length.toString();
     setState(() {});
   }
 
@@ -365,35 +416,38 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
               padding: const EdgeInsets.all(16),
               child: Form(
                 key: _formKey,
-                child: _showForm
-                    ? _OrderForm(
-                        controllers: _orderControllers,
-                        dropdownData: _dropdownData,
-                        onPartySelected: _handlePartySelection,
-                        updateTotals: _updateTotals,
-                        saveOrder: _saveOrderLocally,
-                        additionalInfo: _additionalInfo,
-                        consignees: consignees,
-                        paymentTerms: paymentTerms,
-                        bookingTypes: _bookingTypes,
-                        onAdditionalInfoUpdated: (newInfo) {
-                          setState(() {
-                            _additionalInfo = newInfo;
-                          });
-                        },
-                      )
-                    : _StyleCardsView(
-                        styleManager: _styleManager,
-                        updateTotals: _updateTotals,
-                        getColor: _getColorCode,
-                        onUpdate: () async {
-                          await _styleManager.refreshOrderItems(barcode: barcodeMode);
-                          _initializeQuantitiesAndColors();
-                          _updateTotals();
-                        },
-                        quantities: quantities,
-                        selectedColors: selectedColors,
-                      ),
+                child:
+                    _showForm
+                        ? _OrderForm(
+                          controllers: _orderControllers,
+                          dropdownData: _dropdownData,
+                          onPartySelected: _handlePartySelection,
+                          updateTotals: _updateTotals,
+                          saveOrder: _saveOrderLocally,
+                          additionalInfo: _additionalInfo,
+                          consignees: consignees,
+                          paymentTerms: paymentTerms,
+                          bookingTypes: _bookingTypes,
+                          onAdditionalInfoUpdated: (newInfo) {
+                            setState(() {
+                              _additionalInfo = newInfo;
+                            });
+                          },
+                        )
+                        : _StyleCardsView(
+                          styleManager: _styleManager,
+                          updateTotals: _updateTotals,
+                          getColor: _getColorCode,
+                          onUpdate: () async {
+                            await _styleManager.refreshOrderItems(
+                              barcode: barcodeMode,
+                            );
+                            _initializeQuantitiesAndColors();
+                            _updateTotals();
+                          },
+                          quantities: quantities,
+                          selectedColors: selectedColors,
+                        ),
               ),
             ),
           ),
@@ -418,9 +472,10 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
                 },
                 child: Text('Transaction'),
                 style: TextButton.styleFrom(
-                  foregroundColor: _activeTab == ActiveTab.transaction
-                      ? AppColors.primaryColor
-                      : Colors.grey,
+                  foregroundColor:
+                      _activeTab == ActiveTab.transaction
+                          ? AppColors.primaryColor
+                          : Colors.grey,
                   padding: EdgeInsets.symmetric(vertical: 16),
                 ),
               ),
@@ -435,9 +490,10 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
                 },
                 child: Text('Customer Details'),
                 style: TextButton.styleFrom(
-                  foregroundColor: _activeTab == ActiveTab.customerDetails
-                      ? AppColors.primaryColor
-                      : Colors.grey,
+                  foregroundColor:
+                      _activeTab == ActiveTab.customerDetails
+                          ? AppColors.primaryColor
+                          : Colors.grey,
                   padding: EdgeInsets.symmetric(vertical: 16),
                 ),
               ),
@@ -449,7 +505,10 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
           color: Colors.grey[300],
           child: AnimatedAlign(
             duration: Duration(milliseconds: 300),
-            alignment: _activeTab == ActiveTab.transaction ? Alignment.centerLeft : Alignment.centerRight,
+            alignment:
+                _activeTab == ActiveTab.transaction
+                    ? Alignment.centerLeft
+                    : Alignment.centerRight,
             child: Container(
               width: MediaQuery.of(context).size.width / 2,
               height: 2,
@@ -496,12 +555,14 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (_activeTab == ActiveTab.customerDetails) Icon(Icons.arrow_back_ios, color: Colors.blue, size: 16),
+                if (_activeTab == ActiveTab.customerDetails)
+                  Icon(Icons.arrow_back_ios, color: Colors.blue, size: 16),
                 Text(
                   _activeTab == ActiveTab.transaction ? 'NEXT' : 'BACK',
                   style: TextStyle(color: Colors.blue),
                 ),
-                if (_activeTab == ActiveTab.transaction) Icon(Icons.arrow_forward_ios, color: Colors.blue, size: 16),
+                if (_activeTab == ActiveTab.transaction)
+                  Icon(Icons.arrow_forward_ios, color: Colors.blue, size: 16),
               ],
             ),
             style: TextButton.styleFrom(
@@ -515,7 +576,10 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
 
   AppBar _buildAppBar() {
     return AppBar(
-      title: const Text('View Order Barcode', style: TextStyle(color: Colors.white)),
+      title: const Text(
+        'View Order Barcode',
+        style: TextStyle(color: Colors.white),
+      ),
       backgroundColor: AppColors.primaryColor,
       elevation: 1,
       leading: IconButton(
@@ -553,7 +617,9 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
       });
     } catch (e) {
       print('Error fetching party details: $e');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load party details')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to load party details')));
     }
   }
 
@@ -667,7 +733,9 @@ class _DropdownData {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({"ledKey": ledKey}),
     );
-    return response.statusCode == 200 ? jsonDecode(response.body) : throw Exception('Failed to load details');
+    return response.statusCode == 200
+        ? jsonDecode(response.body)
+        : throw Exception('Failed to load details');
   }
 
   void updateDependentFields(
@@ -684,10 +752,12 @@ class _DropdownData {
     );
     return response.statusCode == 200
         ? (jsonDecode(response.body) as List)
-            .map((e) => {
-                  'ledKey': e['ledKey'].toString(),
-                  'ledName': e['ledName'].toString(),
-                })
+            .map(
+              (e) => {
+                'ledKey': e['ledKey'].toString(),
+                'ledName': e['ledName'].toString(),
+              },
+            )
             .toList()
         : throw Exception("Failed to load ledgers");
   }
@@ -705,7 +775,8 @@ class _DropdownData {
 class _StyleManager {
   List<dynamic> _orderItems = [];
   final Set<String> removedStyles = {};
-  final Map<String, Map<String, Map<String, TextEditingController>>> controllers = {};
+  final Map<String, Map<String, Map<String, TextEditingController>>>
+  controllers = {};
   VoidCallback? updateTotalsCallback;
   bool isOrderItemsLoaded = false;
 
@@ -760,8 +831,11 @@ class _StyleManager {
   void copyStyle(String styleKey) {
     final items = groupedItems[styleKey];
     if (items != null) {
-      final newStyleKey = "${styleKey}_${DateTime.now().millisecondsSinceEpoch}";
-      _orderItems.addAll(items.map((item) => {...item, 'styleCode': newStyleKey}));
+      final newStyleKey =
+          "${styleKey}_${DateTime.now().millisecondsSinceEpoch}";
+      _orderItems.addAll(
+        items.map((item) => {...item, 'styleCode': newStyleKey}),
+      );
       _initializeControllers();
       updateTotalsCallback?.call();
     }
@@ -785,7 +859,9 @@ class _StyleManager {
         controllers[entry.key]![shade] = {};
         for (final size in sizes) {
           final item = items.firstWhere(
-            (i) => (i['shadeName']?.toString() ?? '') == shade && (i['sizeName']?.toString() ?? '') == size,
+            (i) =>
+                (i['shadeName']?.toString() ?? '') == shade &&
+                (i['sizeName']?.toString() ?? '') == size,
             orElse: () => {'clqty': '0'},
           );
           final controller = TextEditingController(
@@ -798,7 +874,10 @@ class _StyleManager {
   }
 
   void _updateControllers() {
-    final currentControllers = Map<String, Map<String, Map<String, TextEditingController>>>.from(controllers);
+    final currentControllers =
+        Map<String, Map<String, Map<String, TextEditingController>>>.from(
+          controllers,
+        );
     controllers.clear();
     for (final entry in groupedItems.entries) {
       final items = entry.value;
@@ -810,12 +889,18 @@ class _StyleManager {
         controllers[entry.key]![shade] = {};
         for (final size in sizes) {
           final item = items.firstWhere(
-            (i) => (i['shadeName']?.toString() ?? '') == shade && (i['sizeName']?.toString() ?? '') == size,
+            (i) =>
+                (i['shadeName']?.toString() ?? '') == shade &&
+                (i['sizeName']?.toString() ?? '') == size,
             orElse: () => {'clqty': '0'},
           );
-          final existingController = currentControllers[entry.key]?[shade]?[size];
-          final controller = existingController ??
-              TextEditingController(text: item['clqty']?.toString() ?? '0')
+          final existingController =
+              currentControllers[entry.key]?[shade]?[size];
+          final controller =
+              existingController ??
+                    TextEditingController(
+                      text: item['clqty']?.toString() ?? '0',
+                    )
                 ..addListener(() => updateTotalsCallback?.call());
           controllers[entry.key]![shade]![size] = controller;
         }
@@ -857,32 +942,43 @@ class _StyleCardsView extends StatelessWidget {
       );
     } else {
       return Column(
-        children: styleManager.groupedItems.entries.map((entry) {
-          final catalogOrder = _convertToCatalogOrderData(entry.key, entry.value);
-          return StyleCard(
-            styleCode: entry.key,
-            items: entry.value,
-            catalogOrder: catalogOrder,
-            quantities: quantities[entry.key] ?? {},
-            selectedColors: selectedColors[entry.key] ?? {},
-            getColor: getColor,
-            onUpdate: onUpdate,
-            styleManager: styleManager,
-          );
-        }).toList(),
+        children:
+            styleManager.groupedItems.entries.map((entry) {
+              final catalogOrder = _convertToCatalogOrderData(
+                entry.key,
+                entry.value,
+              );
+              return StyleCard(
+                styleCode: entry.key,
+                items: entry.value,
+                catalogOrder: catalogOrder,
+                quantities: quantities[entry.key] ?? {},
+                selectedColors: selectedColors[entry.key] ?? {},
+                getColor: getColor,
+                onUpdate: onUpdate,
+                styleManager: styleManager,
+              );
+            }).toList(),
       );
     }
   }
 
-  CatalogOrderData _convertToCatalogOrderData(String styleKey, List<dynamic> items) {
-    final shades = items.map((i) => i['shadeName']?.toString() ?? '').toSet().toList();
-    final sizes = items.map((i) => i['sizeName']?.toString() ?? '').toSet().toList();
+  CatalogOrderData _convertToCatalogOrderData(
+    String styleKey,
+    List<dynamic> items,
+  ) {
+    final shades =
+        items.map((i) => i['shadeName']?.toString() ?? '').toSet().toList();
+    final sizes =
+        items.map((i) => i['sizeName']?.toString() ?? '').toSet().toList();
     final firstItem = items.first;
 
     final matrix = List.generate(shades.length, (shadeIndex) {
       return List.generate(sizes.length, (sizeIndex) {
         final item = items.firstWhere(
-          (i) => (i['shadeName']?.toString() ?? '') == shades[shadeIndex] && (i['sizeName']?.toString() ?? '') == sizes[sizeIndex],
+          (i) =>
+              (i['shadeName']?.toString() ?? '') == shades[shadeIndex] &&
+              (i['sizeName']?.toString() ?? '') == sizes[sizeIndex],
           orElse: () => {},
         );
         final mrp = item['mrp']?.toString() ?? '0';
@@ -910,12 +1006,19 @@ class _StyleCardsView extends StatelessWidget {
         wsp: double.tryParse(firstItem['wsp']?.toString() ?? '0') ?? 0.0,
         onlyMRP: double.tryParse(firstItem['mrp']?.toString() ?? '0') ?? 0.0,
         clqty: int.tryParse(firstItem['clqty']?.toString() ?? '0') ?? 0,
-        total: items.fold(0, (sum, i) => sum + (int.tryParse(i['clqty']?.toString() ?? '0') ?? 0)),
+        total: items.fold(
+          0,
+          (sum, i) => sum + (int.tryParse(i['clqty']?.toString() ?? '0') ?? 0),
+        ),
         fullImagePath: firstItem['imagePath']?.toString() ?? '/NoImage.jpg',
         remark: firstItem['remark']?.toString() ?? '',
         imageId: '',
-        sizeDetails: sizes.map((s) => '$s (${firstItem['mrp']},${firstItem['wsp']})').join(','),
-        sizeDetailsWithoutWSp: sizes.map((s) => '$s (${firstItem['mrp']})').join(','),
+        sizeDetails: sizes
+            .map((s) => '$s (${firstItem['mrp']},${firstItem['wsp']})')
+            .join(','),
+        sizeDetailsWithoutWSp: sizes
+            .map((s) => '$s (${firstItem['mrp']})')
+            .join(','),
         sizeWithMrp: sizes.map((s) => '$s (${firstItem['mrp']})').join(','),
         styleCodeWithcount: styleKey,
         onlySizes: sizes.join(','),
@@ -923,16 +1026,10 @@ class _StyleCardsView extends StatelessWidget {
         createdDate: '',
         shadeImages: '',
       ),
-      orderMatrix: OrderMatrix(
-        shades: shades,
-        sizes: sizes,
-        matrix: matrix,
-      ),
+      orderMatrix: OrderMatrix(shades: shades, sizes: sizes, matrix: matrix),
     );
   }
 }
-
-
 
 class StyleCard extends StatelessWidget {
   final String styleCode;
@@ -955,7 +1052,7 @@ class StyleCard extends StatelessWidget {
     required this.onUpdate,
     required this.styleManager,
   }) : super(key: key);
-Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
+  Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
     final catalog = catalogOrder.catalog;
 
     return Column(
@@ -978,16 +1075,18 @@ Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
                     aspectRatio: 3 / 4,
                     child: GestureDetector(
                       onDoubleTap: () {
-                        final imageUrl = catalog.fullImagePath.contains("http")
-                            ? catalog.fullImagePath
-                            : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}';
+                        final imageUrl =
+                            catalog.fullImagePath.contains("http")
+                                ? catalog.fullImagePath
+                                : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}';
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ImageZoomScreen(
-                              imageUrls: [imageUrl],
-                              initialIndex: 0,
-                            ),
+                            builder:
+                                (context) => ImageZoomScreen(
+                                  imageUrls: [imageUrl],
+                                  initialIndex: 0,
+                                ),
                           ),
                         );
                       },
@@ -996,7 +1095,9 @@ Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
                             ? catalog.fullImagePath
                             : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}',
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.error, size: 60),
+                        errorBuilder:
+                            (context, error, stackTrace) =>
+                                const Icon(Icons.error, size: 60),
                       ),
                     ),
                   ),
@@ -1024,8 +1125,9 @@ Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
                         IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () {
-                            styleManager.removeStyle(styleCode);
-                            onUpdate();
+                            _submitDelete(context);
+                            //styleManager.removeStyle(styleCode);
+                            //onUpdate();
                           },
                           tooltip: 'Delete Style',
                         ),
@@ -1051,7 +1153,7 @@ Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
                         //   'Remark',
                         //   catalog.remark.isNotEmpty ? catalog.remark : 'N/A',
                         // ),
-                            _buildTableRow('Remark', 'Upcomming'),
+                        _buildTableRow('Remark', 'Upcomming'),
                         _buildTableRow('Stk Type', 'Ready'),
                         _buildTableRow(
                           'Stock Qty',
@@ -1081,15 +1183,44 @@ Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
           (color) => Column(
             children: [
               _buildColorSection(catalogOrder, color),
+              const SizedBox(height: 8),
+                            Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      _submitUpdate(context);
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.blue, // button background color
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24.0,
+                        vertical: 12.0,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                    child: const Text(
+                      'Update',
+                      style: TextStyle(
+                        color: Colors.white, // text color
+                        fontSize: 16.0,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 15),
             ],
           ),
         ),
       ],
     );
-}
+  }
 
-TableRow _buildTableRow(String label, String value, {Color? valueColor}) {
+  TableRow _buildTableRow(String label, String value, {Color? valueColor}) {
     return TableRow(
       children: [
         Align(
@@ -1113,8 +1244,8 @@ TableRow _buildTableRow(String label, String value, {Color? valueColor}) {
         ),
       ],
     );
-}
- 
+  }
+
   int _calculateCatalogQuantity() {
     int total = 0;
     quantities.forEach((shade, sizes) {
@@ -1131,7 +1262,8 @@ TableRow _buildTableRow(String label, String value, {Color? valueColor}) {
     for (var shadeIndex = 0; shadeIndex < matrix.shades.length; shadeIndex++) {
       for (var sizeIndex = 0; sizeIndex < matrix.sizes.length; sizeIndex++) {
         final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
-        final stock = int.tryParse(matrixData.length > 2 ? matrixData[2] : '0') ?? 0;
+        final stock =
+            int.tryParse(matrixData.length > 2 ? matrixData[2] : '0') ?? 0;
         total += stock;
       }
     }
@@ -1147,7 +1279,11 @@ TableRow _buildTableRow(String label, String value, {Color? valueColor}) {
       for (var size in quantities[shade]!.keys) {
         final sizeIndex = matrix.sizes.indexOf(size.trim());
         if (sizeIndex == -1) continue;
-        final rate = double.tryParse(matrix.matrix[shadeIndex][sizeIndex].split(',')[0]) ?? 0;
+        final rate =
+            double.tryParse(
+              matrix.matrix[shadeIndex][sizeIndex].split(',')[0],
+            ) ??
+            0;
         final quantity = quantities[shade]![size]!;
         total += rate * quantity;
       }
@@ -1209,25 +1345,29 @@ TableRow _buildTableRow(String label, String value, {Color? valueColor}) {
   }
 
   Widget _buildHeader(String text, int flex) => Expanded(
-        flex: flex,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          decoration: BoxDecoration(
-            border: Border(right: BorderSide(color: Colors.grey.shade300)),
-          ),
-          child: Text(
-            text,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.lora(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-              color: Colors.red.shade900,
-            ),
-          ),
+    flex: flex,
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      decoration: BoxDecoration(
+        border: Border(right: BorderSide(color: Colors.grey.shade300)),
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: GoogleFonts.lora(
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+          color: Colors.red.shade900,
         ),
-      );
+      ),
+    ),
+  );
 
-  Widget _buildSizeRow(CatalogOrderData catalogOrder, String shade, String size) {
+  Widget _buildSizeRow(
+    CatalogOrderData catalogOrder,
+    String shade,
+    String size,
+  ) {
     final matrix = catalogOrder.orderMatrix;
     final shadeIndex = matrix.shades.indexOf(shade.trim());
     final sizeIndex = matrix.sizes.indexOf(size.trim());
@@ -1259,19 +1399,19 @@ TableRow _buildTableRow(String label, String value, {Color? valueColor}) {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                IconButton(
-                  onPressed: () {
-                    final newQuantity = quantity > 0 ? quantity - 1 : 0;
-                    if (quantities[shade] != null) {
-                      quantities[shade]![size] = newQuantity;
-                      controller?.text = newQuantity.toString();
-                      onUpdate();
-                    }
-                  },
-                  icon: const Icon(Icons.remove, size: 20),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
+                // IconButton(
+                //   onPressed: () {
+                //     final newQuantity = quantity > 0 ? quantity - 1 : 0;
+                //     if (quantities[shade] != null) {
+                //       quantities[shade]![size] = newQuantity;
+                //       controller?.text = newQuantity.toString();
+                //       onUpdate();
+                //     }
+                //   },
+                //   icon: const Icon(Icons.remove, size: 20),
+                //   padding: EdgeInsets.zero,
+                //   constraints: const BoxConstraints(),
+                // ),
                 SizedBox(
                   width: 22,
                   child: TextField(
@@ -1293,27 +1433,31 @@ TableRow _buildTableRow(String label, String value, {Color? valueColor}) {
                       LengthLimitingTextInputFormatter(4),
                     ],
                     onChanged: (value) {
-                      final newQuantity = int.tryParse(value.isEmpty ? '0' : value) ?? 0;
+                      final newQuantity =
+                          int.tryParse(value.isEmpty ? '0' : value) ?? 0;
                       if (quantities[shade] != null) {
                         quantities[shade]![size] = newQuantity;
-                        onUpdate();
+                       // onUpdate();
+                      //  setState(() {
+                        
+                      //  });
                       }
                     },
                   ),
                 ),
-                IconButton(
-                  onPressed: () {
-                    final newQuantity = quantity + 1;
-                    if (quantities[shade] != null) {
-                      quantities[shade]![size] = newQuantity;
-                      controller?.text = newQuantity.toString();
-                      onUpdate();
-                    }
-                  },
-                  icon: const Icon(Icons.add, size: 20),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
+                // IconButton(
+                //   onPressed: () {
+                //     final newQuantity = quantity + 1;
+                //     if (quantities[shade] != null) {
+                //       quantities[shade]![size] = newQuantity;
+                //       controller?.text = newQuantity.toString();
+                //       onUpdate();
+                //     }
+                //   },
+                //   icon: const Icon(Icons.add, size: 20),
+                //   padding: EdgeInsets.zero,
+                //   constraints: const BoxConstraints(),
+                // ),
               ],
             ),
           ),
@@ -1326,23 +1470,242 @@ TableRow _buildTableRow(String label, String value, {Color? valueColor}) {
   }
 
   Widget _buildCell(String text, int flex) => Expanded(
-        flex: flex,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          decoration: BoxDecoration(
-            border: Border(right: BorderSide(color: Colors.grey.shade300)),
-          ),
-          child: Text(
-            text,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.roboto(fontSize: 14),
-          ),
-        ),
-      );
+    flex: flex,
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      decoration: BoxDecoration(
+        border: Border(right: BorderSide(color: Colors.grey.shade300)),
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: GoogleFonts.roboto(fontSize: 14),
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
     return buildOrderItem(catalogOrder, context);
+  }
+
+  Future<void> _submitDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Confirm Deletion"),
+          content: const Text("Are you sure you want to delete this style?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Delete", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    String sCode = styleCode;
+    String bCode = "";
+    if (sCode.contains('---')) {
+      List<String> parts = styleCode.split('---');
+      sCode = parts[0];
+      bCode = parts[1];
+    }
+
+    final payload = {
+      "userId": UserSession.userName ?? '',
+      "coBrId": UserSession.coBrId ?? '',
+      "fcYrId": UserSession.userFcYr ?? '',
+      "data": {
+        "designcode": sCode,
+        "mrp": '0',
+        "WSP": '0',
+        "size": '',
+        "TotQty": '0',
+        "Note": '',
+        "color": "",
+        "Qty": "",
+        "cobrid": UserSession.coBrId ?? '',
+        "user": "admin",
+        "barcode": bCode,
+      },
+      "typ": 2,
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(
+          '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+
+      if (response.statusCode == 200) {
+        styleManager.removeStyle(styleCode);
+        onUpdate();
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Style deleted successfully')));
+      } else {
+        _showErrorDialog(
+          context,
+          "Failed to delete style: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      _showErrorDialog(context, "Error deleting style: $e");
+    }
+  }
+
+  void _showErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Error"),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  
+  Future<void> _submitUpdate(BuildContext context) async {
+    // Calculate total quantity
+    int totalQty = _calculateCatalogQuantity();
+    if (totalQty <= 0) {
+      _showErrorDialog(context, "Total quantity must be greater than zero.");
+      return;
+    }
+
+    // Split style code and barcode
+    String sCode = styleCode;
+    String bCode = "";
+    if (sCode.contains('---')) {
+      final parts = styleCode.split('---');
+      sCode = parts[0];
+      bCode = parts.length > 1 ? parts[1] : "";
+    }
+
+    // Prepare initial payload (typ: 1)
+    final initialPayload = {
+      "userId": UserSession.userName ?? '',
+      "coBrId": UserSession.coBrId ?? '',
+      "fcYrId": UserSession.userFcYr ?? '',
+      "data": {
+        "designcode": sCode,
+        "mrp": catalogOrder.catalog.mrp.toString(),
+        "WSP": catalogOrder.catalog.wsp.toString(),
+        "size": catalogOrder.catalog.sizeName,
+        "TotQty": totalQty.toString(),
+        "Note": catalogOrder.catalog.remark,
+        "color": catalogOrder.catalog.shadeName,
+        "cobrid": UserSession.coBrId ?? '',
+        "user": "admin",
+        "barcode": bCode,
+      },
+      "typ": 1,
+    };
+
+    try {
+      // Send initial request (typ: 1)
+      final initialResponse = await http.post(
+        Uri.parse(
+          '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(initialPayload),
+      );
+
+      if (initialResponse.statusCode != 200) {
+        _showErrorDialog(
+          context,
+          "Failed to update style (initial request): ${initialResponse.statusCode} - ${initialResponse.body}",
+        );
+        return;
+      }
+      
+      // Process shade/size quantities (typ: 0)
+      if (quantities.isNotEmpty) {
+
+        final shadeMap = quantities;
+        bool allSuccessful = true;
+
+        for (final shade in shadeMap.keys) {
+          final sizeMap = shadeMap[shade]!;
+          for (final size in sizeMap.keys) {
+            final qty = sizeMap[size]!;
+            if (qty <= 0) continue; // Skip zero quantities
+
+            final payload = {
+              "userId": UserSession.userName ?? '',
+              "coBrId": UserSession.coBrId ?? '',
+              "fcYrId": UserSession.userFcYr ?? '',
+              "data": {
+                "designcode": sCode,
+                "mrp": catalogOrder.catalog.mrp.toString(),
+                "WSP": catalogOrder.catalog.wsp.toString(),
+                "size": size,
+                "TotQty": qty.toString(), // Use individual qty for TotQty
+                "Note": catalogOrder.catalog.remark,
+                "color": shade,
+                "Qty": qty.toString(),
+                "cobrid": UserSession.coBrId ?? '',
+                "user": "admin",
+                "barcode": bCode,
+              },
+              "typ": 0,
+            };
+
+            final response = await http.post(
+              Uri.parse(
+                '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
+              ),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode(payload),
+            );
+
+            if (response.statusCode != 200) {
+              allSuccessful = false;
+              print(
+                'Failed to update shade: $shade, size: $size, status: ${response.statusCode}, body: ${response.body}',
+              );
+            }
+          }
+        }
+
+        if (allSuccessful) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Style updated successfully')),
+          );
+          onUpdate();
+        } else {
+          _showErrorDialog(
+            context,
+            "Some shade/size updates failed. Check logs for details.",
+          );
+        }
+      } else {
+        _showErrorDialog(context, "No quantities found for style: $styleCode");
+      }
+    } catch (e) {
+      print('Error updating style: $e');
+      _showErrorDialog(context, "Error updating style: $e");
+    }
   }
 }
 
@@ -1367,12 +1730,14 @@ class ImageZoomScreen extends StatelessWidget {
         child: Image.network(
           imageUrls[initialIndex],
           fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) => const Icon(Icons.error, size: 60),
+          errorBuilder:
+              (context, error, stackTrace) => const Icon(Icons.error, size: 60),
         ),
       ),
     );
   }
 }
+
 class _OrderForm extends StatefulWidget {
   final _OrderControllers controllers;
   final _DropdownData dropdownData;
@@ -1406,7 +1771,8 @@ class _OrderFormState extends State<_OrderForm> {
   @override
   void initState() {
     super.initState();
-    if (UserSession.userType == 'C' && widget.controllers.selectedParty == null) {
+    if (UserSession.userType == 'C' &&
+        widget.controllers.selectedParty == null) {
       final party = widget.dropdownData.partyList.firstWhere(
         (e) => e['ledKey'] == UserSession.userLedKey,
         orElse: () => {'ledKey': '', 'ledName': ''},
@@ -1425,7 +1791,8 @@ class _OrderFormState extends State<_OrderForm> {
         });
       }
     }
-    if (UserSession.userType == 'S' && widget.controllers.salesPersonKey == null) {
+    if (UserSession.userType == 'S' &&
+        widget.controllers.salesPersonKey == null) {
       final salesman = widget.dropdownData.salesPersonList.firstWhere(
         (e) => e['ledKey'] == UserSession.userLedKey,
         orElse: () => {'ledKey': '', 'ledName': ''},
@@ -1471,7 +1838,8 @@ class _OrderFormState extends State<_OrderForm> {
           (val, key) async {
             widget.controllers.selectedBrokerKey = key;
             if (key != null) {
-              final commission = await widget.dropdownData.fetchCommissionPercentage(key);
+              final commission = await widget.dropdownData
+                  .fetchCommissionPercentage(key);
               widget.controllers.comm.text = commission;
             }
           },
@@ -1507,7 +1875,10 @@ class _OrderFormState extends State<_OrderForm> {
               );
               if (picked != null) {
                 final difference = picked.difference(today).inDays;
-                widget.controllers.deliveryDate.text = _OrderControllers.formatDate(picked);
+                widget
+                    .controllers
+                    .deliveryDate
+                    .text = _OrderControllers.formatDate(picked);
                 widget.controllers.deliveryDays.text = difference.toString();
               }
             },
@@ -1535,19 +1906,23 @@ class _OrderFormState extends State<_OrderForm> {
               child: ElevatedButton(
                 onPressed: () async {
                   if (UserSession.userType == 'S' &&
-                      (widget.controllers.selectedPartyKey == null || widget.controllers.selectedPartyKey!.isEmpty)) {
+                      (widget.controllers.selectedPartyKey == null ||
+                          widget.controllers.selectedPartyKey!.isEmpty)) {
                     showDialog(
                       context: context,
-                      builder: (context) => AlertDialog(
-                        title: Text('Party Selection Required'),
-                        content: Text('Please select a party before adding more information.'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: Text('OK'),
+                      builder:
+                          (context) => AlertDialog(
+                            title: Text('Party Selection Required'),
+                            content: Text(
+                              'Please select a party before adding more information.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: Text('OK'),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
                     );
                     return;
                   }
@@ -1555,23 +1930,25 @@ class _OrderFormState extends State<_OrderForm> {
                   final partyLedKey = widget.controllers.selectedPartyKey;
                   final result = await showDialog(
                     context: context,
-                    builder: (context) => AddMoreInfoDialog(
-                      salesPersonList: salesPersonList,
-                      partyLedKey: partyLedKey,
-                      pytTermDiscKey: widget.controllers.pytTermDiscKey,
-                      salesPersonKey: widget.controllers.salesPersonKey,
-                      creditPeriod: widget.controllers.creditPeriod,
-                      salesLedKey: widget.controllers.salesLedKey,
-                      ledgerName: widget.controllers.ledgerName,
-                      additionalInfo: widget.additionalInfo,
-                      consignees: widget.consignees,
-                      paymentTerms: widget.paymentTerms,
-                      bookingTypes: widget.bookingTypes,
-                      onValueChanged: (newInfo) {
-                        widget.onAdditionalInfoUpdated(newInfo);
-                      },
-                      isSalesmanDropdownEnabled: UserSession.userType != 'S',
-                    ),
+                    builder:
+                        (context) => AddMoreInfoDialog(
+                          salesPersonList: salesPersonList,
+                          partyLedKey: partyLedKey,
+                          pytTermDiscKey: widget.controllers.pytTermDiscKey,
+                          salesPersonKey: widget.controllers.salesPersonKey,
+                          creditPeriod: widget.controllers.creditPeriod,
+                          salesLedKey: widget.controllers.salesLedKey,
+                          ledgerName: widget.controllers.ledgerName,
+                          additionalInfo: widget.additionalInfo,
+                          consignees: widget.consignees,
+                          paymentTerms: widget.paymentTerms,
+                          bookingTypes: widget.bookingTypes,
+                          onValueChanged: (newInfo) {
+                            widget.onAdditionalInfoUpdated(newInfo);
+                          },
+                          isSalesmanDropdownEnabled:
+                              UserSession.userType != 'S',
+                        ),
                   );
                   if (result != null) {
                     widget.onAdditionalInfoUpdated(result);
@@ -1621,9 +1998,10 @@ class _OrderFormState extends State<_OrderForm> {
         ),
         const SizedBox(width: 8),
         ElevatedButton(
-          onPressed: UserSession.userType == 'C'
-              ? null
-              : () => showDialog(
+          onPressed:
+              UserSession.userType == 'C'
+                  ? null
+                  : () => showDialog(
                     context: context,
                     builder: (_) => CustomerMasterDialog(),
                   ),
@@ -1671,7 +2049,10 @@ class _OrderFormState extends State<_OrderForm> {
             style: const TextStyle(fontSize: 16),
           );
         },
-        onChanged: isEnabled ? (val) => onChanged(val, _getKeyFromValue(ledCat, val)) : null,
+        onChanged:
+            isEnabled
+                ? (val) => onChanged(val, _getKeyFromValue(ledCat, val))
+                : null,
         enabled: isEnabled,
       ),
     );
@@ -1717,12 +2098,12 @@ class _OrderFormState extends State<_OrderForm> {
     final isWideScreen = MediaQuery.of(context).size.width > 600;
     return isWideScreen
         ? Row(
-            children: [
-              Expanded(child: first),
-              const SizedBox(width: 10),
-              Expanded(child: second),
-            ],
-          )
+          children: [
+            Expanded(child: first),
+            const SizedBox(width: 10),
+            Expanded(child: second),
+          ],
+        )
         : Column(children: [first, second]);
   }
 }
@@ -1774,12 +2155,7 @@ Widget buildFullField(
 ) {
   return Padding(
     padding: const EdgeInsets.only(top: 12),
-    child: buildTextField(
-      context,
-      label,
-      controller,
-      isText: isText ?? false,
-    ),
+    child: buildTextField(context, label, controller, isText: isText ?? false),
   );
 }
 
@@ -1831,16 +2207,27 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
   @override
   void initState() {
     super.initState();
-    _refNoController = TextEditingController(text: widget.additionalInfo['refno'] ?? '');
-    _stationController = TextEditingController(text: widget.additionalInfo['station'] ?? '');
-    _paymentDaysController = TextEditingController(text: widget.additionalInfo['paymentdays'] ?? '');
-    _selectedSalesman = widget.salesPersonList.firstWhere(
-      (e) => e['ledKey'] == (widget.additionalInfo['salesman'] ?? widget.salesPersonKey),
-      orElse: () => {'ledName': ''},
-    )['ledName'];
-    _selectedSalesmanKey = widget.additionalInfo['salesman'] ?? widget.salesPersonKey;
+    _refNoController = TextEditingController(
+      text: widget.additionalInfo['refno'] ?? '',
+    );
+    _stationController = TextEditingController(
+      text: widget.additionalInfo['station'] ?? '',
+    );
+    _paymentDaysController = TextEditingController(
+      text: widget.additionalInfo['paymentdays'] ?? '',
+    );
+    _selectedSalesman =
+        widget.salesPersonList.firstWhere(
+          (e) =>
+              e['ledKey'] ==
+              (widget.additionalInfo['salesman'] ?? widget.salesPersonKey),
+          orElse: () => {'ledName': ''},
+        )['ledName'];
+    _selectedSalesmanKey =
+        widget.additionalInfo['salesman'] ?? widget.salesPersonKey;
     _selectedConsignee = widget.additionalInfo['consignee'];
-    _selectedPaymentTerm = widget.additionalInfo['paymentterms'] ?? widget.pytTermDiscKey;
+    _selectedPaymentTerm =
+        widget.additionalInfo['paymentterms'] ?? widget.pytTermDiscKey;
     _selectedBookingType = widget.additionalInfo['bookingtype'];
   }
 
@@ -1870,17 +2257,19 @@ class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
                   border: OutlineInputBorder(),
                 ),
               ),
-              onChanged: widget.isSalesmanDropdownEnabled
-                  ? (val) {
-                      setState(() {
-                        _selectedSalesman = val;
-                        _selectedSalesmanKey = widget.salesPersonList.firstWhere(
-                          (e) => e['ledName'] == val,
-                          orElse: () => {'ledKey': ''},
-                        )['ledKey'];
-                      });
-                    }
-                  : null,
+              onChanged:
+                  widget.isSalesmanDropdownEnabled
+                      ? (val) {
+                        setState(() {
+                          _selectedSalesman = val;
+                          _selectedSalesmanKey =
+                              widget.salesPersonList.firstWhere(
+                                (e) => e['ledName'] == val,
+                                orElse: () => {'ledKey': ''},
+                              )['ledKey'];
+                        });
+                      }
+                      : null,
               enabled: widget.isSalesmanDropdownEnabled,
             ),
             SizedBox(height: 10),
