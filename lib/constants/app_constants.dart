@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppConstants {
-  static String? BASE_URL = "http://192.168.0.7:8080/api/v1";
+  static String? BASE_URL = "http://192.168.0.10:8080/api/v1";
 // static const String BASE_URL = "https://vrserp.com/vrs_erp/api/v1";
   static const String whatsappKey= "cbDjhhibDuKvsGbVqM";
   static const String Pdf_url = "http://pdferp.uniretailsoftware.com";
