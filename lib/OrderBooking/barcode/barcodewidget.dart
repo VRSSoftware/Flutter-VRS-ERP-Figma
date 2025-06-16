@@ -207,8 +207,6 @@ import 'package:flutter/material.dart';
 import 'package:vrs_erp_figma/OrderBooking/barcode/barcode_scanner.dart';
 import 'package:vrs_erp_figma/OrderBooking/barcode/bookonBarcode2.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
-import 'package:vrs_erp_figma/OrderBooking/barcode/bookOnBarcode.dart';
-import 'package:vrs_erp_figma/services/app_services.dart';
 
 class BarcodeWiseWidget extends StatefulWidget {
   final ValueChanged<String> onFilterPressed;
@@ -232,7 +230,21 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
     'Shades': true,
     'StyleCode': true,
   };
-  String? _currentBarcode;
+
+  @override
+  void initState() {
+    super.initState();
+    // Convert input to uppercase
+    _barcodeController.addListener(() {
+      final text = _barcodeController.text.toUpperCase();
+      if (_barcodeController.text != text) {
+        _barcodeController.value = _barcodeController.value.copyWith(
+          text: text,
+          selection: TextSelection.collapsed(offset: text.length),
+        );
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -281,23 +293,57 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
 
     if (barcode != null && barcode.isNotEmpty) {
       setState(() {
-        _barcodeController.text = barcode;
-        _currentBarcode = barcode;
+        _barcodeController.text = barcode.toUpperCase();
       });
     }
   }
 
-  void _showBookingScreen(String barcode) {
-    setState(() {
-      _currentBarcode = barcode;
-    });
+void _validateAndNavigate(String barcode) {
+  if (barcode.isEmpty) {
+    _showAlertDialog(context, 'Missing Barcode', 'Please enter or scan a barcode first.');
+    return;
   }
 
-  void _clearBookingScreen() {
-    setState(() {
-      _currentBarcode = null;
-      _barcodeController.clear();
-    });
+  String upperBarcode = barcode.toUpperCase();
+  print("Checking barcode: $upperBarcode, addedItems: $addedItems");
+  if (addedItems.contains(upperBarcode)) {
+    print("Duplicate barcode found: $upperBarcode");
+    _showAlertDialog(context, 'Already Added', 'This barcode is already added in view cart.');
+    return;
+  }
+
+  print("Navigating to BookOnBarcode2 with barcode: $upperBarcode");
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => BookOnBarcode2(
+        barcode: upperBarcode,
+        onSuccess: () {
+          setState(() {
+            addedItems.add(upperBarcode);
+            print("Added barcode: $upperBarcode, addedItems: $addedItems");
+            _barcodeController.clear();
+          });
+          Navigator.pop(context);
+        },
+      ),
+    ),
+  );
+}
+  void _showAlertDialog(BuildContext context, String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -347,48 +393,25 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryColor,
-                minimumSize: const Size(80, 40),
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(0),
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
+            child: Center(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                  minimumSize: const Size(80, 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(0),
+                  ),
                 ),
+                onPressed: () {
+                  _validateAndNavigate(_barcodeController.text.trim());
+                },
+                child: const Text("Search", style: TextStyle(color: Colors.white)),
               ),
-              onPressed: () {
-                final barcode = _barcodeController.text.trim();
-                if (barcode.isEmpty) {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text("Missing Barcode"),
-                      content: const Text("Please enter or scan a barcode first"),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text("OK"),
-                        ),
-                      ],
-                    ),
-                  );
-                } else {
-                  _showBookingScreen(barcode);
-                }
-              },
-              child: const Text("Search", style: TextStyle(color: Colors.white)),
             ),
           ),
-          const SizedBox(height: 12), // Added vertical space
-          if (_currentBarcode != null)
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.6, // Constrain height
-              child: BookOnBarcode2(
-                barcode: _currentBarcode!,
-                onSuccess: _clearBookingScreen,
-              ),
-            ),
+          // Only show results if _barcodeResults is not empty
           if (_barcodeResults.isNotEmpty) ...[
             const Padding(
               padding: EdgeInsets.all(12.0),

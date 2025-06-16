@@ -312,21 +312,39 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     );
   }
 
-  void _updateTotals() {
-    int totalQty = 0;
-    _styleManager.controllers.forEach((style, shades) {
-      shades.forEach((shade, sizes) {
-        sizes.forEach((size, controller) {
-          totalQty += int.tryParse(controller.text) ?? 0;
-        });
+void _updateTotals() {
+  int totalQty = 0;
+  double totalAmt = 0.0; // Use double for currency
+
+  _styleManager.controllers.forEach((style, shades) {
+    final itemsForStyle = _styleManager.groupedItems[style] ?? [];
+    
+    shades.forEach((shade, sizes) {
+      sizes.forEach((size, controller) {
+        final qty = int.tryParse(controller.text) ?? 0;
+        totalQty += qty;
+
+        // Find the item to get MRP
+        final item = itemsForStyle.firstWhere(
+          (item) => 
+            (item['shadeName']?.toString() ?? '') == shade &&
+            (item['sizeName']?.toString() ?? '') == size,
+          orElse: () => {},
+        );
+        
+        if (item.isNotEmpty) {
+          final mrp = (item['mrp'] as num?)?.toDouble() ?? 0.0;
+          totalAmt += qty * mrp;
+        }
       });
     });
+  });
 
-    _orderControllers.totalQty.text = totalQty.toString();
-    _orderControllers.totalItem.text = _styleManager.groupedItems.length.toString();
-    setState(() {});
-  }
-
+  _orderControllers.totalQty.text = totalQty.toString();
+  _orderControllers.totalItem.text = _styleManager.groupedItems.length.toString();
+  _orderControllers.totalAmt.text = totalAmt.toStringAsFixed(2); // Format to 2 decimal places
+  setState(() {});
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -571,6 +589,7 @@ class _OrderControllers {
   final remark = TextEditingController();
   final totalItem = TextEditingController(text: '0');
   final totalQty = TextEditingController(text: '0');
+  final totalAmt=TextEditingController(text: '0');
 
   String? selectedParty;
   String? selectedPartyKey;
@@ -847,7 +866,7 @@ class _NavigationControls extends StatelessWidget {
         backgroundColor: AppColors.paleYellow,
         foregroundColor: AppColors.primaryColor,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
       ),
     );
   }
@@ -1045,22 +1064,29 @@ class _OrderFormState extends State<_OrderForm> {
             },
           ),
         ),
-        buildFullField(context, "Remark", widget.controllers.remark, true),
-        _buildResponsiveRow(
-          context,
-          buildTextField(
-            context,
-            "Total Item",
-            widget.controllers.totalItem,
-            readOnly: true,
-          ),
-          buildTextField(
-            context,
-            "Total Quantity",
-            widget.controllers.totalQty,
-            readOnly: true,
-          ),
-        ),
+      buildFullField(context, "Remark", widget.controllers.remark, true),
+_buildResponsiveRow(
+  context,
+  buildTextField(
+    context,
+    "Total Item",
+    widget.controllers.totalItem,
+    readOnly: true,
+  ),
+  buildTextField(
+    context,
+    "Total Quantity",
+    widget.controllers.totalQty,
+    readOnly: true,
+  ),
+),
+// Add Total Amount field below the row
+buildTextField(
+  context,
+  "Total Amount (₹)",
+  widget.controllers.totalAmt,
+  readOnly: true,
+),
         Row(
           children: [
             Expanded(
