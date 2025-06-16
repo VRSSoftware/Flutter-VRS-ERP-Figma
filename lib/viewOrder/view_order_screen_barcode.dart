@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -931,6 +932,8 @@ class _StyleCardsView extends StatelessWidget {
   }
 }
 
+
+
 class StyleCard extends StatelessWidget {
   final String styleCode;
   final List<dynamic> items;
@@ -952,40 +955,42 @@ class StyleCard extends StatelessWidget {
     required this.onUpdate,
     required this.styleManager,
   }) : super(key: key);
-
-  Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
+Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
     final catalog = catalogOrder.catalog;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+          padding: const EdgeInsets.symmetric(horizontal: 12.0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 30% Image
-              Flexible(
-                flex: 3,
-                child: GestureDetector(
-                  onDoubleTap: () {
-                    final imageUrl = catalog.fullImagePath.contains("http")
-                        ? catalog.fullImagePath
-                        : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}';
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ImageZoomScreen(
-                          imageUrls: [imageUrl],
-                          initialIndex: 0,
-                        ),
-                      ),
-                    );
-                  },
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(0),
-                    child: AspectRatio(
-                      aspectRatio: 3 / 4,
+              Container(
+                height: 160,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(4.0),
+                ),
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.3,
+                  child: AspectRatio(
+                    aspectRatio: 3 / 4,
+                    child: GestureDetector(
+                      onDoubleTap: () {
+                        final imageUrl = catalog.fullImagePath.contains("http")
+                            ? catalog.fullImagePath
+                            : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}';
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ImageZoomScreen(
+                              imageUrls: [imageUrl],
+                              initialIndex: 0,
+                            ),
+                          ),
+                        );
+                      },
                       child: Image.network(
                         catalog.fullImagePath.contains("http")
                             ? catalog.fullImagePath
@@ -998,80 +1003,70 @@ class StyleCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              // 70% Data Section
-              Flexible(
-                flex: 7,
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
+                        Align(
+                          alignment: Alignment.topLeft,
                           child: Text(
                             catalog.styleCode,
                             style: GoogleFonts.poppins(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
-                              color: Colors.blue,
+                              color: Colors.red.shade900,
                             ),
                           ),
                         ),
-                        Row(
-                          children: [
-                           
-                            IconButton(
-                              icon: Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {
-                                styleManager.removeStyle(styleCode);
-                                onUpdate();
-                              },
-                              tooltip: 'Delete Style',
-                            ),
-                          ],
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            styleManager.removeStyle(styleCode);
+                            onUpdate();
+                          },
+                          tooltip: 'Delete Style',
                         ),
                       ],
                     ),
                     Text(
-                      'Shade: ${catalog.shadeName}',
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.roboto(fontSize: 14),
+                      catalog.shadeName,
+                      style: GoogleFonts.roboto(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.blue.shade900,
+                      ),
                     ),
-                    Text(
-                      'Remark: ${catalog.remark.isNotEmpty ? catalog.remark : 'N/A'}',
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.roboto(fontSize: 14),
-                    ),
-                    Text(
-                      'Stk Type: Ready',
-                      style: GoogleFonts.roboto(fontSize: 14),
-                    ),
-                    Row(
+                    Table(
+                      columnWidths: const {
+                        0: FixedColumnWidth(100),
+                        1: FixedColumnWidth(10),
+                        2: FlexColumnWidth(100),
+                      },
+                      defaultVerticalAlignment: TableCellVerticalAlignment.top,
                       children: [
-                        Text(
-                          'Stock Qty: ',
-                          style: GoogleFonts.roboto(fontSize: 14),
+                        // _buildTableRow(
+                        //   'Remark',
+                        //   catalog.remark.isNotEmpty ? catalog.remark : 'N/A',
+                        // ),
+                            _buildTableRow('Remark', 'Upcomming'),
+                        _buildTableRow('Stk Type', 'Ready'),
+                        _buildTableRow(
+                          'Stock Qty',
+                          _calculateStockQuantity().toString(),
+                          valueColor: Colors.green[700],
                         ),
-                        Text(
+                        _buildTableRow(
+                          'Order Qty',
                           _calculateCatalogQuantity().toString(),
-                          style: GoogleFonts.roboto(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green[700],
-                          ),
+                          valueColor: Colors.orange[800],
                         ),
-                        const SizedBox(width: 16),
-                        Text(
-                          'Order Qty: ',
-                          style: GoogleFonts.roboto(fontSize: 14),
-                        ),
-                        Text(
-                          _calculateCatalogQuantity().toString(),
-                          style: GoogleFonts.roboto(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.orange[800],
-                          ),
+                        _buildTableRow(
+                          'Order Amount',
+                          _calculateCatalogPrice().toStringAsFixed(2),
+                          valueColor: Colors.purple[800],
                         ),
                       ],
                     ),
@@ -1090,11 +1085,36 @@ class StyleCard extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 15),
       ],
     );
-  }
+}
 
+TableRow _buildTableRow(String label, String value, {Color? valueColor}) {
+    return TableRow(
+      children: [
+        Align(
+          alignment: Alignment.topLeft,
+          child: Text(label, style: GoogleFonts.roboto(fontSize: 14)),
+        ),
+        Align(
+          alignment: Alignment.center,
+          child: Text(":", style: TextStyle(fontSize: 14)),
+        ),
+        Align(
+          alignment: Alignment.topLeft,
+          child: Text(
+            value,
+            style: GoogleFonts.roboto(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: valueColor ?? Colors.black,
+            ),
+          ),
+        ),
+      ],
+    );
+}
+ 
   int _calculateCatalogQuantity() {
     int total = 0;
     quantities.forEach((shade, sizes) {
@@ -1102,6 +1122,36 @@ class StyleCard extends StatelessWidget {
         total += qty;
       });
     });
+    return total;
+  }
+
+  int _calculateStockQuantity() {
+    int total = 0;
+    final matrix = catalogOrder.orderMatrix;
+    for (var shadeIndex = 0; shadeIndex < matrix.shades.length; shadeIndex++) {
+      for (var sizeIndex = 0; sizeIndex < matrix.sizes.length; sizeIndex++) {
+        final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
+        final stock = int.tryParse(matrixData.length > 2 ? matrixData[2] : '0') ?? 0;
+        total += stock;
+      }
+    }
+    return total;
+  }
+
+  double _calculateCatalogPrice() {
+    double total = 0;
+    final matrix = catalogOrder.orderMatrix;
+    for (var shade in quantities.keys) {
+      final shadeIndex = matrix.shades.indexOf(shade.trim());
+      if (shadeIndex == -1) continue;
+      for (var size in quantities[shade]!.keys) {
+        final sizeIndex = matrix.sizes.indexOf(size.trim());
+        if (sizeIndex == -1) continue;
+        final rate = double.tryParse(matrix.matrix[shadeIndex][sizeIndex].split(',')[0]) ?? 0;
+        final quantity = quantities[shade]![size]!;
+        total += rate * quantity;
+      }
+    }
     return total;
   }
 
@@ -1121,7 +1171,26 @@ class StyleCard extends StatelessWidget {
               Row(
                 children: [
                   _buildHeader("Size", 1),
-                  _buildHeader("Qty", 2),
+                  Expanded(
+                    flex: 2,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          right: BorderSide(color: Colors.grey.shade300),
+                        ),
+                      ),
+                      child: Text(
+                        "Qty",
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.lora(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Colors.red.shade900,
+                        ),
+                      ),
+                    ),
+                  ),
                   _buildHeader("MRP", 1),
                   _buildHeader("WSP", 1),
                   _buildHeader("Stock", 1),
@@ -1149,7 +1218,11 @@ class StyleCard extends StatelessWidget {
           child: Text(
             text,
             textAlign: TextAlign.center,
-            style: GoogleFonts.lora(fontWeight: FontWeight.bold, fontSize: 14),
+            style: GoogleFonts.lora(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              color: Colors.red.shade900,
+            ),
           ),
         ),
       );
@@ -1172,31 +1245,76 @@ class StyleCard extends StatelessWidget {
       controller = styleManager.controllers[styleCode]?[shade]?[size];
     }
 
+    final quantity = quantities[shade]?[size] ?? 0;
+
     return Row(
       children: [
         _buildCell(size, 1),
         Expanded(
           flex: 2,
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
             decoration: BoxDecoration(
               border: Border(right: BorderSide(color: Colors.grey.shade300)),
             ),
-            child: TextField(
-              controller: controller,
-              textAlign: TextAlign.center,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
-              ),
-              onChanged: (value) {
-                final newQty = int.tryParse(value) ?? 0;
-                if (quantities[styleCode] != null && quantities[styleCode]![shade] != null) {
-                  //quantities[styleCode]![shade]![size] = newQty;
-                }
-                onUpdate();
-              },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  onPressed: () {
+                    final newQuantity = quantity > 0 ? quantity - 1 : 0;
+                    if (quantities[shade] != null) {
+                      quantities[shade]![size] = newQuantity;
+                      controller?.text = newQuantity.toString();
+                      onUpdate();
+                    }
+                  },
+                  icon: const Icon(Icons.remove, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                SizedBox(
+                  width: 22,
+                  child: TextField(
+                    controller: controller,
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                      hintText: stock,
+                      hintStyle: GoogleFonts.roboto(
+                        fontSize: 14,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                    style: GoogleFonts.roboto(fontSize: 14),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(4),
+                    ],
+                    onChanged: (value) {
+                      final newQuantity = int.tryParse(value.isEmpty ? '0' : value) ?? 0;
+                      if (quantities[shade] != null) {
+                        quantities[shade]![size] = newQuantity;
+                        onUpdate();
+                      }
+                    },
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    final newQuantity = quantity + 1;
+                    if (quantities[shade] != null) {
+                      quantities[shade]![size] = newQuantity;
+                      controller?.text = newQuantity.toString();
+                      onUpdate();
+                    }
+                  },
+                  icon: const Icon(Icons.add, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
             ),
           ),
         ),
@@ -1228,6 +1346,33 @@ class StyleCard extends StatelessWidget {
   }
 }
 
+class ImageZoomScreen extends StatelessWidget {
+  final List<String> imageUrls;
+  final int initialIndex;
+
+  const ImageZoomScreen({
+    Key? key,
+    required this.imageUrls,
+    required this.initialIndex,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: Center(
+        child: Image.network(
+          imageUrls[initialIndex],
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => const Icon(Icons.error, size: 60),
+        ),
+      ),
+    );
+  }
+}
 class _OrderForm extends StatefulWidget {
   final _OrderControllers controllers;
   final _DropdownData dropdownData;
