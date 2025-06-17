@@ -1300,7 +1300,7 @@ Widget buildOrderItem(RegisterOrder registerOrder) {
                               ),
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color.fromRGBO(25, 118, 210, 1), // Blue[700]
+                                  backgroundColor: AppColors.primaryColor, // Blue[700]
                                   foregroundColor: Colors.white,
                                 ),
                                 onPressed: () async {
@@ -1812,7 +1812,7 @@ Widget build(BuildContext context) {
     drawer: DrawerScreen(),
     appBar: AppBar(
       title: const Text('Order Register', style: TextStyle(color: Colors.white)),
-      backgroundColor: const Color.fromRGBO(25, 118, 210, 1), // Blue[700]
+      backgroundColor: AppColors.primaryColor, // Blue[700]
       elevation: 1,
       leading: Builder(
         builder: (context) => IconButton(
@@ -1938,7 +1938,7 @@ Widget build(BuildContext context) {
     floatingActionButton: Padding(
       padding: const EdgeInsets.only(bottom: 50),
       child: FloatingActionButton(
-        backgroundColor: const Color.fromRGBO(25, 118, 210, 1), // Blue[700]
+        backgroundColor: AppColors.primaryColor, // Blue[700]
         onPressed: () async {
           await Navigator.push(
             context,
@@ -2032,6 +2032,8 @@ Widget build(BuildContext context) {
     ),
   );
 }
+ 
+ 
   Future<void> _selectDate(
     BuildContext context,
     TextEditingController controller,

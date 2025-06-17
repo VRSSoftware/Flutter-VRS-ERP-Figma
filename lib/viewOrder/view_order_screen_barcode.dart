@@ -60,44 +60,45 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
     });
   }
 
-double _calculateTotalAmount() {
-  double total = 0.0;
-  _styleManager.controllers.forEach((style, shades) {
-    final itemsForStyle = _styleManager.groupedItems[style] ?? [];
-    shades.forEach((shade, sizes) {
-      sizes.forEach((size, controller) {
-        final qty = int.tryParse(controller.text) ?? 0;
-        final item = itemsForStyle.firstWhere(
-          (item) =>
-              (item['shadeName']?.toString() ?? '') == shade &&
-              (item['sizeName']?.toString() ?? '') == size,
-          orElse: () => {},
-        );
-        if (item.isNotEmpty) {
-          final mrp = (item['mrp'] as num?)?.toDouble() ?? 0.0;
-          total += qty * mrp;
-        }
+  double _calculateTotalAmount() {
+    double total = 0.0;
+    _styleManager.controllers.forEach((style, shades) {
+      final itemsForStyle = _styleManager.groupedItems[style] ?? [];
+      shades.forEach((shade, sizes) {
+        sizes.forEach((size, controller) {
+          final qty = int.tryParse(controller.text) ?? 0;
+          final item = itemsForStyle.firstWhere(
+            (item) =>
+                (item['shadeName']?.toString() ?? '') == shade &&
+                (item['sizeName']?.toString() ?? '') == size,
+            orElse: () => {},
+          );
+          if (item.isNotEmpty) {
+            final mrp = (item['mrp'] as num?)?.toDouble() ?? 0.0;
+            total += qty * mrp;
+          }
+        });
       });
     });
-  });
-  return total;
-}
+    return total;
+  }
 
-int _calculateTotalItems() {
-  return _styleManager.groupedItems.length;
-}
+  int _calculateTotalItems() {
+    return _styleManager.groupedItems.length;
+  }
 
-int _calculateTotalQuantity() {
-  int total = 0;
-  _styleManager.controllers.forEach((style, shades) {
-    shades.forEach((shade, sizes) {
-      sizes.forEach((size, controller) {
-        total += int.tryParse(controller.text) ?? 0;
+  int _calculateTotalQuantity() {
+    int total = 0;
+    _styleManager.controllers.forEach((style, shades) {
+      shades.forEach((shade, sizes) {
+        sizes.forEach((size, controller) {
+          total += int.tryParse(controller.text) ?? 0;
+        });
       });
     });
-  });
-  return total;
-}
+    return total;
+  }
+
   Future<void> _loadBookingTypes() async {
     try {
       final rawData = await ApiService.fetchBookingTypes(
@@ -633,74 +634,71 @@ int _calculateTotalQuantity() {
     );
   }
 
-AppBar _buildAppBar() {
-  return AppBar(
-    title: const Text(
-      'View Order Barcode',
-      style: TextStyle(color: Colors.white),
-    ),
-    backgroundColor: AppColors.primaryColor,
-    elevation: 1,
-    leading: IconButton(
-      icon: const Icon(Icons.arrow_back, color: Colors.white),
-      onPressed: () => Navigator.pop(context),
-    ),
-    bottom: PreferredSize(
-      preferredSize: const Size.fromHeight(48.0), // Adjusted height for better spacing
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-        color: AppColors.primaryColor, // Consistent with AppBar background
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Flexible(
-              child: Text(
-                'Total: ₹${_calculateTotalAmount().toStringAsFixed(2)}',
-                style: GoogleFonts.roboto(
-                  color: Colors.white,
-                  fontSize: 12, // Smaller font for better fit
+  AppBar _buildAppBar() {
+    return AppBar(
+      title: const Text(
+        'View Order Barcode',
+        style: TextStyle(color: Colors.white),
+      ),
+      backgroundColor: AppColors.primaryColor,
+      elevation: 1,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        onPressed: () => Navigator.pop(context),
+      ),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(
+          48.0,
+        ), // Adjusted height for better spacing
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+          color: AppColors.primaryColor, // Consistent with AppBar background
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: Text(
+                  'Total: ₹${_calculateTotalAmount().toStringAsFixed(2)}',
+                  style: GoogleFonts.roboto(
+                    color: Colors.white,
+                    fontSize: 12, // Smaller font for better fit
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            Container(
-              width: 1,
-              height: 20,
-              color: Colors.white.withOpacity(0.5), // Softer divider color
-              margin: const EdgeInsets.symmetric(horizontal: 8.0),
-            ),
-            Flexible(
-              child: Text(
-                'Items: ${_calculateTotalItems()}',
-                style: GoogleFonts.roboto(
-                  color: Colors.white,
-                  fontSize: 12,
+              Container(
+                width: 1,
+                height: 20,
+                color: Colors.white.withOpacity(0.5), // Softer divider color
+                margin: const EdgeInsets.symmetric(horizontal: 8.0),
+              ),
+              Flexible(
+                child: Text(
+                  'Items: ${_calculateTotalItems()}',
+                  style: GoogleFonts.roboto(color: Colors.white, fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            Container(
-              width: 1,
-              height: 20,
-              color: Colors.white.withOpacity(0.5),
-              margin: const EdgeInsets.symmetric(horizontal: 8.0),
-            ),
-            Flexible(
-              child: Text(
-                'Qty: ${_calculateTotalQuantity()}',
-                style: GoogleFonts.roboto(
-                  color: Colors.white,
-                  fontSize: 12,
+              Container(
+                width: 1,
+                height: 20,
+                color: Colors.white.withOpacity(0.5),
+                margin: const EdgeInsets.symmetric(horizontal: 8.0),
+              ),
+              Flexible(
+                child: Text(
+                  'Qty: ${_calculateTotalQuantity()}',
+                  style: GoogleFonts.roboto(color: Colors.white, fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
+
   void _handlePartySelection(String? val, String? key) async {
     if (key == null) return;
     _orderControllers.selectedPartyKey = key;
@@ -1224,28 +1222,31 @@ class StyleCard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                       Align(
-  alignment: Alignment.topLeft,
-  child: Text(
-    catalog.styleCode,
-    style: GoogleFonts.poppins(
-      fontWeight: FontWeight.bold,
-      fontSize: 14.5 ,
-      color: Colors.red.shade900,
-    ),
-    maxLines: 1, // Restrict to one line
-    overflow: TextOverflow.ellipsis, // Add ellipsis for overflow
-  ),
-),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            _submitDelete(context);
-                            //styleManager.removeStyle(styleCode);
-                            //onUpdate();
-                          },
-                          tooltip: 'Delete Style',
+                        Align(
+                          alignment: Alignment.topLeft,
+                          child: Text(
+                            catalog.styleCode,
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14.5,
+                              color: Colors.red.shade900,
+                            ),
+                            maxLines: 1, // Restrict to one line
+                            overflow:
+                                TextOverflow
+                                    .ellipsis, // Add ellipsis for overflow
+                          ),
                         ),
+
+                        // IconButton(
+                        //   icon: const Icon(Icons.delete, color: Colors.red),
+                        //   onPressed: () {
+                        //     _submitDelete(context);
+                        //     //styleManager.removeStyle(styleCode);
+                        //     //onUpdate();
+                        //   },
+                        //   tooltip: 'Delete Style',
+                        // ),
                       ],
                     ),
                     Text(
@@ -1268,7 +1269,7 @@ class StyleCard extends StatelessWidget {
                         //   'Remark',
                         //   catalog.remark.isNotEmpty ? catalog.remark : 'N/A',
                         // ),
-                        _buildTableRow('Remark', 'Upcomming'),
+                        _buildTableRow('Remark', ''),
                         _buildTableRow('Stk Type', 'Ready'),
                         _buildTableRow(
                           'Stock Qty',
@@ -1300,33 +1301,73 @@ class StyleCard extends StatelessWidget {
               _buildColorSection(catalogOrder, color),
               const SizedBox(height: 8),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  TextButton(
-                    onPressed: () {
-                      _submitUpdate(context);
-                    },
-                    style: TextButton.styleFrom(
-                      backgroundColor: Colors.blue, // button background color
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24.0,
-                        vertical: 12.0,
+                  // Delete Button (Left-aligned)
+                  Expanded(
+                    child: TextButton.icon(
+                      onPressed: () {
+                        _submitDelete(context);
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20.0,
+                          vertical: 10.0,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(0),
+                        ),
+                        side: BorderSide(
+                          color: Colors.red.shade600,
+                        ), // border color
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
+                      icon: Icon(Icons.delete, color: Colors.red.shade600),
+                      label: Text(
+                        'Delete',
+                        style: TextStyle(
+                          color: Colors.red.shade600,
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                    child: const Text(
-                      'Update',
-                      style: TextStyle(
-                        color: Colors.white, // text color
-                        fontSize: 16.0,
-                        fontWeight: FontWeight.w600,
+                  ),
+
+                  const SizedBox(
+                    width: 12.0,
+                  ), // spacing between the two buttons
+                  // Update Button (Right-aligned)
+                  Expanded(
+                    child: TextButton.icon(
+                      onPressed: () {
+                        _submitUpdate(context);
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20.0,
+                          vertical: 10.0,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(0),
+                        ),
+                        side: const BorderSide(
+                          color: Colors.blue,
+                        ), // border color
+                      ),
+                      icon: const Icon(Icons.save, color: Colors.blue),
+                      label: const Text(
+                        'Update',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
+
               const SizedBox(height: 15),
             ],
           ),
@@ -2080,6 +2121,9 @@ class _OrderFormState extends State<_OrderForm> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
                   minimumSize: Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.zero, // removes curve
+                  ),
                 ),
                 child: const Text(
                   'Add More Info',
@@ -2094,6 +2138,9 @@ class _OrderFormState extends State<_OrderForm> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
                   minimumSize: Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.zero, // removes curve
+                  ),
                 ),
                 child: const Text(
                   'Save',
@@ -2128,8 +2175,13 @@ class _OrderFormState extends State<_OrderForm> {
                     context: context,
                     builder: (_) => CustomerMasterDialog(),
                   ),
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.lightBlue),
-          child: const Text('+'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.lightBlue,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.zero, // Removes curve
+            ),
+          ),
+          child: const Text('+', style: TextStyle(color: Colors.white)),
         ),
       ],
     );
@@ -2151,7 +2203,7 @@ class _OrderFormState extends State<_OrderForm> {
             decoration: InputDecoration(
               hintText: _getSearchHint(label),
               prefixIcon: const Icon(Icons.search, color: Colors.grey),
-              border: const OutlineInputBorder(),
+              border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
               contentPadding: const EdgeInsets.symmetric(horizontal: 12),
             ),
           ),
@@ -2161,7 +2213,7 @@ class _OrderFormState extends State<_OrderForm> {
         dropdownDecoratorProps: DropDownDecoratorProps(
           dropdownSearchDecoration: InputDecoration(
             labelText: label,
-            border: const OutlineInputBorder(),
+            border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
           ),
         ),
         dropdownBuilder: (context, selectedItem) {
@@ -2249,7 +2301,8 @@ Widget buildTextField(
       onTap: onTap ?? (isDate ? () => _selectDate(context, controller) : null),
       decoration: InputDecoration(
         labelText: label,
-        border: const OutlineInputBorder(),
+
+        border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
       ),
     ),
   );

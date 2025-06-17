@@ -1139,6 +1139,9 @@ buildTextField(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
                   minimumSize: Size(double.infinity, 50),
+                                   shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.zero, // removes curve
+      ),
                 ),
                 child: const Text(
                   'Add More Info',
@@ -1153,6 +1156,9 @@ buildTextField(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
                   minimumSize: Size(double.infinity, 50),
+                                   shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.zero, // removes curve
+      ),
                 ),
                 child: const Text(
                   'Save',
@@ -1180,15 +1186,20 @@ buildTextField(
         ),
         const SizedBox(width: 8),
         ElevatedButton(
-          onPressed: UserSession.userType == 'C'
-              ? null
-              : () => showDialog(
-                    context: context,
-                    builder: (_) => CustomerMasterDialog(),
-                  ),
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.lightBlue),
-          child: const Text('+'),
+  onPressed: UserSession.userType == 'C'
+      ? null
+      : () => showDialog(
+          context: context,
+          builder: (_) => CustomerMasterDialog(),
         ),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.lightBlue,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.zero, // Removes curve
+    ),
+  ),
+  child: const Text('+', style: TextStyle(color: Colors.white),),
+)
       ],
     );
   }
@@ -1209,7 +1220,9 @@ buildTextField(
             decoration: InputDecoration(
               hintText: _getSearchHint(label),
               prefixIcon: const Icon(Icons.search, color: Colors.grey),
-              border: const OutlineInputBorder(),
+              border: const OutlineInputBorder(
+                        borderRadius: BorderRadius.zero
+              ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 12),
             ),
           ),
@@ -1219,7 +1232,7 @@ buildTextField(
         dropdownDecoratorProps: DropDownDecoratorProps(
           dropdownSearchDecoration: InputDecoration(
             labelText: label,
-            border: const OutlineInputBorder(),
+            border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
           ),
         ),
         dropdownBuilder: (context, selectedItem) {
@@ -1304,7 +1317,9 @@ Widget buildTextField(
       onTap: onTap ?? (isDate ? () => _selectDate(context, controller) : null),
       decoration: InputDecoration(
         labelText: label,
-        border: const OutlineInputBorder(),
+        border: const OutlineInputBorder(
+                  borderRadius: BorderRadius.zero
+        ),
       ),
     ),
   );

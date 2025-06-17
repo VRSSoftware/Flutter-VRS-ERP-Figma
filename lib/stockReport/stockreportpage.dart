@@ -789,7 +789,9 @@ class _StockReportPageState extends State<StockReportPage> {
                 dropdownDecoratorProps: const DropDownDecoratorProps(
                   dropdownSearchDecoration: InputDecoration(
                     labelText: "Select Category",
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                          borderRadius: BorderRadius.zero,
+                    ),
                     filled: true, // Add this
                     fillColor: Colors.white,
                   ),
@@ -882,7 +884,9 @@ class _StockReportPageState extends State<StockReportPage> {
                 dropdownDecoratorProps: const DropDownDecoratorProps(
                   dropdownSearchDecoration: InputDecoration(
                     labelText: "Select Item",
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                          borderRadius: BorderRadius.zero,
+                    ),
                     filled: true, // Add this
                     fillColor: Colors.white, // Set background color
                   ),

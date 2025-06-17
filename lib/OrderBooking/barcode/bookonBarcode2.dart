@@ -672,7 +672,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
                       children: [
                         _buildTableRow(
                           'Remark',
-                          catalog.remark.isNotEmpty ? catalog.remark : 'N/A',
+                          catalog.remark.isNotEmpty ? catalog.remark : '',
                         ),
                         _buildTableRow('Stk Type', 'Ready'),
                         _buildTableRow(

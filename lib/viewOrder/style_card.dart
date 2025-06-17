@@ -1025,22 +1025,27 @@ class _StyleCardState extends State<StyleCard> {
     return TableRow(
       children: [
         TableCell(
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              children: [
-                const SizedBox(width: 8),
-                Text(
-                  shade,
-                  style: TextStyle(
-                    color: widget.getColor(shade),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+  child: Padding(
+    padding: const EdgeInsets.all(8),
+    child: Row(
+      children: [
+        const SizedBox(width: 8),
+        Expanded( // ⬅️ This allows wrapping inside the row
+          child: Text(
+            shade,
+            style: TextStyle(
+              color: widget.getColor(shade),
+              fontWeight: FontWeight.bold,
             ),
+            softWrap: true,
+            overflow: TextOverflow.visible,
           ),
         ),
+      ],
+    ),
+  ),
+),
+
         ...sizes.map(
           (size) => Padding(
             padding: const EdgeInsets.all(4),
