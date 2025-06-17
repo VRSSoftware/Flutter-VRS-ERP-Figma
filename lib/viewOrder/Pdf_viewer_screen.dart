@@ -63,7 +63,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   void _showError(String message) {
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
       setState(() {
         isLoading = false;
       });
@@ -73,33 +75,34 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   void _showShareOptions() {
     showModalBottomSheet(
       context: context,
-      builder: (_) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading:const FaIcon(
-  FontAwesomeIcons.whatsapp,
-  size: 25,
-  //color: Colors.green,
-),
+      builder:
+          (_) => SafeArea(
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: const FaIcon(
+                    FontAwesomeIcons.whatsapp,
+                    size: 25,
+                    //color: Colors.green,
+                  ),
 
-              title: Text('Send via WhatsApp'),
-              onTap: () {
-                Navigator.pop(context);
-                _showWhatsAppDialog();
-              },
+                  title: Text('Send via WhatsApp'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showWhatsAppDialog();
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.share),
+                  title: Text('Share'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _sharePdf();
+                  },
+                ),
+              ],
             ),
-            ListTile(
-              leading: Icon(Icons.share),
-              title: Text('Share'),
-              onTap: () {
-                Navigator.pop(context);
-                _sharePdf();
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -107,46 +110,55 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     final controller = TextEditingController(text: widget.whatsappNo);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Send PDF via WhatsApp'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.phone,
-          decoration: InputDecoration(labelText: 'WhatsApp Number'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: Text('Send PDF via WhatsApp'),
+            content: TextField(
+              controller: controller,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(labelText: 'WhatsApp Number'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  final file = File(filePath!);
+                  final fileBytes = await file.readAsBytes();
+                  final success = await sendWhatsAppFile(
+                    fileBytes: fileBytes,
+                    mobileNo: controller.text,
+                    fileType: 'pdf',
+                    caption: 'Order ${widget.orderNo}',
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        success ? 'Sent via WhatsApp' : 'Failed to send',
+                      ),
+                    ),
+                  );
+                },
+                child: Text('Send'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              final file = File(filePath!);
-              final fileBytes = await file.readAsBytes();
-              final success = await sendWhatsAppFile(
-                fileBytes: fileBytes,
-                mobileNo: controller.text,
-                fileType: 'pdf',
-                caption: 'Order ${widget.orderNo}',
-              );
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(success ? 'Sent via WhatsApp' : 'Failed to send'),
-              ));
-            },
-            child: Text('Send'),
-          ),
-        ],
-      ),
     );
   }
 
   Future<void> _sharePdf() async {
     if (filePath == null) return;
     try {
-      await Share.shareXFiles([XFile(filePath!)], text: 'Order ${widget.orderNo}');
+      await Share.shareXFiles([
+        XFile(filePath!),
+      ], text: 'Order ${widget.orderNo}');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Share error: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Share error: $e')));
     }
   }
 
@@ -156,24 +168,22 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       appBar: AppBar(
         title: Text('Order PDF'),
         actions: [
-          IconButton(
-            icon: Icon(Icons.share),
-            onPressed: _showShareOptions,
-          ),
+          IconButton(icon: Icon(Icons.share), onPressed: _showShareOptions),
         ],
       ),
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : PDFView(
-              filePath: filePath!,
-              enableSwipe: true,
-              swipeHorizontal: true,
-              autoSpacing: false,
-              pageFling: false,
-              onError: (error) => _showError('PDF Error: $error'),
-              onPageError: (page, error) =>
-                  _showError('Error on page $page: $error'),
-            ),
+      body:
+          isLoading
+              ? Center(child: CircularProgressIndicator())
+              : PDFView(
+                filePath: filePath!,
+                enableSwipe: true,
+                swipeHorizontal: true,
+                autoSpacing: false,
+                pageFling: false,
+                onError: (error) => _showError('PDF Error: $error'),
+                onPageError:
+                    (page, error) => _showError('Error on page $page: $error'),
+              ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showShareOptions,
         tooltip: 'Share PDF',
