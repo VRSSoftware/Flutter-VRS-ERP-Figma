@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,8 +9,6 @@ import 'dart:convert';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/screens/home_screen.dart';
 import 'package:vrs_erp_figma/screens/register_screen.dart';
-
-
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -40,6 +41,10 @@ class _LoginPageState extends State<LoginScreen> {
     _checkPreferences();
     _fetchCompanies();
     _fetchFinancialYears();
+    // setState(() {
+    //   _passwordController.text = 'Admin';
+    //   _usernameController.text = 'admin';
+    // });
   }
 
   Future<void> _checkPreferences() async {
@@ -47,26 +52,40 @@ class _LoginPageState extends State<LoginScreen> {
     setState(() {
       isRegistered = prefs.getString('isRegistered');
       // isRegistered = '1';
-
     });
   }
 
   Future<void> _fetchCompanies() async {
     final url = '${AppConstants.BASE_URL}/users/cobr';
     try {
-      final response = await http.get(Uri.parse(url));
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 10));
+
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         setState(() {
           _companies.clear();
-          _companies.addAll(data.map((e) => e as Map<String, dynamic>).toList());
+          _companies.addAll(
+            data.map((e) => e as Map<String, dynamic>).toList(),
+          );
           _isLoadingCompanies = false;
 
-          if(_companies.isNotEmpty && _companies.length == 1){
+          if (_companies.isNotEmpty && _companies.length == 1) {
             _selectedCompany = _companies[0];
           }
         });
+      } else if (response.statusCode == 404) {
+        _fetchCompanies(); // Retry on 404
       }
+    } on SocketException catch (_) {
+      // Retry on no internet
+      await Future.delayed(const Duration(seconds: 2));
+      _fetchCompanies();
+    } on TimeoutException catch (_) {
+      // Retry on request timeout
+      await Future.delayed(const Duration(seconds: 2));
+      _fetchCompanies();
     } catch (e) {
       setState(() {
         _isLoadingCompanies = false;
@@ -77,23 +96,41 @@ class _LoginPageState extends State<LoginScreen> {
   Future<void> _fetchFinancialYears() async {
     final url = '${AppConstants.BASE_URL}/users/fcyr';
     try {
-      final response = await http.get(Uri.parse(url));
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 10));
+
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         setState(() {
           _years.clear();
           _years.addAll(data.map((e) => e as Map<String, dynamic>).toList());
         });
-        if(_years.isNotEmpty && _years.length == 1){
+
+        if (_years.isNotEmpty && _years.length == 1) {
           _selectedYear = _years[0];
         }
+      } else if (response.statusCode == 404) {
+        _fetchFinancialYears(); // Retry on 404
       }
-    } catch (e) {}
+    } on SocketException catch (_) {
+      // Retry on no internet
+      await Future.delayed(const Duration(seconds: 2));
+      _fetchFinancialYears();
+    } on TimeoutException catch (_) {
+      // Retry on request timeout
+      await Future.delayed(const Duration(seconds: 2));
+      _fetchFinancialYears();
+    } catch (e) {
+      // Optionally log error
+    }
   }
 
   Future<void> fetchOnlineImageSetting() async {
     try {
-      final response = await http.get(Uri.parse('${AppConstants.BASE_URL}/images/isOnlineImage'));
+      final response = await http.get(
+        Uri.parse('${AppConstants.BASE_URL}/images/isOnlineImage'),
+      );
       if (response.statusCode == 200) {
         setState(() {
           UserSession.onlineImage = response.body.trim();
@@ -111,16 +148,24 @@ class _LoginPageState extends State<LoginScreen> {
     if (isRegistered == '1') {
       if (_formKey.currentState?.validate() ?? false) {
         final url = '${AppConstants.BASE_URL}/users/login';
-        final Map<String, String> headers = {'Content-Type': 'application/json'};
+        final Map<String, String> headers = {
+          'Content-Type': 'application/json',
+        };
         final Map<String, String> body = {
           'userName': _usernameController.text.trim(),
           'userPwd': _passwordController.text.trim(),
         };
 
         try {
-          final response = await http.post(Uri.parse(url), headers: headers, body: json.encode(body));
+          final response = await http.post(
+            Uri.parse(url),
+            headers: headers,
+            body: json.encode(body),
+          );
           if (response.statusCode == 200) {
-            final Map<String, dynamic> responseData = json.decode(response.body);
+            final Map<String, dynamic> responseData = json.decode(
+              response.body,
+            );
 
             await prefs.setInt('userId', responseData["userId"]);
             await prefs.setString('coBrId', _selectedCompany?["coBrId"]);
@@ -146,8 +191,11 @@ class _LoginPageState extends State<LoginScreen> {
               _showPopupMessage(context, "Invalid Username or Password");
             }
           } else {
-            final Map<String, dynamic> errorResponse = json.decode(response.body);
-            String errorMessage = errorResponse['errorMessage'] ?? "An error occurred";
+            final Map<String, dynamic> errorResponse = json.decode(
+              response.body,
+            );
+            String errorMessage =
+                errorResponse['errorMessage'] ?? "An error occurred";
 
             if (errorMessage.contains('Invalid UserName')) {
               _showPopupMessage(context, "Invalid Username");
@@ -172,7 +220,10 @@ class _LoginPageState extends State<LoginScreen> {
         }
       }
     } else {
-      _showPopupMessage(context, "You have to register first. Device not registered");
+      _showPopupMessage(
+        context,
+        "You have to register first. Device not registered",
+      );
     }
   }
 
@@ -311,178 +362,225 @@ class _LoginPageState extends State<LoginScreen> {
   //     ),
   //   );
   // }
-@override
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: Colors.white,
-    resizeToAvoidBottomInset: false,
-    body: SafeArea(
-      
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            physics: constraints.maxHeight < 600
-                ? AlwaysScrollableScrollPhysics()
-                : NeverScrollableScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: IntrinsicHeight(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.center, // Center the form vertically
-                    children: [
-                      Stack(
-                        alignment: Alignment.bottomCenter,
-                        clipBehavior: Clip.none,
-                        children: [
-                          Image.asset(
-                            "assets/images/background.png",
-                            width: double.infinity,
-                            height: constraints.maxHeight * 0.23,
-                            fit: BoxFit.cover,
-                          ),
-                          Positioned(
-                            bottom: -40,
-                            child: CircleAvatar(
-                              radius: 50,
-                              backgroundColor: Colors.white,
-                              child: ClipOval(
-                                child: Image.asset(
-                                  "assets/images/logo.png",
-                                  width: 300,
-                                  height: 350,
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 50),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Column(
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics:
+                  constraints.maxHeight < 600
+                      ? AlwaysScrollableScrollPhysics()
+                      : NeverScrollableScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment:
+                          MainAxisAlignment
+                              .center, // Center the form vertically
+                      children: [
+                        Stack(
+                          alignment: Alignment.bottomCenter,
+                          clipBehavior: Clip.none,
                           children: [
-                            Text(
-                              "Login Now",
-                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                            ),
-                            SizedBox(height: 8),
-                            _buildTextField(
-                              "User",
-                              "Enter your username",
-                              controller: _usernameController,
-                              focusNode: _usernameFocus,
-                              nextFocus: _passwordFocus,
-                              validator: (value) =>
-                                  value == null || value.isEmpty ? 'Username is required' : null,
-                            ),
-                            _buildTextField(
-                              "Password",
-                              "Enter your password",
-                              obscureText: true,
-                              controller: _passwordController,
-                              focusNode: _passwordFocus,
-                              nextFocus: _companyFocus,
-                              validator: (value) =>
-                                  value == null || value.isEmpty ? 'Password is required' : null,
-                            ),
-                            _buildDropdown(
-                              "Company",
-                              "Select your Company",
-                              items: _companies,
-                              value: _selectedCompany,
-                              focusNode: _companyFocus,
-                              nextFocus: _yearFocus,
-                              onChanged: (val) => setState(() => _selectedCompany = val),
-                              validator: (value) => value == null ? 'Please select a company' : null,
-                            ),
-                            _buildDropdown(
-                              "Year",
-                              "Select Year",
-                              items: _years,
-                              value: _selectedYear,
-                              focusNode: _yearFocus,
-                              onChanged: (val) => setState(() => _selectedYear = val),
-                              validator: (value) => value == null ? 'Please select a year' : null,
-                            ),
-                            SizedBox(height: 8),
-                            Container(
+                            Image.asset(
+                              "assets/images/background.png",
                               width: double.infinity,
-                              height: 45,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(0),
-                                gradient: LinearGradient(
-                                  colors: [AppColors.primaryColor, AppColors.maroon],
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                ),
-                              ),
-                              child: ElevatedButton(
-                                onPressed: () => login(context),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
-                                ),
-                                child: Text(
-                                  "Log in",
-                                  style: TextStyle(fontSize: 16, color: Colors.white),
+                              height: constraints.maxHeight * 0.23,
+                              fit: BoxFit.cover,
+                            ),
+                            Positioned(
+                              bottom: -40,
+                              child: CircleAvatar(
+                                radius: 50,
+                                backgroundColor: Colors.white,
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    "assets/images/logo.png",
+                                    width: 300,
+                                    height: 350,
+                                    fit: BoxFit.contain,
+                                  ),
                                 ),
                               ),
                             ),
-                            isRegistered == '1'
-                                ? Container()
-                                : TextButton(
-                                    onPressed: () => Navigator.push(
-                                        context, MaterialPageRoute(builder: (context) => RegisterScreen())),
+                          ],
+                        ),
+                        SizedBox(height: 50),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Column(
+                            children: [
+                              Text(
+                                "Login Now",
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              _buildTextField(
+                                "User",
+                                "Enter your username",
+                                controller: _usernameController,
+                                focusNode: _usernameFocus,
+                                nextFocus: _passwordFocus,
+                                validator:
+                                    (value) =>
+                                        value == null || value.isEmpty
+                                            ? 'Username is required'
+                                            : null,
+                              ),
+                              _buildTextField(
+                                "Password",
+                                "Enter your password",
+                                obscureText: true,
+                                controller: _passwordController,
+                                focusNode: _passwordFocus,
+                                nextFocus: _companyFocus,
+                                validator:
+                                    (value) =>
+                                        value == null || value.isEmpty
+                                            ? 'Password is required'
+                                            : null,
+                              ),
+                              _buildDropdown(
+                                "Company",
+                                "Select your Company",
+                                items: _companies,
+                                value: _selectedCompany,
+                                focusNode: _companyFocus,
+                                nextFocus: _yearFocus,
+                                onChanged:
+                                    (val) =>
+                                        setState(() => _selectedCompany = val),
+                                validator:
+                                    (value) =>
+                                        value == null
+                                            ? 'Please select a company'
+                                            : null,
+                              ),
+                              _buildDropdown(
+                                "Year",
+                                "Select Year",
+                                items: _years,
+                                value: _selectedYear,
+                                focusNode: _yearFocus,
+                                onChanged:
+                                    (val) =>
+                                        setState(() => _selectedYear = val),
+                                validator:
+                                    (value) =>
+                                        value == null
+                                            ? 'Please select a year'
+                                            : null,
+                              ),
+                              SizedBox(height: 8),
+                              Container(
+                                width: double.infinity,
+                                height: 45,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(0),
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      AppColors.primaryColor,
+                                      AppColors.maroon,
+                                    ],
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                  ),
+                                ),
+                                child: ElevatedButton(
+                                  onPressed: () => login(context),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.transparent,
+                                    shadowColor: Colors.transparent,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(0),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    "Log in",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              isRegistered == '1'
+                                  ? Container()
+                                  : TextButton(
+                                    onPressed:
+                                        () => Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) => RegisterScreen(),
+                                          ),
+                                        ),
                                     child: RichText(
                                       text: TextSpan(
                                         text: "New user? ",
-                                        style: TextStyle(color: Colors.black, fontSize: 14),
+                                        style: TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 14,
+                                        ),
                                         children: [
                                           TextSpan(
                                             text: "Register here",
                                             style: TextStyle(
-                                                color: AppColors.primaryColor, fontWeight: FontWeight.bold),
+                                              color: AppColors.primaryColor,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ],
                                       ),
                                     ),
                                   ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      // Removed Spacer() to allow centering
-                    ],
+                        // Removed Spacer() to allow centering
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
-    ),
-  );
-}
- 
- 
-  Widget _buildTextField(String label, String hint,
-      {bool obscureText = false,
-      TextEditingController? controller,
-      String? Function(String?)? validator,
-      FocusNode? focusNode,
-      FocusNode? nextFocus,
-      bool isLastField = false,
-      TextInputAction textInputAction = TextInputAction.next}) {
+    );
+  }
+
+  Widget _buildTextField(
+    String label,
+    String hint, {
+    bool obscureText = false,
+    TextEditingController? controller,
+    String? Function(String?)? validator,
+    FocusNode? focusNode,
+    FocusNode? nextFocus,
+    bool isLastField = false,
+    TextInputAction textInputAction = TextInputAction.next,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(
+            label,
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
           SizedBox(height: 2),
           TextFormField(
             controller: controller,
@@ -495,10 +593,31 @@ Widget build(BuildContext context) {
             decoration: InputDecoration(
               hintText: hint,
               isDense: true,
-              contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(0), borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(0), borderSide: BorderSide(color: AppColors.primaryColor, width: 3.0)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(0), borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0)),
+              contentPadding: EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: 12,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(0),
+                borderSide: BorderSide(
+                  color: AppColors.primaryColor,
+                  width: 2.0,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(0),
+                borderSide: BorderSide(
+                  color: AppColors.primaryColor,
+                  width: 3.0,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(0),
+                borderSide: BorderSide(
+                  color: AppColors.primaryColor,
+                  width: 2.0,
+                ),
+              ),
               errorStyle: TextStyle(height: 0.7),
             ),
             validator: validator,
@@ -508,19 +627,25 @@ Widget build(BuildContext context) {
     );
   }
 
-  Widget _buildDropdown(String label, String hint,
-      {required List<Map<String, dynamic>> items,
-      required Map<String, dynamic>? value,
-      required Function(Map<String, dynamic>?) onChanged,
-      String? Function(Map<String, dynamic>?)? validator,
-      FocusNode? focusNode,
-      FocusNode? nextFocus}) {
+  Widget _buildDropdown(
+    String label,
+    String hint, {
+    required List<Map<String, dynamic>> items,
+    required Map<String, dynamic>? value,
+    required Function(Map<String, dynamic>?) onChanged,
+    String? Function(Map<String, dynamic>?)? validator,
+    FocusNode? focusNode,
+    FocusNode? nextFocus,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(
+            label,
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
           SizedBox(height: 2),
           DropdownButtonFormField<Map<String, dynamic>>(
             value: value,
@@ -528,19 +653,46 @@ Widget build(BuildContext context) {
             isExpanded: true,
             decoration: InputDecoration(
               isDense: true,
-              contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(0), borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(0), borderSide: BorderSide(color: AppColors.primaryColor, width: 3.0)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(0), borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0)),
+              contentPadding: EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: 12,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(0),
+                borderSide: BorderSide(
+                  color: AppColors.primaryColor,
+                  width: 2.0,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(0),
+                borderSide: BorderSide(
+                  color: AppColors.primaryColor,
+                  width: 3.0,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(0),
+                borderSide: BorderSide(
+                  color: AppColors.primaryColor,
+                  width: 2.0,
+                ),
+              ),
               errorStyle: TextStyle(height: 0.7),
             ),
             hint: Text(hint, overflow: TextOverflow.ellipsis),
-            items: items.map((item) {
-              return DropdownMenuItem<Map<String, dynamic>>(
-                value: item,
-                child: Text(item.containsKey('coBr_name') ? item['coBr_name'] : item['fcYrName'], overflow: TextOverflow.ellipsis),
-              );
-            }).toList(),
+            items:
+                items.map((item) {
+                  return DropdownMenuItem<Map<String, dynamic>>(
+                    value: item,
+                    child: Text(
+                      item.containsKey('coBr_name')
+                          ? item['coBr_name']
+                          : item['fcYrName'],
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList(),
             onChanged: (val) {
               onChanged(val);
               if (nextFocus != null) nextFocus.requestFocus();
