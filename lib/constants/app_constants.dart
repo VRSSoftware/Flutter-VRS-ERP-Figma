@@ -50,6 +50,7 @@ class UserSession {
   static String? userFcYr='24';
   static String? name='Admin';
   static String? onlineImage='0';
+  static String? rptPath;
   // static int? userId=1;
   // static String? coBrId='01';
   // static String? userType='A';
