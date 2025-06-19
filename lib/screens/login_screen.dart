@@ -41,10 +41,10 @@ class _LoginPageState extends State<LoginScreen> {
     _checkPreferences();
     _fetchCompanies();
     _fetchFinancialYears();
-    // setState(() {
-    //   _passwordController.text = 'Admin';
-    //   _usernameController.text = 'admin';
-    // });
+    setState(() {
+      _passwordController.text = 'Admin';
+      _usernameController.text = 'admin';
+    });
   }
 
   Future<void> _checkPreferences() async {
@@ -224,6 +224,8 @@ class _LoginPageState extends State<LoginScreen> {
               await fetchOnlineImageSetting(); // API CALL HERE
               UserSession.rptPath = await fetchAppSetting('606');
               AppConstants.whatsappKey = await fetchAppSetting('541');
+              // print("Whatsapp Key: ${AppConstants.whatsappKey}");
+              // print("RPT Path: ${UserSession.rptPath}");
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => HomeScreen()),
