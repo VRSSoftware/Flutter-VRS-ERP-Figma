@@ -632,7 +632,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
                         catalog.fullImagePath.contains("http")
                             ? catalog.fullImagePath
                             : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}',
-                        fit: BoxFit.cover,
+                        fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) =>
                             const Icon(Icons.error, size: 60),
                       ),
@@ -640,6 +640,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
                   ),
                 ),
               ),
+       
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
