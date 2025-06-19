@@ -142,37 +142,44 @@ class _LoginPageState extends State<LoginScreen> {
     }
   }
 
+  Future<String> fetchAppSetting(String appSettId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  			  Future<void> fetchAppSetting(String appSettId) async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  try {
-    final response = await http.get(Uri.parse('${AppConstants.BASE_URL}/users/app-setting/$appSettId'));
-    if (response.statusCode == 200) {
-      final String rptPath = response.body.trim();
-      
-      // Print the unmasked FTP path
-      print('Unmasked FTP Path: $rptPath');
-      
-      UserSession.rptPath = rptPath;
-      await prefs.setString('appSetting_$appSettId', rptPath);
-      
-      // For debugging - show in console exactly what was received
-      print("Raw response body: ${response.body}");
-      print("Trimmed response: $rptPath");
-      
-    } else {
-      print("Failed to fetch app setting ($appSettId): ${response.statusCode}");
+    try {
+      final response = await http.get(
+        Uri.parse('${AppConstants.BASE_URL}/users/app-setting/$appSettId'),
+      );
+
+      if (response.statusCode == 200) {
+        final String body = response.body.trim();
+
+        // Optionally store in prefs or a session variable
+        await prefs.setString('appSetting_$appSettId', body);
+
+        return body; // ✅ returning the raw body
+      } else {
+        print(
+          "Failed to fetch app setting ($appSettId): ${response.statusCode}",
+        );
+        if (context.mounted) {
+          _showPopupMessage(
+            context,
+            "Failed to fetch app setting for ID: $appSettId",
+          );
+        }
+      }
+    } catch (e) {
+      print("Error fetching app setting ($appSettId): $e");
       if (context.mounted) {
-        _showPopupMessage(context, "Failed to fetch app setting for ID: $appSettId");
+        _showPopupMessage(
+          context,
+          "Error fetching app setting. Please try again.",
+        );
       }
     }
-  } catch (e) {
-    print("Error fetching app setting ($appSettId): $e");
-    if (context.mounted) {
-      _showPopupMessage(context, "Error fetching app setting. Please try again.");
-    }
+
+    return ""; // Return empty string if any failure
   }
-}
 
   Future<void> login(BuildContext context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -215,7 +222,8 @@ class _LoginPageState extends State<LoginScreen> {
 
             if (responseData['userName'] == _usernameController.text.trim()) {
               await fetchOnlineImageSetting(); // API CALL HERE
-              await fetchAppSetting('606');
+              UserSession.rptPath = await fetchAppSetting('606');
+              AppConstants.whatsappKey = await fetchAppSetting('541');
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => HomeScreen()),
