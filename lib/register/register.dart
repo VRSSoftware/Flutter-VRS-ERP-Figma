@@ -1061,6 +1061,7 @@ import 'package:vrs_erp_figma/register/registerFilteration.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
 import 'package:vrs_erp_figma/viewOrder/Pdf_viewer_screen.dart';
+import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_screen_barcode.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -1504,6 +1505,15 @@ Expanded(
                         ),
                       );
                       break;
+                     case 'edit':
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EditOrderScreenBarcode(docId: registerOrder.orderId),
+                          ),
+                        );
+                        break;
+                    
                   }
                 },
                 itemBuilder: (BuildContext context) => [
@@ -1558,6 +1568,20 @@ Expanded(
                       ],
                     ),
                   ),
+                  const PopupMenuItem<String>(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.edit,
+                                color: Colors.blue, // Non-nullable
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Text('Edit', style: TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                        ),
                 ],
               ),
             ],
