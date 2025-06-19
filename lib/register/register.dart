@@ -1088,7 +1088,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void initState() {
     super.initState();
-    fromDate = DateTime.now().subtract(Duration(days: 30));
+    fromDate = DateTime.now();
     toDate = DateTime.now();
     fromDateController.text = DateFormat('yyyy-MM-dd').format(fromDate!);
     toDateController.text = DateFormat('yyyy-MM-dd').format(toDate!);
@@ -1247,29 +1247,38 @@ Widget buildOrderItem(RegisterOrder registerOrder) {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: SizedBox(
-                  height: 24,
-                  child: Marquee(
-                    text: registerOrder.itemName,
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: const Color.fromRGBO(21, 101, 192, 1), // Blue[900]
-                    ),
-                    scrollAxis: Axis.horizontal,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    blankSpace: 20.0,
-                    velocity: 50.0,
-                    pauseAfterRound: const Duration(seconds: 1),
-                    startPadding: 10.0,
-                    accelerationDuration: const Duration(seconds: 1),
-                    accelerationCurve: Curves.linear,
-                    decelerationDuration: const Duration(milliseconds: 500),
-                    decelerationCurve: Curves.easeOut,
-                  ),
-                ),
-              ),
+Expanded(
+  child: SizedBox(
+    height: 24,
+    child: Tooltip(
+      message: registerOrder.itemName,
+      triggerMode: TooltipTriggerMode.tap, // show on tap
+      showDuration: const Duration(seconds: 2),
+      waitDuration: Duration.zero, // no delay
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.9),
+        borderRadius: BorderRadius.zero, // removes curve
+      ),
+      textStyle: GoogleFonts.poppins(
+        fontSize: 14,
+        color: Colors.white,
+      ),
+      padding: const EdgeInsets.all(8),
+      child: Text(
+        registerOrder.itemName,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+        style: GoogleFonts.poppins(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: const Color.fromRGBO(21, 101, 192, 1),
+        ),
+      ),
+    ),
+  ),
+),
+
+
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert, color: Colors.blue),
                 onSelected: (value) async {
@@ -1323,7 +1332,7 @@ Widget buildOrderItem(RegisterOrder registerOrder) {
                                   try {
                                     final dio = Dio();
                                     final response = await dio.post(
-                                      '${AppConstants.Pdf_url}/api/values/order',
+                                      '${AppConstants.Pdf_url}/api/values/order2',
                                       data: {"doc_id": docId},
                                       options: Options(
                                         responseType: ResponseType.bytes,
@@ -1402,7 +1411,7 @@ Widget buildOrderItem(RegisterOrder registerOrder) {
 
                         final dio = Dio();
                         final response = await dio.post(
-                          '${AppConstants.Pdf_url}/api/values/order',
+                          '${AppConstants.Pdf_url}/api/values/order2',
                           data: {"doc_id": registerOrder.orderId},
                           options: Options(responseType: ResponseType.bytes),
                         );
@@ -1555,92 +1564,76 @@ Widget buildOrderItem(RegisterOrder registerOrder) {
           ),
           const SizedBox(height: 12),
           // Second Row: Order Number, City, and Delivery Type
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                decoration: BoxDecoration(
-                  color: const Color.fromRGBO(227, 242, 253, 1), // Blue[50]
-                  borderRadius: BorderRadius.circular(4),
-                  border: const Border.fromBorderSide(BorderSide(
-                    color: Color.fromRGBO(144, 202, 249, 1), // Blue[200]
-                    width: 1,
-                  )),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.receipt_long,
-                      size: 16,
-                      color: Colors.blue,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      registerOrder.orderNo,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: const Color.fromRGBO(21, 101, 192, 1), // Blue[900]
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                decoration: BoxDecoration(
-                  color: const Color.fromRGBO(227, 242, 253, 1), // Blue[50]
-                  borderRadius: BorderRadius.circular(4),
-                  border: const Border.fromBorderSide(BorderSide(
-                    color: Color.fromRGBO(144, 202, 249, 1), // Blue[200]
-                    width: 1,
-                  )),
-                ),
-                child: Text(
-                  registerOrder.city,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: const Color.fromRGBO(21, 101, 192, 1), // Blue[900]
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                decoration: BoxDecoration(
-                  color: deliveryTextColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.fromBorderSide(BorderSide(
-                    color: deliveryBorderColor,
-                    width: 1,
-                  )),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.local_shipping,
-                      size: 16,
-                      color: deliveryIconColor,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      registerOrder.deliveryType,
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: deliveryTextColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+   Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  crossAxisAlignment: CrossAxisAlignment.center,
+  children: [
+    // Order Number Container
+    Flexible(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+        decoration: BoxDecoration(
+          color: const Color.fromRGBO(227, 242, 253, 1),
+          borderRadius: BorderRadius.circular(4),
+          border: const Border.fromBorderSide(BorderSide(
+            color: Color.fromRGBO(144, 202, 249, 1),
+            width: 1,
+          )),
+        ),
+        constraints: const BoxConstraints(minWidth: 60), // Minimum width
+        child: _buildScaledRow(
+          icon: Icons.receipt_long,
+          text: registerOrder.orderNo,
+          iconColor: Colors.blue,
+          textColor: const Color.fromRGBO(21, 101, 192, 1),
+        ),
+      ),
+    ),
+
+    // City Container
+    Flexible(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+        decoration: BoxDecoration(
+          color: const Color.fromRGBO(227, 242, 253, 1),
+          borderRadius: BorderRadius.circular(4),
+          border: const Border.fromBorderSide(BorderSide(
+            color: Color.fromRGBO(144, 202, 249, 1),
+            width: 1,
+          )),
+        ),
+        constraints: const BoxConstraints(minWidth: 60), // Minimum width
+        child: _buildScaledText(
+          text: registerOrder.city,
+          textColor: const Color.fromRGBO(21, 101, 192, 1),
+        ),
+      ),
+    ),
+
+    // Delivery Type Container
+    Flexible(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+        decoration: BoxDecoration(
+          color: deliveryTextColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.fromBorderSide(BorderSide(
+            color: deliveryBorderColor,
+            width: 1,
+          )),
+        ),
+        constraints: const BoxConstraints(minWidth: 80), // Wider minimum
+        child: _buildScaledRow(
+          icon: Icons.local_shipping,
+          text: registerOrder.deliveryType,
+          iconColor: deliveryIconColor,
+          textColor: deliveryTextColor,
+        ),
+      ),
+    ),
+  ],
+),
+
           const SizedBox(height: 12),
           // Table for Additional Details
           Table(
@@ -1675,7 +1668,7 @@ Widget buildOrderItem(RegisterOrder registerOrder) {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
                     child: Text(
-                      '${registerOrder.orderDate} ${registerOrder.createdTime}',
+                      '${registerOrder.orderDate} ',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -1768,6 +1761,45 @@ Widget buildOrderItem(RegisterOrder registerOrder) {
           ),
         ],
       ),
+    ),
+  );
+}
+
+Widget _buildScaledRow({
+  required IconData icon,
+  required String text,
+  required Color iconColor,
+  required Color textColor,
+}) {
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Icon(icon, size: 16, color: iconColor),
+      const SizedBox(width: 6),
+      Flexible(
+        child: _buildScaledText(text: text, textColor: textColor),
+      ),
+    ],
+  );
+}
+
+// Helper method for auto-scaling text
+Widget _buildScaledText({
+  required String text,
+  required Color textColor,
+}) {
+  return FittedBox(
+    fit: BoxFit.scaleDown,
+    child: Text(
+      text,
+      style: GoogleFonts.poppins(
+        fontSize: 14, // Base size
+        fontWeight: FontWeight.w600,
+        color: textColor,
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     ),
   );
 }
