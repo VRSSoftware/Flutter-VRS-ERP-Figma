@@ -1825,7 +1825,7 @@ class _StyleCardState extends State<StyleCard> {
                 "mrp": widget.catalogOrder.catalog.mrp.toString(),
                 "WSP": widget.catalogOrder.catalog.wsp.toString(),
                 "size": size,
-                "TotQty": qty.toString(),
+                "TotQty": totalQty.toString(),
                 "Note": widget.catalogOrder.catalog.remark,
                 "color": shade,
                 "Qty": qty.toString(),
