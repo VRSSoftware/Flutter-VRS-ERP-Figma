@@ -366,10 +366,9 @@ class BarcodeWiseWidget extends StatefulWidget {
   State<BarcodeWiseWidget> createState() => _BarcodeWiseWidgetState();
 }
 
-class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> with WidgetsBindingObserver {
+class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
   final TextEditingController _barcodeController = TextEditingController();
-  final FocusNode _barcodeFocusNode = FocusNode(); 
-  
+  final FocusNode _barcodeFocusNode = FocusNode(); // Add FocusNode
   List<Map<String, dynamic>> _barcodeResults = [];
   List<String> addedItems = [];
   Map<String, bool> _filters = {
@@ -379,15 +378,22 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> with WidgetsBindi
     'StyleCode': true,
   };
   bool _noDataFound = false;
-  bool _isInitialized = false; // Track initialization state
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _barcodeController.addListener(_handleBarcodeInput);
-    _isInitialized = true; // Mark initialization complete
-    WidgetsBinding.instance.addPostFrameCallback((_) => _requestFocus());
+    // Request focus when widget is first built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _barcodeFocusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _barcodeController.dispose();
+    _barcodeFocusNode.dispose(); // Dispose FocusNode
+    super.dispose();
   }
 
   void _handleBarcodeInput() {
@@ -401,7 +407,7 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> with WidgetsBindi
     }
   }
 
-  KeyEventResult _handleKeyEvent(FocusNode node, RawKeyEvent event) {
+  void _handleKeyEvent(RawKeyEvent event) {
     if (event is RawKeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
       final barcode = _barcodeController.text.trim();
       if (barcode.isNotEmpty) {
@@ -410,76 +416,7 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> with WidgetsBindi
           _validateAndNavigate(barcode);
         });
       }
-      return KeyEventResult.handled;
     }
-    return KeyEventResult.ignored;
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_isInitialized) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _requestFocus());
-    }
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _isInitialized) {
-      _requestFocus();
-    }
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _barcodeController.dispose();
-    _barcodeFocusNode.dispose();
-    super.dispose();
-  }
-
-  void _requestFocus() {
-    if (mounted && !_barcodeFocusNode.hasFocus) {
-      FocusScope.of(context).requestFocus(_barcodeFocusNode);
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (mounted && _barcodeFocusNode.hasFocus) {
-          SystemChannels.textInput.invokeMethod('TextInput.show');
-        }
-      });
-    }
-  }
-
-  void _showFilterPopup(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Select Fields to Show'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: _filters.keys.map((key) {
-              return CheckboxListTile(
-                title: Text(key),
-                value: _filters[key],
-                onChanged: (bool? value) {
-                  setState(() {
-                    _filters[key] = value ?? true;
-                  });
-                  Navigator.pop(context);
-                  _showFilterPopup(context);
-                },
-              );
-            }).toList(),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Done'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   Future<void> _scanBarcode() async {
@@ -496,28 +433,28 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> with WidgetsBindi
       });
       _validateAndNavigate(upperBarcode);
     }
+    // Request focus after scan
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _barcodeFocusNode.requestFocus();
+    });
   }
 
   void _validateAndNavigate(String barcode) async {
     if (barcode.isEmpty) {
-      _showAlertDialog(
-        context,
-        'Missing Barcode',
-        'Please enter or scan a barcode first.',
-      );
+      _showAlertDialog(context, 'Missing Barcode', 'Please enter or scan a barcode first.');
+      _barcodeFocusNode.requestFocus(); // Request focus on error
       return;
     }
 
     String upperBarcode = barcode.toUpperCase();
+    print("Checking barcode: $upperBarcode, addedItems: $addedItems");
     if (addedItems.contains(upperBarcode)) {
-      _showAlertDialog(
-        context,
-        'Already Added',
-        'This barcode is already added',
-      );
+      _showAlertDialog(context, 'Already Added', 'This barcode is already added');
+      _barcodeFocusNode.requestFocus(); // Request focus on error
       return;
     }
 
+    print("Navigating to BookOnBarcode2 with barcode: $upperBarcode");
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
@@ -526,19 +463,39 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> with WidgetsBindi
           onSuccess: () {
             setState(() {
               addedItems.add(upperBarcode);
+              print("Added barcode: $upperBarcode, addedItems: $addedItems");
               _barcodeController.clear();
               _noDataFound = false;
+            });
+            // Request focus after success
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _barcodeFocusNode.requestFocus();
             });
           },
           onCancel: () {
             _barcodeController.clear();
+            // Request focus after cancel
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _barcodeFocusNode.requestFocus();
+            });
           },
         ),
       ),
     );
 
-    setState(() {
-      _noDataFound = result == false;
+    // Check the result from BookOnBarcode2
+    if (result == false) {
+      setState(() {
+        _noDataFound = true;
+      });
+    } else {
+      setState(() {
+        _noDataFound = false;
+      });
+    }
+    // Request focus after navigation returns
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _barcodeFocusNode.requestFocus();
     });
   }
 
@@ -550,7 +507,10 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> with WidgetsBindi
         content: Text(message),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              Navigator.pop(context);
+              _barcodeFocusNode.requestFocus(); // Request focus after dialog dismissed
+            },
             child: const Text('OK'),
           ),
         ],
@@ -566,16 +526,16 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> with WidgetsBindi
         children: [
           Padding(
             padding: const EdgeInsets.all(12.0),
-            child: Focus(
-              canRequestFocus: _isInitialized, // Only request focus after initialization
+            child: RawKeyboardListener(
+              focusNode: FocusNode(),
               onKey: _handleKeyEvent,
               child: Row(
                 children: [
                   Expanded(
                     child: TextFormField(
                       controller: _barcodeController,
-                      focusNode: _barcodeFocusNode,
-                      autofocus: true,
+                      focusNode: _barcodeFocusNode, // Assign FocusNode
+                      autofocus: true, // Keep autofocus true
                       maxLines: 1,
                       keyboardType: TextInputType.text,
                       textInputAction: TextInputAction.none,
@@ -635,6 +595,7 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> with WidgetsBindi
                   ),
                   child: Row(
                     children: [
+                      // Left diagonal area with "SEARCH"
                       Expanded(
                         child: ClipPath(
                           clipper: DiagonalClipper(),
@@ -653,6 +614,7 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> with WidgetsBindi
                           ),
                         ),
                       ),
+                      // Icon section
                       Container(
                         width: 38,
                         alignment: Alignment.center,
@@ -667,6 +629,7 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> with WidgetsBindi
               ),
             ),
           ),
+          // Show "No Data Found" message if applicable
           if (_noDataFound)
             const Padding(
               padding: EdgeInsets.all(12.0),
@@ -681,6 +644,7 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> with WidgetsBindi
                 ),
               ),
             ),
+          // Only show results if _barcodeResults is not empty
           if (_barcodeResults.isNotEmpty) ...[
             const Padding(
               padding: EdgeInsets.all(12.0),
@@ -702,20 +666,23 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> with WidgetsBindi
                   if (_filters['Shades'] == true)
                     const DataColumn(label: Text("Shade")),
                 ],
-                rows: _barcodeResults.map((result) {
-                  return DataRow(
-                    cells: [
-                      if (_filters['StyleCode'] == true)
-                        DataCell(Text(result['StyleCode']?.toString() ?? '')),
-                      if (_filters['WSP'] == true)
-                        DataCell(Text(result['WSP']?.toString() ?? '')),
-                      if (_filters['Sizes'] == true)
-                        DataCell(Text(result['Size']?.toString() ?? '')),
-                      if (_filters['Shades'] == true)
-                        DataCell(Text(result['Shade']?.toString() ?? '')),
-                    ],
-                  );
-                }).toList(),
+                rows:
+                    _barcodeResults.map((result) {
+                      return DataRow(
+                        cells: [
+                          if (_filters['StyleCode'] == true)
+                            DataCell(
+                              Text(result['StyleCode']?.toString() ?? ''),
+                            ),
+                          if (_filters['WSP'] == true)
+                            DataCell(Text(result['WSP']?.toString() ?? '')),
+                          if (_filters['Sizes'] == true)
+                            DataCell(Text(result['Size']?.toString() ?? '')),
+                          if (_filters['Shades'] == true)
+                            DataCell(Text(result['Shade']?.toString() ?? '')),
+                        ],
+                      );
+                    }).toList(),
               ),
             ),
           ],
