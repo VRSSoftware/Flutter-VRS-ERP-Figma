@@ -1094,7 +1094,8 @@ class _StyleCardsView extends StatelessWidget {
         );
         final mrp = item['mrp']?.toString() ?? '0';
         final wsp = item['wsp']?.toString() ?? '0';
-        final qty = item['clqty']?.toString() ?? '0';
+        // final qty = item['clqty']?.toString() ?? '0';
+        final qty = item['data2']?.toString() ?? '0';
         return '$mrp,$wsp,$qty';
       });
     });
@@ -1137,6 +1138,7 @@ class _StyleCardsView extends StatelessWidget {
         createdDate: '',
         shadeImages: '',
         upcoming_Stk: firstItem['upcoming_Stk']?.toString() ?? '',
+
       ),
       orderMatrix: OrderMatrix(shades: shades, sizes: sizes, matrix: matrix),
     );
@@ -1548,7 +1550,7 @@ class _StyleCardState extends State<StyleCard> {
       final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
       rate = matrixData[0];
       wsp = matrixData.length > 1 ? matrixData[1] : '0';
-      stock = '0';
+      stock = matrixData[2] ?? '0';
       controller = widget.styleManager.controllers[widget.styleCode]?[shade]?[size];
     }
 
