@@ -1143,7 +1143,8 @@ class _StyleCardsView extends StatelessWidget {
   }
 }
 
-class StyleCard extends StatelessWidget {
+
+class StyleCard extends StatefulWidget {
   final String styleCode;
   final List<dynamic> items;
   final CatalogOrderData catalogOrder;
@@ -1164,6 +1165,26 @@ class StyleCard extends StatelessWidget {
     required this.onUpdate,
     required this.styleManager,
   }) : super(key: key);
+
+  @override
+  _StyleCardState createState() => _StyleCardState();
+}
+
+class _StyleCardState extends State<StyleCard> {
+  bool _hasQuantityChanged = false;
+  bool _isUpdated = false;
+  Map<String, Map<String, int>> _lastSavedQuantities = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // Deep copy initial quantities
+    _lastSavedQuantities = widget.quantities.map((shade, sizes) => MapEntry(
+          shade,
+          Map<String, int>.from(sizes),
+        ));
+  }
+
   Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
     final catalog = catalogOrder.catalog;
 
@@ -1181,24 +1202,22 @@ class StyleCard extends StatelessWidget {
                   border: Border.all(color: Colors.grey),
                   borderRadius: BorderRadius.circular(4.0),
                 ),
-                child: Container(
+                child: SizedBox(
                   width: MediaQuery.of(context).size.width * 0.3,
                   child: AspectRatio(
                     aspectRatio: 3 / 4,
                     child: GestureDetector(
                       onDoubleTap: () {
-                        final imageUrl =
-                            catalog.fullImagePath.contains("http")
-                                ? catalog.fullImagePath
-                                : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}';
+                        final imageUrl = catalog.fullImagePath.contains("http")
+                            ? catalog.fullImagePath
+                            : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}';
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder:
-                                (context) => ImageZoomScreen(
-                                  imageUrls: [imageUrl],
-                                  initialIndex: 0,
-                                ),
+                            builder: (context) => ImageZoomScreen(
+                              imageUrls: [imageUrl],
+                              initialIndex: 0,
+                            ),
                           ),
                         );
                       },
@@ -1207,9 +1226,8 @@ class StyleCard extends StatelessWidget {
                             ? catalog.fullImagePath
                             : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}',
                         fit: BoxFit.cover,
-                        errorBuilder:
-                            (context, error, stackTrace) =>
-                                const Icon(Icons.error, size: 60),
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.error, size: 60),
                       ),
                     ),
                   ),
@@ -1232,22 +1250,10 @@ class StyleCard extends StatelessWidget {
                               fontSize: 14.5,
                               color: Colors.red.shade900,
                             ),
-                            maxLines: 1, // Restrict to one line
-                            overflow:
-                                TextOverflow
-                                    .ellipsis, // Add ellipsis for overflow
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-
-                        // IconButton(
-                        //   icon: const Icon(Icons.delete, color: Colors.red),
-                        //   onPressed: () {
-                        //     _submitDelete(context);
-                        //     //styleManager.removeStyle(styleCode);
-                        //     //onUpdate();
-                        //   },
-                        //   tooltip: 'Delete Style',
-                        // ),
                       ],
                     ),
                     Text(
@@ -1266,12 +1272,11 @@ class StyleCard extends StatelessWidget {
                       },
                       defaultVerticalAlignment: TableCellVerticalAlignment.top,
                       children: [
-                        // _buildTableRow(
-                        //   'Remark',
-                        //   catalog.remark.isNotEmpty ? catalog.remark : 'N/A',
-                        // ),
                         _buildTableRow('Remark', ''),
-                        _buildTableRow('Stk Type', catalog.upcoming_Stk == '0' ? 'Upcoming' : 'Ready'),
+                        _buildTableRow(
+                          'Stk Type',
+                          catalog.upcoming_Stk == '0' ? 'Upcoming' : 'Ready',
+                        ),
                         _buildTableRow(
                           'Stock Qty',
                           _calculateStockQuantity().toString(),
@@ -1296,7 +1301,7 @@ class StyleCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 15),
-        ...selectedColors.map(
+        ...widget.selectedColors.map(
           (color) => Column(
             children: [
               _buildColorSection(catalogOrder, color),
@@ -1304,12 +1309,9 @@ class StyleCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Delete Button (Left-aligned)
                   Expanded(
                     child: TextButton.icon(
-                      onPressed: () {
-                        _submitDelete(context);
-                      },
+                      onPressed: () => _submitDelete(context),
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20.0,
@@ -1318,9 +1320,7 @@ class StyleCard extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(0),
                         ),
-                        side: BorderSide(
-                          color: Colors.red.shade600,
-                        ), // border color
+                        side: BorderSide(color: Colors.red.shade600),
                       ),
                       icon: Icon(Icons.delete, color: Colors.red.shade600),
                       label: Text(
@@ -1333,16 +1333,12 @@ class StyleCard extends StatelessWidget {
                       ),
                     ),
                   ),
-
-                  const SizedBox(
-                    width: 12.0,
-                  ), // spacing between the two buttons
-                  // Update Button (Right-aligned)
+                  const SizedBox(width: 12.0),
                   Expanded(
                     child: TextButton.icon(
-                      onPressed: () {
-                        _submitUpdate(context);
-                      },
+                      onPressed: _hasQuantityChanged && !_isUpdated
+                          ? () => _submitUpdate(context)
+                          : null,
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20.0,
@@ -1351,15 +1347,27 @@ class StyleCard extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(0),
                         ),
-                        side: const BorderSide(
-                          color: Colors.blue,
-                        ), // border color
+                        side: BorderSide(
+                          color: _hasQuantityChanged && !_isUpdated
+                              ? Colors.blue
+                              : Colors.grey.shade400,
+                        ),
+                        backgroundColor: _hasQuantityChanged && !_isUpdated
+                            ? Colors.blue.withOpacity(0.1)
+                            : Colors.grey.withOpacity(0.1),
                       ),
-                      icon: const Icon(Icons.save, color: Colors.blue),
-                      label: const Text(
+                      icon: Icon(
+                        Icons.save,
+                        color: _hasQuantityChanged && !_isUpdated
+                            ? Colors.blue
+                            : Colors.grey.shade400,
+                      ),
+                      label: Text(
                         'Update',
                         style: TextStyle(
-                          color: Colors.blue,
+                          color: _hasQuantityChanged && !_isUpdated
+                              ? Colors.blue
+                              : Colors.grey.shade400,
                           fontSize: 16.0,
                           fontWeight: FontWeight.w600,
                         ),
@@ -1368,7 +1376,6 @@ class StyleCard extends StatelessWidget {
                   ),
                 ],
               ),
-
               const SizedBox(height: 15),
             ],
           ),
@@ -1386,7 +1393,7 @@ class StyleCard extends StatelessWidget {
         ),
         Align(
           alignment: Alignment.center,
-          child: Text(":", style: TextStyle(fontSize: 14)),
+          child: const Text(":", style: TextStyle(fontSize: 14)),
         ),
         Align(
           alignment: Alignment.topLeft,
@@ -1405,7 +1412,7 @@ class StyleCard extends StatelessWidget {
 
   int _calculateCatalogQuantity() {
     int total = 0;
-    quantities.forEach((shade, sizes) {
+    widget.quantities.forEach((shade, sizes) {
       sizes.forEach((size, qty) {
         total += qty;
       });
@@ -1415,7 +1422,7 @@ class StyleCard extends StatelessWidget {
 
   int _calculateStockQuantity() {
     int total = 0;
-    final matrix = catalogOrder.orderMatrix;
+    final matrix = widget.catalogOrder.orderMatrix;
     for (var shadeIndex = 0; shadeIndex < matrix.shades.length; shadeIndex++) {
       for (var sizeIndex = 0; sizeIndex < matrix.sizes.length; sizeIndex++) {
         final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
@@ -1424,25 +1431,22 @@ class StyleCard extends StatelessWidget {
         total += stock;
       }
     }
-    // return total;
-    return 0;
+    return 0; // As per original code, always returns 0
   }
 
   double _calculateCatalogPrice() {
     double total = 0;
-    final matrix = catalogOrder.orderMatrix;
-    for (var shade in quantities.keys) {
+    final matrix = widget.catalogOrder.orderMatrix;
+    for (var shade in widget.quantities.keys) {
       final shadeIndex = matrix.shades.indexOf(shade.trim());
       if (shadeIndex == -1) continue;
-      for (var size in quantities[shade]!.keys) {
+      for (var size in widget.quantities[shade]!.keys) {
         final sizeIndex = matrix.sizes.indexOf(size.trim());
         if (sizeIndex == -1) continue;
         final rate =
-            double.tryParse(
-              matrix.matrix[shadeIndex][sizeIndex].split(',')[0],
-            ) ??
+            double.tryParse(matrix.matrix[shadeIndex][sizeIndex].split(',')[0]) ??
             0;
-        final quantity = quantities[shade]![size]!;
+        final quantity = widget.quantities[shade]![size]!;
         total += rate * quantity;
       }
     }
@@ -1502,24 +1506,26 @@ class StyleCard extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(String text, int flex) => Expanded(
-    flex: flex,
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      decoration: BoxDecoration(
-        border: Border(right: BorderSide(color: Colors.grey.shade300)),
-      ),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: GoogleFonts.lora(
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-          color: Colors.red.shade900,
+  Widget _buildHeader(String text, int flex) {
+    return Expanded(
+      flex: flex,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        decoration: BoxDecoration(
+          border: Border(right: BorderSide(color: Colors.grey.shade300)),
+        ),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.lora(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: Colors.red.shade900,
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 
   Widget _buildSizeRow(
     CatalogOrderData catalogOrder,
@@ -1539,12 +1545,11 @@ class StyleCard extends StatelessWidget {
       final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
       rate = matrixData[0];
       wsp = matrixData.length > 1 ? matrixData[1] : '0';
-      // stock = matrixData.length > 2 ? matrixData[2] : '0';
       stock = '0';
-      controller = styleManager.controllers[styleCode]?[shade]?[size];
+      controller = widget.styleManager.controllers[widget.styleCode]?[shade]?[size];
     }
 
-    final quantity = quantities[shade]?[size] ?? 0;
+    final quantity = widget.quantities[shade]?[size] ?? 0;
 
     return Row(
       children: [
@@ -1555,69 +1560,37 @@ class StyleCard extends StatelessWidget {
             decoration: BoxDecoration(
               border: Border(right: BorderSide(color: Colors.grey.shade300)),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // IconButton(
-                //   onPressed: () {
-                //     final newQuantity = quantity > 0 ? quantity - 1 : 0;
-                //     if (quantities[shade] != null) {
-                //       quantities[shade]![size] = newQuantity;
-                //       controller?.text = newQuantity.toString();
-                //       onUpdate();
-                //     }
-                //   },
-                //   icon: const Icon(Icons.remove, size: 20),
-                //   padding: EdgeInsets.zero,
-                //   constraints: const BoxConstraints(),
-                // ),
-                SizedBox(
-                  width: 22,
-                  child: TextField(
-                    controller: controller,
-                    textAlign: TextAlign.center,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                      hintText: stock,
-                      hintStyle: GoogleFonts.roboto(
-                        fontSize: 14,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                    style: GoogleFonts.roboto(fontSize: 14),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(4),
-                    ],
-                    onChanged: (value) {
-                      final newQuantity =
-                          int.tryParse(value.isEmpty ? '0' : value) ?? 0;
-                      if (quantities[shade] != null) {
-                        quantities[shade]![size] = newQuantity;
-                        // onUpdate();
-                        //  setState(() {
-
-                        //  });
-                      }
-                    },
+            child: SizedBox(
+              width: 60,
+              child: TextField(
+                controller: controller,
+                textAlign: TextAlign.center,
+                keyboardType: TextInputType.number,
+                readOnly: _isUpdated,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  hintText: stock,
+                  hintStyle: GoogleFonts.roboto(
+                    fontSize: 14,
+                    color: Colors.grey.shade500,
                   ),
                 ),
-                // IconButton(
-                //   onPressed: () {
-                //     final newQuantity = quantity + 1;
-                //     if (quantities[shade] != null) {
-                //       quantities[shade]![size] = newQuantity;
-                //       controller?.text = newQuantity.toString();
-                //       onUpdate();
-                //     }
-                //   },
-                //   icon: const Icon(Icons.add, size: 20),
-                //   padding: EdgeInsets.zero,
-                //   constraints: const BoxConstraints(),
-                // ),
-              ],
+                style: GoogleFonts.roboto(fontSize: 14),
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(4),
+                ],
+                onChanged: (value) {
+                  final newQuantity = int.tryParse(value.isEmpty ? '0' : value) ?? 0;
+                  if (widget.quantities[shade] != null) {
+                    setState(() {
+                      widget.quantities[shade]![size] = newQuantity;
+                      _hasQuantityChanged = _checkQuantityChanged();
+                    });
+                  }
+                },
+              ),
             ),
           ),
         ),
@@ -1628,24 +1601,34 @@ class StyleCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCell(String text, int flex) => Expanded(
-    flex: flex,
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      decoration: BoxDecoration(
-        border: Border(right: BorderSide(color: Colors.grey.shade300)),
+  Widget _buildCell(String text, int flex) {
+    return Expanded(
+      flex: flex,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        decoration: BoxDecoration(
+          border: Border(right: BorderSide(color: Colors.grey.shade300)),
+        ),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.roboto(fontSize: 14),
+        ),
       ),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: GoogleFonts.roboto(fontSize: 14),
-      ),
-    ),
-  );
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return buildOrderItem(catalogOrder, context);
+  bool _checkQuantityChanged() {
+    for (var shade in widget.quantities.keys) {
+      for (var size in widget.quantities[shade]!.keys) {
+        final currentQty = widget.quantities[shade]![size]!;
+        final lastQty = _lastSavedQuantities[shade]?[size] ?? 0;
+        if (currentQty != lastQty) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   Future<void> _submitDelete(BuildContext context) async {
@@ -1671,12 +1654,12 @@ class StyleCard extends StatelessWidget {
 
     if (confirmed != true) return;
 
-    String sCode = styleCode;
+    String sCode = widget.styleCode;
     String bCode = "";
     if (sCode.contains('---')) {
-      List<String> parts = styleCode.split('---');
+      final parts = widget.styleCode.split('---');
       sCode = parts[0];
-      bCode = parts[1];
+      bCode = parts.length > 1 ? parts[1] : "";
     }
 
     final payload = {
@@ -1701,19 +1684,17 @@ class StyleCard extends StatelessWidget {
 
     try {
       final response = await http.post(
-        Uri.parse(
-          '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
-        ),
+        Uri.parse('${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
       );
 
       if (response.statusCode == 200) {
-        styleManager.removeStyle(styleCode);
-        onUpdate();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Style deleted successfully')));
+        widget.styleManager.removeStyle(widget.styleCode);
+        widget.onUpdate();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Style deleted successfully')),
+        );
       } else {
         _showErrorDialog(
           context,
@@ -1722,6 +1703,140 @@ class StyleCard extends StatelessWidget {
       }
     } catch (e) {
       _showErrorDialog(context, "Error deleting style: $e");
+    }
+  }
+
+  Future<void> _submitUpdate(BuildContext context) async {
+    int totalQty = _calculateCatalogQuantity();
+    if (totalQty <= 0) {
+      _showErrorDialog(context, "Total quantity must be greater than zero.");
+      return;
+    }
+
+    String sCode = widget.styleCode;
+    String bCode = "";
+    if (sCode.contains('---')) {
+      final parts = widget.styleCode.split('---');
+      sCode = parts[0];
+      bCode = parts.length > 1 ? parts[1] : "";
+    }
+
+    final initialPayload = {
+      "userId": UserSession.userName ?? '',
+      "coBrId": UserSession.coBrId ?? '',
+      "fcYrId": UserSession.userFcYr ?? '',
+      "data": {
+        "designcode": sCode,
+        "mrp": widget.catalogOrder.catalog.mrp.toString(),
+        "WSP": widget.catalogOrder.catalog.wsp.toString(),
+        "size": widget.catalogOrder.catalog.sizeName,
+        "TotQty": totalQty.toString(),
+        "Note": widget.catalogOrder.catalog.remark,
+        "color": widget.catalogOrder.catalog.shadeName,
+        "cobrid": UserSession.coBrId ?? '',
+        "user": "admin",
+        "barcode": bCode,
+      },
+      "typ": 1,
+    };
+
+    try {
+      final initialResponse = await http.post(
+        Uri.parse('${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(initialPayload),
+      );
+
+      if (initialResponse.statusCode != 200) {
+        _showErrorDialog(
+          context,
+          "Failed to update style (initial request): ${initialResponse.statusCode} - ${initialResponse.body}",
+        );
+        return;
+      }
+
+      if (widget.quantities.isNotEmpty) {
+        final shadeMap = widget.quantities;
+        bool allSuccessful = true;
+
+        for (final shade in shadeMap.keys) {
+          final sizeMap = shadeMap[shade]!;
+          for (final size in sizeMap.keys) {
+            final qty = sizeMap[size]!;
+            if (qty <= 0) continue;
+
+            final payload = {
+              "userId": UserSession.userName ?? '',
+              "coBrId": UserSession.coBrId ?? '',
+              "fcYrId": UserSession.userFcYr ?? '',
+              "data": {
+                "designcode": sCode,
+                "mrp": widget.catalogOrder.catalog.mrp.toString(),
+                "WSP": widget.catalogOrder.catalog.wsp.toString(),
+                "size": size,
+                "TotQty": qty.toString(),
+                "Note": widget.catalogOrder.catalog.remark,
+                "color": shade,
+                "Qty": qty.toString(),
+                "cobrid": UserSession.coBrId ?? '',
+                "user": "admin",
+                "barcode": bCode,
+              },
+              "typ": 0,
+            };
+
+            final response = await http.post(
+              Uri.parse('${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails'),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode(payload),
+            );
+
+            if (response.statusCode != 200) {
+              allSuccessful = false;
+              print(
+                'Failed to update shade: $shade, size: $size, status: ${response.statusCode}, body: ${response.body}',
+              );
+            }
+          }
+        }
+
+        if (allSuccessful) {
+          setState(() {
+            _isUpdated = true;
+            _hasQuantityChanged = false;
+            _lastSavedQuantities = widget.quantities.map((shade, sizes) => MapEntry(
+                  shade,
+                  Map<String, int>.from(sizes),
+                ));
+          });
+          widget.onUpdate();
+          await showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text("Success"),
+                content: const Text("Style updated successfully"),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("OK"),
+                  ),
+                ],
+              );
+            },
+          );
+        } else {
+          _showErrorDialog(
+            context,
+            "Some shade/size updates failed. Check logs for details.",
+          );
+        }
+      } else {
+        _showErrorDialog(context, "No quantities found for style: ${widget.styleCode}");
+      }
+    } catch (e) {
+      print('Error updating style: $e');
+      _showErrorDialog(context, "Error updating style: $e");
     }
   }
 
@@ -1743,130 +1858,11 @@ class StyleCard extends StatelessWidget {
     );
   }
 
-  Future<void> _submitUpdate(BuildContext context) async {
-    // Calculate total quantity
-    int totalQty = _calculateCatalogQuantity();
-    if (totalQty <= 0) {
-      _showErrorDialog(context, "Total quantity must be greater than zero.");
-      return;
-    }
-
-    // Split style code and barcode
-    String sCode = styleCode;
-    String bCode = "";
-    if (sCode.contains('---')) {
-      final parts = styleCode.split('---');
-      sCode = parts[0];
-      bCode = parts.length > 1 ? parts[1] : "";
-    }
-
-    // Prepare initial payload (typ: 1)
-    final initialPayload = {
-      "userId": UserSession.userName ?? '',
-      "coBrId": UserSession.coBrId ?? '',
-      "fcYrId": UserSession.userFcYr ?? '',
-      "data": {
-        "designcode": sCode,
-        "mrp": catalogOrder.catalog.mrp.toString(),
-        "WSP": catalogOrder.catalog.wsp.toString(),
-        "size": catalogOrder.catalog.sizeName,
-        "TotQty": totalQty.toString(),
-        "Note": catalogOrder.catalog.remark,
-        "color": catalogOrder.catalog.shadeName,
-        "cobrid": UserSession.coBrId ?? '',
-        "user": "admin",
-        "barcode": bCode,
-      },
-      "typ": 1,
-    };
-
-    try {
-      // Send initial request (typ: 1)
-      final initialResponse = await http.post(
-        Uri.parse(
-          '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
-        ),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(initialPayload),
-      );
-
-      if (initialResponse.statusCode != 200) {
-        _showErrorDialog(
-          context,
-          "Failed to update style (initial request): ${initialResponse.statusCode} - ${initialResponse.body}",
-        );
-        return;
-      }
-
-      // Process shade/size quantities (typ: 0)
-      if (quantities.isNotEmpty) {
-        final shadeMap = quantities;
-        bool allSuccessful = true;
-
-        for (final shade in shadeMap.keys) {
-          final sizeMap = shadeMap[shade]!;
-          for (final size in sizeMap.keys) {
-            final qty = sizeMap[size]!;
-            if (qty <= 0) continue; // Skip zero quantities
-
-            final payload = {
-              "userId": UserSession.userName ?? '',
-              "coBrId": UserSession.coBrId ?? '',
-              "fcYrId": UserSession.userFcYr ?? '',
-              "data": {
-                "designcode": sCode,
-                "mrp": catalogOrder.catalog.mrp.toString(),
-                "WSP": catalogOrder.catalog.wsp.toString(),
-                "size": size,
-                "TotQty": qty.toString(), // Use individual qty for TotQty
-                "Note": catalogOrder.catalog.remark,
-                "color": shade,
-                "Qty": qty.toString(),
-                "cobrid": UserSession.coBrId ?? '',
-                "user": "admin",
-                "barcode": bCode,
-              },
-              "typ": 0,
-            };
-
-            final response = await http.post(
-              Uri.parse(
-                '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
-              ),
-              headers: {'Content-Type': 'application/json'},
-              body: jsonEncode(payload),
-            );
-
-            if (response.statusCode != 200) {
-              allSuccessful = false;
-              print(
-                'Failed to update shade: $shade, size: $size, status: ${response.statusCode}, body: ${response.body}',
-              );
-            }
-          }
-        }
-
-        if (allSuccessful) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Style updated successfully')),
-          );
-          onUpdate();
-        } else {
-          _showErrorDialog(
-            context,
-            "Some shade/size updates failed. Check logs for details.",
-          );
-        }
-      } else {
-        _showErrorDialog(context, "No quantities found for style: $styleCode");
-      }
-    } catch (e) {
-      print('Error updating style: $e');
-      _showErrorDialog(context, "Error updating style: $e");
-    }
+  @override
+  Widget build(BuildContext context) {
+    return buildOrderItem(widget.catalogOrder, context);
   }
 }
-
 class ImageZoomScreen extends StatelessWidget {
   final List<String> imageUrls;
   final int initialIndex;
