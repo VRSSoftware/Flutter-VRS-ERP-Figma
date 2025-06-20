@@ -1136,7 +1136,7 @@ class _StyleCardsView extends StatelessWidget {
         sizeWithWsp: sizes.map((s) => '$s (${firstItem['wsp']})').join(','),
         createdDate: '',
         shadeImages: '',
-        upcoming_Stk: '',
+        upcoming_Stk: firstItem['upcoming_Stk']?.toString() ?? '',
       ),
       orderMatrix: OrderMatrix(shades: shades, sizes: sizes, matrix: matrix),
     );

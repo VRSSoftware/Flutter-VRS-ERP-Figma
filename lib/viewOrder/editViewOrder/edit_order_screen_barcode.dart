@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:vrs_erp_figma/OrderBooking/barcode/barcodewidget.dart';
 import 'package:vrs_erp_figma/catalog/imagezoom.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
@@ -25,7 +26,8 @@ enum ActiveTab { transaction, customerDetails }
 class EditOrderScreenBarcode extends StatefulWidget {
   final String docId;
 
-  const EditOrderScreenBarcode({Key? key, required this.docId}) : super(key: key);
+  const EditOrderScreenBarcode({Key? key, required this.docId})
+    : super(key: key);
 
   @override
   _EditOrderScreenBarcodeState createState() => _EditOrderScreenBarcodeState();
@@ -253,11 +255,29 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
   }
 
   Future<void> _initializeData() async {
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    List<Map<String, dynamic>> addedItems = [];
+    if (args != null && args.containsKey('addedItems')) {
+      addedItems = List<Map<String, dynamic>>.from(args['addedItems']);
+    }
+
     await Future.wait([
-      _styleManager.fetchOrderItems(barcode: barcodeMode, doc_Id: docId.toString()),
+      _styleManager.fetchOrderItems(
+        barcode: barcodeMode,
+        doc_Id: docId.toString(),
+      ),
       _dropdownData.loadAllDropdownData(),
       fetchPaymentTerms(),
     ]);
+
+    // Add new items to _styleManager._orderItems
+    if (addedItems.isNotEmpty) {
+      setState(() {
+        _styleManager._orderItems.addAll(addedItems);
+      });
+    }
+
     _initializeQuantitiesAndColors();
     _updateTotals();
     setState(() {
@@ -522,6 +542,12 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
           _buildBottomButtons(),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _handleAddAction,
+        backgroundColor: AppColors.primaryColor,
+        child: const Icon(Icons.add, color: Colors.white),
+        tooltip: 'Add New Item',
+      ),
     );
   }
 
@@ -620,6 +646,9 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
                 });
               }
             },
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -633,9 +662,6 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
                   Icon(Icons.arrow_forward_ios, color: Colors.blue, size: 16),
               ],
             ),
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-            ),
           ),
         ],
       ),
@@ -644,10 +670,7 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
 
   AppBar _buildAppBar() {
     return AppBar(
-      title: const Text(
-        'Update Order ',
-        style: TextStyle(color: Colors.white),
-      ),
+      title: const Text('Update Order ', style: TextStyle(color: Colors.white)),
       backgroundColor: AppColors.primaryColor,
       elevation: 1,
       leading: IconButton(
@@ -758,6 +781,21 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
       default:
         return Colors.black;
     }
+  }
+
+  void _handleAddAction() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => BarcodeWiseWidget(
+              onFilterPressed: (filter) {
+                print("Filter pressed: $filter");
+              },
+              edit: true, // Set edit to true
+            ),
+      ),
+    );
   }
 }
 
@@ -909,7 +947,10 @@ class _StyleManager {
     return map;
   }
 
-  Future<void> fetchOrderItems({required bool barcode, required String doc_Id}) async {
+  Future<void> fetchOrderItems({
+    required bool barcode,
+    required String doc_Id,
+  }) async {
     final response = await http.post(
       Uri.parse('${AppConstants.BASE_URL}/orderRegister/editOrderData'),
       headers: {'Content-Type': 'application/json'},
@@ -1147,7 +1188,6 @@ class _StyleCardsView extends StatelessWidget {
         upcoming_Stk: '',
       ),
       orderMatrix: OrderMatrix(shades: shades, sizes: sizes, matrix: matrix),
-
     );
   }
 }
@@ -1310,7 +1350,6 @@ class StyleCard extends StatelessWidget {
             children: [
               _buildColorSection(catalogOrder, color),
               const SizedBox(height: 8),
-            
 
               const SizedBox(height: 15),
             ],
@@ -1591,8 +1630,6 @@ class StyleCard extends StatelessWidget {
     return buildOrderItem(catalogOrder, context);
   }
 
-  
-
   void _showErrorDialog(BuildContext context, String message) {
     showDialog(
       context: context,
@@ -1610,10 +1647,7 @@ class StyleCard extends StatelessWidget {
       },
     );
   }
-
-  
 }
-
 
 class _OrderForm extends StatefulWidget {
   final _OrderControllers controllers;

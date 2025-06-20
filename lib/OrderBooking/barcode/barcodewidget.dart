@@ -350,7 +350,6 @@
 //   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 // }
 
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:vrs_erp_figma/OrderBooking/barcode/barcode_scanner.dart';
@@ -359,8 +358,13 @@ import 'package:vrs_erp_figma/constants/app_constants.dart';
 
 class BarcodeWiseWidget extends StatefulWidget {
   final ValueChanged<String> onFilterPressed;
+  final bool edit;
 
-  const BarcodeWiseWidget({super.key, required this.onFilterPressed});
+  const BarcodeWiseWidget({
+    super.key,
+    required this.onFilterPressed,
+    this.edit = false,
+  });
 
   @override
   State<BarcodeWiseWidget> createState() => _BarcodeWiseWidgetState();
@@ -408,7 +412,8 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
   }
 
   void _handleKeyEvent(RawKeyEvent event) {
-    if (event is RawKeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
+    if (event is RawKeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.enter) {
       final barcode = _barcodeController.text.trim();
       if (barcode.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -441,7 +446,11 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
 
   void _validateAndNavigate(String barcode) async {
     if (barcode.isEmpty) {
-      _showAlertDialog(context, 'Missing Barcode', 'Please enter or scan a barcode first.');
+      _showAlertDialog(
+        context,
+        'Missing Barcode',
+        'Please enter or scan a barcode first.',
+      );
       _barcodeFocusNode.requestFocus(); // Request focus on error
       return;
     }
@@ -449,37 +458,43 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
     String upperBarcode = barcode.toUpperCase();
     print("Checking barcode: $upperBarcode, addedItems: $addedItems");
     if (addedItems.contains(upperBarcode)) {
-      _showAlertDialog(context, 'Already Added', 'This barcode is already added');
+      _showAlertDialog(
+        context,
+        'Already Added',
+        'This barcode is already added',
+      );
       _barcodeFocusNode.requestFocus(); // Request focus on error
       return;
     }
 
     print("Navigating to BookOnBarcode2 with barcode: $upperBarcode");
-    final result = await Navigator.push<bool>(
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => BookOnBarcode2(
-          barcode: upperBarcode,
-          onSuccess: () {
-            setState(() {
-              addedItems.add(upperBarcode);
-              print("Added barcode: $upperBarcode, addedItems: $addedItems");
-              _barcodeController.clear();
-              _noDataFound = false;
-            });
-            // Request focus after success
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _barcodeFocusNode.requestFocus();
-            });
-          },
-          onCancel: () {
-            _barcodeController.clear();
-            // Request focus after cancel
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _barcodeFocusNode.requestFocus();
-            });
-          },
-        ),
+        builder:
+            (context) => BookOnBarcode2(
+              barcode: upperBarcode,
+              onSuccess: () {
+                setState(() {
+                  addedItems.add(upperBarcode);
+                  print(
+                    "Added barcode: $upperBarcode, addedItems: $addedItems",
+                  );
+                  _barcodeController.clear();
+                  _noDataFound = false;
+                });
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _barcodeFocusNode.requestFocus();
+                });
+              },
+              onCancel: () {
+                _barcodeController.clear();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _barcodeFocusNode.requestFocus();
+                });
+              },
+              edit: widget.edit, // Pass edit parameter
+            ),
       ),
     );
 
@@ -502,19 +517,21 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
   void _showAlertDialog(BuildContext context, String title, String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _barcodeFocusNode.requestFocus(); // Request focus after dialog dismissed
-            },
-            child: const Text('OK'),
+      builder:
+          (context) => AlertDialog(
+            title: Text(title),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _barcodeFocusNode
+                      .requestFocus(); // Request focus after dialog dismissed
+                },
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -551,11 +568,15 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
                         fillColor: const Color(0xFFF6F8FA),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(0),
-                          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE0E0E0),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(0),
-                          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE0E0E0),
+                          ),
                         ),
                       ),
                     ),
