@@ -1271,7 +1271,7 @@ class StyleCard extends StatelessWidget {
                         //   catalog.remark.isNotEmpty ? catalog.remark : 'N/A',
                         // ),
                         _buildTableRow('Remark', ''),
-                        _buildTableRow('Stk Type', 'Ready'),
+                        _buildTableRow('Stk Type', catalog.upcoming_Stk == '0' ? 'Upcoming' : 'Ready'),
                         _buildTableRow(
                           'Stock Qty',
                           _calculateStockQuantity().toString(),
