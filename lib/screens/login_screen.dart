@@ -181,6 +181,35 @@ class _LoginPageState extends State<LoginScreen> {
     return ""; // Return empty string if any failure
   }
 
+
+  Future<void> fetchDatabaseCredentials() async {
+  try {
+    final response = await http.get(
+      Uri.parse('${AppConstants.BASE_URL}/users/database-credentials'),
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      setState(() {
+        UserSession.dbName = data['dbName'];
+        UserSession.dbUserName = data['dbUserName'];
+        UserSession.dbPassword = data['dbPassword'];
+        UserSession.dbSource = data['dbSource'];
+      });
+      
+      // Print for debugging (remove in production)
+      print('Database Credentials Loaded:');
+      print('Name: ${UserSession.dbName}');
+      print('User: ${UserSession.dbUserName}');
+      print('Source: ${UserSession.dbSource}');
+    } else {
+      print('Failed to load database credentials: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error fetching database credentials: $e');
+  }
+}
+
   Future<void> login(BuildContext context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -224,6 +253,7 @@ class _LoginPageState extends State<LoginScreen> {
               await fetchOnlineImageSetting(); // API CALL HERE
               UserSession.rptPath = await fetchAppSetting('606');
               AppConstants.whatsappKey = await fetchAppSetting('541');
+              await fetchDatabaseCredentials();
               // print("Whatsapp Key: ${AppConstants.whatsappKey}");
               // print("RPT Path: ${UserSession.rptPath}");
               Navigator.pushReplacement(
