@@ -20,6 +20,7 @@ import 'package:vrs_erp_figma/models/item.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
 import 'package:vrs_erp_figma/models/OrderMatrix.dart';
 import 'package:vrs_erp_figma/models/CatalogOrderData.dart';
+import 'package:vrs_erp_figma/viewOrder/editViewOrder/more_order_using_barcode.dart';
 
 enum ActiveTab { transaction, customerDetails }
 
@@ -783,20 +784,30 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
     }
   }
 
-  void _handleAddAction() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder:
-            (context) => BarcodeWiseWidget(
-              onFilterPressed: (filter) {
-                print("Filter pressed: $filter");
-              },
-              edit: true, // Set edit to true
-            ),
+void _handleAddAction() {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => MoreOrderBarcodePage(
+        onFilterPressed: (String filter) {
+          // Handle filter if needed
+        },
+        edit: true, // Set edit mode
       ),
-    );
-  }
+    ),
+  ).then((result) {
+    if (result != null && result is List<String>) {
+      // Refresh order items after adding new barcodes
+      _styleManager.refreshOrderItems(barcode: barcodeMode).then((_) {
+        setState(() {
+          _initializeQuantitiesAndColors();
+          _updateTotals();
+        });
+      });
+    }
+  });
+}
+
 }
 
 class _OrderControllers {
