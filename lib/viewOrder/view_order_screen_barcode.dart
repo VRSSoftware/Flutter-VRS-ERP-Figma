@@ -1436,7 +1436,7 @@ class _StyleCardState extends State<StyleCard> {
         total += stock;
       }
     }
-    return 0; // As per original code, always returns 0
+    return total; // As per original code, always returns 0
   }
 
   double _calculateCatalogPrice() {
