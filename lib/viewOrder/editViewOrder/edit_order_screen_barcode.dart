@@ -1143,7 +1143,8 @@ class _StyleCardsView extends StatelessWidget {
         );
         final mrp = item['mrp']?.toString() ?? '0';
         final wsp = item['wsp']?.toString() ?? '0';
-        final qty = item['clqty']?.toString() ?? '0';
+        final qty1 = item['data2']?.toString()?? '0';
+        final qty = qty1.split('.')[0];
         return '$mrp,$wsp,$qty';
       });
     });
@@ -1185,7 +1186,7 @@ class _StyleCardsView extends StatelessWidget {
         sizeWithWsp: sizes.map((s) => '$s (${firstItem['wsp']})').join(','),
         createdDate: '',
         shadeImages: '',
-        upcoming_Stk: '',
+        upcoming_Stk: firstItem['upcoming_Stk']?.toString() ?? '',
       ),
       orderMatrix: OrderMatrix(shades: shades, sizes: sizes, matrix: matrix),
     );
@@ -1320,7 +1321,7 @@ class StyleCard extends StatelessWidget {
                         //   catalog.remark.isNotEmpty ? catalog.remark : 'N/A',
                         // ),
                         _buildTableRow('Remark', ''),
-                        _buildTableRow('Stk Type', 'Ready'),
+                        _buildTableRow('Stk Type',catalog.upcoming_Stk == '1' ? 'Upcoming' : 'Ready'),
                         _buildTableRow(
                           'Stock Qty',
                           _calculateStockQuantity().toString(),
@@ -1406,8 +1407,8 @@ class StyleCard extends StatelessWidget {
         total += stock;
       }
     }
-    // return total;
-    return 0;
+    return total;
+    // return 0;
   }
 
   double _calculateCatalogPrice() {
@@ -1521,8 +1522,8 @@ class StyleCard extends StatelessWidget {
       final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
       rate = matrixData[0];
       wsp = matrixData.length > 1 ? matrixData[1] : '0';
-      // stock = matrixData.length > 2 ? matrixData[2] : '0';
-      stock = '0';
+      stock = matrixData.length > 2 ? matrixData[2] : '0';
+    
       controller = styleManager.controllers[styleCode]?[shade]?[size];
     }
 

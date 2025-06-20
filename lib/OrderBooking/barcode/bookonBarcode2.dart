@@ -686,7 +686,6 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
 
   Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
     final catalog = catalogOrder.catalog;
-    print('catalog.upcoming_Stk : ${catalog.upcoming_Stk}');
     final Set<String> selectedColors = selectedColors2[catalog.styleKey] ?? {};
 
     return Column(
