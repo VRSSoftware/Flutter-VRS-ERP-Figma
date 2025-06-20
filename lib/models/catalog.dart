@@ -26,6 +26,7 @@ class Catalog {
   final String sizeWithWsp;
   final String createdDate;
   final String shadeImages;
+  final String upcoming_Stk;
   final int total;
 
 
@@ -50,6 +51,7 @@ class Catalog {
     required this.fullImagePath,
     required this.remark,
     required this.imageId,
+    required this.upcoming_Stk,
     this.sizeDetails = '', // ✅ Optional default value
     this.sizeDetailsWithoutWSp = '',
     this.sizeWithMrp = '',
@@ -90,6 +92,7 @@ class Catalog {
        sizeWithWsp: json['sizeWithWsp'] ?? '',
        createdDate: json['createdDate'] ?? '',
        shadeImages: json['shadeImages'] ?? '',
+       upcoming_Stk: json['upcoming_Stk'] ?? '',
     );
   }
 

@@ -385,46 +385,46 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
     print(orderDataJson);
 
     try {
-      String statusCode = await insertFinalSalesOrder(orderDataJson);
-      if (statusCode == "200") {
-        showDialog(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                title: Text('Order Saved'),
-                content: Text(
-                  'Order ${_orderControllers.orderNo.text} saved successfully',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => PdfViewerScreen(
-                                orderNo: _orderControllers.orderNo.text,
-                                whatsappNo: _orderControllers.whatsAppMobileNo,
-                              ),
-                        ),
-                      );
-                    },
-                    child: Text('View PDF'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => HomeScreen()),
-                      );
-                    },
-                    child: Text('Done'),
-                  ),
-                ],
-              ),
-        );
-      }
+      // String statusCode = await insertFinalSalesOrder({});
+      // if (statusCode == "200") {
+      //   showDialog(
+      //     context: context,
+      //     builder:
+      //         (context) => AlertDialog(
+      //           title: Text('Order Saved'),
+      //           content: Text(
+      //             'Order ${_orderControllers.orderNo.text} saved successfully',
+      //           ),
+      //           actions: [
+      //             TextButton(
+      //               onPressed: () {
+      //                 Navigator.pop(context);
+      //                 Navigator.push(
+      //                   context,
+      //                   MaterialPageRoute(
+      //                     builder:
+      //                         (context) => PdfViewerScreen(
+      //                           orderNo: _orderControllers.orderNo.text,
+      //                           whatsappNo: _orderControllers.whatsAppMobileNo,
+      //                         ),
+      //                   ),
+      //                 );
+      //               },
+      //               child: Text('View PDF'),
+      //             ),
+      //             TextButton(
+      //               onPressed: () {
+      //                 Navigator.pushReplacement(
+      //                   context,
+      //                   MaterialPageRoute(builder: (context) => HomeScreen()),
+      //                 );
+      //               },
+      //               child: Text('Done'),
+      //             ),
+      //           ],
+      //         ),
+      //   );
+      // }
     } catch (e) {
       print('Error during order saving: $e');
       ScaffoldMessenger.of(
@@ -1308,73 +1308,7 @@ class StyleCard extends StatelessWidget {
             children: [
               _buildColorSection(catalogOrder, color),
               const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Delete Button (Left-aligned)
-                  Expanded(
-                    child: TextButton.icon(
-                      onPressed: () {
-                        _submitDelete(context);
-                      },
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20.0,
-                          vertical: 10.0,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(0),
-                        ),
-                        side: BorderSide(
-                          color: Colors.red.shade600,
-                        ), // border color
-                      ),
-                      icon: Icon(Icons.delete, color: Colors.red.shade600),
-                      label: Text(
-                        'Delete',
-                        style: TextStyle(
-                          color: Colors.red.shade600,
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(
-                    width: 12.0,
-                  ), // spacing between the two buttons
-                  // Update Button (Right-aligned)
-                  Expanded(
-                    child: TextButton.icon(
-                      onPressed: () {
-                        _submitUpdate(context);
-                      },
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20.0,
-                          vertical: 10.0,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(0),
-                        ),
-                        side: const BorderSide(
-                          color: Colors.blue,
-                        ), // border color
-                      ),
-                      icon: const Icon(Icons.save, color: Colors.blue),
-                      label: const Text(
-                        'Update',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            
 
               const SizedBox(height: 15),
             ],
@@ -1655,82 +1589,7 @@ class StyleCard extends StatelessWidget {
     return buildOrderItem(catalogOrder, context);
   }
 
-  Future<void> _submitDelete(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Confirm Deletion"),
-          content: const Text("Are you sure you want to delete this style?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text("Cancel"),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text("Delete", style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmed != true) return;
-
-    String sCode = styleCode;
-    String bCode = "";
-    if (sCode.contains('---')) {
-      List<String> parts = styleCode.split('---');
-      sCode = parts[0];
-      bCode = parts[1];
-    }
-
-    final payload = {
-      "userId": UserSession.userName ?? '',
-      "coBrId": UserSession.coBrId ?? '',
-      "fcYrId": UserSession.userFcYr ?? '',
-      "data": {
-        "designcode": sCode,
-        "mrp": '0',
-        "WSP": '0',
-        "size": '',
-        "TotQty": '0',
-        "Note": '',
-        "color": "",
-        "Qty": "",
-        "cobrid": UserSession.coBrId ?? '',
-        "user": "admin",
-        "barcode": bCode,
-      },
-      "typ": 2,
-    };
-
-    try {
-      final response = await http.post(
-        Uri.parse(
-          '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
-        ),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
-
-      if (response.statusCode == 200) {
-        styleManager.removeStyle(styleCode);
-        onUpdate();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Style deleted successfully')));
-      } else {
-        _showErrorDialog(
-          context,
-          "Failed to delete style: ${response.statusCode}",
-        );
-      }
-    } catch (e) {
-      _showErrorDialog(context, "Error deleting style: $e");
-    }
-  }
+  
 
   void _showErrorDialog(BuildContext context, String message) {
     showDialog(
@@ -1750,158 +1609,9 @@ class StyleCard extends StatelessWidget {
     );
   }
 
-  Future<void> _submitUpdate(BuildContext context) async {
-    // Calculate total quantity
-    int totalQty = _calculateCatalogQuantity();
-    if (totalQty <= 0) {
-      _showErrorDialog(context, "Total quantity must be greater than zero.");
-      return;
-    }
-
-    // Split style code and barcode
-    String sCode = styleCode;
-    String bCode = "";
-    if (sCode.contains('---')) {
-      final parts = styleCode.split('---');
-      sCode = parts[0];
-      bCode = parts.length > 1 ? parts[1] : "";
-    }
-
-    // Prepare initial payload (typ: 1)
-    final initialPayload = {
-      "userId": UserSession.userName ?? '',
-      "coBrId": UserSession.coBrId ?? '',
-      "fcYrId": UserSession.userFcYr ?? '',
-      "data": {
-        "designcode": sCode,
-        "mrp": catalogOrder.catalog.mrp.toString(),
-        "WSP": catalogOrder.catalog.wsp.toString(),
-        "size": catalogOrder.catalog.sizeName,
-        "TotQty": totalQty.toString(),
-        "Note": catalogOrder.catalog.remark,
-        "color": catalogOrder.catalog.shadeName,
-        "cobrid": UserSession.coBrId ?? '',
-        "user": "admin",
-        "barcode": bCode,
-      },
-      "typ": 1,
-    };
-
-    try {
-      // Send initial request (typ: 1)
-      final initialResponse = await http.post(
-        Uri.parse(
-          '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
-        ),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(initialPayload),
-      );
-
-      if (initialResponse.statusCode != 200) {
-        _showErrorDialog(
-          context,
-          "Failed to update style (initial request): ${initialResponse.statusCode} - ${initialResponse.body}",
-        );
-        return;
-      }
-
-      // Process shade/size quantities (typ: 0)
-      if (quantities.isNotEmpty) {
-        final shadeMap = quantities;
-        bool allSuccessful = true;
-
-        for (final shade in shadeMap.keys) {
-          final sizeMap = shadeMap[shade]!;
-          for (final size in sizeMap.keys) {
-            final qty = sizeMap[size]!;
-            if (qty <= 0) continue; // Skip zero quantities
-
-            final payload = {
-              "userId": UserSession.userName ?? '',
-              "coBrId": UserSession.coBrId ?? '',
-              "fcYrId": UserSession.userFcYr ?? '',
-              "data": {
-                "designcode": sCode,
-                "mrp": catalogOrder.catalog.mrp.toString(),
-                "WSP": catalogOrder.catalog.wsp.toString(),
-                "size": size,
-                "TotQty": qty.toString(), // Use individual qty for TotQty
-                "Note": catalogOrder.catalog.remark,
-                "color": shade,
-                "Qty": qty.toString(),
-                "cobrid": UserSession.coBrId ?? '',
-                "user": "admin",
-                "barcode": bCode,
-              },
-              "typ": 0,
-            };
-
-            final response = await http.post(
-              Uri.parse(
-                '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
-              ),
-              headers: {'Content-Type': 'application/json'},
-              body: jsonEncode(payload),
-            );
-
-            if (response.statusCode != 200) {
-              allSuccessful = false;
-              print(
-                'Failed to update shade: $shade, size: $size, status: ${response.statusCode}, body: ${response.body}',
-              );
-            }
-          }
-        }
-
-        if (allSuccessful) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Style updated successfully')),
-          );
-          onUpdate();
-        } else {
-          _showErrorDialog(
-            context,
-            "Some shade/size updates failed. Check logs for details.",
-          );
-        }
-      } else {
-        _showErrorDialog(context, "No quantities found for style: $styleCode");
-      }
-    } catch (e) {
-      print('Error updating style: $e');
-      _showErrorDialog(context, "Error updating style: $e");
-    }
-  }
+  
 }
 
-class ImageZoomScreen extends StatelessWidget {
-  final List<String> imageUrls;
-  final int initialIndex;
-
-  const ImageZoomScreen({
-    Key? key,
-    required this.imageUrls,
-    required this.initialIndex,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: Center(
-        child: Image.network(
-          imageUrls[initialIndex],
-          fit: BoxFit.contain,
-          errorBuilder:
-              (context, error, stackTrace) => const Icon(Icons.error, size: 60),
-        ),
-      ),
-    );
-  }
-}
 
 class _OrderForm extends StatefulWidget {
   final _OrderControllers controllers;
