@@ -1279,7 +1279,7 @@ class _StyleCardState extends State<StyleCard> {
                         _buildTableRow('Remark', ''),
                         _buildTableRow(
                           'Stk Type',
-                          catalog.upcoming_Stk == '0' ? 'Upcoming' : 'Ready',
+                          catalog.upcoming_Stk == '1' ? 'Upcoming' : 'Ready',
                         ),
                         _buildTableRow(
                           'Stock Qty',
