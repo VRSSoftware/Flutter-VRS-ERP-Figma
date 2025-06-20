@@ -1170,9 +1170,11 @@ class StyleCard extends StatefulWidget {
   _StyleCardState createState() => _StyleCardState();
 }
 
+
 class _StyleCardState extends State<StyleCard> {
   bool _hasQuantityChanged = false;
   bool _isUpdated = false;
+  bool _isLoading = false; // State variable for inline loader
   Map<String, Map<String, int>> _lastSavedQuantities = {};
 
   @override
@@ -1301,17 +1303,18 @@ class _StyleCardState extends State<StyleCard> {
           ),
         ),
         const SizedBox(height: 15),
+      
         ...widget.selectedColors.map(
           (color) => Column(
             children: [
-              _buildColorSection(catalogOrder, color),
+              _buildColorSection(widget.catalogOrder, color),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
                     child: TextButton.icon(
-                      onPressed: () => _submitDelete(context),
+                      onPressed: _isLoading ? null : () => _submitDelete(context),
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20.0,
@@ -1336,9 +1339,9 @@ class _StyleCardState extends State<StyleCard> {
                   const SizedBox(width: 12.0),
                   Expanded(
                     child: TextButton.icon(
-                      onPressed: _hasQuantityChanged && !_isUpdated
-                          ? () => _submitUpdate(context)
-                          : null,
+                      onPressed: _isLoading || !_hasQuantityChanged
+                          ? null
+                          : () => _submitUpdate(context),
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20.0,
@@ -1348,24 +1351,24 @@ class _StyleCardState extends State<StyleCard> {
                           borderRadius: BorderRadius.circular(0),
                         ),
                         side: BorderSide(
-                          color: _hasQuantityChanged && !_isUpdated
+                          color: _hasQuantityChanged
                               ? Colors.blue
                               : Colors.grey.shade400,
                         ),
-                        backgroundColor: _hasQuantityChanged && !_isUpdated
+                        backgroundColor: _hasQuantityChanged
                             ? Colors.blue.withOpacity(0.1)
                             : Colors.grey.withOpacity(0.1),
                       ),
                       icon: Icon(
                         Icons.save,
-                        color: _hasQuantityChanged && !_isUpdated
+                        color: _hasQuantityChanged
                             ? Colors.blue
                             : Colors.grey.shade400,
                       ),
                       label: Text(
                         'Update',
                         style: TextStyle(
-                          color: _hasQuantityChanged && !_isUpdated
+                          color: _hasQuantityChanged
                               ? Colors.blue
                               : Colors.grey.shade400,
                           fontSize: 16.0,
@@ -1566,7 +1569,6 @@ class _StyleCardState extends State<StyleCard> {
                 controller: controller,
                 textAlign: TextAlign.center,
                 keyboardType: TextInputType.number,
-                readOnly: _isUpdated,
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -1631,6 +1633,24 @@ class _StyleCardState extends State<StyleCard> {
     return false;
   }
 
+  void _showErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Error"),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _submitDelete(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -1653,6 +1673,10 @@ class _StyleCardState extends State<StyleCard> {
     );
 
     if (confirmed != true) return;
+
+    setState(() {
+      _isLoading = true; // Show inline loader
+    });
 
     String sCode = widget.styleCode;
     String bCode = "";
@@ -1689,19 +1713,35 @@ class _StyleCardState extends State<StyleCard> {
         body: jsonEncode(payload),
       );
 
+      setState(() {
+        _isLoading = false; // Hide inline loader
+      });
+
       if (response.statusCode == 200) {
         widget.styleManager.removeStyle(widget.styleCode);
         widget.onUpdate();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Style deleted successfully')),
+        await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text("Success"),
+              content: const Text("Style deleted successfully"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("OK"),
+                ),
+              ],
+            );
+          },
         );
       } else {
-        _showErrorDialog(
-          context,
-          "Failed to delete style: ${response.statusCode}",
-        );
+        _showErrorDialog(context, "Failed to delete style: ${response.statusCode}");
       }
     } catch (e) {
+      setState(() {
+        _isLoading = false; // Hide inline loader
+      });
       _showErrorDialog(context, "Error deleting style: $e");
     }
   }
@@ -1712,6 +1752,10 @@ class _StyleCardState extends State<StyleCard> {
       _showErrorDialog(context, "Total quantity must be greater than zero.");
       return;
     }
+
+    setState(() {
+      _isLoading = true; // Show inline loader
+    });
 
     String sCode = widget.styleCode;
     String bCode = "";
@@ -1741,6 +1785,7 @@ class _StyleCardState extends State<StyleCard> {
     };
 
     try {
+      // Send initial request
       final initialResponse = await http.post(
         Uri.parse('${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails'),
         headers: {'Content-Type': 'application/json'},
@@ -1748,6 +1793,9 @@ class _StyleCardState extends State<StyleCard> {
       );
 
       if (initialResponse.statusCode != 200) {
+        setState(() {
+          _isLoading = false; // Hide inline loader
+        });
         _showErrorDialog(
           context,
           "Failed to update style (initial request): ${initialResponse.statusCode} - ${initialResponse.body}",
@@ -1757,8 +1805,9 @@ class _StyleCardState extends State<StyleCard> {
 
       if (widget.quantities.isNotEmpty) {
         final shadeMap = widget.quantities;
-        bool allSuccessful = true;
+        List<Future<http.Response>> requests = [];
 
+        // Prepare all shade/size requests
         for (final shade in shadeMap.keys) {
           final sizeMap = shadeMap[shade]!;
           for (final size in sizeMap.keys) {
@@ -1785,24 +1834,35 @@ class _StyleCardState extends State<StyleCard> {
               "typ": 0,
             };
 
-            final response = await http.post(
+            requests.add(http.post(
               Uri.parse('${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails'),
               headers: {'Content-Type': 'application/json'},
               body: jsonEncode(payload),
-            );
-
-            if (response.statusCode != 200) {
-              allSuccessful = false;
-              print(
-                'Failed to update shade: $shade, size: $size, status: ${response.statusCode}, body: ${response.body}',
-              );
-            }
+            ));
           }
         }
 
+        // Send all requests concurrently
+        final responses = await Future.wait(requests);
+
+        bool allSuccessful = true;
+        for (var i = 0; i < responses.length; i++) {
+          final response = responses[i];
+          if (response.statusCode != 200) {
+            allSuccessful = false;
+            print(
+              'Failed to update shade/size, status: ${response.statusCode}, body: ${response.body}',
+            );
+          }
+        }
+
+        setState(() {
+          _isLoading = false; // Hide inline loader
+        });
+
         if (allSuccessful) {
           setState(() {
-            _isUpdated = true;
+            _isUpdated = false;
             _hasQuantityChanged = false;
             _lastSavedQuantities = widget.quantities.map((shade, sizes) => MapEntry(
                   shade,
@@ -1832,37 +1892,75 @@ class _StyleCardState extends State<StyleCard> {
           );
         }
       } else {
+        setState(() {
+          _isLoading = false; // Hide inline loader
+        });
         _showErrorDialog(context, "No quantities found for style: ${widget.styleCode}");
       }
     } catch (e) {
+      setState(() {
+        _isLoading = false; // Hide inline loader
+      });
       print('Error updating style: $e');
       _showErrorDialog(context, "Error updating style: $e");
     }
   }
 
-  void _showErrorDialog(BuildContext context, String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Error"),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
+
+    @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        // Main content
+        buildOrderItem(widget.catalogOrder, context),
+        
+        // Modal loading overlay
+        if (_isLoading)
+          ModalBarrier(
+            dismissible: false,
+            color: Colors.black.withOpacity(0.4),
+          ),
+        if (_isLoading)
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(
+                    'Updating...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        );
-      },
+          ),
+      ],
     );
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return buildOrderItem(widget.catalogOrder, context);
-  }
 }
+
 class ImageZoomScreen extends StatelessWidget {
   final List<String> imageUrls;
   final int initialIndex;
