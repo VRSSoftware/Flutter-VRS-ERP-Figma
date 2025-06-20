@@ -151,6 +151,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
               .join(', '),
           createdDate: '',
           shadeImages: '',
+          upcoming_Stk: '',
         );
 
         final matrix = <List<String>>[];
