@@ -18,6 +18,7 @@ class CatalogItem {
   final int clQty;
   final double mrp;
   final double wsp;
+  final String upcoming_Stk;
 
   CatalogItem({
     required this.styleCode,
@@ -26,6 +27,7 @@ class CatalogItem {
     required this.clQty,
     required this.mrp,
     required this.wsp,
+    required this.upcoming_Stk,
   });
 
   factory CatalogItem.fromJson(Map<String, dynamic> json) {
@@ -33,9 +35,11 @@ class CatalogItem {
       styleCode: json['styleCode']?.toString() ?? '',
       shadeName: json['shadeName']?.toString() ?? '',
       sizeName: json['sizeName']?.toString() ?? '',
+      upcoming_Stk: json['upcoming_Stk']?.toString() ?? '',
       clQty: int.tryParse(json['clqty']?.toString() ?? '0') ?? 0,
       mrp: double.tryParse(json['mrp']?.toString() ?? '0') ?? 0,
       wsp: double.tryParse(json['wsp']?.toString() ?? '0') ?? 0,
+      
     );
   }
 }
@@ -120,6 +124,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
           onlyMRP: items.first.mrp,
           clqty: items.first.clQty,
           total: items.fold(0, (sum, item) => sum + item.clQty),
+          upcoming_Stk: items.first.upcoming_Stk,
           fullImagePath: '/NoImage.jpg',
           remark: '',
           imageId: '',
@@ -151,7 +156,8 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
               .join(', '),
           createdDate: '',
           shadeImages: '',
-          upcoming_Stk: '',
+          
+          
         );
 
         final matrix = <List<String>>[];
@@ -167,6 +173,8 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
                 clQty: items.first.clQty,
                 mrp: items.first.mrp,
                 wsp: items.first.wsp,
+                upcoming_Stk: items.first.upcoming_Stk,
+
               ),
             );
             row.add('${item.mrp},${item.wsp},${item.clQty}');
@@ -198,6 +206,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
                 clQty: items.first.clQty,
                 mrp: items.first.mrp,
                 wsp: items.first.wsp,
+                upcoming_Stk: items.first.upcoming_Stk  
               ),
             );
             quantities[styleCode]![shade]![size] = 1;
@@ -587,6 +596,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
 
   Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
     final catalog = catalogOrder.catalog;
+    print('catalog.upcoming_Stk : ${catalog.upcoming_Stk}' );
     final Set<String> selectedColors = selectedColors2[catalog.styleKey] ?? {};
 
     return Column(
@@ -676,7 +686,8 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
                           'Remark',
                           catalog.remark.isNotEmpty ? catalog.remark : '',
                         ),
-                        _buildTableRow('Stk Type', 'Ready'),
+                        _buildTableRow('Stk Type', catalog.upcoming_Stk == '1' ? 'Upcoming' : 'Ready' ),
+                        
                         _buildTableRow(
                           'Stock Qty',
                           _calculateStockQuantity(catalog.styleKey).toString(),
