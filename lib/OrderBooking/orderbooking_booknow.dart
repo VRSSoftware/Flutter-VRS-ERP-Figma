@@ -1728,36 +1728,36 @@ class _OrderPageState extends State<OrderPage> {
     }
   }
 
-  void _showBookingDialog(BuildContext context, Catalog item) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => Dialog(
-            insetPadding: EdgeInsets.all(16),
-            child: CatalogBookingTable(
-              itemSubGrpKey: item.itemSubGrpKey.toString() ?? '',
-              itemKey: item.itemKey.toString() ?? '',
-              styleKey: item.styleKey.toString() ?? '',
-              onSuccess: () {
-                setState(() {
-                  addedItems.add(item.styleCode); // Update local addedItems
-                });
-                Provider.of<CartModel>(
-                  context,
-                  listen: false,
-                ).addItem(item.styleCode); // Update CartModel
-                _fetchCartCount().then((_) {
-                  _fetchAddedItems(
-                    coBr!,
-                    fcYrId!,
-                  ); // Re-fetch added items to ensure sync with backend
-                  Navigator.pop(context);
-                });
-              },
-            ),
-          ),
-    );
-  }
+void _showBookingDialog(BuildContext context, Catalog item) {
+  showDialog(
+    context: context,
+    builder: (context) => Dialog(
+      insetPadding: EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.zero, // <- Removes the curve
+      ),
+      child: CatalogBookingTable(
+        itemSubGrpKey: item.itemSubGrpKey.toString(),
+        itemKey: item.itemKey.toString(),
+        styleKey: item.styleKey.toString(),
+        onSuccess: () {
+          setState(() {
+            addedItems.add(item.styleCode); // Update local addedItems
+          });
+          Provider.of<CartModel>(
+            context,
+            listen: false,
+          ).addItem(item.styleCode); // Update CartModel
+          _fetchCartCount().then((_) {
+            _fetchAddedItems(coBr!, fcYrId!); // Re-fetch added items
+            Navigator.pop(context);
+          });
+        },
+      ),
+    ),
+  );
+}
+
 
   Widget _buildToggleRow(String title, bool value, Function(bool) onChanged) {
     return Row(
