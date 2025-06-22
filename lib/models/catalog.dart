@@ -28,6 +28,7 @@ class Catalog {
   final String shadeImages;
   final String upcoming_Stk;
   final String stkQty;
+  final String barcode;
   final int total;
 
 
@@ -62,6 +63,7 @@ class Catalog {
     this.createdDate='',
     this.shadeImages='',
     this.stkQty = '',
+    this.barcode = '',
   });
 
   factory Catalog.fromJson(Map<String, dynamic> json) {
@@ -96,6 +98,7 @@ class Catalog {
        shadeImages: json['shadeImages'] ?? '',
        upcoming_Stk: json['upcoming_Stk'] ?? '',
        stkQty: json['data2'] ?? '',
+       barcode: json['barcode'] ?? '',
     );
   }
 
@@ -129,6 +132,7 @@ class Catalog {
       'createdDate':createdDate,
       'shadeImages':shadeImages,
       'stkQty':stkQty,
+      'barcode':barcode,
 
     };
   }

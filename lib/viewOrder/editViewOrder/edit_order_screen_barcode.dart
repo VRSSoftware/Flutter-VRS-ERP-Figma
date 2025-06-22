@@ -277,6 +277,93 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
       _initializeQuantitiesAndColors();
     }
 
+    // Fetch order details from the new API
+    if (docId != '-1') {
+      try {
+        final response = await http.post(
+          Uri.parse('${AppConstants.BASE_URL}/users/detailsForEdit'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({"doc_id": docId}),
+        );
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          setState(() {
+            // Set party
+            final party = _dropdownData.partyList.firstWhere(
+              (e) => e['ledKey'] == data['Led_Key']?.toString(),
+              orElse: () => {'ledKey': '', 'ledName': ''},
+            );
+            _orderControllers.selectedPartyKey = data['Led_Key']?.toString();
+            _orderControllers.selectedParty =
+                party['ledName']?.isNotEmpty ?? false ? party['ledName'] : null;
+
+            // Set broker
+            final broker = _dropdownData.brokerList.firstWhere(
+              (e) => e['ledKey'] == data['Broker_Key']?.toString(),
+              orElse: () => {'ledKey': '', 'ledName': ''},
+            );
+            _orderControllers.selectedBrokerKey =
+                data['Broker_Key']?.toString();
+            _orderControllers.selectedBroker =
+                broker['ledName']?.isNotEmpty ?? false
+                    ? broker['ledName']
+                    : null;
+            _orderControllers.comm.text =
+                data['Broker_Comm']?.toString() ?? '0.00';
+
+            // Set transporter
+            final transporter = _dropdownData.transporterList.firstWhere(
+              (e) => e['ledKey'] == data['Trsp_Key']?.toString(),
+              orElse: () => {'ledKey': '', 'ledName': ''},
+            );
+            _orderControllers.selectedTransporterKey =
+                data['Trsp_Key']?.toString();
+            _orderControllers.selectedTransporter =
+                transporter['ledName']?.isNotEmpty ?? false
+                    ? transporter['ledName']
+                    : null;
+
+            // Set payment days, delivery date, and remark
+            _orderControllers.deliveryDays.text =
+                data['PytDays']?.toString() ?? '0';
+            _orderControllers.deliveryDate.text =
+                data['DlvDate'] != null
+                    ? _OrderControllers.formatDate(
+                      DateTime.parse(data['DlvDate']),
+                    )
+                    : _OrderControllers.formatDate(DateTime.now());
+            _orderControllers.remark.text = data['Remark']?.toString() ?? '';
+
+            // Update additionalInfo
+            _additionalInfo.addAll({
+              'paymentdays': data['PytDays']?.toString() ?? '0',
+              'refno': '', // If API provides this, update accordingly
+            });
+          });
+          // Fetch consignees based on Led_Key
+          await fetchAndMapConsignees(
+            key: data['Led_Key']?.toString() ?? '',
+            CoBrId: UserSession.coBrId ?? '',
+          );
+        } else {
+          print('Error fetching order details: ${response.statusCode}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to fetch order details: ${response.statusCode}',
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        print('Error fetching order details: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching order details: $e')),
+        );
+      }
+    }
+
     await Future.wait([
       _styleManager.fetchOrderItems(
         barcode: barcodeMode,
@@ -289,9 +376,7 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
     if (docId == '-1' && addedItems.isNotEmpty) {
       print('Processing addedItems for docId == -1');
       setState(() {
-        // Clear existing data to avoid duplicates
         EditOrderData.data.clear();
-        // Convert and add each item to EditOrderData.data
         for (var item in addedItems) {
           final styleCode = item['styleCode']?.toString() ?? 'No Style Code';
           final catalogOrder = _styleManager._convertToCatalogOrderData(
@@ -308,7 +393,6 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
       });
     }
 
-    // Always reinitialize quantities and colors after fetching or adding items
     _initializeQuantitiesAndColors();
     setState(() {
       isLoading = false;
@@ -426,7 +510,7 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
     }
 
     final orderData = {
-      "doc_id": docId,
+      "doc_id": EditOrderData.doc_id,
       "login_id": UserSession.userName ?? 'admin',
       "coBr_id": UserSession.coBrId ?? '01',
       "fcYr_id": UserSession.userFcYr ?? '25',
@@ -508,7 +592,9 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
                     .toList();
               })
               .expand((i) => i)
-              .where((item) => (item['qty'] as int) > 0) // Exclude items with qty 0
+              .where(
+                (item) => (item['qty'] as int) > 0,
+              ) // Exclude items with qty 0
               .toList(),
     };
 
@@ -601,6 +687,7 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
                           styleManager: _styleManager,
                           updateTotals: _updateTotals,
                           getColor: _getColorCode,
+
                           onUpdate: () async {
                             await _styleManager.refreshOrderItems(
                               barcode: barcodeMode,
@@ -1183,6 +1270,7 @@ class _StyleManager {
       createdDate: '',
       shadeImages: '',
       upcoming_Stk: firstItem['upcoming_Stk']?.toString() ?? '0',
+      barcode: firstItem['barcode']?.toString() ?? 'Unknown',
     );
 
     print('Catalog created for $styleKey: ${catalog.toJson()}');
@@ -1198,6 +1286,7 @@ class _StyleManager {
   }) async {
     docId = doc_Id;
     if (doc_Id != '-1') {
+      EditOrderData.doc_id = doc_Id;
       try {
         final response = await http.post(
           Uri.parse('${AppConstants.BASE_URL}/orderRegister/editOrderData'),
@@ -1555,18 +1644,64 @@ class StyleCard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Align(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            catalog.styleCode,
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14.5,
-                              color: Colors.red.shade900,
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.topLeft,
+                            child: Text(
+                              catalog.styleCode,
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14.5,
+                                color: Colors.red.shade900,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder:
+                                  (context) => AlertDialog(
+                                    title: const Text('Confirm Delete'),
+                                    content: Text(
+                                      'Are you sure you want to delete style ${catalog.styleCode}?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          styleManager.removeStyle(
+                                            catalog.styleCode,
+                                          );
+                                          onUpdate();
+                                          Navigator.pop(context);
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Style ${catalog.styleCode} removed',
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        child: const Text(
+                                          'Delete',
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                            );
+                          },
+                          tooltip: 'Delete Style',
                         ),
                       ],
                     ),
@@ -1888,6 +2023,7 @@ class _OrderFormState extends State<_OrderForm> {
   @override
   void initState() {
     super.initState();
+    // Handle customer user type (C)
     if (UserSession.userType == 'C' &&
         widget.controllers.selectedParty == null) {
       final party = widget.dropdownData.partyList.firstWhere(
@@ -1908,6 +2044,7 @@ class _OrderFormState extends State<_OrderForm> {
         });
       }
     }
+    // Handle salesman user type (S)
     if (UserSession.userType == 'S' &&
         widget.controllers.salesPersonKey == null) {
       final salesman = widget.dropdownData.salesPersonList.firstWhere(
@@ -1925,6 +2062,19 @@ class _OrderFormState extends State<_OrderForm> {
         });
       }
     }
+    // Ensure dropdowns reflect API response values
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        // Ensure selectedParty, selectedBroker, and selectedTransporter are set
+        if (widget.controllers.selectedParty != null &&
+            widget.controllers.selectedPartyKey != null) {
+          widget.onPartySelected(
+            widget.controllers.selectedParty,
+            widget.controllers.selectedPartyKey,
+          );
+        }
+      });
+    });
   }
 
   @override
@@ -1975,7 +2125,15 @@ class _OrderFormState extends State<_OrderForm> {
             context,
             "Delivery Days",
             widget.controllers.deliveryDays,
-            readOnly: true,
+            // keyboardType: TextInputType.number,
+            // onChanged: (value) {
+            //   final days = int.tryParse(value) ?? 0;
+            //   final futureDate = DateTime.now().add(Duration(days: days));
+            //   widget
+            //       .controllers
+            //       .deliveryDate
+            //       .text = _OrderControllers.formatDate(futureDate);
+            // },
           ),
           buildTextField(
             context,
@@ -2001,6 +2159,7 @@ class _OrderFormState extends State<_OrderForm> {
             },
           ),
         ),
+
         buildFullField(context, "Remark", widget.controllers.remark, true),
         Row(
           children: [
@@ -2021,9 +2180,9 @@ class _OrderFormState extends State<_OrderForm> {
               ),
             ),
           ],
-        )
+        ),
         // _buildResponsiveRow(
-          // context,
+        // context,
         //   buildTextField(
         //     context,
         //     "Total Item",
@@ -2046,90 +2205,90 @@ class _OrderFormState extends State<_OrderForm> {
         // ),
         // Row(
         //   children: [
-            // Expanded(
-            //   child: ElevatedButton(
-            //     onPressed: () async {
-            //       if (UserSession.userType == 'S' &&
-            //           (widget.controllers.selectedPartyKey == null ||
-            //               widget.controllers.selectedPartyKey!.isEmpty)) {
-            //         showDialog(
-            //           context: context,
-            //           builder:
-            //               (context) => AlertDialog(
-            //                 title: Text('Party Selection Required'),
-            //                 content: Text(
-            //                   'Please select a party before adding more information.',
-            //                 ),
-            //                 actions: [
-            //                   TextButton(
-            //                     onPressed: () => Navigator.pop(context),
-            //                     child: Text('OK'),
-            //                   ),
-            //                 ],
-            //               ),
-            //         );
-            //         return;
-            //       }
-            //       final salesPersonList = widget.dropdownData.salesPersonList;
-            //       final partyLedKey = widget.controllers.selectedPartyKey;
-            //       final result = await showDialog(
-            //         context: context,
-            //         builder:
-            //             (context) => AddMoreInfoDialog(
-            //               salesPersonList: salesPersonList,
-            //               partyLedKey: partyLedKey,
-            //               pytTermDiscKey: widget.controllers.pytTermDiscKey,
-            //               salesPersonKey: widget.controllers.salesPersonKey,
-            //               creditPeriod: widget.controllers.creditPeriod,
-            //               salesLedKey: widget.controllers.salesLedKey,
-            //               ledgerName: widget.controllers.ledgerName,
-            //               additionalInfo: widget.additionalInfo,
-            //               consignees: widget.consignees,
-            //               paymentTerms: widget.paymentTerms,
-            //               bookingTypes: widget.bookingTypes,
-            //               onValueChanged: (newInfo) {
-            //                 widget.onAdditionalInfoUpdated(newInfo);
-            //               },
-            //               isSalesmanDropdownEnabled:
-            //                   UserSession.userType != 'S',
-            //             ),
-            //       );
-            //       if (result != null) {
-            //         widget.onAdditionalInfoUpdated(result);
-            //       }
-            //     },
-            //     style: ElevatedButton.styleFrom(
-            //       backgroundColor: AppColors.primaryColor,
-            //       minimumSize: Size(double.infinity, 50),
-            //       shape: RoundedRectangleBorder(
-            //         borderRadius: BorderRadius.zero,
-            //       ),
-            //     ),
-            //     child: const Text(
-            //       'Add More Info',
-            //       style: TextStyle(color: Colors.white),
-            //     ),
-            //   ),
-            // ),
-            //const SizedBox(width: 10),
-            // Expanded(
-            //   child: ElevatedButton(
-            //     onPressed: widget.saveOrder,
-            //     style: ElevatedButton.styleFrom(
-            //       backgroundColor: AppColors.primaryColor,
-            //       minimumSize: Size(double.infinity, 50),
-            //       shape: RoundedRectangleBorder(
-            //         borderRadius: BorderRadius.zero,
-            //       ),
-            //     ),
-            //     child: const Text(
-            //       'Save',
-            //       style: TextStyle(color: Colors.white),
-            //     ),
-            //   ),
-            // ),
+        // Expanded(
+        //   child: ElevatedButton(
+        //     onPressed: () async {
+        //       if (UserSession.userType == 'S' &&
+        //           (widget.controllers.selectedPartyKey == null ||
+        //               widget.controllers.selectedPartyKey!.isEmpty)) {
+        //         showDialog(
+        //           context: context,
+        //           builder:
+        //               (context) => AlertDialog(
+        //                 title: Text('Party Selection Required'),
+        //                 content: Text(
+        //                   'Please select a party before adding more information.',
+        //                 ),
+        //                 actions: [
+        //                   TextButton(
+        //                     onPressed: () => Navigator.pop(context),
+        //                     child: Text('OK'),
+        //                   ),
+        //                 ],
+        //               ),
+        //         );
+        //         return;
+        //       }
+        //       final salesPersonList = widget.dropdownData.salesPersonList;
+        //       final partyLedKey = widget.controllers.selectedPartyKey;
+        //       final result = await showDialog(
+        //         context: context,
+        //         builder:
+        //             (context) => AddMoreInfoDialog(
+        //               salesPersonList: salesPersonList,
+        //               partyLedKey: partyLedKey,
+        //               pytTermDiscKey: widget.controllers.pytTermDiscKey,
+        //               salesPersonKey: widget.controllers.salesPersonKey,
+        //               creditPeriod: widget.controllers.creditPeriod,
+        //               salesLedKey: widget.controllers.salesLedKey,
+        //               ledgerName: widget.controllers.ledgerName,
+        //               additionalInfo: widget.additionalInfo,
+        //               consignees: widget.consignees,
+        //               paymentTerms: widget.paymentTerms,
+        //               bookingTypes: widget.bookingTypes,
+        //               onValueChanged: (newInfo) {
+        //                 widget.onAdditionalInfoUpdated(newInfo);
+        //               },
+        //               isSalesmanDropdownEnabled:
+        //                   UserSession.userType != 'S',
+        //             ),
+        //       );
+        //       if (result != null) {
+        //         widget.onAdditionalInfoUpdated(result);
+        //       }
+        //     },
+        //     style: ElevatedButton.styleFrom(
+        //       backgroundColor: AppColors.primaryColor,
+        //       minimumSize: Size(double.infinity, 50),
+        //       shape: RoundedRectangleBorder(
+        //         borderRadius: BorderRadius.zero,
+        //       ),
+        //     ),
+        //     child: const Text(
+        //       'Add More Info',
+        //       style: TextStyle(color: Colors.white),
+        //     ),
+        //   ),
+        // ),
+        //const SizedBox(width: 10),
+        // Expanded(
+        //   child: ElevatedButton(
+        //     onPressed: widget.saveOrder,
+        //     style: ElevatedButton.styleFrom(
+        //       backgroundColor: AppColors.primaryColor,
+        //       minimumSize: Size(double.infinity, 50),
+        //       shape: RoundedRectangleBorder(
+        //         borderRadius: BorderRadius.zero,
+        //       ),
+        //     ),
+        //     child: const Text(
+        //       'Save',
+        //       style: TextStyle(color: Colors.white),
+        //     ),
+        //   ),
+        // ),
         //   ],
-        
+
         // ),
       ],
     );
@@ -2190,7 +2349,9 @@ class _OrderFormState extends State<_OrderForm> {
           ),
         ),
         items: _getLedgerList(ledCat).map((e) => e['ledName']!).toList(),
-        selectedItem: selectedValue,
+        selectedItem:
+            selectedValue ??
+            _getDefaultSelection(ledCat), // Fallback to default if null
         dropdownDecoratorProps: DropDownDecoratorProps(
           dropdownSearchDecoration: InputDecoration(
             labelText: label,
@@ -2199,7 +2360,7 @@ class _OrderFormState extends State<_OrderForm> {
         ),
         dropdownBuilder: (context, selectedItem) {
           return Text(
-            selectedItem ?? '',
+            selectedItem ?? 'Select $label',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 16),
@@ -2212,6 +2373,20 @@ class _OrderFormState extends State<_OrderForm> {
         enabled: isEnabled,
       ),
     );
+  }
+
+  // Helper method to provide default selection if needed
+  String? _getDefaultSelection(String ledCat) {
+    switch (ledCat) {
+      case 'w':
+        return widget.controllers.selectedParty;
+      case 'B':
+        return widget.controllers.selectedBroker;
+      case 'T':
+        return widget.controllers.selectedTransporter;
+      default:
+        return null;
+    }
   }
 
   List<Map<String, String>> _getLedgerList(String ledCat) {
