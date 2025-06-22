@@ -44,12 +44,12 @@ class _CustomerMasterDialogState extends State<CustomerMasterDialog> {
   Future<void> fetchDropdowns() async {
     try {
       final results = await Future.wait([
-        ApiService.fetchLedgers(ledCat: 'L', coBrId: UserSession.coBrId??''),
-        ApiService.fetchStations(coBrId: UserSession.coBrId??''),
-        ApiService.fetchLedgers(ledCat: 'B', coBrId: UserSession.coBrId??''),
-        ApiService.fetchLedgers(ledCat: 'T', coBrId: UserSession.coBrId??''),
-        ApiService.fetchLedgers(ledCat: 'S', coBrId: UserSession.coBrId??''),
-        ApiService.fetchPayTerms(coBrId: UserSession.coBrId??''),
+        ApiService.fetchLedgers(ledCat: 'L', coBrId: UserSession.coBrId ?? ''),
+        ApiService.fetchStations(coBrId: UserSession.coBrId ?? ''),
+        ApiService.fetchLedgers(ledCat: 'B', coBrId: UserSession.coBrId ?? ''),
+        ApiService.fetchLedgers(ledCat: 'T', coBrId: UserSession.coBrId ?? ''),
+        ApiService.fetchLedgers(ledCat: 'S', coBrId: UserSession.coBrId ?? ''),
+        ApiService.fetchPayTerms(coBrId: UserSession.coBrId ?? ''),
       ]);
 
       setState(() {
@@ -154,6 +154,8 @@ class _CustomerMasterDialogState extends State<CustomerMasterDialog> {
                       paymentTerms,
                       selectedPaymentTerms,
                       (val) => setState(() => selectedPaymentTerms = val),
+                      validator:
+                          null, // Explicitly set validator to null to make it optional
                     ),
                     buildTextField(
                       "Credit Days",
@@ -168,7 +170,7 @@ class _CustomerMasterDialogState extends State<CustomerMasterDialog> {
                           child: ElevatedButton(
                             onPressed: onSave,
                             style: ElevatedButton.styleFrom(
-                            //  backgroundColor: Colors.blue,
+                              //  backgroundColor: Colors.blue,
                             ),
                             child: Text(
                               "Save",
@@ -181,7 +183,7 @@ class _CustomerMasterDialogState extends State<CustomerMasterDialog> {
                           child: ElevatedButton(
                             onPressed: () => Navigator.pop(context),
                             style: ElevatedButton.styleFrom(
-                             // backgroundColor: Colors.red,
+                              // backgroundColor: Colors.red,
                             ),
                             child: Text(
                               "Close",
@@ -229,12 +231,13 @@ class _CustomerMasterDialogState extends State<CustomerMasterDialog> {
     String label,
     List<KeyName> items,
     KeyName? selected,
-    Function(KeyName?) onChanged,
-  ) {
+    Function(KeyName?) onChanged, {
+    String? Function(KeyName?)? validator, // Add optional validator parameter
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<KeyName>(
-        isExpanded: true, // 🔥 This is critical to avoid overflow!
+        isExpanded: true,
         value: selected,
         decoration: InputDecoration(
           labelText: label,
@@ -245,15 +248,12 @@ class _CustomerMasterDialogState extends State<CustomerMasterDialog> {
                 .map(
                   (item) => DropdownMenuItem<KeyName>(
                     value: item,
-                    child: Text(
-                      item.name,
-                      overflow: TextOverflow.ellipsis, // clip long names
-                    ),
+                    child: Text(item.name, overflow: TextOverflow.ellipsis),
                   ),
                 )
                 .toList(),
         onChanged: onChanged,
-        validator: (val) => val == null ? "Select $label" : null,
+        validator: validator, // Use the passed validator (can be null)
       ),
     );
   }
@@ -289,9 +289,9 @@ class _CustomerMasterDialogState extends State<CustomerMasterDialog> {
 
         // Prepare request body
         final requestBody = {
-          "coBrId": UserSession.coBrId??'',
-          "userId": UserSession.userName??'',
-          "fcYrId": UserSession.userFcYr??'',
+          "coBrId": UserSession.coBrId ?? '',
+          "userId": UserSession.userName ?? '',
+          "fcYrId": UserSession.userFcYr ?? '',
           "data2": dataJson,
         };
 

@@ -52,7 +52,7 @@ class UserSession {
   static String? onlineImage='0';
   static String? rptPath;
   static String? dbName;
-  static String? dbUserName;
+  static String? dbUser;
   static String? dbPassword;
   static String? dbSource;
   static String? coBrName;

@@ -201,7 +201,7 @@ Future<void> _fetchCompanies() async {
       final Map<String, dynamic> data = json.decode(response.body);
       setState(() {
         UserSession.dbName = data['dbName'];
-        UserSession.dbUserName = data['dbUserName'];
+        UserSession.dbUser = data['dbUserName'];
         UserSession.dbPassword = data['dbPassword'];
         UserSession.dbSource = data['dbSource'];
       });
@@ -209,7 +209,7 @@ Future<void> _fetchCompanies() async {
       // Print for debugging (remove in production)
       print('Database Credentials Loaded:');
       print('Name: ${UserSession.dbName}');
-      print('User: ${UserSession.dbUserName}');
+      print('User: ${UserSession.dbUser}');
       print('Source: ${UserSession.dbSource}');
     } else {
       print('Failed to load database credentials: ${response.statusCode}');
