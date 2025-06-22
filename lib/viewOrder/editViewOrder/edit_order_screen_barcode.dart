@@ -20,6 +20,7 @@ import 'package:vrs_erp_figma/models/item.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
 import 'package:vrs_erp_figma/models/OrderMatrix.dart';
 import 'package:vrs_erp_figma/models/CatalogOrderData.dart';
+import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_data.dart';
 import 'package:vrs_erp_figma/viewOrder/editViewOrder/more_order_using_barcode.dart';
 
 enum ActiveTab { transaction, customerDetails }
@@ -68,45 +69,61 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
     });
     setState(() {
       docId = widget.docId;
+      _styleManager.docId = docId; // Pass docId to _StyleManager
     });
   }
 
   double _calculateTotalAmount() {
     double total = 0.0;
-    _styleManager.controllers.forEach((style, shades) {
-      final itemsForStyle = _styleManager.groupedItems[style] ?? [];
-      shades.forEach((shade, sizes) {
-        sizes.forEach((size, controller) {
-          final qty = int.tryParse(controller.text) ?? 0;
-          final item = itemsForStyle.firstWhere(
-            (item) =>
-                (item['shadeName']?.toString() ?? '') == shade &&
-                (item['sizeName']?.toString() ?? '') == size,
-            orElse: () => {},
-          );
-          if (item.isNotEmpty) {
-            final mrp = (item['mrp'] as num?)?.toDouble() ?? 0.0;
-            total += qty * mrp;
-          }
-        });
-      });
-    });
+    for (final catalogOrder in EditOrderData.data) {
+      final styleCode = catalogOrder.catalog.styleCode;
+      final shades = catalogOrder.orderMatrix.shades;
+      final sizes = catalogOrder.orderMatrix.sizes;
+      for (var shadeIndex = 0; shadeIndex < shades.length; shadeIndex++) {
+        final shade = shades[shadeIndex];
+        for (var sizeIndex = 0; sizeIndex < sizes.length; sizeIndex++) {
+          final size = sizes[sizeIndex];
+          final qty =
+              int.tryParse(
+                _styleManager.controllers[styleCode]?[shade]?[size]?.text ??
+                    '0',
+              ) ??
+              0;
+          final mrp =
+              double.tryParse(
+                catalogOrder.orderMatrix.matrix[shadeIndex][sizeIndex].split(
+                  ',',
+                )[0],
+              ) ??
+              0.0;
+          total += qty * mrp;
+        }
+      }
+    }
     return total;
   }
 
   int _calculateTotalItems() {
-    return _styleManager.groupedItems.length;
+    return EditOrderData.data.length;
   }
 
   int _calculateTotalQuantity() {
     int total = 0;
-    _styleManager.controllers.forEach((style, shades) {
-      shades.forEach((shade, sizes) {
-        sizes.forEach((size, controller) {
-          total += int.tryParse(controller.text) ?? 0;
-        });
-      });
-    });
+    for (final catalogOrder in EditOrderData.data) {
+      final styleCode = catalogOrder.catalog.styleCode;
+      final shades = catalogOrder.orderMatrix.shades;
+      final sizes = catalogOrder.orderMatrix.sizes;
+      for (var shade in shades) {
+        for (var size in sizes) {
+          total +=
+              int.tryParse(
+                _styleManager.controllers[styleCode]?[shade]?[size]?.text ??
+                    '0',
+              ) ??
+              0;
+        }
+      }
+    }
     return total;
   }
 
@@ -207,21 +224,13 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
   }
 
   Future<String> insertFinalSalesOrder(String orderDataJson) async {
-    final Map<String, dynamic> body = {
-      'userId': UserSession.userName ?? '',
-      'coBrId': UserSession.coBrId ?? '',
-      'fcYrId': UserSession.userFcYr ?? '',
-      'data2': orderDataJson,
-      'barcode': barcodeMode.toString(),
-    };
-
     try {
       final response = await http.post(
         Uri.parse(
           '${AppConstants.BASE_URL}/orderBooking/InsertFinalsalesorder',
         ),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
+        body: orderDataJson, // Send the new JSON structure directly
       );
 
       if (response.statusCode == 200) {
@@ -261,6 +270,11 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
     List<Map<String, dynamic>> addedItems = [];
     if (args != null && args.containsKey('addedItems')) {
       addedItems = List<Map<String, dynamic>>.from(args['addedItems']);
+      print('Initial addedItems: $addedItems');
+    }
+    if (docId == "-1") {
+      _styleManager._initializeControllers();
+      _initializeQuantitiesAndColors();
     }
 
     await Future.wait([
@@ -272,28 +286,54 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
       fetchPaymentTerms(),
     ]);
 
-    // Add new items to _styleManager._orderItems
-    if (addedItems.isNotEmpty) {
+    if (docId == '-1' && addedItems.isNotEmpty) {
+      print('Processing addedItems for docId == -1');
       setState(() {
-        _styleManager._orderItems.addAll(addedItems);
+        // Clear existing data to avoid duplicates
+        EditOrderData.data.clear();
+        // Convert and add each item to EditOrderData.data
+        for (var item in addedItems) {
+          final styleCode = item['styleCode']?.toString() ?? 'No Style Code';
+          final catalogOrder = _styleManager._convertToCatalogOrderData(
+            styleCode,
+            [item],
+          );
+          EditOrderData.data.add(catalogOrder);
+          print(
+            'Added item for style $styleCode: Matrix ${catalogOrder.orderMatrix.matrix}',
+          );
+        }
+        _styleManager._initializeControllers();
+        _initializeQuantitiesAndColors();
       });
     }
 
+    // Always reinitialize quantities and colors after fetching or adding items
     _initializeQuantitiesAndColors();
-    _updateTotals();
     setState(() {
       isLoading = false;
     });
+    print(
+      'EditOrderData.data after initialization: ${EditOrderData.data.map((e) => e.catalog.styleCode)}',
+    );
   }
 
   void _initializeQuantitiesAndColors() {
     quantities.clear();
     selectedColors.clear();
-    for (var entry in _styleManager.groupedItems.entries) {
-      final styleKey = entry.key;
-      final items = entry.value;
-      final shades = _styleManager._getSortedUniqueValues(items, 'shadeName');
-      final sizes = _styleManager._getSortedUniqueValues(items, 'sizeName');
+    print(
+      'Initializing quantities and colors for ${EditOrderData.data.length} items',
+    );
+
+    for (var catalogOrder in EditOrderData.data) {
+      final styleKey = catalogOrder.catalog.styleCode;
+      final items = catalogOrder.orderMatrix;
+      final shades = items.shades;
+      final sizes = items.sizes;
+
+      print(
+        'Processing quantities for style: $styleKey, Shades: $shades, Sizes: $sizes',
+      );
 
       selectedColors[styleKey] = shades.toSet();
       quantities[styleKey] = {};
@@ -301,17 +341,29 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
       for (var shade in shades) {
         quantities[styleKey]![shade] = {};
         for (var size in sizes) {
-          final item = items.firstWhere(
-            (i) =>
-                (i['shadeName']?.toString() ?? '') == shade &&
-                (i['sizeName']?.toString() ?? '') == size,
-            orElse: () => {'clqty': '0'},
-          );
-          quantities[styleKey]![shade]![size] =
-              int.tryParse(item['clqty']?.toString() ?? '0') ?? 0;
+          final shadeIndex = shades.indexOf(shade);
+          final sizeIndex = sizes.indexOf(size);
+          if (shadeIndex == -1 || sizeIndex == -1) {
+            print(
+              'Warning: Invalid indices for $styleKey/$shade/$size '
+              '(shadeIndex: $shadeIndex, sizeIndex: $sizeIndex)',
+            );
+            quantities[styleKey]![shade]![size] = 0;
+            continue;
+          }
+          final qty =
+              int.tryParse(
+                catalogOrder.orderMatrix.matrix[shadeIndex][sizeIndex].split(
+                  ',',
+                )[2],
+              ) ??
+              0;
+          quantities[styleKey]![shade]![size] = qty;
+          print('Quantity set for $styleKey/$shade/$size: $qty');
         }
       }
     }
+    print('Quantities after initialization: $quantities');
   }
 
   String formatDate(String date, bool time) {
@@ -353,51 +405,110 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
   Future<void> _saveOrderLocally() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Calculate totQty per style code
+    final styleQuantities = <String, int>{};
+    for (final catalogOrder in EditOrderData.data) {
+      final styleCode = catalogOrder.catalog.styleCode;
+      int totalQty = 0;
+      final shades = catalogOrder.orderMatrix.shades;
+      final sizes = catalogOrder.orderMatrix.sizes;
+      for (var shade in shades) {
+        for (var size in sizes) {
+          totalQty +=
+              int.tryParse(
+                _styleManager.controllers[styleCode]?[shade]?[size]?.text ??
+                    '0',
+              ) ??
+              0;
+        }
+      }
+      styleQuantities[styleCode] = totalQty;
+    }
+
     final orderData = {
-      "saleorderno": _orderControllers.orderNo.text,
-      "orderdate": formatDate(_orderControllers.date.text, true),
-      "customer": _orderControllers.selectedPartyKey ?? '',
-      "broker": _orderControllers.selectedBrokerKey ?? '',
-      "comission": _orderControllers.comm.text,
-      "transporter": _orderControllers.selectedTransporterKey ?? '',
-      "delivaryday": _orderControllers.deliveryDays.text,
-      "delivarydate": formatDate(_orderControllers.deliveryDate.text, false),
-      "totitem": _orderControllers.totalItem.text,
-      "totqty": _orderControllers.totalQty.text,
-      "remark": _orderControllers.remark.text,
-      "consignee": _additionalInfo['consignee'] ?? '',
-      "station": _additionalInfo['station'] ?? '',
-      "paymentterms":
-          _additionalInfo['paymentterms'] ??
-          _orderControllers.pytTermDiscKey ??
-          '',
-      "paymentdays":
-          _additionalInfo['paymentdays'] ??
-          _orderControllers.creditPeriod?.toString() ??
-          '0',
-      "duedate": calculateDueDate(),
-      "refno": _additionalInfo['refno'] ?? '',
-      "date": '',
-      "bookingtype": _additionalInfo['bookingtype'] ?? '',
-      "salesman":
-          _additionalInfo['salesman'] ?? _orderControllers.salesPersonKey ?? '',
+      "doc_id": docId,
+      "login_id": UserSession.userName ?? 'admin',
+      "coBr_id": UserSession.coBrId ?? '01',
+      "fcYr_id": UserSession.userFcYr ?? '25',
+      "data": {
+        "customer": _orderControllers.selectedPartyKey ?? '',
+        "consignee": _additionalInfo['consignee'] ?? '',
+        "salesman":
+            _additionalInfo['salesman'] ??
+            _orderControllers.salesPersonKey ??
+            '',
+        "orderdate": formatDate(_orderControllers.date.text, false),
+        "delivarydate": formatDate(_orderControllers.deliveryDate.text, false),
+        "refno": _additionalInfo['refno'] ?? '',
+        "date": '',
+        "paymentterms":
+            _additionalInfo['paymentterms'] ??
+            _orderControllers.pytTermDiscKey ??
+            '',
+        "paymentdays":
+            _additionalInfo['paymentdays'] ??
+            _orderControllers.creditPeriod?.toString() ??
+            '0',
+        "duedate": calculateDueDate(),
+        "broker": _orderControllers.selectedBrokerKey ?? '',
+        "comission":
+            _orderControllers.comm.text.isEmpty
+                ? '0.00'
+                : _orderControllers.comm.text,
+        "transporter": _orderControllers.selectedTransporterKey ?? '',
+        "remark": _orderControllers.remark.text,
+        "delivaryday":
+            _orderControllers.deliveryDays.text.isEmpty
+                ? '0'
+                : _orderControllers.deliveryDays.text,
+        "bookingtype": _additionalInfo['bookingtype'] ?? '',
+      },
       "items":
-          _styleManager.groupedItems.entries
-              .map((entry) {
-                return entry.value.map((item) {
-                  return {
-                    ...item,
-                    'clqty':
-                        _styleManager
-                            .controllers[entry
-                                .key]?[item['shadeName']]?[item['sizeName']]
-                            ?.text ??
-                        '0',
-                  };
-                }).toList();
+          EditOrderData.data
+              .map((catalogOrder) {
+                final styleCode = catalogOrder.catalog.styleCode;
+                final shades = catalogOrder.orderMatrix.shades;
+                final sizes = catalogOrder.orderMatrix.sizes;
+                return shades
+                    .asMap()
+                    .entries
+                    .map((shadeEntry) {
+                      final shadeIndex = shadeEntry.key;
+                      final shade = shadeEntry.value;
+                      return sizes.asMap().entries.map((sizeEntry) {
+                        final sizeIndex = sizeEntry.key;
+                        final size = sizeEntry.value;
+                        final qty =
+                            _styleManager
+                                .controllers[styleCode]?[shade]?[size]
+                                ?.text ??
+                            '0';
+                        final matrixData = catalogOrder
+                            .orderMatrix
+                            .matrix[shadeIndex][sizeIndex]
+                            .split(',');
+                        return {
+                          'style_code': styleCode,
+                          'shade': shade,
+                          'size': size,
+                          'qty': int.tryParse(qty) ?? 0,
+                          'totQty': styleQuantities[styleCode] ?? 0,
+                          'mrp': double.tryParse(matrixData[0]) ?? 0.0,
+                          'wsp':
+                              double.tryParse(
+                                matrixData.length > 1 ? matrixData[1] : '0',
+                              ) ??
+                              0.0,
+                          'barcode': '', // Not available in current data
+                          'note': catalogOrder.catalog.remark ?? '',
+                        };
+                      }).toList();
+                    })
+                    .expand((i) => i)
+                    .toList();
               })
-              .toList()
               .expand((i) => i)
+              .where((item) => (item['qty'] as int) > 0) // Exclude items with qty 0
               .toList(),
     };
 
@@ -406,46 +517,7 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
     print(orderDataJson);
 
     try {
-      // String statusCode = await insertFinalSalesOrder({});
-      // if (statusCode == "200") {
-      //   showDialog(
-      //     context: context,
-      //     builder:
-      //         (context) => AlertDialog(
-      //           title: Text('Order Saved'),
-      //           content: Text(
-      //             'Order ${_orderControllers.orderNo.text} saved successfully',
-      //           ),
-      //           actions: [
-      //             TextButton(
-      //               onPressed: () {
-      //                 Navigator.pop(context);
-      //                 Navigator.push(
-      //                   context,
-      //                   MaterialPageRoute(
-      //                     builder:
-      //                         (context) => PdfViewerScreen(
-      //                           orderNo: _orderControllers.orderNo.text,
-      //                           whatsappNo: _orderControllers.whatsAppMobileNo,
-      //                         ),
-      //                   ),
-      //                 );
-      //               },
-      //               child: Text('View PDF'),
-      //             ),
-      //             TextButton(
-      //               onPressed: () {
-      //                 Navigator.pushReplacement(
-      //                   context,
-      //                   MaterialPageRoute(builder: (context) => HomeScreen()),
-      //                 );
-      //               },
-      //               child: Text('Done'),
-      //             ),
-      //           ],
-      //         ),
-      //   );
-      // }
+      await insertFinalSalesOrder(orderDataJson);
     } catch (e) {
       print('Error during order saving: $e');
       ScaffoldMessenger.of(
@@ -456,28 +528,32 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
 
   void _updateTotals() {
     int totalQty = 0;
-    double totalAmt = 0.0; // Use double for currency
+    double totalAmt = 0.0;
 
     _styleManager.controllers.forEach((style, shades) {
-      final itemsForStyle = _styleManager.groupedItems[style] ?? [];
+      final catalogOrder = EditOrderData.data.firstWhere(
+        (order) => order.catalog.styleCode == style,
+      );
 
       shades.forEach((shade, sizes) {
+        final shadeIndex = catalogOrder.orderMatrix.shades.indexOf(shade);
+        if (shadeIndex == -1) return;
+
         sizes.forEach((size, controller) {
           final qty = int.tryParse(controller.text) ?? 0;
           totalQty += qty;
 
-          // Find the item to get MRP
-          final item = itemsForStyle.firstWhere(
-            (item) =>
-                (item['shadeName']?.toString() ?? '') == shade &&
-                (item['sizeName']?.toString() ?? '') == size,
-            orElse: () => {},
-          );
+          final sizeIndex = catalogOrder.orderMatrix.sizes.indexOf(size);
+          if (sizeIndex == -1) return;
 
-          if (item.isNotEmpty) {
-            final mrp = (item['mrp'] as num?)?.toDouble() ?? 0.0;
-            totalAmt += qty * mrp;
-          }
+          final mrp =
+              double.tryParse(
+                catalogOrder.orderMatrix.matrix[shadeIndex][sizeIndex].split(
+                  ',',
+                )[0],
+              ) ??
+              0.0;
+          totalAmt += qty * mrp;
         });
       });
     });
@@ -485,9 +561,7 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
     _orderControllers.totalQty.text = totalQty.toString();
     _orderControllers.totalItem.text =
         _styleManager.groupedItems.length.toString();
-    _orderControllers.totalAmt.text = totalAmt.toStringAsFixed(
-      2,
-    ); // Format to 2 decimal places
+    _orderControllers.totalAmt.text = totalAmt.toStringAsFixed(2);
     setState(() {});
   }
 
@@ -679,29 +753,24 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
         onPressed: () => Navigator.pop(context),
       ),
       bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(
-          48.0,
-        ), // Adjusted height for better spacing
+        preferredSize: const Size.fromHeight(48.0),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-          color: AppColors.primaryColor, // Consistent with AppBar background
+          color: AppColors.primaryColor,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Flexible(
                 child: Text(
                   'Total: ₹${_calculateTotalAmount().toStringAsFixed(2)}',
-                  style: GoogleFonts.roboto(
-                    color: Colors.white,
-                    fontSize: 12, // Smaller font for better fit
-                  ),
+                  style: GoogleFonts.roboto(color: Colors.white, fontSize: 12),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               Container(
                 width: 1,
                 height: 20,
-                color: Colors.white.withOpacity(0.5), // Softer divider color
+                color: Colors.white.withOpacity(0.5),
                 margin: const EdgeInsets.symmetric(horizontal: 8.0),
               ),
               Flexible(
@@ -784,30 +853,66 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
     }
   }
 
-void _handleAddAction() {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => MoreOrderBarcodePage(
-        onFilterPressed: (String filter) {
-          // Handle filter if needed
-        },
-        edit: true, // Set edit mode
+  void _handleAddAction() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => MoreOrderBarcodePage(
+              onFilterPressed: (String filter) {},
+              edit: true,
+            ),
       ),
-    ),
-  ).then((result) {
-    if (result != null && result is List<String>) {
-      // Refresh order items after adding new barcodes
-      _styleManager.refreshOrderItems(barcode: barcodeMode).then((_) {
+    ).then((result) {
+      if (result != null && result is List<Map<String, dynamic>>) {
+        print('Received items from MoreOrderBarcodePage: $result');
         setState(() {
+          // Group new items by styleCode
+          final groupedByStyle = <String, List<dynamic>>{};
+          for (var item in result) {
+            final styleCode = item['styleCode']?.toString() ?? 'No Style Code';
+            groupedByStyle.putIfAbsent(styleCode, () => []).add(item);
+          }
+
+          // Add or update CatalogOrderData for each style
+          for (var entry in groupedByStyle.entries) {
+            final styleCode = entry.key;
+            final items = entry.value;
+            final existingIndex = EditOrderData.data.indexWhere(
+              (order) => order.catalog.styleCode == styleCode,
+            );
+            final catalogOrder = _styleManager._convertToCatalogOrderData(
+              styleCode,
+              items,
+            );
+            if (existingIndex != -1) {
+              EditOrderData.data[existingIndex] = catalogOrder;
+              print('Updated existing style: $styleCode');
+            } else {
+              EditOrderData.data.add(catalogOrder);
+              print('Added new style: $styleCode');
+            }
+          }
+
+          // Remove any styles in removedStyles
+          EditOrderData.data.removeWhere(
+            (order) =>
+                _styleManager.removedStyles.contains(order.catalog.styleCode),
+          );
+
+          // Reinitialize controllers and quantities
+          _styleManager._initializeControllers();
           _initializeQuantitiesAndColors();
           _updateTotals();
         });
-      });
-    }
-  });
-}
-
+        print(
+          'EditOrderData.data after adding items: ${EditOrderData.data.map((e) => e.catalog.styleCode)}',
+        );
+      } else {
+        print('No items returned from MoreOrderBarcodePage');
+      }
+    });
+  }
 }
 
 class _OrderControllers {
@@ -941,72 +1046,264 @@ class _DropdownData {
 }
 
 class _StyleManager {
-  List<dynamic> _orderItems = [];
   final Set<String> removedStyles = {};
   final Map<String, Map<String, Map<String, TextEditingController>>>
   controllers = {};
   VoidCallback? updateTotalsCallback;
   bool isOrderItemsLoaded = false;
+  String? docId;
 
-  Map<String, List<dynamic>> get groupedItems {
-    final map = <String, List<dynamic>>{};
-    for (final item in _orderItems) {
-      final styleCode = item['styleCode']?.toString() ?? 'No Style Code';
+  Map<String, List<CatalogOrderData>> get groupedItems {
+    final map = <String, List<CatalogOrderData>>{};
+    for (final catalogOrder in EditOrderData.data) {
+      final styleCode = catalogOrder.catalog.styleCode;
       if (removedStyles.contains(styleCode)) continue;
-      map.putIfAbsent(styleCode, () => []).add(item);
+      map.putIfAbsent(styleCode, () => []).add(catalogOrder);
     }
     return map;
+  }
+
+  CatalogOrderData _convertToCatalogOrderData(
+    String styleKey,
+    List<dynamic> items,
+  ) {
+    print('Converting to CatalogOrderData for style: $styleKey, Items: $items');
+    if (items.isEmpty) {
+      print('Error: Empty items list for style $styleKey');
+      return CatalogOrderData(
+        catalog: Catalog(
+          itemSubGrpKey: '',
+          itemSubGrpName: '',
+          itemKey: '',
+          itemName: 'Unknown',
+          brandKey: '',
+          brandName: '',
+          styleKey: styleKey,
+          styleCode: styleKey,
+          shadeKey: '',
+          shadeName: '',
+          styleSizeId: '',
+          sizeName: '',
+          mrp: 0.0,
+          wsp: 0.0,
+          onlyMRP: 0.0,
+          clqty: 0,
+          total: 0,
+          fullImagePath: '/NoImage.jpg',
+          remark: '',
+          imageId: '',
+          sizeDetails: '',
+          sizeDetailsWithoutWSp: '',
+          sizeWithMrp: '',
+          styleCodeWithcount: styleKey,
+          onlySizes: '',
+          sizeWithWsp: '',
+          createdDate: '',
+          shadeImages: '',
+          upcoming_Stk: '0',
+        ),
+        orderMatrix: OrderMatrix(shades: [], sizes: [], matrix: []),
+      );
+    }
+
+    final shades =
+        items
+            .map((i) => i['shadeName']?.toString() ?? '')
+            .where((s) => s.isNotEmpty)
+            .toSet()
+            .toList();
+    final sizes =
+        items
+            .map((i) => i['sizeName']?.toString() ?? '')
+            .where((s) => s.isNotEmpty)
+            .toSet()
+            .toList();
+    final firstItem = items.first;
+
+    if (shades.isEmpty || sizes.isEmpty) {
+      print(
+        'Error: Empty shades or sizes for style $styleKey (Shades: $shades, Sizes: $sizes)',
+      );
+    }
+
+    final matrix = List.generate(shades.length, (shadeIndex) {
+      return List.generate(sizes.length, (sizeIndex) {
+        final item = items.firstWhere(
+          (i) =>
+              (i['shadeName']?.toString() ?? '') == shades[shadeIndex] &&
+              (i['sizeName']?.toString() ?? '') == sizes[sizeIndex],
+          orElse: () => {},
+        );
+        final mrp = item['mrp']?.toString() ?? '0';
+        final wsp = item['wsp']?.toString() ?? '0';
+        final qty = item['clqty']?.toString() ?? '0';
+        final stkQty = item['upcoming_Stk']?.toString() ?? '0';
+        final matrixEntry = '$mrp,$wsp,$qty,$stkQty';
+        print(
+          'Matrix entry for $styleKey/$shadeIndex/$sizeIndex: $matrixEntry',
+        );
+        return matrixEntry;
+      });
+    });
+
+    final catalog = Catalog(
+      itemSubGrpKey: '',
+      itemSubGrpName: '',
+      itemKey: '',
+      itemName: firstItem['itemName']?.toString() ?? 'Unknown',
+      brandKey: '',
+      brandName: '',
+      styleKey: styleKey,
+      styleCode: firstItem['styleCode']?.toString() ?? styleKey,
+      shadeKey: '',
+      shadeName: shades.join(','),
+      styleSizeId: '',
+      sizeName: sizes.join(','),
+      mrp: double.tryParse(firstItem['mrp']?.toString() ?? '0') ?? 0.0,
+      wsp: double.tryParse(firstItem['wsp']?.toString() ?? '0') ?? 0.0,
+      onlyMRP: double.tryParse(firstItem['mrp']?.toString() ?? '0') ?? 0.0,
+      clqty: int.tryParse(firstItem['clqty']?.toString() ?? '0') ?? 0,
+      total: items.fold(
+        0,
+        (sum, i) => sum + (int.tryParse(i['clqty']?.toString() ?? '0') ?? 0),
+      ),
+      fullImagePath: firstItem['imagePath']?.toString() ?? '/NoImage.jpg',
+      remark: firstItem['remark']?.toString() ?? '',
+      imageId: '',
+      sizeDetails: sizes
+          .map((s) => '$s (${firstItem['mrp']},${firstItem['wsp']})')
+          .join(','),
+      sizeDetailsWithoutWSp: sizes
+          .map((s) => '$s (${firstItem['mrp']})')
+          .join(','),
+      sizeWithMrp: sizes.map((s) => '$s (${firstItem['mrp']})').join(','),
+      styleCodeWithcount: styleKey,
+      onlySizes: sizes.join(','),
+      sizeWithWsp: sizes.map((s) => '$s (${firstItem['wsp']})').join(','),
+      createdDate: '',
+      shadeImages: '',
+      upcoming_Stk: firstItem['upcoming_Stk']?.toString() ?? '0',
+    );
+
+    print('Catalog created for $styleKey: ${catalog.toJson()}');
+    return CatalogOrderData(
+      catalog: catalog,
+      orderMatrix: OrderMatrix(shades: shades, sizes: sizes, matrix: matrix),
+    );
   }
 
   Future<void> fetchOrderItems({
     required bool barcode,
     required String doc_Id,
   }) async {
-    final response = await http.post(
-      Uri.parse('${AppConstants.BASE_URL}/orderRegister/editOrderData'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        "doc_id": doc_Id,
-        // "userId": UserSession.userName ?? '',
-        // "fcYrId": UserSession.userFcYr ?? '',
-        // "barcode": barcode ? "true" : "false",
-      }),
-    );
+    docId = doc_Id;
+    if (doc_Id != '-1') {
+      try {
+        final response = await http.post(
+          Uri.parse('${AppConstants.BASE_URL}/orderRegister/editOrderData'),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({"doc_id": doc_Id}),
+        );
 
-    if (response.statusCode == 200) {
-      _orderItems = json.decode(response.body);
-      _initializeControllers();
-      isOrderItemsLoaded = true;
+        print(
+          'Fetch API Response: ${response.statusCode}, Body: ${response.body}',
+        );
+
+        if (response.statusCode == 200) {
+          final items = json.decode(response.body);
+          if (items is List && items.isNotEmpty) {
+            final groupedByStyle = <String, List<dynamic>>{};
+            for (var item in items) {
+              final styleCode =
+                  item['styleCode']?.toString() ?? 'No Style Code';
+              groupedByStyle.putIfAbsent(styleCode, () => []).add(item);
+            }
+            EditOrderData.data =
+                groupedByStyle.entries.map((entry) {
+                  final catalogOrder = _convertToCatalogOrderData(
+                    entry.key,
+                    entry.value,
+                  );
+                  print(
+                    'Fetched style: ${entry.key}, Matrix: ${catalogOrder.orderMatrix.matrix}',
+                  );
+                  return catalogOrder;
+                }).toList();
+            _initializeControllers();
+          } else {
+            print('No items found in response');
+            EditOrderData.data = [];
+          }
+        } else {
+          print('API Error: ${response.statusCode}');
+          EditOrderData.data = [];
+        }
+      } catch (e) {
+        print('Error fetching order items: $e');
+        EditOrderData.data = [];
+      }
     }
+    isOrderItemsLoaded = true;
   }
 
   Future<void> refreshOrderItems({required bool barcode}) async {
-    final response = await http.post(
-      Uri.parse('${AppConstants.BASE_URL}/orderBooking/GetViewOrder'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        "coBrId": UserSession.coBrId ?? '',
-        "userId": UserSession.userName ?? '',
-        "fcYrId": UserSession.userFcYr ?? '',
-        "barcode": barcode ? "true" : "false",
-      }),
-    );
+    if (docId != null && docId != '-1') {
+      try {
+        final response = await http.post(
+          Uri.parse('${AppConstants.BASE_URL}/orderRegister/editOrderData'),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({"doc_id": docId}),
+        );
 
-    if (response.statusCode == 200) {
-      final newItems = json.decode(response.body);
-      _orderItems = newItems;
-      _updateControllers();
+        print(
+          'Refresh API Response: ${response.statusCode}, Body: ${response.body}',
+        );
+
+        if (response.statusCode == 200) {
+          final newItems = json.decode(response.body);
+          if (newItems is List && newItems.isNotEmpty) {
+            final groupedByStyle = <String, List<dynamic>>{};
+            for (var item in newItems) {
+              final styleCode =
+                  item['styleCode']?.toString() ?? 'No Style Code';
+              groupedByStyle.putIfAbsent(styleCode, () => []).add(item);
+            }
+            EditOrderData.data =
+                groupedByStyle.entries.map((entry) {
+                  final catalogOrder = _convertToCatalogOrderData(
+                    entry.key,
+                    entry.value,
+                  );
+                  print(
+                    'Refreshed style: ${entry.key}, Matrix: ${catalogOrder.orderMatrix.matrix}',
+                  );
+                  return catalogOrder;
+                }).toList();
+            _initializeControllers();
+          } else {
+            print('No items found in refresh response');
+            EditOrderData.data = [];
+          }
+        } else {
+          print('Error refreshing order items: ${response.statusCode}');
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   SnackBar(content: Text('Failed to refresh order items')),
+          // );
+        }
+      } catch (e) {
+        print('Error refreshing order items: $e');
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('Error refreshing order items: $e')),
+        // );
+      }
+    } else {
+      print('Invalid docId: $docId');
     }
   }
 
   void copyStyle(String styleKey) {
-    final items = groupedItems[styleKey];
-    if (items != null) {
-      final newStyleKey =
-          "${styleKey}_${DateTime.now().millisecondsSinceEpoch}";
-      _orderItems.addAll(
-        items.map((item) => {...item, 'styleCode': newStyleKey}),
-      );
+    final catalogOrders = groupedItems[styleKey];
+    if (catalogOrders != null && catalogOrders.isNotEmpty) {
       _initializeControllers();
       updateTotalsCallback?.call();
     }
@@ -1015,72 +1312,66 @@ class _StyleManager {
   void removeStyle(String styleKey) {
     removedStyles.add(styleKey);
     controllers.remove(styleKey);
+    EditOrderData.data =
+        EditOrderData.data
+            .where((e) => e.catalog.styleCode != styleKey)
+            .toList();
     updateTotalsCallback?.call();
   }
 
   void _initializeControllers() {
-    controllers.clear();
-    for (final entry in groupedItems.entries) {
-      final items = entry.value;
-      final sizes = _getSortedUniqueValues(items, 'sizeName');
-      final shades = _getSortedUniqueValues(items, 'shadeName');
-
-      controllers[entry.key] = {};
-      for (final shade in shades) {
-        controllers[entry.key]![shade] = {};
-        for (final size in sizes) {
-          final item = items.firstWhere(
-            (i) =>
-                (i['shadeName']?.toString() ?? '') == shade &&
-                (i['sizeName']?.toString() ?? '') == size,
-            orElse: () => {'clqty': '0'},
-          );
-          final controller = TextEditingController(
-            text: item['clqty']?.toString() ?? '0',
-          )..addListener(() => updateTotalsCallback?.call());
-          controllers[entry.key]![shade]![size] = controller;
-        }
-      }
-    }
-  }
-
-  void _updateControllers() {
     final currentControllers =
         Map<String, Map<String, Map<String, TextEditingController>>>.from(
           controllers,
         );
-    controllers.clear();
-    for (final entry in groupedItems.entries) {
-      final items = entry.value;
-      final sizes = _getSortedUniqueValues(items, 'sizeName');
-      final shades = _getSortedUniqueValues(items, 'shadeName');
+    print(
+      'Initializing controllers for styles: ${groupedItems.keys}, Removed styles: $removedStyles',
+    );
 
-      controllers[entry.key] = {};
+    for (final entry in groupedItems.entries) {
+      final styleKey = entry.key;
+      final catalogOrder = entry.value.first;
+      final sizes = catalogOrder.orderMatrix.sizes;
+      final shades = catalogOrder.orderMatrix.shades;
+
+      print('Processing style: $styleKey, Shades: $shades, Sizes: $sizes');
+
+      controllers.putIfAbsent(styleKey, () => {});
       for (final shade in shades) {
-        controllers[entry.key]![shade] = {};
+        controllers[styleKey]!.putIfAbsent(shade, () => {});
         for (final size in sizes) {
-          final item = items.firstWhere(
-            (i) =>
-                (i['shadeName']?.toString() ?? '') == shade &&
-                (i['sizeName']?.toString() ?? '') == size,
-            orElse: () => {'clqty': '0'},
-          );
+          final matrix = catalogOrder.orderMatrix.matrix;
+          String qty = '0';
+          if (matrix.isNotEmpty) {
+            final shadeIndex = shades.indexOf(shade);
+            final sizeIndex = sizes.indexOf(size);
+            if (shadeIndex >= 0 &&
+                sizeIndex >= 0 &&
+                shadeIndex < matrix.length &&
+                sizeIndex < matrix[shadeIndex].length) {
+              qty = matrix[shadeIndex][sizeIndex].split(',')[2];
+            } else {
+              print(
+                'Warning: Invalid matrix indices for $styleKey/$shade/$size '
+                '(shadeIndex: $shadeIndex, sizeIndex: $sizeIndex, matrix: $matrix)',
+              );
+            }
+          } else {
+            print('Warning: Empty matrix for style $styleKey');
+          }
           final existingController =
-              currentControllers[entry.key]?[shade]?[size];
+              currentControllers[styleKey]?[shade]?[size];
           final controller =
-              existingController ??
-                    TextEditingController(
-                      text: item['clqty']?.toString() ?? '0',
-                    )
+              existingController ?? TextEditingController(text: qty)
                 ..addListener(() => updateTotalsCallback?.call());
-          controllers[entry.key]![shade]![size] = controller;
+          controllers[styleKey]![shade]![size] = controller;
+          print(
+            'Controller set for $styleKey/$shade/$size: ${controller.text}',
+          );
         }
       }
     }
   }
-
-  List<String> _getSortedUniqueValues(List<dynamic> items, String field) =>
-      items.map((e) => e[field]?.toString() ?? '').toSet().toList()..sort();
 }
 
 class _StyleCardsView extends StatelessWidget {
@@ -1104,109 +1395,44 @@ class _StyleCardsView extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!styleManager.isOrderItemsLoaded) {
       return const Center(child: CircularProgressIndicator());
-    } else if (styleManager.groupedItems.isEmpty) {
+    } else if (EditOrderData.data.isEmpty ||
+        styleManager.groupedItems.isEmpty) {
       return const Center(
         child: Text(
-          'No item added',
+          'No items added',
           style: TextStyle(fontSize: 18, color: Colors.grey),
         ),
       );
     } else {
       return Column(
         children:
-            styleManager.groupedItems.entries.map((entry) {
-              final catalogOrder = _convertToCatalogOrderData(
-                entry.key,
-                entry.value,
-              );
-              return StyleCard(
-                styleCode: entry.key,
-                items: entry.value,
-                catalogOrder: catalogOrder,
-                quantities: quantities[entry.key] ?? {},
-                selectedColors: selectedColors[entry.key] ?? {},
-                getColor: getColor,
-                onUpdate: onUpdate,
-                styleManager: styleManager,
-              );
-            }).toList(),
+            EditOrderData.data
+                .where(
+                  (catalogOrder) =>
+                      !styleManager.removedStyles.contains(
+                        catalogOrder.catalog.styleCode,
+                      ),
+                )
+                .map((catalogOrder) {
+                  final styleKey = catalogOrder.catalog.styleCode;
+                  return StyleCard(
+                    styleCode: styleKey,
+                    catalogOrder: catalogOrder,
+                    quantities: quantities[styleKey] ?? {},
+                    selectedColors: selectedColors[styleKey] ?? {},
+                    getColor: getColor,
+                    onUpdate: onUpdate,
+                    styleManager: styleManager,
+                  );
+                })
+                .toList(),
       );
     }
-  }
-
-  CatalogOrderData _convertToCatalogOrderData(
-    String styleKey,
-    List<dynamic> items,
-  ) {
-    final shades =
-        items.map((i) => i['shadeName']?.toString() ?? '').toSet().toList();
-    final sizes =
-        items.map((i) => i['sizeName']?.toString() ?? '').toSet().toList();
-    final firstItem = items.first;
-
-    final matrix = List.generate(shades.length, (shadeIndex) {
-      return List.generate(sizes.length, (sizeIndex) {
-        final item = items.firstWhere(
-          (i) =>
-              (i['shadeName']?.toString() ?? '') == shades[shadeIndex] &&
-              (i['sizeName']?.toString() ?? '') == sizes[sizeIndex],
-          orElse: () => {},
-        );
-        final mrp = item['mrp']?.toString() ?? '0';
-        final wsp = item['wsp']?.toString() ?? '0';
-        final qty1 = item['data2']?.toString()?? '0';
-        final qty = qty1.split('.')[0];
-        return '$mrp,$wsp,$qty';
-      });
-    });
-
-    return CatalogOrderData(
-      catalog: Catalog(
-        itemSubGrpKey: '',
-        itemSubGrpName: '',
-        itemKey: '',
-        itemName: firstItem['itemName']?.toString() ?? 'Unknown',
-        brandKey: '',
-        brandName: '',
-        styleKey: styleKey,
-        styleCode: firstItem['styleCode']?.toString() ?? styleKey,
-        shadeKey: '',
-        shadeName: shades.join(','),
-        styleSizeId: '',
-        sizeName: sizes.join(','),
-        mrp: double.tryParse(firstItem['mrp']?.toString() ?? '0') ?? 0.0,
-        wsp: double.tryParse(firstItem['wsp']?.toString() ?? '0') ?? 0.0,
-        onlyMRP: double.tryParse(firstItem['mrp']?.toString() ?? '0') ?? 0.0,
-        clqty: int.tryParse(firstItem['clqty']?.toString() ?? '0') ?? 0,
-        total: items.fold(
-          0,
-          (sum, i) => sum + (int.tryParse(i['clqty']?.toString() ?? '0') ?? 0),
-        ),
-        fullImagePath: firstItem['imagePath']?.toString() ?? '/NoImage.jpg',
-        remark: firstItem['remark']?.toString() ?? '',
-        imageId: '',
-        sizeDetails: sizes
-            .map((s) => '$s (${firstItem['mrp']},${firstItem['wsp']})')
-            .join(','),
-        sizeDetailsWithoutWSp: sizes
-            .map((s) => '$s (${firstItem['mrp']})')
-            .join(','),
-        sizeWithMrp: sizes.map((s) => '$s (${firstItem['mrp']})').join(','),
-        styleCodeWithcount: styleKey,
-        onlySizes: sizes.join(','),
-        sizeWithWsp: sizes.map((s) => '$s (${firstItem['wsp']})').join(','),
-        createdDate: '',
-        shadeImages: '',
-        upcoming_Stk: firstItem['upcoming_Stk']?.toString() ?? '',
-      ),
-      orderMatrix: OrderMatrix(shades: shades, sizes: sizes, matrix: matrix),
-    );
   }
 }
 
 class StyleCard extends StatelessWidget {
   final String styleCode;
-  final List<dynamic> items;
   final CatalogOrderData catalogOrder;
   final Map<String, Map<String, int>> quantities;
   final Set<String> selectedColors;
@@ -1217,7 +1443,6 @@ class StyleCard extends StatelessWidget {
   const StyleCard({
     Key? key,
     required this.styleCode,
-    required this.items,
     required this.catalogOrder,
     required this.quantities,
     required this.selectedColors,
@@ -1225,6 +1450,52 @@ class StyleCard extends StatelessWidget {
     required this.onUpdate,
     required this.styleManager,
   }) : super(key: key);
+
+  int _calculateCatalogQuantity(CatalogOrderData catalogOrder) {
+    int total = 0;
+    quantities.forEach((shade, sizes) {
+      sizes.forEach((size, qty) {
+        total += qty;
+      });
+    });
+    return total;
+  }
+
+  int _calculateStockQuantity(CatalogOrderData catalogOrder) {
+    int total = 0;
+    final matrix = catalogOrder.orderMatrix;
+    for (var shadeIndex = 0; shadeIndex < matrix.shades.length; shadeIndex++) {
+      for (var sizeIndex = 0; sizeIndex < matrix.sizes.length; sizeIndex++) {
+        final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
+        final stock =
+            int.tryParse(matrixData.length > 3 ? matrixData[3] : '0') ?? 0;
+        total += stock;
+      }
+    }
+    return total;
+  }
+
+  double _calculateCatalogPrice(CatalogOrderData catalogOrder) {
+    double total = 0;
+    final matrix = catalogOrder.orderMatrix;
+    for (var shade in quantities.keys) {
+      final shadeIndex = matrix.shades.indexOf(shade.trim());
+      if (shadeIndex == -1) continue;
+      for (var size in quantities[shade]!.keys) {
+        final sizeIndex = matrix.sizes.indexOf(size.trim());
+        if (sizeIndex == -1) continue;
+        final rate =
+            double.tryParse(
+              matrix.matrix[shadeIndex][sizeIndex].split(',')[0],
+            ) ??
+            0;
+        final quantity = quantities[shade]![size]!;
+        total += rate * quantity;
+      }
+    }
+    return total;
+  }
+
   Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
     final catalog = catalogOrder.catalog;
 
@@ -1293,22 +1564,10 @@ class StyleCard extends StatelessWidget {
                               fontSize: 14.5,
                               color: Colors.red.shade900,
                             ),
-                            maxLines: 1, // Restrict to one line
-                            overflow:
-                                TextOverflow
-                                    .ellipsis, // Add ellipsis for overflow
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-
-                        // IconButton(
-                        //   icon: const Icon(Icons.delete, color: Colors.red),
-                        //   onPressed: () {
-                        //     _submitDelete(context);
-                        //     //styleManager.removeStyle(styleCode);
-                        //     //onUpdate();
-                        //   },
-                        //   tooltip: 'Delete Style',
-                        // ),
                       ],
                     ),
                     Text(
@@ -1327,25 +1586,26 @@ class StyleCard extends StatelessWidget {
                       },
                       defaultVerticalAlignment: TableCellVerticalAlignment.top,
                       children: [
-                        // _buildTableRow(
-                        //   'Remark',
-                        //   catalog.remark.isNotEmpty ? catalog.remark : 'N/A',
-                        // ),
-                        _buildTableRow('Remark', ''),
-                        _buildTableRow('Stk Type',catalog.upcoming_Stk == '1' ? 'Upcoming' : 'Ready'),
+                        _buildTableRow('Remark', catalog.remark),
+                        _buildTableRow(
+                          'Stk Type',
+                          catalog.upcoming_Stk == '1' ? 'Upcoming' : 'Ready',
+                        ),
                         _buildTableRow(
                           'Stock Qty',
-                          _calculateStockQuantity().toString(),
+                          _calculateStockQuantity(catalogOrder).toString(),
                           valueColor: Colors.green[700],
                         ),
                         _buildTableRow(
                           'Order Qty',
-                          _calculateCatalogQuantity().toString(),
+                          _calculateCatalogQuantity(catalogOrder).toString(),
                           valueColor: Colors.orange[800],
                         ),
                         _buildTableRow(
                           'Order Amount',
-                          _calculateCatalogPrice().toStringAsFixed(2),
+                          _calculateCatalogPrice(
+                            catalogOrder,
+                          ).toStringAsFixed(2),
                           valueColor: Colors.purple[800],
                         ),
                       ],
@@ -1362,7 +1622,6 @@ class StyleCard extends StatelessWidget {
             children: [
               _buildColorSection(catalogOrder, color),
               const SizedBox(height: 8),
-
               const SizedBox(height: 15),
             ],
           ),
@@ -1395,52 +1654,6 @@ class StyleCard extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  int _calculateCatalogQuantity() {
-    int total = 0;
-    quantities.forEach((shade, sizes) {
-      sizes.forEach((size, qty) {
-        total += qty;
-      });
-    });
-    return total;
-  }
-
-  int _calculateStockQuantity() {
-    int total = 0;
-    final matrix = catalogOrder.orderMatrix;
-    for (var shadeIndex = 0; shadeIndex < matrix.shades.length; shadeIndex++) {
-      for (var sizeIndex = 0; sizeIndex < matrix.sizes.length; sizeIndex++) {
-        final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
-        final stock =
-            int.tryParse(matrixData.length > 2 ? matrixData[2] : '0') ?? 0;
-        total += stock;
-      }
-    }
-    return total;
-    // return 0;
-  }
-
-  double _calculateCatalogPrice() {
-    double total = 0;
-    final matrix = catalogOrder.orderMatrix;
-    for (var shade in quantities.keys) {
-      final shadeIndex = matrix.shades.indexOf(shade.trim());
-      if (shadeIndex == -1) continue;
-      for (var size in quantities[shade]!.keys) {
-        final sizeIndex = matrix.sizes.indexOf(size.trim());
-        if (sizeIndex == -1) continue;
-        final rate =
-            double.tryParse(
-              matrix.matrix[shadeIndex][sizeIndex].split(',')[0],
-            ) ??
-            0;
-        final quantity = quantities[shade]![size]!;
-        total += rate * quantity;
-      }
-    }
-    return total;
   }
 
   Widget _buildColorSection(CatalogOrderData catalogOrder, String shade) {
@@ -1524,21 +1737,21 @@ class StyleCard extends StatelessWidget {
     final shadeIndex = matrix.shades.indexOf(shade.trim());
     final sizeIndex = matrix.sizes.indexOf(size.trim());
 
-    String rate = '';
-    String stock = '0';
+    String rate = '0';
     String wsp = '0';
+    String qty = '0';
+    String stock = '0';
     TextEditingController? controller;
 
     if (shadeIndex != -1 && sizeIndex != -1) {
       final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
       rate = matrixData[0];
       wsp = matrixData.length > 1 ? matrixData[1] : '0';
-      stock = matrixData.length > 2 ? matrixData[2] : '0';
-    
+      qty = matrixData.length > 2 ? matrixData[2] : '0';
+      stock = matrixData.length > 3 ? matrixData[3] : '0';
       controller = styleManager.controllers[styleCode]?[shade]?[size];
+      print('Controller for $styleCode/$shade/$size: ${controller?.text}');
     }
-
-    final quantity = quantities[shade]?[size] ?? 0;
 
     return Row(
       children: [
@@ -1552,19 +1765,6 @@ class StyleCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // IconButton(
-                //   onPressed: () {
-                //     final newQuantity = quantity > 0 ? quantity - 1 : 0;
-                //     if (quantities[shade] != null) {
-                //       quantities[shade]![size] = newQuantity;
-                //       controller?.text = newQuantity.toString();
-                //       onUpdate();
-                //     }
-                //   },
-                //   icon: const Icon(Icons.remove, size: 20),
-                //   padding: EdgeInsets.zero,
-                //   constraints: const BoxConstraints(),
-                // ),
                 SizedBox(
                   width: 22,
                   child: TextField(
@@ -1590,27 +1790,21 @@ class StyleCard extends StatelessWidget {
                           int.tryParse(value.isEmpty ? '0' : value) ?? 0;
                       if (quantities[shade] != null) {
                         quantities[shade]![size] = newQuantity;
-                        // onUpdate();
-                        //  setState(() {
-
-                        //  });
+                        if (shadeIndex != -1 && sizeIndex != -1) {
+                          final matrixData = matrix
+                              .matrix[shadeIndex][sizeIndex]
+                              .split(',');
+                          matrix.matrix[shadeIndex][sizeIndex] =
+                              '${matrixData[0]},${matrixData[1]},$newQuantity,${matrixData.length > 3 ? matrixData[3] : '0'}';
+                          print(
+                            'Updated matrix for $styleCode/$shade/$size: ${matrix.matrix[shadeIndex][sizeIndex]}',
+                          );
+                        }
+                        styleManager.updateTotalsCallback?.call();
                       }
                     },
                   ),
                 ),
-                // IconButton(
-                //   onPressed: () {
-                //     final newQuantity = quantity + 1;
-                //     if (quantities[shade] != null) {
-                //       quantities[shade]![size] = newQuantity;
-                //       controller?.text = newQuantity.toString();
-                //       onUpdate();
-                //     }
-                //   },
-                //   icon: const Icon(Icons.add, size: 20),
-                //   padding: EdgeInsets.zero,
-                //   constraints: const BoxConstraints(),
-                // ),
               ],
             ),
           ),
@@ -1808,96 +2002,8 @@ class _OrderFormState extends State<_OrderForm> {
           ),
         ),
         buildFullField(context, "Remark", widget.controllers.remark, true),
-        _buildResponsiveRow(
-          context,
-          buildTextField(
-            context,
-            "Total Item",
-            widget.controllers.totalItem,
-            readOnly: true,
-          ),
-          buildTextField(
-            context,
-            "Total Quantity",
-            widget.controllers.totalQty,
-            readOnly: true,
-          ),
-        ),
-        // Add Total Amount field below the row
-        buildTextField(
-          context,
-          "Total Amount (₹)",
-          widget.controllers.totalAmt,
-          readOnly: true,
-        ),
         Row(
           children: [
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () async {
-                  if (UserSession.userType == 'S' &&
-                      (widget.controllers.selectedPartyKey == null ||
-                          widget.controllers.selectedPartyKey!.isEmpty)) {
-                    showDialog(
-                      context: context,
-                      builder:
-                          (context) => AlertDialog(
-                            title: Text('Party Selection Required'),
-                            content: Text(
-                              'Please select a party before adding more information.',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: Text('OK'),
-                              ),
-                            ],
-                          ),
-                    );
-                    return;
-                  }
-                  final salesPersonList = widget.dropdownData.salesPersonList;
-                  final partyLedKey = widget.controllers.selectedPartyKey;
-                  final result = await showDialog(
-                    context: context,
-                    builder:
-                        (context) => AddMoreInfoDialog(
-                          salesPersonList: salesPersonList,
-                          partyLedKey: partyLedKey,
-                          pytTermDiscKey: widget.controllers.pytTermDiscKey,
-                          salesPersonKey: widget.controllers.salesPersonKey,
-                          creditPeriod: widget.controllers.creditPeriod,
-                          salesLedKey: widget.controllers.salesLedKey,
-                          ledgerName: widget.controllers.ledgerName,
-                          additionalInfo: widget.additionalInfo,
-                          consignees: widget.consignees,
-                          paymentTerms: widget.paymentTerms,
-                          bookingTypes: widget.bookingTypes,
-                          onValueChanged: (newInfo) {
-                            widget.onAdditionalInfoUpdated(newInfo);
-                          },
-                          isSalesmanDropdownEnabled:
-                              UserSession.userType != 'S',
-                        ),
-                  );
-                  if (result != null) {
-                    widget.onAdditionalInfoUpdated(result);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  minimumSize: Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.zero, // removes curve
-                  ),
-                ),
-                child: const Text(
-                  'Add More Info',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
             Expanded(
               child: ElevatedButton(
                 onPressed: widget.saveOrder,
@@ -1905,7 +2011,7 @@ class _OrderFormState extends State<_OrderForm> {
                   backgroundColor: AppColors.primaryColor,
                   minimumSize: Size(double.infinity, 50),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.zero, // removes curve
+                    borderRadius: BorderRadius.zero,
                   ),
                 ),
                 child: const Text(
@@ -1915,7 +2021,116 @@ class _OrderFormState extends State<_OrderForm> {
               ),
             ),
           ],
-        ),
+        )
+        // _buildResponsiveRow(
+          // context,
+        //   buildTextField(
+        //     context,
+        //     "Total Item",
+        //     widget.controllers.totalItem,
+        //     readOnly: true,
+        //   ),
+        //   buildTextField(
+        //     context,
+        //     "Total Quantity",
+        //     widget.controllers.totalQty,
+        //     readOnly: true,
+        //   ),
+        // ),
+        // buildTextField(
+        //   context,
+        //   "Total Amount (₹)",
+        //   //_calculateTotalAmount().toStringAsFixed(2),
+        //   widget.controllers.totalAmt,
+        //   readOnly: true,
+        // ),
+        // Row(
+        //   children: [
+            // Expanded(
+            //   child: ElevatedButton(
+            //     onPressed: () async {
+            //       if (UserSession.userType == 'S' &&
+            //           (widget.controllers.selectedPartyKey == null ||
+            //               widget.controllers.selectedPartyKey!.isEmpty)) {
+            //         showDialog(
+            //           context: context,
+            //           builder:
+            //               (context) => AlertDialog(
+            //                 title: Text('Party Selection Required'),
+            //                 content: Text(
+            //                   'Please select a party before adding more information.',
+            //                 ),
+            //                 actions: [
+            //                   TextButton(
+            //                     onPressed: () => Navigator.pop(context),
+            //                     child: Text('OK'),
+            //                   ),
+            //                 ],
+            //               ),
+            //         );
+            //         return;
+            //       }
+            //       final salesPersonList = widget.dropdownData.salesPersonList;
+            //       final partyLedKey = widget.controllers.selectedPartyKey;
+            //       final result = await showDialog(
+            //         context: context,
+            //         builder:
+            //             (context) => AddMoreInfoDialog(
+            //               salesPersonList: salesPersonList,
+            //               partyLedKey: partyLedKey,
+            //               pytTermDiscKey: widget.controllers.pytTermDiscKey,
+            //               salesPersonKey: widget.controllers.salesPersonKey,
+            //               creditPeriod: widget.controllers.creditPeriod,
+            //               salesLedKey: widget.controllers.salesLedKey,
+            //               ledgerName: widget.controllers.ledgerName,
+            //               additionalInfo: widget.additionalInfo,
+            //               consignees: widget.consignees,
+            //               paymentTerms: widget.paymentTerms,
+            //               bookingTypes: widget.bookingTypes,
+            //               onValueChanged: (newInfo) {
+            //                 widget.onAdditionalInfoUpdated(newInfo);
+            //               },
+            //               isSalesmanDropdownEnabled:
+            //                   UserSession.userType != 'S',
+            //             ),
+            //       );
+            //       if (result != null) {
+            //         widget.onAdditionalInfoUpdated(result);
+            //       }
+            //     },
+            //     style: ElevatedButton.styleFrom(
+            //       backgroundColor: AppColors.primaryColor,
+            //       minimumSize: Size(double.infinity, 50),
+            //       shape: RoundedRectangleBorder(
+            //         borderRadius: BorderRadius.zero,
+            //       ),
+            //     ),
+            //     child: const Text(
+            //       'Add More Info',
+            //       style: TextStyle(color: Colors.white),
+            //     ),
+            //   ),
+            // ),
+            //const SizedBox(width: 10),
+            // Expanded(
+            //   child: ElevatedButton(
+            //     onPressed: widget.saveOrder,
+            //     style: ElevatedButton.styleFrom(
+            //       backgroundColor: AppColors.primaryColor,
+            //       minimumSize: Size(double.infinity, 50),
+            //       shape: RoundedRectangleBorder(
+            //         borderRadius: BorderRadius.zero,
+            //       ),
+            //     ),
+            //     child: const Text(
+            //       'Save',
+            //       style: TextStyle(color: Colors.white),
+            //     ),
+            //   ),
+            // ),
+        //   ],
+        
+        // ),
       ],
     );
   }
@@ -1944,7 +2159,7 @@ class _OrderFormState extends State<_OrderForm> {
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.lightBlue,
             shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.zero, // Removes curve
+              borderRadius: BorderRadius.zero,
             ),
           ),
           child: const Text('+', style: TextStyle(color: Colors.white)),
@@ -2067,7 +2282,6 @@ Widget buildTextField(
       onTap: onTap ?? (isDate ? () => _selectDate(context, controller) : null),
       decoration: InputDecoration(
         labelText: label,
-
         border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
       ),
     ),
