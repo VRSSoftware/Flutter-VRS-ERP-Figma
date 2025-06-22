@@ -54,45 +54,54 @@ class _LoginPageState extends State<LoginScreen> {
       // isRegistered = '1';
     });
   }
+Future<void> _fetchCompanies() async {
+  final url = '${AppConstants.BASE_URL}/users/cobr';
+  try {
+    final response = await http
+        .get(Uri.parse(url))
+        .timeout(const Duration(seconds: 10));
 
-  Future<void> _fetchCompanies() async {
-    final url = '${AppConstants.BASE_URL}/users/cobr';
-    try {
-      final response = await http
-          .get(Uri.parse(url))
-          .timeout(const Duration(seconds: 10));
+    print("responsebody: ${response.body}");
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        setState(() {
-          _companies.clear();
-          _companies.addAll(
-            data.map((e) => e as Map<String, dynamic>).toList(),
-          );
-          _isLoadingCompanies = false;
-
-          if (_companies.isNotEmpty && _companies.length == 1) {
-            _selectedCompany = _companies[0];
-          }
-        });
-      } else if (response.statusCode == 404) {
-        _fetchCompanies(); // Retry on 404
-      }
-    } on SocketException catch (_) {
-      // Retry on no internet
-      await Future.delayed(const Duration(seconds: 2));
-      _fetchCompanies();
-    } on TimeoutException catch (_) {
-      // Retry on request timeout
-      await Future.delayed(const Duration(seconds: 2));
-      _fetchCompanies();
-    } catch (e) {
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      // Initialize SharedPreferences
+      SharedPreferences prefs = await SharedPreferences.getInstance();
       setState(() {
+        _companies.clear();
+        _companies.addAll(
+          data.map((e) => e as Map<String, dynamic>).toList(),
+        );
         _isLoadingCompanies = false;
-      });
-    }
-  }
 
+        if (_companies.isNotEmpty && _companies.length == 1) {
+          _selectedCompany = _companies[0];
+          // Save to SharedPreferences and UserSession
+          prefs.setString('coBrId', _selectedCompany?["coBrId"] ?? '');
+          prefs.setString('coBrName', _selectedCompany?["coBr_name"] ?? '');
+          UserSession.coBrId = _selectedCompany?["coBrId"];
+          UserSession.coBrName = _selectedCompany?["coBr_name"];
+        }
+      });
+    } else if (response.statusCode == 404) {
+      await Future.delayed(const Duration(seconds: 2));
+      _fetchCompanies(); // Retry on 404
+    }
+  } on SocketException catch (_) {
+    // Retry on no internet
+    await Future.delayed(const Duration(seconds: 2));
+    _fetchCompanies();
+  } on TimeoutException catch (_) {
+    // Retry on request timeout
+    await Future.delayed(const Duration(seconds: 2));
+    _fetchCompanies();
+  } catch (e) {
+    setState(() {
+      _isLoadingCompanies = false;
+    });
+    _showPopupMessage(context, "Error fetching companies: $e");
+  }
+}
   Future<void> _fetchFinancialYears() async {
     final url = '${AppConstants.BASE_URL}/users/fcyr';
     try {

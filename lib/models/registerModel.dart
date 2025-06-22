@@ -16,6 +16,8 @@ class RegisterOrder {
   final String orderType;
   final String dlvDate;
   final String deliveryType;
+  final String partyLedKey;
+    final String partyName; 
 
   RegisterOrder({
     required this.orderId,
@@ -35,6 +37,8 @@ class RegisterOrder {
     required this.orderType,
     required this.dlvDate,
     required this.deliveryType,
+     required this.partyLedKey, 
+       required this.partyName,
   });
 
   factory RegisterOrder.fromJson(Map<String, dynamic> json) {
@@ -56,6 +60,8 @@ class RegisterOrder {
       orderType: json['orderType']?.toString() ?? '',
       dlvDate: json['dlvDate']?.toString() ?? '',
       deliveryType: json['deliveryType']?.toString() ?? '',
+      partyLedKey: json['partyKey']?.toString() ?? '',
+       partyName: json['customerName']?.toString() ?? '',
     );
   }
 }

@@ -12,11 +12,15 @@ import 'package:vrs_erp_figma/constants/app_constants.dart';
 class PdfViewerScreen extends StatefulWidget {
   final String orderNo;
   final String? whatsappNo;
+    final String partyName; 
+     final String orderDate; 
 
   const PdfViewerScreen({
     Key? key,
     required this.orderNo,
     required this.whatsappNo,
+    required this.partyName,
+     required this.orderDate, 
   }) : super(key: key);
 
   @override
@@ -132,7 +136,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                     fileBytes: fileBytes,
                     mobileNo: controller.text,
                     fileType: 'pdf',
-                    caption: 'Order ${widget.orderNo}',
+                    caption: 'Dear ${widget.partyName},Thanks for booking your order with ${UserSession.coBrName}.Your order number:${widget.orderNo} on ${widget.orderDate}.',
                   );
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -154,7 +158,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     try {
       await Share.shareXFiles([
         XFile(filePath!),
-      ], text: 'Order ${widget.orderNo}');
+      ], text: 'Dear ${widget.partyName},Thanks for booking your order with ${UserSession.coBrName}.Your order number:${widget.orderNo} on ${widget.orderDate}');
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -206,7 +210,7 @@ Future<bool> sendWhatsAppFile({
       Uri.parse("http://node4.wabapi.com/v4/postfile.php"),
       body: {
         'data': fileBase64,
-        'filename': fileType == 'image' ? 'catalog.jpg' : 'catalog.pdf',
+        'filename': fileType == 'image' ? 'catalog.jpg' : 'Order.pdf',
         'key': AppConstants.whatsappKey,
         'number': '91$mobileNo',
         'caption': caption ?? 'Please find the file attached.',

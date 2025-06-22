@@ -1927,7 +1927,7 @@ List<String> _getImageUrl(Catalog catalog) {
 
       await Share.shareXFiles([
         XFile(file.path),
-      ], subject: 'Catalog PDF from VRS ERP');
+      ], subject: 'Please find the Catalog as an attachment.');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

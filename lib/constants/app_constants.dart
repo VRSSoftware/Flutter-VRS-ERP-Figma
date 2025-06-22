@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppConstants {
-  static String? BASE_URL = "http://192.168.0.4:8080/api/v1";
-//  static  String BASE_URL = "https://vrserp.com/vrs_erp_tjs/api/v1";
+  //static String? BASE_URL = "http://192.168.0.5:8080/api/v1";
+ static  String BASE_URL = "https://vrserp.com/vrs_erp_tjs/api/v1";
   static  String? whatsappKey;
   static  String Pdf_url = "http://pdfconvertor.uniretailsoftware.com";
 
@@ -55,6 +55,8 @@ class UserSession {
   static String? dbUserName;
   static String? dbPassword;
   static String? dbSource;
+  static String? coBrName;
+  
   // static int? userId=1;
   // static String? coBrId='01';
   // static String? userType='A';

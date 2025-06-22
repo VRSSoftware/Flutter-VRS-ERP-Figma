@@ -300,6 +300,8 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                   builder: (context) => PdfViewerScreen(
                     orderNo: _orderControllers.orderNo.text,
                     whatsappNo: _orderControllers.whatsAppMobileNo,
+       partyName: _orderControllers.selectedPartyName ?? '', 
+                    orderDate: _orderControllers.date.text,
                   ),
                 ),
               );
@@ -530,6 +532,11 @@ void _updateTotals() {
 
   void _handlePartySelection(String? val, String? key) async {
     if (key == null) return;
+      setState(() {
+    _orderControllers.selectedParty = val; // Store the display name
+    _orderControllers.selectedPartyKey = key;
+    _orderControllers.selectedPartyName = val; // Store for PDF
+  });
     _orderControllers.selectedPartyKey = key;
     UserSession.userLedKey = key; // Assign selected party key to userLedKey
     try {
@@ -601,10 +608,12 @@ class _OrderControllers {
 
   String? selectedParty;
   String? selectedPartyKey;
+   String? selectedPartyName; 
   String? selectedTransporter;
   String? selectedTransporterKey;
   String? selectedBroker;
   String? selectedBrokerKey;
+
 
   static String formatDate(DateTime date) {
     return DateFormat("yyyy-MM-dd").format(date);
@@ -620,6 +629,7 @@ class _OrderControllers {
     creditPeriod = details['creditPeriod'] as int?;
     salesLedKey = details['salesLedKey']?.toString();
     ledgerName = details['ledgerName']?.toString();
+     selectedPartyName = selectedPartyName ?? details['ledgerName']?.toString();
 
     final partyBrokerKey = details['brokerKey']?.toString() ?? '';
     if (partyBrokerKey.isNotEmpty) {

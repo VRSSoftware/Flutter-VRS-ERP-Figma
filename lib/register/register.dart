@@ -1188,6 +1188,9 @@ class _RegisterPageState extends State<RegisterPage> {
   void _submitRegisterOrders() {
     // Handle register submission logic
   }
+
+
+
   Future<bool> _sendWhatsAppFile2({
     required List<int> fileBytes,
     required String mobileNo,
@@ -1501,6 +1504,8 @@ Expanded(
                           builder: (context) => PdfViewerScreen(
                             orderNo: registerOrder.orderId,
                             whatsappNo: registerOrder.whatsAppMobileNo,
+                                  partyName: registerOrder.partyName, // Use partyLedKey from RegisterOrder
+        orderDate: registerOrder.orderDate,  
                           ),
                         ),
                       );
