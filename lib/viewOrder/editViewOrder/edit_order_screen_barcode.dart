@@ -216,7 +216,7 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
     if (salesOrderData.isNotEmpty &&
         salesOrderData.containsKey('salesOrderNo')) {
       String salesOrderNo = salesOrderData['salesOrderNo'];
-      _orderControllers.orderNo.text = salesOrderNo;
+      _orderControllers.orderNo.text = (int.tryParse(EditOrderData.doc_id)! - 1).toString();
       print('Sales Order Number: $salesOrderNo');
     } else {
       print('Sales Order Number not found');
@@ -227,7 +227,7 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
     try {
       final response = await http.post(
         Uri.parse(
-          '${AppConstants.BASE_URL}/orderBooking/InsertFinalsalesorder',
+          '${AppConstants.BASE_URL}/orderRegister/saveEditedSalesOrder',
         ),
         headers: {'Content-Type': 'application/json'},
         body: orderDataJson, // Send the new JSON structure directly
@@ -277,6 +277,12 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
       _initializeQuantitiesAndColors();
     }
 
+    // Fetch dropdown data first to ensure partyList is populated
+    await _dropdownData.loadAllDropdownData();
+    print(
+      'Dropdown data loaded: partyList=${_dropdownData.partyList.length} parties',
+    );
+
     // Fetch order details from the new API
     if (docId != '-1') {
       try {
@@ -286,17 +292,27 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
           body: jsonEncode({"doc_id": docId}),
         );
 
+        print(
+          'detailsForEdit API Response: ${response.statusCode}, Body: ${response.body}',
+        );
+
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
+          print('Order details fetched: $data');
           setState(() {
             // Set party
             final party = _dropdownData.partyList.firstWhere(
               (e) => e['ledKey'] == data['Led_Key']?.toString(),
-              orElse: () => {'ledKey': '', 'ledName': ''},
+              orElse: () => {'ledKey': '', 'ledName': 'Select Party'},
             );
             _orderControllers.selectedPartyKey = data['Led_Key']?.toString();
             _orderControllers.selectedParty =
-                party['ledName']?.isNotEmpty ?? false ? party['ledName'] : null;
+                party['ledName']?.isNotEmpty ?? false
+                    ? party['ledName']
+                    : 'Select Party';
+            print(
+              'Set party: ${_orderControllers.selectedParty} (${_orderControllers.selectedPartyKey})',
+            );
 
             // Set broker
             final broker = _dropdownData.brokerList.firstWhere(
@@ -338,14 +354,18 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
             // Update additionalInfo
             _additionalInfo.addAll({
               'paymentdays': data['PytDays']?.toString() ?? '0',
-              'refno': '', // If API provides this, update accordingly
+              'refno': data['RefNo']?.toString() ?? '',
             });
           });
-          // Fetch consignees based on Led_Key
-          await fetchAndMapConsignees(
-            key: data['Led_Key']?.toString() ?? '',
-            CoBrId: UserSession.coBrId ?? '',
-          );
+
+          // Fetch consignees after setting party
+          if (_orderControllers.selectedPartyKey != null) {
+            await fetchAndMapConsignees(
+              key: _orderControllers.selectedPartyKey!,
+              CoBrId: UserSession.coBrId ?? '',
+            );
+            print('Consignees fetched: ${consignees.length}');
+          }
         } else {
           print('Error fetching order details: ${response.statusCode}');
           ScaffoldMessenger.of(context).showSnackBar(
@@ -369,7 +389,6 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
         barcode: barcodeMode,
         doc_Id: docId.toString(),
       ),
-      _dropdownData.loadAllDropdownData(),
       fetchPaymentTerms(),
     ]);
 
@@ -583,8 +602,11 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
                                 matrixData.length > 1 ? matrixData[1] : '0',
                               ) ??
                               0.0,
-                          'barcode': '', // Not available in current data
-                          'note': catalogOrder.catalog.remark ?? '',
+                          'barcode':
+                              catalogOrder
+                                  .catalog
+                                  .barcode, // Not available in current data
+                          'note': "",
                         };
                       }).toList();
                     })
@@ -2020,23 +2042,47 @@ class _OrderForm extends StatefulWidget {
 }
 
 class _OrderFormState extends State<_OrderForm> {
+  String? _partyValue;
+  String? _brokerValue;
+  String? _transporterValue;
+
   @override
   void initState() {
     super.initState();
-    // Handle customer user type (C)
+    _partyValue = widget.controllers.selectedParty;
+    _brokerValue = widget.controllers.selectedBroker;
+    _transporterValue = widget.controllers.selectedTransporter;
+
+    print(
+      'OrderForm initState: userType=${UserSession.userType}, '
+      'selectedParty=${widget.controllers.selectedParty}, '
+      'selectedPartyKey=${widget.controllers.selectedPartyKey}, '
+      'partyList=${widget.dropdownData.partyList.length} parties',
+    );
+
     if (UserSession.userType == 'C' &&
         widget.controllers.selectedParty == null) {
       final party = widget.dropdownData.partyList.firstWhere(
         (e) => e['ledKey'] == UserSession.userLedKey,
-        orElse: () => {'ledKey': '', 'ledName': ''},
+        orElse: () => {'ledKey': '', 'ledName': 'Select Party'},
       );
       if (party['ledKey']!.isNotEmpty) {
-        widget.controllers.selectedParty = party['ledName'];
-        widget.controllers.selectedPartyKey = party['ledKey'];
+        print(
+          'Setting party for customer: ${party['ledName']} (${party['ledKey']})',
+        );
+        setState(() {
+          _partyValue = party['ledName'];
+          widget.controllers.selectedParty = party['ledName'];
+          widget.controllers.selectedPartyKey = party['ledKey'];
+        });
         WidgetsBinding.instance.addPostFrameCallback((_) {
           widget.onPartySelected(party['ledName'], party['ledKey']);
         });
       } else {
+        print('No party found for userLedKey=${UserSession.userLedKey}');
+        setState(() {
+          _partyValue = 'Select Party';
+        });
         WidgetsBinding.instance.addPostFrameCallback((_) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('No party found for userLedKey')),
@@ -2044,7 +2090,7 @@ class _OrderFormState extends State<_OrderForm> {
         });
       }
     }
-    // Handle salesman user type (S)
+
     if (UserSession.userType == 'S' &&
         widget.controllers.salesPersonKey == null) {
       final salesman = widget.dropdownData.salesPersonList.firstWhere(
@@ -2052,9 +2098,13 @@ class _OrderFormState extends State<_OrderForm> {
         orElse: () => {'ledKey': '', 'ledName': ''},
       );
       if (salesman['ledKey']!.isNotEmpty) {
+        print(
+          'Setting salesman: ${salesman['ledName']} (${salesman['ledKey']})',
+        );
         widget.controllers.salesPersonKey = salesman['ledKey'];
         widget.additionalInfo['salesman'] = salesman['ledKey'];
       } else {
+        print('No salesman found for userLedKey=${UserSession.userLedKey}');
         WidgetsBinding.instance.addPostFrameCallback((_) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('No salesman found for userLedKey')),
@@ -2062,19 +2112,22 @@ class _OrderFormState extends State<_OrderForm> {
         });
       }
     }
-    // Ensure dropdowns reflect API response values
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
-        // Ensure selectedParty, selectedBroker, and selectedTransporter are set
-        if (widget.controllers.selectedParty != null &&
-            widget.controllers.selectedPartyKey != null) {
-          widget.onPartySelected(
-            widget.controllers.selectedParty,
-            widget.controllers.selectedPartyKey,
-          );
-        }
+
+    // Trigger party selection if already set
+    if (widget.controllers.selectedParty != null &&
+        widget.controllers.selectedPartyKey != null &&
+        widget.controllers.selectedParty != 'Select Party') {
+      print(
+        'Triggering onPartySelected for existing party: '
+        '${widget.controllers.selectedParty} (${widget.controllers.selectedPartyKey})',
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onPartySelected(
+          widget.controllers.selectedParty,
+          widget.controllers.selectedPartyKey,
+        );
       });
-    });
+    }
   }
 
   @override
@@ -2098,42 +2151,28 @@ class _OrderFormState extends State<_OrderForm> {
           ),
         ),
         _buildPartyDropdownRow(context),
-        _buildDropdown(
-          "Broker",
-          "B",
-          widget.controllers.selectedBroker,
-          (val, key) async {
-            widget.controllers.selectedBrokerKey = key;
-            if (key != null) {
-              final commission = await widget.dropdownData
-                  .fetchCommissionPercentage(key);
-              widget.controllers.comm.text = commission;
-            }
-          },
-          isEnabled: UserSession.userType != 'C',
-        ),
+        _buildDropdown("Broker", "B", _brokerValue, (val, key) async {
+          widget.controllers.selectedBrokerKey = key;
+          _brokerValue = val;
+          if (key != null) {
+            final commission = await widget.dropdownData
+                .fetchCommissionPercentage(key);
+            widget.controllers.comm.text = commission;
+          }
+          setState(() {});
+        }, isEnabled: UserSession.userType != 'C'),
         buildTextField(context, "Comm (%)", widget.controllers.comm),
-        _buildDropdown(
-          "Transporter",
-          "T",
-          widget.controllers.selectedTransporter,
-          (val, key) => widget.controllers.selectedTransporterKey = key,
-        ),
+        _buildDropdown("Transporter", "T", _transporterValue, (val, key) {
+          widget.controllers.selectedTransporterKey = key;
+          _transporterValue = val;
+          setState(() {});
+        }),
         _buildResponsiveRow(
           context,
           buildTextField(
             context,
             "Delivery Days",
             widget.controllers.deliveryDays,
-            // keyboardType: TextInputType.number,
-            // onChanged: (value) {
-            //   final days = int.tryParse(value) ?? 0;
-            //   final futureDate = DateTime.now().add(Duration(days: days));
-            //   widget
-            //       .controllers
-            //       .deliveryDate
-            //       .text = _OrderControllers.formatDate(futureDate);
-            // },
           ),
           buildTextField(
             context,
@@ -2159,7 +2198,6 @@ class _OrderFormState extends State<_OrderForm> {
             },
           ),
         ),
-
         buildFullField(context, "Remark", widget.controllers.remark, true),
         Row(
           children: [
@@ -2181,115 +2219,6 @@ class _OrderFormState extends State<_OrderForm> {
             ),
           ],
         ),
-        // _buildResponsiveRow(
-        // context,
-        //   buildTextField(
-        //     context,
-        //     "Total Item",
-        //     widget.controllers.totalItem,
-        //     readOnly: true,
-        //   ),
-        //   buildTextField(
-        //     context,
-        //     "Total Quantity",
-        //     widget.controllers.totalQty,
-        //     readOnly: true,
-        //   ),
-        // ),
-        // buildTextField(
-        //   context,
-        //   "Total Amount (₹)",
-        //   //_calculateTotalAmount().toStringAsFixed(2),
-        //   widget.controllers.totalAmt,
-        //   readOnly: true,
-        // ),
-        // Row(
-        //   children: [
-        // Expanded(
-        //   child: ElevatedButton(
-        //     onPressed: () async {
-        //       if (UserSession.userType == 'S' &&
-        //           (widget.controllers.selectedPartyKey == null ||
-        //               widget.controllers.selectedPartyKey!.isEmpty)) {
-        //         showDialog(
-        //           context: context,
-        //           builder:
-        //               (context) => AlertDialog(
-        //                 title: Text('Party Selection Required'),
-        //                 content: Text(
-        //                   'Please select a party before adding more information.',
-        //                 ),
-        //                 actions: [
-        //                   TextButton(
-        //                     onPressed: () => Navigator.pop(context),
-        //                     child: Text('OK'),
-        //                   ),
-        //                 ],
-        //               ),
-        //         );
-        //         return;
-        //       }
-        //       final salesPersonList = widget.dropdownData.salesPersonList;
-        //       final partyLedKey = widget.controllers.selectedPartyKey;
-        //       final result = await showDialog(
-        //         context: context,
-        //         builder:
-        //             (context) => AddMoreInfoDialog(
-        //               salesPersonList: salesPersonList,
-        //               partyLedKey: partyLedKey,
-        //               pytTermDiscKey: widget.controllers.pytTermDiscKey,
-        //               salesPersonKey: widget.controllers.salesPersonKey,
-        //               creditPeriod: widget.controllers.creditPeriod,
-        //               salesLedKey: widget.controllers.salesLedKey,
-        //               ledgerName: widget.controllers.ledgerName,
-        //               additionalInfo: widget.additionalInfo,
-        //               consignees: widget.consignees,
-        //               paymentTerms: widget.paymentTerms,
-        //               bookingTypes: widget.bookingTypes,
-        //               onValueChanged: (newInfo) {
-        //                 widget.onAdditionalInfoUpdated(newInfo);
-        //               },
-        //               isSalesmanDropdownEnabled:
-        //                   UserSession.userType != 'S',
-        //             ),
-        //       );
-        //       if (result != null) {
-        //         widget.onAdditionalInfoUpdated(result);
-        //       }
-        //     },
-        //     style: ElevatedButton.styleFrom(
-        //       backgroundColor: AppColors.primaryColor,
-        //       minimumSize: Size(double.infinity, 50),
-        //       shape: RoundedRectangleBorder(
-        //         borderRadius: BorderRadius.zero,
-        //       ),
-        //     ),
-        //     child: const Text(
-        //       'Add More Info',
-        //       style: TextStyle(color: Colors.white),
-        //     ),
-        //   ),
-        // ),
-        //const SizedBox(width: 10),
-        // Expanded(
-        //   child: ElevatedButton(
-        //     onPressed: widget.saveOrder,
-        //     style: ElevatedButton.styleFrom(
-        //       backgroundColor: AppColors.primaryColor,
-        //       minimumSize: Size(double.infinity, 50),
-        //       shape: RoundedRectangleBorder(
-        //         borderRadius: BorderRadius.zero,
-        //       ),
-        //     ),
-        //     child: const Text(
-        //       'Save',
-        //       style: TextStyle(color: Colors.white),
-        //     ),
-        //   ),
-        // ),
-        //   ],
-
-        // ),
       ],
     );
   }
@@ -2298,30 +2227,20 @@ class _OrderFormState extends State<_OrderForm> {
     return Row(
       children: [
         Expanded(
-          child: _buildDropdown(
-            "Party Name",
-            "w",
-            widget.controllers.selectedParty,
-            widget.onPartySelected,
-            isEnabled: UserSession.userType != 'C',
-          ),
-        ),
-        const SizedBox(width: 8),
-        ElevatedButton(
-          onPressed:
-              UserSession.userType == 'C'
-                  ? null
-                  : () => showDialog(
-                    context: context,
-                    builder: (_) => CustomerMasterDialog(),
-                  ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.lightBlue,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.zero,
-            ),
-          ),
-          child: const Text('+', style: TextStyle(color: Colors.white)),
+          child: _buildDropdown("Party Name", "w", _partyValue, (
+            val,
+            key,
+          ) async {
+            print('Party selected: $val ($key)');
+            setState(() {
+              _partyValue = val ?? 'Select Party';
+              widget.controllers.selectedParty = val;
+              widget.controllers.selectedPartyKey = key;
+            });
+            if (key != null) {
+              await widget.onPartySelected(val, key);
+            }
+          }, isEnabled: UserSession.userType != 'C'),
         ),
       ],
     );
@@ -2337,6 +2256,7 @@ class _OrderFormState extends State<_OrderForm> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: DropdownSearch<String>(
+        key: ValueKey('$ledCat-$selectedValue'),
         popupProps: PopupProps.menu(
           showSearchBox: true,
           searchFieldProps: TextFieldProps(
@@ -2349,9 +2269,7 @@ class _OrderFormState extends State<_OrderForm> {
           ),
         ),
         items: _getLedgerList(ledCat).map((e) => e['ledName']!).toList(),
-        selectedItem:
-            selectedValue ??
-            _getDefaultSelection(ledCat), // Fallback to default if null
+        selectedItem: selectedValue,
         dropdownDecoratorProps: DropDownDecoratorProps(
           dropdownSearchDecoration: InputDecoration(
             labelText: label,
@@ -2368,25 +2286,19 @@ class _OrderFormState extends State<_OrderForm> {
         },
         onChanged:
             isEnabled
-                ? (val) => onChanged(val, _getKeyFromValue(ledCat, val))
+                ? (val) {
+                  final key = _getKeyFromValue(ledCat, val);
+                  onChanged(val, key);
+                  setState(() {
+                    if (label == 'Party Name') _partyValue = val;
+                    if (label == 'Broker') _brokerValue = val;
+                    if (label == 'Transporter') _transporterValue = val;
+                  });
+                }
                 : null,
         enabled: isEnabled,
       ),
     );
-  }
-
-  // Helper method to provide default selection if needed
-  String? _getDefaultSelection(String ledCat) {
-    switch (ledCat) {
-      case 'w':
-        return widget.controllers.selectedParty;
-      case 'B':
-        return widget.controllers.selectedBroker;
-      case 'T':
-        return widget.controllers.selectedTransporter;
-      default:
-        return null;
-    }
   }
 
   List<Map<String, String>> _getLedgerList(String ledCat) {
@@ -2435,7 +2347,74 @@ class _OrderFormState extends State<_OrderForm> {
             Expanded(child: second),
           ],
         )
-        : Column(children: [first, second]);
+        : Column(children: [first, const SizedBox(height: 10), second]);
+  }
+
+  Widget buildTextField(
+    BuildContext context,
+    String label,
+    TextEditingController controller, {
+    bool isText = false,
+    bool isDate = false,
+    VoidCallback? onTap,
+  }) {
+    return TextFormField(
+      controller: controller,
+      readOnly: isDate,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
+      ),
+      keyboardType: isText ? TextInputType.text : TextInputType.number,
+      onTap: onTap,
+      // validator: (value) {
+      //   if (value == null || value.isEmpty) {
+      //     return 'Please enter $label';
+      //   }
+      //   return null;
+      // },
+    );
+  }
+
+  Widget buildFullField(
+    BuildContext context,
+    String label,
+    TextEditingController controller,
+    bool isMultiline,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
+        ),
+        maxLines: isMultiline ? 3 : 1,
+        // validator: (value) {
+        //   if (value == null || value.isEmpty) {
+        //     return 'Please enter $label';
+        //   }
+        //   return null;
+        // },
+      ),
+    );
+  }
+
+  Future<void> _selectDate(
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
+    final today = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: today,
+      firstDate: today,
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      controller.text = _OrderControllers.formatDate(picked);
+    }
   }
 }
 
