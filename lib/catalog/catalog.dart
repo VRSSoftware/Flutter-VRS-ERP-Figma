@@ -1907,7 +1907,7 @@ List<String> _getImageUrl(Catalog catalog) {
     }
 
     final requestBody = {
-      "company": "VRS Software",
+      "company": UserSession.coBrName,
       "createdBy": "admin",
       "mobile": "",
       "catalogItems": catalogItems,
@@ -1922,12 +1922,13 @@ List<String> _getImageUrl(Catalog catalog) {
     if (response.statusCode == 200) {
       final file = File(
         '${tempDir.path}/catalog_${DateTime.now().millisecondsSinceEpoch}.pdf',
+        
       );
       await file.writeAsBytes(response.bodyBytes);
 
       await Share.shareXFiles([
         XFile(file.path),
-      ], subject: 'Please find the Catalog as an attachment.');
+      ], text: 'Please find the Catalog as an attachment.');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -2404,6 +2405,7 @@ Future<void> _shareSelectedItems({
             Navigator.pop(context);
             _shareSelectedItemsPDF(
               shareType: 'pdf',
+              
               includeDesign: includeDesign,
               includeShade: includeShade,
               includeRate: includeRate,
