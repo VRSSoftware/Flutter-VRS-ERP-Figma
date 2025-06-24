@@ -42,8 +42,8 @@ class _LoginPageState extends State<LoginScreen> {
     _fetchCompanies();
     _fetchFinancialYears();
     setState(() {
-      _passwordController.text = 'Admin';
-      _usernameController.text = 'admin';
+      // _passwordController.text = 'Admin';
+      // _usernameController.text = 'admin';
     });
   }
 
@@ -239,6 +239,7 @@ Future<void> _fetchCompanies() async {
             headers: headers,
             body: json.encode(body),
           );
+          print("response body :${response.body}");
           if (response.statusCode == 200) {
             final Map<String, dynamic> responseData = json.decode(
               response.body,
@@ -258,7 +259,7 @@ Future<void> _fetchCompanies() async {
             UserSession.userLedKey = responseData["ledKey"];
             UserSession.name = responseData["name"];
 
-            if (responseData['userName'] == _usernameController.text.trim()) {
+           if ((responseData['userName'] as String).trim() == _usernameController.text.trim()) {
               await fetchOnlineImageSetting(); // API CALL HERE
               UserSession.rptPath = await fetchAppSetting('606');
               AppConstants.whatsappKey = await fetchAppSetting('541');
