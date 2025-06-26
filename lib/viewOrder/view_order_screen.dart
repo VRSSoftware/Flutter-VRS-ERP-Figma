@@ -161,11 +161,13 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
         body: jsonEncode(body),
       );
 
+      print("response body:${response.body}");
+
       if (response.statusCode == 200) {
         print('Success: ${response.body}');
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Order saved successfully')));
-        return response.statusCode.toString();
+            return response.body;
       } else {
         print('Error: ${response.statusCode}');
         print('Response Body: ${response.body}');
@@ -269,52 +271,64 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
           _orderControllers.salesPersonKey ??
           '',
     };
+  final orderDataJson = jsonEncode(orderData);
+  print("Saved Order Data:");
+  print(orderDataJson);
 
-    final orderDataJson = jsonEncode(orderData);
-    print("Saved Order Data:");
-    print(orderDataJson);
-
-    String statusCode = await insertFinalSalesOrder(orderDataJson);
-
-    final salesOrderNo = _orderControllers.orderNo.text;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Order Saved'),
-        content: Text('Order ${_orderControllers.orderNo.text} saved successfully'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PdfViewerScreen(
-                    orderNo: _orderControllers.orderNo.text,
-                    whatsappNo: _orderControllers.whatsAppMobileNo,
-                     partyName: _orderControllers.selectedPartyName ?? '', 
-                     orderDate: _orderControllers.date.text,
+  try {
+    final response = await insertFinalSalesOrder(orderDataJson);
+    if (response != null && response != "fail") {
+      // Format the order number as "SO" + response body
+      final formattedOrderNo = "SO$response";
+      
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Order Saved'),
+          content: Text('Order $formattedOrderNo saved successfully'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PdfViewerScreen(
+                      orderNo: formattedOrderNo,
+                      whatsappNo: _orderControllers.whatsAppMobileNo,
+                      partyName: _orderControllers.selectedPartyName ?? '', 
+                      orderDate: _orderControllers.date.text,
+                    ),
                   ),
-                ),
-              );
-            },
-            child: Text('View PDF'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => HomeScreen()),
-              );
-            },
-            child: Text('Done'),
-          ),
-        ],
-      ),
-    );
+                );
+              },
+              child: Text('View PDF'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => HomeScreen()),
+                );
+              },
+              child: Text('Done'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Handle failure case
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save order. Please try again.')),
+      );
+    }
+  } catch (e) {
+    print('Error during order saving: $e');
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Error saving order: $e')));
   }
-
+}
 void _updateTotals() {
   int totalQty = 0;
   double totalAmt = 0.0; // Use double for currency
@@ -1007,14 +1021,14 @@ class _OrderFormState extends State<_OrderForm> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _buildResponsiveRow(
-          context,
-          buildTextField(
-            context,
-            "Order No",
-            widget.controllers.orderNo,
-            isText: true,
-          ),
+        // _buildResponsiveRow(
+        //   context,
+          // buildTextField(
+          //   context,
+          //   "Order No",
+          //   widget.controllers.orderNo,
+          //   isText: true,
+          // ),
           buildTextField(
             context,
             "Select Date",
@@ -1022,7 +1036,7 @@ class _OrderFormState extends State<_OrderForm> {
             isDate: true,
             onTap: () => _selectDate(context, widget.controllers.date),
           ),
-        ),
+     //   ),
         _buildPartyDropdownRow(context),
         _buildDropdown(
           "Broker",

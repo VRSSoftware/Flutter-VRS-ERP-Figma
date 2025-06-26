@@ -8,6 +8,7 @@ import 'package:dropdown_search/dropdown_search.dart';
 import 'package:vrs_erp_figma/OrderBooking/barcode/barcodewidget.dart';
 import 'package:vrs_erp_figma/catalog/imagezoom.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/register/register.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/screens/home_screen.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
@@ -51,10 +52,16 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
   ActiveTab _activeTab = ActiveTab.transaction;
   Map<String, Map<String, Map<String, int>>> quantities = {};
   Map<String, Set<String>> selectedColors = {};
+  bool _isSaving = false;
+
+
 
   @override
   void initState() {
     super.initState();
+    docId = widget.docId;
+    _styleManager.docId = docId; // Pass docId to _StyleManager
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final args =
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
@@ -67,12 +74,20 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
       _styleManager.updateTotalsCallback = _updateTotals;
       _loadBookingTypes();
     });
-    setState(() {
-      docId = widget.docId;
-      _styleManager.docId = docId; // Pass docId to _StyleManager
-    });
   }
 
+Future<void> _handleSave() async {
+  if (_isSaving) return;
+  
+  setState(() => _isSaving = true);
+  try {
+    await _saveOrderLocally();
+  } catch (e) {
+    print('Save error: $e');
+  } finally {
+    setState(() => _isSaving = false);
+  }
+}
   double _calculateTotalAmount() {
     double total = 0.0;
     for (final catalogOrder in EditOrderData.data) {
@@ -126,6 +141,8 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
     }
     return total;
   }
+
+
 
   Future<void> _loadBookingTypes() async {
     try {
@@ -206,56 +223,101 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
   }
 
   Future<void> fetchAndPrintSalesOrderNumber() async {
-    Map<String, dynamic> salesOrderData = await ApiService.getSalesOrderData(
-      coBrId: UserSession.coBrId ?? '',
-      userId: UserSession.userName ?? '',
-      fcYrId: UserSession.userFcYr ?? '',
-      barcode: "true",
-    );
-
-    if (salesOrderData.isNotEmpty &&
-        salesOrderData.containsKey('salesOrderNo')) {
-      String salesOrderNo = salesOrderData['salesOrderNo'];
-      _orderControllers.orderNo.text = (int.tryParse(EditOrderData.doc_id)! - 1).toString();
-      print('Sales Order Number: $salesOrderNo');
-    } else {
-      print('Sales Order Number not found');
-    }
-  }
-
-  Future<String> insertFinalSalesOrder(String orderDataJson) async {
-    try {
-      final response = await http.post(
-        Uri.parse(
-          '${AppConstants.BASE_URL}/orderRegister/saveEditedSalesOrder',
-        ),
-        headers: {'Content-Type': 'application/json'},
-        body: orderDataJson, // Send the new JSON structure directly
+    if (docId == "-1") {
+      // New order - get next number
+      Map<String, dynamic> salesOrderData = await ApiService.getSalesOrderData(
+        coBrId: UserSession.coBrId ?? '',
+        userId: UserSession.userName ?? '',
+        fcYrId: UserSession.userFcYr ?? '',
+        barcode: "true",
       );
 
-      if (response.statusCode == 200) {
-        print('Success: ${response.body}');
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Order saved successfully')));
-        return response.statusCode.toString();
-      } else {
-        print('Error: ${response.statusCode}');
-        print('Response Body: ${response.body}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save order: ${response.statusCode}'),
-          ),
-        );
+      if (salesOrderData.isNotEmpty &&
+          salesOrderData.containsKey('salesOrderNo')) {
+        String salesOrderNo = salesOrderData['salesOrderNo'];
+        setState(() {
+          _orderControllers.orderNo.text = salesOrderNo;
+        });
       }
-    } catch (e) {
-      print('Error: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error saving order: $e')));
+    } else {
+      // Existing order - use docId
+      setState(() {
+        _orderControllers.orderNo.text = docId;
+      });
     }
-    return "fail";
   }
+
+Future<String> insertFinalSalesOrder(String orderDataJson) async {
+  try {
+    final response = await http.post(
+      Uri.parse(
+        '${AppConstants.BASE_URL}/orderRegister/saveEditedSalesOrder',
+      ),
+      headers: {'Content-Type': 'application/json'},
+      body: orderDataJson,
+    );
+
+    if (response.statusCode == 200) {
+      print('Success: ${response.body}');
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Success'),
+          content: Text('Order Updated Successfully'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RegisterPage(), // Your RegisterPage class
+                  ),
+                );
+              },
+              child: Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return response.statusCode.toString();
+    } else {
+      print('Error: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Failed'),
+          content: Text('Failed to save order: ${response.statusCode}'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  } catch (e) {
+    print('Error: $e');
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Error'),
+        content: Text('Error saving order: $e'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+  return "fail";
+}
+
+
 
   void _setInitialDates() {
     final today = DateTime.now();
@@ -300,19 +362,26 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
           final data = jsonDecode(response.body);
           print('Order details fetched: $data');
           setState(() {
-            // Set party
-            final party = _dropdownData.partyList.firstWhere(
-              (e) => e['ledKey'] == data['Led_Key']?.toString(),
-              orElse: () => {'ledKey': '', 'ledName': 'Select Party'},
-            );
-            _orderControllers.selectedPartyKey = data['Led_Key']?.toString();
-            _orderControllers.selectedParty =
-                party['ledName']?.isNotEmpty ?? false
-                    ? party['ledName']
-                    : 'Select Party';
-            print(
-              'Set party: ${_orderControllers.selectedParty} (${_orderControllers.selectedPartyKey})',
-            );
+            // Set party using partyName from API response
+            if (data['partyName'] != null) {
+              _orderControllers.selectedParty = data['partyName']?.toString();
+              _orderControllers.selectedPartyKey = data['Led_Key']?.toString();
+              print(
+                'Set party from API partyName: ${_orderControllers.selectedParty} (${_orderControllers.selectedPartyKey})',
+              );
+            } else {
+              // Fallback to partyList if partyName is missing
+              final party = _dropdownData.partyList.firstWhere(
+                (e) => e['ledKey'] == data['Led_Key']?.toString(),
+                orElse: () => {'ledKey': '', 'ledName': 'Select Party'},
+              );
+              _orderControllers.selectedPartyKey = data['Led_Key']?.toString();
+              _orderControllers.selectedParty =
+                  party['ledName'] ?? 'Select Party';
+              print(
+                'Set party from partyList: ${_orderControllers.selectedParty} (${_orderControllers.selectedPartyKey})',
+              );
+            }
 
             // Set broker
             final broker = _dropdownData.brokerList.firstWhere(
@@ -321,10 +390,7 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
             );
             _orderControllers.selectedBrokerKey =
                 data['Broker_Key']?.toString();
-            _orderControllers.selectedBroker =
-                broker['ledName']?.isNotEmpty ?? false
-                    ? broker['ledName']
-                    : null;
+            _orderControllers.selectedBroker = broker['ledName'] ?? '';
             _orderControllers.comm.text =
                 data['Broker_Comm']?.toString() ?? '0.00';
 
@@ -336,13 +402,11 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
             _orderControllers.selectedTransporterKey =
                 data['Trsp_Key']?.toString();
             _orderControllers.selectedTransporter =
-                transporter['ledName']?.isNotEmpty ?? false
-                    ? transporter['ledName']
-                    : null;
+                transporter['ledName'] ?? '';
 
             // Set payment days, delivery date, and remark
             _orderControllers.deliveryDays.text =
-                data['PytDays']?.toString() ?? '0';
+                data['dlv_Days']?.toString() ?? '0';
             _orderControllers.deliveryDate.text =
                 data['DlvDate'] != null
                     ? _OrderControllers.formatDate(
@@ -694,7 +758,7 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
                           dropdownData: _dropdownData,
                           onPartySelected: _handlePartySelection,
                           updateTotals: _updateTotals,
-                          saveOrder: _saveOrderLocally,
+                          saveOrder: _handleSave,
                           additionalInfo: _additionalInfo,
                           consignees: consignees,
                           paymentTerms: paymentTerms,
@@ -704,6 +768,7 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
                               _additionalInfo = newInfo;
                             });
                           },
+                            isSaving: _isSaving,
                         )
                         : _StyleCardsView(
                           styleManager: _styleManager,
@@ -963,6 +1028,7 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
   }
 
   void _handleAddAction() {
+    
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -970,6 +1036,7 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
             (context) => MoreOrderBarcodePage(
               onFilterPressed: (String filter) {},
               edit: true,
+              
             ),
       ),
     ).then((result) {
@@ -1397,15 +1464,9 @@ class _StyleManager {
           }
         } else {
           print('Error refreshing order items: ${response.statusCode}');
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   SnackBar(content: Text('Failed to refresh order items')),
-          // );
         }
       } catch (e) {
         print('Error refreshing order items: $e');
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(content: Text('Error refreshing order items: $e')),
-        // );
       }
     } else {
       print('Invalid docId: $docId');
@@ -2023,6 +2084,7 @@ class _OrderForm extends StatefulWidget {
   final List<PytTermDisc> paymentTerms;
   final List<Item> bookingTypes;
   final Function(Map<String, dynamic>) onAdditionalInfoUpdated;
+    final bool isSaving;
 
   const _OrderForm({
     required this.controllers,
@@ -2035,6 +2097,7 @@ class _OrderForm extends StatefulWidget {
     required this.paymentTerms,
     required this.bookingTypes,
     required this.onAdditionalInfoUpdated,
+      required this.isSaving,
   });
 
   @override
@@ -2042,17 +2105,9 @@ class _OrderForm extends StatefulWidget {
 }
 
 class _OrderFormState extends State<_OrderForm> {
-  String? _partyValue;
-  String? _brokerValue;
-  String? _transporterValue;
-
   @override
   void initState() {
     super.initState();
-    _partyValue = widget.controllers.selectedParty;
-    _brokerValue = widget.controllers.selectedBroker;
-    _transporterValue = widget.controllers.selectedTransporter;
-
     print(
       'OrderForm initState: userType=${UserSession.userType}, '
       'selectedParty=${widget.controllers.selectedParty}, '
@@ -2071,7 +2126,6 @@ class _OrderFormState extends State<_OrderForm> {
           'Setting party for customer: ${party['ledName']} (${party['ledKey']})',
         );
         setState(() {
-          _partyValue = party['ledName'];
           widget.controllers.selectedParty = party['ledName'];
           widget.controllers.selectedPartyKey = party['ledKey'];
         });
@@ -2081,7 +2135,7 @@ class _OrderFormState extends State<_OrderForm> {
       } else {
         print('No party found for userLedKey=${UserSession.userLedKey}');
         setState(() {
-          _partyValue = 'Select Party';
+          widget.controllers.selectedParty = 'Select Party';
         });
         WidgetsBinding.instance.addPostFrameCallback((_) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -2131,17 +2185,49 @@ class _OrderFormState extends State<_OrderForm> {
   }
 
   @override
+  void didUpdateWidget(covariant _OrderForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.controllers != oldWidget.controllers) {
+      setState(() {}); 
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         _buildResponsiveRow(
           context,
-          buildTextField(
-            context,
-            "Order No",
-            widget.controllers.orderNo,
-            isText: true,
+          TextFormField(
+            enabled: false, 
+            controller: widget.controllers.orderNo,
+            decoration: InputDecoration(
+              labelText: "Order No",
+              labelStyle: TextStyle(
+                color:
+                    Colors.grey[600], 
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.zero,
+                borderSide: BorderSide(color: Colors.grey[600]!),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.zero,
+                borderSide: BorderSide(color: Colors.grey[600]!),
+              ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.zero,
+                borderSide: BorderSide(color: Colors.grey[600]!),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+            ),
+            style: TextStyle(
+              color: Colors.grey[600], 
+            ),
           ),
+
           buildTextField(
             context,
             "Select Date",
@@ -2150,23 +2236,37 @@ class _OrderFormState extends State<_OrderForm> {
             onTap: () => _selectDate(context, widget.controllers.date),
           ),
         ),
+        const SizedBox(height: 12),
         _buildPartyDropdownRow(context),
-        _buildDropdown("Broker", "B", _brokerValue, (val, key) async {
-          widget.controllers.selectedBrokerKey = key;
-          _brokerValue = val;
-          if (key != null) {
-            final commission = await widget.dropdownData
-                .fetchCommissionPercentage(key);
-            widget.controllers.comm.text = commission;
-          }
-          setState(() {});
-        }, isEnabled: UserSession.userType != 'C'),
+        _buildDropdown(
+          "Broker",
+          "B",
+          widget.controllers.selectedBroker,
+          (val, key) async {
+            print('Broker selected: $val ($key)');
+            widget.controllers.selectedBrokerKey = key;
+            widget.controllers.selectedBroker = val;
+            if (key != null) {
+              final commission = await widget.dropdownData
+                  .fetchCommissionPercentage(key);
+              widget.controllers.comm.text = commission;
+            }
+            setState(() {});
+          },
+          isEnabled: UserSession.userType != 'C',
+        ),
         buildTextField(context, "Comm (%)", widget.controllers.comm),
-        _buildDropdown("Transporter", "T", _transporterValue, (val, key) {
-          widget.controllers.selectedTransporterKey = key;
-          _transporterValue = val;
-          setState(() {});
-        }),
+        _buildDropdown(
+          "Transporter",
+          "T",
+          widget.controllers.selectedTransporter,
+          (val, key) {
+            print('Transporter selected: $val ($key)');
+            widget.controllers.selectedTransporterKey = key;
+            widget.controllers.selectedTransporter = val;
+            setState(() {});
+          },
+        ),
         _buildResponsiveRow(
           context,
           buildTextField(
@@ -2199,26 +2299,52 @@ class _OrderFormState extends State<_OrderForm> {
           ),
         ),
         buildFullField(context, "Remark", widget.controllers.remark, true),
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton(
-                onPressed: widget.saveOrder,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  minimumSize: Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.zero,
-                  ),
-                ),
-                child: const Text(
-                  'Save',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-          ],
+ Row(
+  children: [
+    Expanded(
+      child: ElevatedButton(
+        onPressed: widget.isSaving ? null : widget.saveOrder,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: widget.isSaving 
+              ? Colors.grey 
+              : AppColors.primaryColor,
+          minimumSize: const Size(double.infinity, 50),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.zero,
+          ),
         ),
+        child: widget.isSaving
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Updating...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              )
+            : const Text(
+                'Save',
+                style: TextStyle(color: Colors.white),
+              ),
+      ),
+    ),
+  ],
+)
       ],
     );
   }
@@ -2227,20 +2353,47 @@ class _OrderFormState extends State<_OrderForm> {
     return Row(
       children: [
         Expanded(
-          child: _buildDropdown("Party Name", "w", _partyValue, (
-            val,
-            key,
-          ) async {
-            print('Party selected: $val ($key)');
-            setState(() {
-              _partyValue = val ?? 'Select Party';
-              widget.controllers.selectedParty = val;
-              widget.controllers.selectedPartyKey = key;
-            });
-            if (key != null) {
-              await widget.onPartySelected(val, key);
-            }
-          }, isEnabled: UserSession.userType != 'C'),
+          child: DropdownSearch<String>(
+            popupProps: PopupProps.menu(
+              showSearchBox: true,
+              searchFieldProps: TextFieldProps(
+                decoration: InputDecoration(
+                  hintText: 'Search party...',
+                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                  border: const OutlineInputBorder(
+                    borderRadius: BorderRadius.zero,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
+              ),
+            ),
+            items:
+                widget.dropdownData.partyList
+                    .map((e) => e['ledName']!)
+                    .toList(),
+            selectedItem: widget.controllers.selectedParty,
+            dropdownDecoratorProps: DropDownDecoratorProps(
+              dropdownSearchDecoration: InputDecoration(
+                labelText: 'Party Name',
+                border: const OutlineInputBorder(
+                  borderRadius: BorderRadius.zero,
+                ),
+              ),
+            ),
+            dropdownBuilder: (context, selectedItem) {
+              return SizedBox(
+                width: double.infinity, // Take full width
+                child: Text(
+                  selectedItem ?? 'Select Party',
+                  style: TextStyle(color: Colors.grey[600]),
+                  overflow: TextOverflow.ellipsis, // Add ellipsis for overflow
+                  maxLines: 1, // Ensure single line
+                ),
+              );
+            },
+            onChanged: null, // Disable selection
+            enabled: false, // Disable interaction
+          ),
         ),
       ],
     );
@@ -2289,11 +2442,6 @@ class _OrderFormState extends State<_OrderForm> {
                 ? (val) {
                   final key = _getKeyFromValue(ledCat, val);
                   onChanged(val, key);
-                  setState(() {
-                    if (label == 'Party Name') _partyValue = val;
-                    if (label == 'Broker') _brokerValue = val;
-                    if (label == 'Transporter') _transporterValue = val;
-                  });
                 }
                 : null,
         enabled: isEnabled,
@@ -2356,23 +2504,18 @@ class _OrderFormState extends State<_OrderForm> {
     TextEditingController controller, {
     bool isText = false,
     bool isDate = false,
+    bool readOnly = false,
     VoidCallback? onTap,
   }) {
     return TextFormField(
       controller: controller,
-      readOnly: isDate,
+      readOnly: readOnly || isDate,
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
       ),
       keyboardType: isText ? TextInputType.text : TextInputType.number,
       onTap: onTap,
-      // validator: (value) {
-      //   if (value == null || value.isEmpty) {
-      //     return 'Please enter $label';
-      //   }
-      //   return null;
-      // },
     );
   }
 
@@ -2391,12 +2534,6 @@ class _OrderFormState extends State<_OrderForm> {
           border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
         ),
         maxLines: isMultiline ? 3 : 1,
-        // validator: (value) {
-        //   if (value == null || value.isEmpty) {
-        //     return 'Please enter $label';
-        //   }
-        //   return null;
-        // },
       ),
     );
   }
@@ -2416,57 +2553,6 @@ class _OrderFormState extends State<_OrderForm> {
       controller.text = _OrderControllers.formatDate(picked);
     }
   }
-}
-
-Widget buildTextField(
-  BuildContext context,
-  String label,
-  TextEditingController controller, {
-  bool isDate = false,
-  bool readOnly = false,
-  VoidCallback? onTap,
-  bool isText = false,
-}) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    child: TextFormField(
-      controller: controller,
-      readOnly: readOnly || isDate,
-      keyboardType: isText ? TextInputType.text : TextInputType.number,
-      onTap: onTap ?? (isDate ? () => _selectDate(context, controller) : null),
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
-      ),
-    ),
-  );
-}
-
-Future<void> _selectDate(
-  BuildContext context,
-  TextEditingController controller,
-) async {
-  final picked = await showDatePicker(
-    context: context,
-    initialDate: DateTime.now(),
-    firstDate: DateTime(2000),
-    lastDate: DateTime(2100),
-  );
-  if (picked != null) {
-    controller.text = _OrderControllers.formatDate(picked);
-  }
-}
-
-Widget buildFullField(
-  BuildContext context,
-  String label,
-  TextEditingController controller,
-  bool? isText,
-) {
-  return Padding(
-    padding: const EdgeInsets.only(top: 12),
-    child: buildTextField(context, label, controller, isText: isText ?? false),
-  );
 }
 
 class AddMoreInfoDialog extends StatefulWidget {

@@ -42,6 +42,7 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
   ActiveTab _activeTab = ActiveTab.transaction;
   Map<String, Map<String, Map<String, int>>> quantities = {};
   Map<String, Set<String>> selectedColors = {};
+    bool _isSaving = false;
 
   @override
   void initState() {
@@ -59,6 +60,19 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
       _loadBookingTypes();
     });
   }
+
+  Future<void> _handleSave() async {
+  if (_isSaving) return;
+  
+  setState(() => _isSaving = true);
+  try {
+    await _saveOrderLocally();
+  } catch (e) {
+    print('Save error: $e');
+  } finally {
+    setState(() => _isSaving = false);
+  }
+}
 
   double _calculateTotalAmount() {
     double total = 0.0;
@@ -213,12 +227,13 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
         body: jsonEncode(body),
       );
 
+      print("rrrrrrrrrresponse body:${response.body}");
       if (response.statusCode == 200) {
         print('Success: ${response.body}');
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Order saved successfully')));
-        return response.statusCode.toString();
+         return response.body;
       } else {
         print('Error: ${response.statusCode}');
         print('Response Body: ${response.body}');
@@ -236,6 +251,7 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
     }
     return "fail";
   }
+
 
   void _setInitialDates() {
     final today = DateTime.now();
@@ -376,57 +392,58 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
     print("Saved Order Data:");
     print(orderDataJson);
 
-    try {
-      String statusCode = await insertFinalSalesOrder(orderDataJson);
-      if (statusCode == "200") {
-        showDialog(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                title: Text('Order Saved'),
-                content: Text(
-                  'Order ${_orderControllers.orderNo.text} saved successfully',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => PdfViewerScreen(
-                                orderNo: _orderControllers.orderNo.text,
-                                whatsappNo: _orderControllers.whatsAppMobileNo,
-                                 partyName: _orderControllers.selectedPartyName ?? '', 
-                                orderDate: _orderControllers.date.text,
-
-                              ),
-                        ),
-                      );
-                    },
-                    child: Text('View PDF'),
+   try {
+    final orderNumber = await insertFinalSalesOrder(orderDataJson);
+    if (orderNumber != null) {
+      // Format the order number as "SO" + response body
+      final formattedOrderNo = "SO$orderNumber";
+      print("formattedOrderNo: ${formattedOrderNo}");
+      
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Order Saved'),
+          content: Text(
+            'Order $formattedOrderNo saved successfully', // Use formatted order number
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PdfViewerScreen(
+                      orderNo: formattedOrderNo, // Use formatted order number
+                      whatsappNo: _orderControllers.whatsAppMobileNo,
+                      partyName: _orderControllers.selectedPartyName ?? '', 
+                      orderDate: _orderControllers.date.text,
+                    ),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => HomeScreen()),
-                      );
-                    },
-                    child: Text('Done'),
-                  ),
-                ],
-              ),
-        );
-      }
-    } catch (e) {
-      print('Error during order saving: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error saving order: $e')));
+                );
+              },
+              child: Text('View PDF'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => HomeScreen()),
+                );
+              },
+              child: Text('Done'),
+            ),
+          ],
+        ),
+      );
     }
+  } catch (e) {
+    print('Error during order saving: $e');
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Error saving order: $e')));
   }
+}
 
   void _updateTotals() {
     int totalQty = 0;
@@ -486,7 +503,7 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
                           dropdownData: _dropdownData,
                           onPartySelected: _handlePartySelection,
                           updateTotals: _updateTotals,
-                          saveOrder: _saveOrderLocally,
+                          saveOrder: _handleSave,
                           additionalInfo: _additionalInfo,
                           consignees: consignees,
                           paymentTerms: paymentTerms,
@@ -496,6 +513,7 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
                               _additionalInfo = newInfo;
                             });
                           },
+                           isSaving: _isSaving,
                         )
                         : _StyleCardsView(
                           styleManager: _styleManager,
@@ -2013,6 +2031,7 @@ class _OrderForm extends StatefulWidget {
   final List<PytTermDisc> paymentTerms;
   final List<Item> bookingTypes;
   final Function(Map<String, dynamic>) onAdditionalInfoUpdated;
+      final bool isSaving;
 
   const _OrderForm({
     required this.controllers,
@@ -2025,6 +2044,7 @@ class _OrderForm extends StatefulWidget {
     required this.paymentTerms,
     required this.bookingTypes,
     required this.onAdditionalInfoUpdated,
+     required this.isSaving,
   });
 
   @override
@@ -2078,14 +2098,14 @@ class _OrderFormState extends State<_OrderForm> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _buildResponsiveRow(
-          context,
-          buildTextField(
-            context,
-            "Order No",
-            widget.controllers.orderNo,
-            isText: true,
-          ),
+        // _buildResponsiveRow(
+        //   context,
+          // buildTextField(
+          //   context,
+          //   "Order No",
+          //   widget.controllers.orderNo,
+          //   isText: true,
+          // ),
           buildTextField(
             context,
             "Select Date",
@@ -2093,7 +2113,7 @@ class _OrderFormState extends State<_OrderForm> {
             isDate: true,
             onTap: () => _selectDate(context, widget.controllers.date),
           ),
-        ),
+       // ),
         _buildPartyDropdownRow(context),
         _buildDropdown(
           "Broker",
@@ -2239,22 +2259,48 @@ class _OrderFormState extends State<_OrderForm> {
               ),
             ),
             const SizedBox(width: 10),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: widget.saveOrder,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  minimumSize: Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.zero, // removes curve
+      Expanded(
+      child: ElevatedButton(
+        onPressed: widget.isSaving ? null : widget.saveOrder,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: widget.isSaving 
+              ? Colors.grey 
+              : AppColors.primaryColor,
+          minimumSize: const Size(double.infinity, 50),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.zero,
+          ),
+        ),
+        child: widget.isSaving
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Saving...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
                   ),
-                ),
-                child: const Text(
-                  'Save',
-                  style: TextStyle(color: Colors.white),
-                ),
+                  const SizedBox(width: 12),
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              )
+            : const Text(
+                'Save',
+                style: TextStyle(color: Colors.white),
               ),
-            ),
+      ),
+    ),
           ],
         ),
       ],
