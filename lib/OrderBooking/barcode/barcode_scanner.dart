@@ -10,6 +10,27 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   bool _isFlashOn = false;
   final MobileScannerController _controller = MobileScannerController();
   bool _isScanned = false;
+  BarcodeCapture? lastCapture;
+
+  void _onCapturePressed() {
+    if (_isScanned) return;
+
+    if (lastCapture != null && lastCapture!.barcodes.isNotEmpty) {
+      final String? code = lastCapture!.barcodes.first.rawValue;
+      if (code != null) {
+        _isScanned = true;
+        Navigator.pop(context, code);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("No barcode detected")),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("No barcode detected")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,18 +53,12 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         children: [
           MobileScanner(
             controller: _controller,
+            //allowDuplicates: true,
             onDetect: (capture) {
-              if (_isScanned) return;
-              final List<Barcode> barcodes = capture.barcodes;
-              final Barcode barcode = barcodes.first;
-
-              final String? code = barcode.rawValue;
-              if (code != null) {
-                _isScanned = true;
-                Navigator.pop(context, code);
-              }
+              lastCapture = capture;
             },
           ),
+          // Green Focus Frame
           Center(
             child: Container(
               width: 250,
@@ -51,6 +66,38 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.greenAccent, width: 2),
                 borderRadius: BorderRadius.circular(0),
+              ),
+            ),
+          ),
+          // Circular Capture Button
+          Positioned(
+            bottom: 40,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: GestureDetector(
+                onTap: _onCapturePressed,
+                child: Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                    border: Border.all(color: Colors.grey, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 4,
+                        offset: Offset(2, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.camera_alt,
+                    size: 30,
+                    color: Colors.black87,
+                  ),
+                ),
               ),
             ),
           ),
