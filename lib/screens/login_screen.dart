@@ -26,6 +26,7 @@ class _LoginPageState extends State<LoginScreen> {
   final List<Map<String, dynamic>> _years = [];
 
   bool _isLoadingCompanies = true;
+  bool _isLoading = false;
 
   final FocusNode _usernameFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
@@ -42,8 +43,8 @@ class _LoginPageState extends State<LoginScreen> {
     _fetchCompanies();
     _fetchFinancialYears();
     setState(() {
-      // _passwordController.text = 'Admin';
-      // _usernameController.text = 'admin';
+      _passwordController.text = 'Admin';
+      _usernameController.text = 'admin';
     });
   }
 
@@ -220,6 +221,9 @@ Future<void> _fetchCompanies() async {
 }
 
   Future<void> login(BuildContext context) async {
+    setState(() {
+      _isLoading = true;
+    });
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     if (isRegistered == '1') {
@@ -308,6 +312,9 @@ Future<void> _fetchCompanies() async {
         "You have to register first. Device not registered",
       );
     }
+        setState(() {
+      _isLoading = false;
+    });
   }
 
   void _showPopupMessage(BuildContext context, String message) {
@@ -581,7 +588,7 @@ Future<void> _fetchCompanies() async {
                                   ),
                                 ),
                                 child: ElevatedButton(
-                                  onPressed: () => login(context),
+                                  onPressed: () =>  _isLoading ? '' : login(context),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.transparent,
                                     shadowColor: Colors.transparent,
@@ -589,7 +596,7 @@ Future<void> _fetchCompanies() async {
                                       borderRadius: BorderRadius.circular(0),
                                     ),
                                   ),
-                                  child: Text(
+                                  child: _isLoading ? CircularProgressIndicator() : Text(
                                     "Log in",
                                     style: TextStyle(
                                       fontSize: 16,

@@ -995,7 +995,7 @@ Widget _buildRegisterButton() {
     width: double.infinity,
     height: 45,
     child: ElevatedButton(
-      onPressed: _handleRegister,
+      onPressed: _isLoading ? null :  _handleRegister,
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primaryColor, // Solid color, no gradient
         shadowColor: Colors.transparent,
@@ -1003,7 +1003,7 @@ Widget _buildRegisterButton() {
           borderRadius: BorderRadius.zero, // Remove rounded corners
         ),
       ),
-      child: Text(
+      child: _isLoading ? CircularProgressIndicator() :  Text(
         "Register",
         style: TextStyle(fontSize: 16, color: Colors.white),
       ),
