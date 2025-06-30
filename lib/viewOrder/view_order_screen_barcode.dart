@@ -177,10 +177,7 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
       if (responseMap['statusCode'] == 200) {
         if (responseMap['result'] is List) {
           setState(() {
-            consignees =
-                responseMap['result']
-                    .map((e) => Consignee.fromJson(e))
-                    .toList();
+            consignees = responseMap['result'];
           });
         }
       } else {
