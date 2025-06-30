@@ -125,18 +125,7 @@ flutter:
     - assets/images/setting.png
     - assets/images/team.png
     - assets/images/deleteAccount.png
-    - assets/garments/image_01.png
-    - assets/garments/image_02.png
-    - assets/garments/image_03.png
-    - assets/garments/image_04.png
-    - assets/garments/image_05.png
-    - assets/garments/image_06.png
-    - assets/garments/image_07.png
-    - assets/garments/image_08.png
-    - assets/garments/image_09.png
-    - assets/garments/image_10.png
-    - assets/garments/image_11.png
-    - assets/garments/image_12.png
+    
     
 
   # An image asset can refer to one or more resolution-specific "variants", see
