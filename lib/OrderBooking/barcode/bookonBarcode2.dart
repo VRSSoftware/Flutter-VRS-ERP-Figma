@@ -47,7 +47,6 @@ class CatalogItem {
       wsp: double.tryParse(json['wsp']?.toString() ?? '0') ?? 0,
       stkQty: json['data2']?.toString() ?? '0',
       barcode: json['barcode']?.toString() ?? '',
-
     );
   }
 }
@@ -237,11 +236,11 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
   }
 
   Future<List<CatalogItem>> fetchCatalogData() async {
-     String apiUrl = '';
+    String apiUrl = '';
     if (widget.edit) {
       apiUrl = '${AppConstants.BASE_URL}/orderBooking/GetBarcodeDetailsUpdated';
     } else {
-     apiUrl =  '${AppConstants.BASE_URL}/orderBooking/GetBarcodeDetails';
+      apiUrl = '${AppConstants.BASE_URL}/orderBooking/GetBarcodeDetails';
     }
     final Map<String, dynamic> requestBody = {
       "coBrId": UserSession.coBrId ?? '',
@@ -262,6 +261,15 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
         if (data.isNotEmpty) {
           return data.map((e) => CatalogItem.fromJson(e)).toList();
         }
+      } else if (response.statusCode == 500 &&
+          response.body == 'Barcode already added') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('This barcode is already added in the cart.'),
+            backgroundColor: AppColors.primaryColor,
+          ),
+        );
+        
       } else {
         debugPrint('Failed to fetch catalog data: ${response.statusCode}');
       }
