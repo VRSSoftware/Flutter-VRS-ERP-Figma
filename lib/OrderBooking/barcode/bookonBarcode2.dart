@@ -366,7 +366,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
           final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
           final mrp = matrixData.isNotEmpty ? matrixData[0] : '0';
           final wsp = matrixData.length > 1 ? matrixData[1] : '0';
-          final stkQty = matrixData.length > 3 ? matrixData[3] : '0';
+          final stkQty = matrixData.length > 2 ? matrixData[2] : '0';
           final qty = quantities[styleKey]?[shade]?[size]?.toString() ?? '1';
           row.add('$mrp,$wsp,$qty,$stkQty');
         }
@@ -407,7 +407,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
               );
               final mrp = matrixData.isNotEmpty ? matrixData[0] : '0';
               final wsp = matrixData.length > 1 ? matrixData[1] : mrp;
-              final stkQty = matrixData.length > 3 ? matrixData[3] : '0';
+              final stkQty = matrixData.length > 2 ? matrixData[2] : '0';
               final item = {
                 "designcode": styleCode,
                 "mrp": mrp,
@@ -930,7 +930,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
           ) {
             final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
             final stock =
-                int.tryParse(matrixData.length > 3 ? matrixData[3] : '0') ?? 0;
+                int.tryParse(matrixData.length > 2 ? matrixData[2] : '0') ?? 0;
             total += stock;
           }
         }
@@ -1221,7 +1221,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
       final matrixData = matrix.matrix[shadeIndex][sizeIndex].split(',');
       rate = matrixData[0];
       wsp = matrixData.length > 1 ? matrixData[1] : '0';
-      stkQty = matrixData.length > 3 ? matrixData[3] : '0';
+      stkQty = matrixData.length > 3 ? matrixData[2] : '0';
     }
 
     int quantity = _getQuantity(styleKey, shade, size);
