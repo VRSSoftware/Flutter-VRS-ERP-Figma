@@ -1313,7 +1313,7 @@ class _StyleManager {
         final mrp = item['mrp']?.toString() ?? '0';
         final wsp = item['wsp']?.toString() ?? '0';
         final qty = item['clqty']?.toString() ?? '0';
-        final stkQty = item['upcoming_Stk']?.toString() ?? '0';
+        final stkQty =  item['data2'] ?? '0';
         final matrixEntry = '$mrp,$wsp,$qty,$stkQty';
         print(
           'Matrix entry for $styleKey/$shadeIndex/$sizeIndex: $matrixEntry',
