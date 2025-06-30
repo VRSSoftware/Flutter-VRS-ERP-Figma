@@ -1061,6 +1061,7 @@ import 'package:vrs_erp_figma/register/registerFilteration.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
 import 'package:vrs_erp_figma/viewOrder/Pdf_viewer_screen.dart';
+import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_screen.dart';
 import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_screen_barcode.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -1510,11 +1511,21 @@ Expanded(
                         ),
                       );
                       break;
-                     case 'edit':
+                     case 'editBarcode':
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => EditOrderScreenBarcode(docId: registerOrder.orderId),
+                            // builder: (context) => EditOrderScreen(docId: registerOrder.orderId),
+                          ),
+                        );
+                        break;
+                     case 'edit2':
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            // builder: (context) => EditOrderScreenBarcode(docId: registerOrder.orderId),
+                            builder: (context) => EditOrderScreen(docId: registerOrder.orderId),
                           ),
                         );
                         break;
@@ -1574,7 +1585,7 @@ Expanded(
                     ),
                   ),
                   const PopupMenuItem<String>(
-                          value: 'edit',
+                          value: 'editBarcode',
                           child: Row(
                             children: [
                               Icon(
@@ -1583,7 +1594,21 @@ Expanded(
                                 size: 20,
                               ),
                               SizedBox(width: 8),
-                              Text('Edit', style: TextStyle(fontSize: 14)),
+                              Text('Edit Barcode', style: TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                  const PopupMenuItem<String>(
+                          value: 'edit2',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.edit,
+                                color: Colors.blue, // Non-nullable
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Text('Edit 2', style: TextStyle(fontSize: 14)),
                             ],
                           ),
                         ),
