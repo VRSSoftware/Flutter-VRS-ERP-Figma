@@ -8,7 +8,7 @@ class BarcodeScannerScreen extends StatefulWidget {
 
 class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   bool _isFlashOn = false;
-  final MobileScannerController _controller = MobileScannerController();
+  final MobileScannerController _controller = MobileScannerController(formats: [BarcodeFormat.code39],);
   bool _isScanned = false;
   BarcodeCapture? lastCapture;
 
