@@ -352,6 +352,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:vrs_erp_figma/OrderBooking/barcode/QRCodeScannerScreen.dart';
 import 'package:vrs_erp_figma/OrderBooking/barcode/barcode_scanner.dart';
 import 'package:vrs_erp_figma/OrderBooking/barcode/bookonBarcode2.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
@@ -428,6 +429,27 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
     final barcode = await Navigator.push<String>(
       context,
       MaterialPageRoute(builder: (context) => BarcodeScannerScreen()),
+      // MaterialPageRoute(builder: (context) => QRCodeScannerScreen()),
+    );
+
+    if (barcode != null && barcode.isNotEmpty) {
+      final upperBarcode = barcode.toUpperCase();
+      setState(() {
+        _barcodeController.text = upperBarcode;
+        _noDataFound = false;
+      });
+      _validateAndNavigate(upperBarcode);
+    }
+    // Request focus after scan
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _barcodeFocusNode.requestFocus();
+    });
+  }
+  Future<void> _scanQRCode() async {
+    final barcode = await Navigator.push<String>(
+      context,
+      // MaterialPageRoute(builder: (context) => BarcodeScannerScreen()),
+      MaterialPageRoute(builder: (context) => QRCodeScannerScreen()),
     );
 
     if (barcode != null && barcode.isNotEmpty) {
@@ -588,6 +610,15 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
                       'assets/images/barcode.png',
                       width: 40,
                       height: 40,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: _scanQRCode,
+                    child: Icon(
+                      Icons.qr_code_2_rounded,
+                      size: 35, // Optional size
+                      color: Colors.blue, // Optional color
                     ),
                   ),
                 ],
