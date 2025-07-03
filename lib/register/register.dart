@@ -1040,7 +1040,6 @@
 
 
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -1050,10 +1049,9 @@ import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:marquee/marquee.dart';
-import 'package:http/http.dart' as http; // Added for HTTP requests
+import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
-import 'dart:convert'; // Added for base64 encoding
-
+import 'dart:convert'; 
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/keyName.dart';
 import 'package:vrs_erp_figma/models/registerModel.dart';
@@ -1274,7 +1272,7 @@ Expanded(
         registerOrder.itemName,
         overflow: TextOverflow.ellipsis,
         maxLines: 1,
-        style: GoogleFonts.poppins(
+        style: GoogleFonts.lora(
           fontSize: 15,
           fontWeight: FontWeight.w600,
           color: const Color.fromRGBO(21, 101, 192, 1),
@@ -1641,6 +1639,7 @@ Expanded(
           text: registerOrder.orderNo,
           iconColor: Colors.blue,
           textColor: const Color.fromRGBO(21, 101, 192, 1),
+          
         ),
       ),
     ),
@@ -1848,7 +1847,7 @@ Widget _buildScaledText({
     fit: BoxFit.scaleDown,
     child: Text(
       text,
-      style: GoogleFonts.poppins(
+      style: GoogleFonts.lora(
         fontSize: 14, // Base size
         fontWeight: FontWeight.w600,
         color: textColor,

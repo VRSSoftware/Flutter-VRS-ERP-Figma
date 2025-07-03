@@ -337,6 +337,26 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
   Future<void> _saveOrderLocally() async {
     if (!_formKey.currentState!.validate()) return;
 
+      String? consigneeLedKey = '';
+  String? stationStnKey = '';
+  final selectedConsigneeName = _additionalInfo['consignee']?.toString();
+  if (selectedConsigneeName != null && selectedConsigneeName.isNotEmpty) {
+    final selectedConsignee = consignees.firstWhere(
+      (consignee) => consignee.ledName == selectedConsigneeName,
+      orElse: () => Consignee(
+        ledKey: '',
+        ledName: '',
+        stnKey: '',
+        stnName: '',
+        paymentTermsKey: '',
+        paymentTermsName: '',
+        pytTermDiscdays: '0',
+      ),
+    );
+    consigneeLedKey = selectedConsignee.ledKey;
+    stationStnKey = selectedConsignee.stnKey;
+  }
+
     final orderData = {
       "saleorderno": _orderControllers.orderNo.text,
       "orderdate": formatDate(_orderControllers.date.text, true),
@@ -349,8 +369,8 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
       "totitem": _orderControllers.totalItem.text,
       "totqty": _orderControllers.totalQty.text,
       "remark": _orderControllers.remark.text,
-      "consignee": _additionalInfo['consignee'] ?? '',
-      "station": _additionalInfo['station'] ?? '',
+       "consignee": consigneeLedKey, // Use ledKey instead of ledName
+    "station": stationStnKey,     // Use stnKey instead of stnName
       "paymentterms":
           _additionalInfo['paymentterms'] ??
           _orderControllers.pytTermDiscKey ??
@@ -365,24 +385,24 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
       "bookingtype": _additionalInfo['bookingtype'] ?? '',
       "salesman":
           _additionalInfo['salesman'] ?? _orderControllers.salesPersonKey ?? '',
-      "items":
-          _styleManager.groupedItems.entries
-              .map((entry) {
-                return entry.value.map((item) {
-                  return {
-                    ...item,
-                    'clqty':
-                        _styleManager
-                            .controllers[entry
-                                .key]?[item['shadeName']]?[item['sizeName']]
-                            ?.text ??
-                        '0',
-                  };
-                }).toList();
-              })
-              .toList()
-              .expand((i) => i)
-              .toList(),
+      // "items":
+      //     _styleManager.groupedItems.entries
+      //         .map((entry) {
+      //           return entry.value.map((item) {
+      //             return {
+      //               ...item,
+      //               'clqty':
+      //                   _styleManager
+      //                       .controllers[entry
+      //                           .key]?[item['shadeName']]?[item['sizeName']]
+      //                       ?.text ??
+      //                   '0',
+      //             };
+      //           }).toList();
+      //         })
+      //         .toList()
+      //         .expand((i) => i)
+      //         .toList(),
     };
 
     final orderDataJson = jsonEncode(orderData);
@@ -1364,46 +1384,75 @@ class _StyleCardState extends State<StyleCard> {
                     ),
                   ),
                   const SizedBox(width: 12.0),
-                  Expanded(
-                    child: TextButton.icon(
-                      onPressed: _isLoading || !_hasQuantityChanged
-                          ? null
-                          : () => _submitUpdate(context),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20.0,
-                          vertical: 10.0,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(0),
-                        ),
-                        side: BorderSide(
-                          color: _hasQuantityChanged
-                              ? Colors.blue
-                              : Colors.grey.shade400,
-                        ),
-                        backgroundColor: _hasQuantityChanged
-                            ? Colors.blue.withOpacity(0.1)
-                            : Colors.grey.withOpacity(0.1),
-                      ),
-                      icon: Icon(
-                        Icons.save,
-                        color: _hasQuantityChanged
-                            ? Colors.blue
-                            : Colors.grey.shade400,
-                      ),
-                      label: Text(
-                        'Update',
-                        style: TextStyle(
-                          color: _hasQuantityChanged
-                              ? Colors.blue
-                              : Colors.grey.shade400,
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
+                        Expanded(
+  child: TextButton(
+    onPressed: _isLoading || !_hasQuantityChanged
+        ? null
+        : () => _submitUpdate(context),
+    style: TextButton.styleFrom(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 20.0,
+        vertical: 10.0,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(0),
+      ),
+      side: BorderSide(
+        color: _hasQuantityChanged
+            ? Colors.blue
+            : Colors.grey.shade400,
+      ),
+      backgroundColor: _hasQuantityChanged
+          ? Colors.blue.withOpacity(0.1)
+          : Colors.grey.withOpacity(0.1),
+    ),
+    child: _isLoading
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Updating...',
+                style: TextStyle(
+                  color: Colors.blue, // Match button's active color
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: Colors.blue, // Match button's active color
+                ),
+              ),
+            ],
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.save,
+                color: _hasQuantityChanged
+                    ? Colors.blue
+                    : Colors.grey.shade400,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Update',
+                style: TextStyle(
+                  color: _hasQuantityChanged
+                      ? Colors.blue
+                      : Colors.grey.shade400,
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+  ),
+),
                 ],
               ),
               const SizedBox(height: 15),

@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/screens/home_screen.dart';
 import 'package:vrs_erp_figma/screens/register_screen.dart';
@@ -573,38 +571,62 @@ Future<void> _fetchCompanies() async {
                                             : null,
                               ),
                               SizedBox(height: 8),
-                              Container(
-                                width: double.infinity,
-                                height: 45,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(0),
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      AppColors.primaryColor,
-                                      AppColors.maroon,
-                                    ],
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                  ),
-                                ),
-                                child: ElevatedButton(
-                                  onPressed: () =>  _isLoading ? '' : login(context),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(0),
-                                    ),
-                                  ),
-                                  child: _isLoading ? CircularProgressIndicator() : Text(
-                                    "Log in",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
+                           Container(
+  width: double.infinity,
+  height: 45,
+  decoration: BoxDecoration(
+    borderRadius: BorderRadius.circular(0),
+    gradient: LinearGradient(
+      colors: [
+        AppColors.primaryColor,
+        AppColors.maroon,
+      ],
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+    ),
+  ),
+  child: ElevatedButton(
+    onPressed: _isLoading ? null : () => login(context), // Disable button when loading
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.transparent,
+      shadowColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(0),
+      ),
+    ),
+    child: _isLoading
+        ? Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Log in...',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white, // Changed to white to match button theme
+                ),
+              ),
+              const SizedBox(width: 12),
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: Colors.white, // Changed to white to match button theme
+                ),
+              ),
+            ],
+          )
+        : const Text(
+            "Log in",
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.white,
+            ),
+          ),
+  ),
+),
                               isRegistered == '1'
                                   ? Container()
                                   : TextButton(

@@ -598,6 +598,7 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
                           borderRadius: BorderRadius.circular(0),
                           borderSide: const BorderSide(
                             color: Color(0xFFE0E0E0),
+                        
                           ),
                         ),
                       ),
@@ -618,7 +619,7 @@ class _BarcodeWiseWidgetState extends State<BarcodeWiseWidget> {
                     child: Icon(
                       Icons.qr_code_2_rounded,
                       size: 35, // Optional size
-                      color: Colors.blue, // Optional color
+                      color: Colors.black, // Optional color
                     ),
                   ),
                 ],
