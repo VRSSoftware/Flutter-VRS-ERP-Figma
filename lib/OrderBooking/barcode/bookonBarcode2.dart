@@ -210,7 +210,7 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
         for (var shade in uniqueShades) {
           quantities[styleCode]![shade] = {};
           for (var size in uniqueSizes) {
-            quantities[styleCode]![shade]![size] = 1; // Default to 1
+            quantities[styleCode]![shade]![size] = UserSession.coBrName=='G CUBE NX' ? 0 : 1; // Default to 1
             final controllerKey = '$styleCode-$shade-$size';
             final controller = TextEditingController(
               text: '1',
