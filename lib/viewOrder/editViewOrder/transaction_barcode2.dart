@@ -3,11 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:vrs_erp_figma/catalog/imagezoom.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/CatalogOrderData.dart';
+import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_data.dart'; // ✅ EditOrderData
 
 class TransactionBarcode2 extends StatefulWidget {
-  final List<CatalogOrderData> orderData;
-
-  const TransactionBarcode2({super.key, required this.orderData});
+  const TransactionBarcode2({super.key, required List<CatalogOrderData> orderData}); // Removed parameter
 
   @override
   State<TransactionBarcode2> createState() => _TransactionBarcode2State();
@@ -23,7 +22,7 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
   }
 
   void _initializeControllers() {
-    for (var item in widget.orderData) {
+    for (var item in EditOrderData.data) {
       final styleKey = item.catalog.styleCode;
       controllers[styleKey] = {};
       for (var size in item.orderMatrix.sizes) {
@@ -54,12 +53,12 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
 
   @override
   Widget build(BuildContext context) {
-    return widget.orderData.isEmpty
+    return EditOrderData.data.isEmpty
         ? const Center(child: Text('No items found'))
         : ListView.builder(
-            itemCount: widget.orderData.length,
+            itemCount: EditOrderData.data.length,
             itemBuilder: (context, index) {
-              final catalogOrder = widget.orderData[index];
+              final catalogOrder = EditOrderData.data[index];
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 elevation: 2,
@@ -74,7 +73,6 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
           );
   }
 
-  /// 🔥 Build order item card widget
   Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
     final catalog = catalogOrder.catalog;
     final matrix = catalogOrder.orderMatrix;
@@ -82,11 +80,9 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        /// 🔹 Top Info Section (Image + Details)
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// 🔸 Image
             GestureDetector(
               onDoubleTap: () {
                 final imageUrl = catalog.fullImagePath.contains("http")
@@ -95,8 +91,7 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        ImageZoomScreen(imageUrls: [imageUrl]),
+                    builder: (context) => ImageZoomScreen(imageUrls: [imageUrl]),
                   ),
                 );
               },
@@ -112,20 +107,15 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
                       ? catalog.fullImagePath
                       : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}',
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.error),
+                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
                 ),
               ),
             ),
-
             const SizedBox(width: 10),
-
-            /// 🔸 Details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// Style
                   Text(
                     catalog.styleCode,
                     style: TextStyle(
@@ -133,8 +123,6 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
                         fontWeight: FontWeight.bold,
                         color: Colors.red.shade900),
                   ),
-
-                  /// Shade Name
                   Text(
                     catalog.shadeName,
                     style: TextStyle(
@@ -142,10 +130,7 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
                         fontSize: 14,
                         color: Colors.blue.shade900),
                   ),
-
                   const SizedBox(height: 6),
-
-                  /// Table Info
                   Table(
                     columnWidths: const {
                       0: FixedColumnWidth(100),
@@ -155,21 +140,16 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
                     defaultVerticalAlignment: TableCellVerticalAlignment.top,
                     children: [
                       _buildTableRow('Remark', catalog.remark),
-                      _buildTableRow(
-                          'Stk Type',
-                          catalog.upcoming_Stk == '1'
-                              ? 'Upcoming'
-                              : 'Ready'),
+                      _buildTableRow('Stk Type',
+                          catalog.upcoming_Stk == '1' ? 'Upcoming' : 'Ready'),
                       _buildTableRow('Stock Qty',
                           _calculateStockQty(catalogOrder).toString(),
                           valueColor: Colors.green[700]),
                       _buildTableRow('Order Qty',
                           _calculateOrderQty(catalogOrder).toString(),
                           valueColor: Colors.orange[800]),
-                      _buildTableRow(
-                          'Order Amount',
-                          _calculateOrderAmount(catalogOrder)
-                              .toStringAsFixed(2),
+                      _buildTableRow('Order Amount',
+                          _calculateOrderAmount(catalogOrder).toStringAsFixed(2),
                           valueColor: Colors.purple[800]),
                     ],
                   ),
@@ -178,10 +158,7 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
             ),
           ],
         ),
-
         const SizedBox(height: 15),
-
-        /// 🔸 Matrix Section (No shade now, only Size | Qty | MRP | WSP | Stock)
         Container(
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey.shade300),
@@ -189,8 +166,6 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
           child: Column(
             children: [
               Divider(height: 1, color: Colors.grey.shade300),
-
-              /// Header Row
               Row(
                 children: [
                   _buildHeaderCell("Size", 2),
@@ -200,10 +175,7 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
                   _buildHeaderCell("Stock", 1),
                 ],
               ),
-
               Divider(height: 1, color: Colors.grey.shade300),
-
-              /// Data Rows
               for (var size in matrix.sizes) ...[
                 _buildMatrixRow(catalogOrder, size),
                 Divider(height: 1, color: Colors.grey.shade300),
@@ -215,29 +187,7 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
     );
   }
 
-  /// 🔸 Header Cell Widget
-  Widget _buildHeaderCell(String text, int flex) => Expanded(
-        flex: flex,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            border:
-                Border(right: BorderSide(color: Colors.grey.shade300)),
-          ),
-          child: Text(
-            text,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: Colors.red.shade900),
-          ),
-        ),
-      );
-
-  /// 🔸 Table Row
-  TableRow _buildTableRow(String label, String value,
-      {Color? valueColor}) {
+  TableRow _buildTableRow(String label, String value, {Color? valueColor}) {
     return TableRow(children: [
       Align(
           alignment: Alignment.topLeft,
@@ -258,7 +208,24 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
     ]);
   }
 
-  /// 🔸 Matrix Row Widget
+  Widget _buildHeaderCell(String text, int flex) => Expanded(
+        flex: flex,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            border: Border(right: BorderSide(color: Colors.grey.shade300)),
+          ),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Colors.red.shade900),
+          ),
+        ),
+      );
+
   Widget _buildMatrixRow(CatalogOrderData catalogOrder, String size) {
     final matrix = catalogOrder.orderMatrix;
     final styleKey = catalogOrder.catalog.styleCode;
@@ -271,8 +238,7 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
 
     if (sizeIndex != -1) {
       final matrixData =
-          matrix.matrix.firstWhere((row) => row.length > sizeIndex)[sizeIndex]
-              .split(',');
+          matrix.matrix.firstWhere((row) => row.length > sizeIndex)[sizeIndex].split(',');
       mrp = matrixData.isNotEmpty ? matrixData[0] : '0';
       wsp = matrixData.length > 1 ? matrixData[1] : '0';
       qty = matrixData.length > 2 ? matrixData[2] : '0';
@@ -280,19 +246,16 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
     }
 
     controllers[styleKey] ??= {};
-    controllers[styleKey]![size] ??=
-        TextEditingController(text: qty);
+    controllers[styleKey]![size] ??= TextEditingController(text: qty);
 
     return Row(
       children: [
         _buildCell(size, 2),
-        /// Qty Editable
         Expanded(
           flex: 2,
           child: Container(
             decoration: BoxDecoration(
-              border:
-                  Border(right: BorderSide(color: Colors.grey.shade300)),
+              border: Border(right: BorderSide(color: Colors.grey.shade300)),
             ),
             child: Center(
               child: SizedBox(
@@ -311,7 +274,7 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
                   ),
                   onChanged: (val) {
                     setState(() {
-                      // Update matrix on change if needed
+                      // You can update the matrix value here if needed
                     });
                   },
                 ),
@@ -326,14 +289,12 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
     );
   }
 
-  /// 🔸 Cell Widget
   Widget _buildCell(String text, int flex) => Expanded(
         flex: flex,
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            border:
-                Border(right: BorderSide(color: Colors.grey.shade300)),
+            border: Border(right: BorderSide(color: Colors.grey.shade300)),
           ),
           child: Text(
             text,
@@ -343,7 +304,6 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
         ),
       );
 
-  /// 🔥 Calculation Functions
   int _calculateOrderQty(CatalogOrderData data) {
     return data.orderMatrix.matrix
         .expand((i) => i)
@@ -367,6 +327,6 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
           final qty = double.tryParse(parts[2]) ?? 0;
           return mrp * qty;
         })
-        .fold(50, (a, b) => a + b);
+        .fold(0, (a, b) => a + b);
   }
 }
