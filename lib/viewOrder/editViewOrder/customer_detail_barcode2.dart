@@ -4,7 +4,7 @@ import 'package:vrs_erp_figma/models/CatalogOrderData.dart';
 import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_data.dart';
 
 class CustomerDetailBarcode2 extends StatefulWidget {
-  const CustomerDetailBarcode2({super.key, });
+  const CustomerDetailBarcode2({super.key});
 
   @override
   State<CustomerDetailBarcode2> createState() => _CustomerDetailBarcode2State();
@@ -23,12 +23,10 @@ class _CustomerDetailBarcode2State extends State<CustomerDetailBarcode2> {
   void initState() {
     super.initState();
 
-    // Validate broker key exists
     if (EditOrderData.brokerList.any((item) => item['key'] == EditOrderData.brokerKey)) {
       selectedBrokerKey = EditOrderData.brokerKey;
     }
 
-    // Validate transporter key exists
     if (EditOrderData.transporterList.any((item) => item['key'] == EditOrderData.transporterKey)) {
       selectedTransporterKey = EditOrderData.transporterKey;
     }
@@ -37,6 +35,20 @@ class _CustomerDetailBarcode2State extends State<CustomerDetailBarcode2> {
     deliveryDaysController.text = EditOrderData.deliveryDays;
     deliveryDateController.text = EditOrderData.deliveryDate;
     remarkController.text = EditOrderData.remark;
+
+    commController.addListener(updateEditOrderData);
+    deliveryDaysController.addListener(updateEditOrderData);
+    deliveryDateController.addListener(updateEditOrderData);
+    remarkController.addListener(updateEditOrderData);
+  }
+
+  void updateEditOrderData() {
+    EditOrderData.brokerKey = selectedBrokerKey ?? '';
+    EditOrderData.transporterKey = selectedTransporterKey ?? '';
+    EditOrderData.commission = commController.text;
+    EditOrderData.deliveryDays = deliveryDaysController.text;
+    EditOrderData.deliveryDate = deliveryDateController.text;
+    EditOrderData.remark = remarkController.text;
   }
 
   @override
@@ -48,45 +60,43 @@ class _CustomerDetailBarcode2State extends State<CustomerDetailBarcode2> {
         children: [
           buildReadOnlyField('Date', EditOrderData.detailsForEdit),
           buildReadOnlyField('Party Name', EditOrderData.partyName),
-
           const SizedBox(height: 10),
-
           buildDropdownField(
             label: 'Broker',
             value: selectedBrokerKey,
             items: EditOrderData.brokerList,
             onChanged: (val) {
-              setState(() => selectedBrokerKey = val);
+              setState(() {
+                selectedBrokerKey = val;
+                updateEditOrderData();
+              });
             },
           ),
-
           buildTextField('Commission %', commController, TextInputType.number),
-
           buildDropdownField(
             label: 'Transporter',
             value: selectedTransporterKey,
             items: EditOrderData.transporterList,
             onChanged: (val) {
-              setState(() => selectedTransporterKey = val);
+              setState(() {
+                selectedTransporterKey = val;
+                updateEditOrderData();
+              });
             },
           ),
-
           buildTextField('Delivery Days', deliveryDaysController, TextInputType.number),
-
           GestureDetector(
             onTap: pickDeliveryDate,
             child: AbsorbPointer(
               child: buildTextField('Delivery Date', deliveryDateController, TextInputType.text),
             ),
           ),
-
           buildTextField('Remark', remarkController, TextInputType.text),
         ],
       ),
     );
   }
 
-  /// 🔹 Read-only Display Field
   Widget buildReadOnlyField(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -107,7 +117,6 @@ class _CustomerDetailBarcode2State extends State<CustomerDetailBarcode2> {
     );
   }
 
-  /// 🔹 Editable Input Field
   Widget buildTextField(String label, TextEditingController controller, TextInputType type) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
@@ -130,7 +139,6 @@ class _CustomerDetailBarcode2State extends State<CustomerDetailBarcode2> {
     );
   }
 
-  /// 🔹 Dropdown Field
   Widget buildDropdownField({
     required String label,
     required String? value,
@@ -164,7 +172,6 @@ class _CustomerDetailBarcode2State extends State<CustomerDetailBarcode2> {
     );
   }
 
-  /// 🔹 Delivery Date Picker
   Future<void> pickDeliveryDate() async {
     DateTime? picked = await showDatePicker(
       context: context,
@@ -173,7 +180,19 @@ class _CustomerDetailBarcode2State extends State<CustomerDetailBarcode2> {
       lastDate: DateTime(2030),
     );
     if (picked != null) {
-      deliveryDateController.text = DateFormat('yyyy-MM-dd').format(picked);
+      setState(() {
+        deliveryDateController.text = DateFormat('yyyy-MM-dd').format(picked);
+        updateEditOrderData();
+      });
     }
+  }
+
+  @override
+  void dispose() {
+    commController.dispose();
+    deliveryDaysController.dispose();
+    deliveryDateController.dispose();
+    remarkController.dispose();
+    super.dispose();
   }
 }
