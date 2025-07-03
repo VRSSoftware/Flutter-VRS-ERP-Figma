@@ -32,12 +32,13 @@ class _EditOrderBarcode2State extends State<EditOrderBarcode2>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     if (widget.docId != '-1') {
-      EditOrderData.doc_id=widget.docId;
+      EditOrderData.doc_id = widget.docId;
       fetchOrderItems(doc_Id: widget.docId);
       fetchOrderHeaderDetails(widget.docId);
     }
   }
-   Future<void> fetchOrderItems({required String doc_Id}) async {
+
+  Future<void> fetchOrderItems({required String doc_Id}) async {
     try {
       final response = await http.post(
         Uri.parse('${AppConstants.BASE_URL}/orderRegister/editOrderData'),
@@ -55,13 +56,14 @@ class _EditOrderBarcode2State extends State<EditOrderBarcode2>
           }
 
           setState(() {
-            orderData = groupedByStyle.entries.map((entry) {
-              final catalogOrder = _convertToCatalogOrderData(
-                entry.key,
-                entry.value,
-              );
-              return catalogOrder;
-            }).toList();
+            orderData =
+                groupedByStyle.entries.map((entry) {
+                  final catalogOrder = _convertToCatalogOrderData(
+                    entry.key,
+                    entry.value,
+                  );
+                  return catalogOrder;
+                }).toList();
 
             EditOrderData.data = orderData;
             isOrderItemsLoaded = true;
@@ -72,18 +74,24 @@ class _EditOrderBarcode2State extends State<EditOrderBarcode2>
       print('Error fetching order items: $e');
     }
   }
-   CatalogOrderData _convertToCatalogOrderData(String styleKey, List<dynamic> items) {
-    final shades = items
-        .map((i) => i['shadeName']?.toString() ?? '')
-        .where((s) => s.isNotEmpty)
-        .toSet()
-        .toList();
 
-    final sizes = items
-        .map((i) => i['sizeName']?.toString() ?? '')
-        .where((s) => s.isNotEmpty)
-        .toSet()
-        .toList();
+  CatalogOrderData _convertToCatalogOrderData(
+    String styleKey,
+    List<dynamic> items,
+  ) {
+    final shades =
+        items
+            .map((i) => i['shadeName']?.toString() ?? '')
+            .where((s) => s.isNotEmpty)
+            .toSet()
+            .toList();
+
+    final sizes =
+        items
+            .map((i) => i['sizeName']?.toString() ?? '')
+            .where((s) => s.isNotEmpty)
+            .toSet()
+            .toList();
 
     final firstItem = items.first;
 
@@ -128,8 +136,12 @@ class _EditOrderBarcode2State extends State<EditOrderBarcode2>
       fullImagePath: firstItem['imagePath']?.toString() ?? '/NoImage.jpg',
       remark: firstItem['remark']?.toString() ?? '',
       imageId: '',
-      sizeDetails: sizes.map((s) => '$s (${firstItem['mrp']},${firstItem['wsp']})').join(','),
-      sizeDetailsWithoutWSp: sizes.map((s) => '$s (${firstItem['mrp']})').join(','),
+      sizeDetails: sizes
+          .map((s) => '$s (${firstItem['mrp']},${firstItem['wsp']})')
+          .join(','),
+      sizeDetailsWithoutWSp: sizes
+          .map((s) => '$s (${firstItem['mrp']})')
+          .join(','),
       sizeWithMrp: sizes.map((s) => '$s (${firstItem['mrp']})').join(','),
       styleCodeWithcount: styleKey,
       onlySizes: sizes.join(','),
@@ -162,7 +174,8 @@ class _EditOrderBarcode2State extends State<EditOrderBarcode2>
         EditOrderData.transporterKey = data['Trsp_Key'] ?? '';
         EditOrderData.commission = data['Broker_Comm']?.toString() ?? '';
         EditOrderData.deliveryDays = data['dlv_Days']?.toString() ?? '';
-        EditOrderData.deliveryDate = data['DlvDate']?.toString().substring(0, 10) ?? '';
+        EditOrderData.deliveryDate =
+            data['DlvDate']?.toString().substring(0, 10) ?? '';
         EditOrderData.remark = data['Remark'] ?? '';
 
         final brokerRes = await ApiService.fetchLedgers(
@@ -213,43 +226,47 @@ class _EditOrderBarcode2State extends State<EditOrderBarcode2>
         "comission": EditOrderData.commission,
         "transporter": EditOrderData.transporterKey,
         "remark": EditOrderData.remark,
-        "delivaryday": EditOrderData.deliveryDays
+        "delivaryday": EditOrderData.deliveryDays,
       },
-      "items": EditOrderData.data.expand((item) {
-        final styleCode = item.catalog.styleCode;
-        final shade = item.catalog.shadeName;
-        final mrp = item.catalog.mrp;
-        final wsp = item.catalog.wsp;
-        final barcode = item.catalog.barcode;
-        final totalQty = item.catalog.clqty;
-        final List<Map<String, dynamic>> matrixItems = [];
-        for (int i = 0; i < item.orderMatrix.shades.length; i++) {
-          for (int j = 0; j < item.orderMatrix.sizes.length; j++) {
-            final matrixEntry = item.orderMatrix.matrix[i][j];
-            final split = matrixEntry.split(',');
-            final qty = int.tryParse(split.length > 2 ? split[2] : '0') ?? 0;
-            if (qty > 0) {
-              matrixItems.add({
-                "style_code": styleCode,
-                "shade": item.orderMatrix.shades[i],
-                "size": item.orderMatrix.sizes[j],
-                "qty": qty,
-                "totQty": totalQty,
-                "mrp": double.tryParse(split[0]) ?? mrp,
-                "wsp": double.tryParse(split[1]) ?? wsp,
-                "barcode": barcode,
-                "note": ""
-              });
+      "items":
+          EditOrderData.data.expand((item) {
+            final styleCode = item.catalog.styleCode;
+            final shade = item.catalog.shadeName;
+            final mrp = item.catalog.mrp;
+            final wsp = item.catalog.wsp;
+            final barcode = item.catalog.barcode;
+            final totalQty = item.catalog.clqty;
+            final List<Map<String, dynamic>> matrixItems = [];
+            for (int i = 0; i < item.orderMatrix.shades.length; i++) {
+              for (int j = 0; j < item.orderMatrix.sizes.length; j++) {
+                final matrixEntry = item.orderMatrix.matrix[i][j];
+                final split = matrixEntry.split(',');
+                final qty =
+                    int.tryParse(split.length > 2 ? split[2] : '0') ?? 0;
+                if (qty > 0) {
+                  matrixItems.add({
+                    "style_code": styleCode,
+                    "shade": item.orderMatrix.shades[i],
+                    "size": item.orderMatrix.sizes[j],
+                    "qty": qty,
+                    "totQty": totalQty,
+                    "mrp": double.tryParse(split[0]) ?? mrp,
+                    "wsp": double.tryParse(split[1]) ?? wsp,
+                    "barcode": barcode,
+                    "note": "",
+                  });
+                }
+              }
             }
-          }
-        }
-        return matrixItems;
-      }).toList()
+            return matrixItems;
+          }).toList(),
     };
 
     try {
       final response = await http.post(
-        Uri.parse('${AppConstants.BASE_URL}/orderRegister/saveEditedSalesOrder'),
+        Uri.parse(
+          '${AppConstants.BASE_URL}/orderRegister/saveEditedSalesOrder',
+        ),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
       );
@@ -258,69 +275,89 @@ class _EditOrderBarcode2State extends State<EditOrderBarcode2>
           const SnackBar(content: Text('Order updated successfully')),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: ${response.body}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed: ${response.body}')));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Update Order'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(90),
-          child: Column(
+      backgroundColor: Colors.white,
+   appBar: AppBar(
+  backgroundColor: Colors.blue,
+  automaticallyImplyLeading: false, // disable default back arrow
+  leading: IconButton(
+    icon: const Icon(Icons.arrow_back_ios, color: Colors.white), // 👈 iOS back icon
+    onPressed: () {
+      Navigator.of(context).pop(); // 👈 go back when pressed
+    },
+  ),
+  title: const Text(
+    'Update Order',
+    style: TextStyle(
+      color: Colors.white,
+    ),
+  ),
+  bottom: PreferredSize(
+    preferredSize: const Size.fromHeight(90),
+    child: Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+          color: Colors.blue,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                color: Colors.blue,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        'Total: ₹${_calculateTotalAmount().toStringAsFixed(2)}',
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    _divider(),
-                    Flexible(
-                      child: Text(
-                        'Items: ${_calculateTotalItems()}',
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    _divider(),
-                    Flexible(
-                      child: Text(
-                        'Qty: ${_calculateTotalQuantity()}',
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+              Flexible(
+                child: Text(
+                  'Total: ₹${_calculateTotalAmount().toStringAsFixed(2)}',
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              TabBar(
-                controller: _tabController,
-                tabs: const [
-                  Tab(text: 'Transactions'),
-                  Tab(text: 'Customer Details'),
-                ],
+              _divider(),
+              Flexible(
+                child: Text(
+                  'Items: ${_calculateTotalItems()}',
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              _divider(),
+              Flexible(
+                child: Text(
+                  'Qty: ${_calculateTotalQuantity()}',
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
         ),
-      ),
+        Container(
+          color: Colors.white,
+          child: TabBar(
+            controller: _tabController,
+            tabs: const [
+              Tab(text: 'Transactions'),
+              Tab(text: 'Customer Details'),
+            ],
+            labelColor: Colors.blue,
+            unselectedLabelColor: Colors.grey,
+          ),
+        ),
+      ],
+    ),
+  ),
+),
+
       body: TabBarView(
         controller: _tabController,
         children: [
@@ -342,23 +379,24 @@ class _EditOrderBarcode2State extends State<EditOrderBarcode2>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             ElevatedButton.icon(
-              onPressed: _tabController.index > 0
-                  ? () => setState(() => _tabController.index--)
-                  : null,
+              onPressed:
+                  _tabController.index > 0
+                      ? () => setState(() => _tabController.index--)
+                      : null,
               icon: const Icon(Icons.arrow_back),
               label: const Text('Previous'),
             ),
             _tabController.index == _tabController.length - 1
                 ? ElevatedButton.icon(
-                    onPressed: _saveEditedOrder,
-                    icon: const Icon(Icons.save),
-                    label: const Text('Save'),
-                  )
+                  onPressed: _saveEditedOrder,
+                  icon: const Icon(Icons.save),
+                  label: const Text('Save'),
+                )
                 : ElevatedButton.icon(
-                    onPressed: () => setState(() => _tabController.index++),
-                    icon: const Icon(Icons.arrow_forward),
-                    label: const Text('Next'),
-                  ),
+                  onPressed: () => setState(() => _tabController.index++),
+                  icon: const Icon(Icons.arrow_forward),
+                  label: const Text('Next'),
+                ),
           ],
         ),
       ),
@@ -375,7 +413,10 @@ class _EditOrderBarcode2State extends State<EditOrderBarcode2>
   }
 
   double _calculateTotalAmount() {
-    return orderData.fold(0.0, (sum, item) => sum + (item.catalog.mrp * item.catalog.clqty));
+    return orderData.fold(
+      0.0,
+      (sum, item) => sum + (item.catalog.mrp * item.catalog.clqty),
+    );
   }
 
   int _calculateTotalItems() {
@@ -390,10 +431,11 @@ class _EditOrderBarcode2State extends State<EditOrderBarcode2>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MoreOrderBarcodePage(
-          onFilterPressed: (String filter) {},
-          edit: true,
-        ),
+        builder:
+            (context) => MoreOrderBarcodePage(
+              onFilterPressed: (String filter) {},
+              edit: true,
+            ),
       ),
     ).then((result) {
       if (result != null && result is List<Map<String, dynamic>>) {

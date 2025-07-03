@@ -41,8 +41,8 @@ class _LoginPageState extends State<LoginScreen> {
     _fetchCompanies();
     _fetchFinancialYears();
     setState(() {
-      _passwordController.text = 'Admin';
-      _usernameController.text = 'admin';
+      //_passwordController.text = 'Admin';
+    //  _usernameController.text = 'admin';
     });
   }
 
