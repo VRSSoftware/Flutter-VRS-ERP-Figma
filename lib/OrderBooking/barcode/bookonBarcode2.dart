@@ -10,6 +10,7 @@ import 'package:vrs_erp_figma/models/CartModel.dart';
 import 'package:vrs_erp_figma/models/CatalogOrderData.dart';
 import 'package:vrs_erp_figma/models/OrderMatrix.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
+import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_barcode2.dart';
 import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_data.dart';
 import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_screen_barcode.dart';
 
@@ -536,7 +537,8 @@ class _BookOnBarcode2State extends State<BookOnBarcode2> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => EditOrderScreenBarcode(docId: '-1'),
+                builder: (context) => EditOrderBarcode2(docId: '-1'),
+                // builder: (context) => EditOrderScreenBarcode(docId: '-1'),
                 // settings: RouteSettings(
                 //   arguments: {'barcode': true, 'addedItems': addedItems},
                 // ),

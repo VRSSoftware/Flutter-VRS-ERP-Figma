@@ -1061,6 +1061,7 @@ import 'package:vrs_erp_figma/register/registerFilteration.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
 import 'package:vrs_erp_figma/viewOrder/Pdf_viewer_screen.dart';
+import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_barcode2.dart';
 import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_screen.dart';
 import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_screen_barcode.dart';
 
@@ -1515,7 +1516,7 @@ Expanded(
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => EditOrderScreenBarcode(docId: registerOrder.orderId),
+                            builder: (context) => EditOrderBarcode2 (docId: registerOrder.orderId),
                             // builder: (context) => EditOrderScreen(docId: registerOrder.orderId),
                           ),
                         );

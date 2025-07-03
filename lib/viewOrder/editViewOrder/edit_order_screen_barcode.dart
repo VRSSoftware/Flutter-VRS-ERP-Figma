@@ -5,19 +5,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:dropdown_search/dropdown_search.dart';
-import 'package:vrs_erp_figma/OrderBooking/barcode/barcodewidget.dart';
 import 'package:vrs_erp_figma/catalog/imagezoom.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/register/register.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/screens/home_screen.dart';
-import 'package:vrs_erp_figma/services/app_services.dart';
-import 'package:vrs_erp_figma/viewOrder/Pdf_viewer_screen.dart';
-import 'package:vrs_erp_figma/viewOrder/add_more_info.dart';
-import 'package:vrs_erp_figma/viewOrder/customer_master.dart';
-import 'package:vrs_erp_figma/models/consignee.dart';
-import 'package:vrs_erp_figma/models/PytTermDisc.dart';
-import 'package:vrs_erp_figma/models/item.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
 import 'package:vrs_erp_figma/models/OrderMatrix.dart';
 import 'package:vrs_erp_figma/models/CatalogOrderData.dart';
@@ -39,14 +31,10 @@ class EditOrderScreenBarcode extends StatefulWidget {
 class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
   late String docId;
   final _formKey = GlobalKey<FormState>();
-  Map<String, dynamic> _additionalInfo = {};
   bool _showForm = false;
   final _orderControllers = _OrderControllers();
   final _dropdownData = _DropdownData();
   final _styleManager = _StyleManager();
-  List<Consignee> consignees = [];
-  List<PytTermDisc> paymentTerms = [];
-  List<Item> _bookingTypes = [];
   bool isLoading = true;
   bool barcodeMode = false;
   ActiveTab _activeTab = ActiveTab.transaction;
@@ -70,9 +58,7 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
       }
       _initializeData();
       _setInitialDates();
-      fetchAndPrintSalesOrderNumber();
       _styleManager.updateTotalsCallback = _updateTotals;
-      _loadBookingTypes();
     });
   }
 
@@ -142,110 +128,6 @@ Future<void> _handleSave() async {
     return total;
   }
 
-
-
-  Future<void> _loadBookingTypes() async {
-    try {
-      final rawData = await ApiService.fetchBookingTypes(
-        coBrId: UserSession.coBrId ?? '',
-      );
-      setState(() {
-        _bookingTypes =
-            (rawData as List)
-                .map(
-                  (json) => Item(
-                    itemKey: json['key'],
-                    itemName: json['name'],
-                    itemSubGrpKey: '',
-                  ),
-                )
-                .toList();
-      });
-    } catch (e) {
-      print('Failed to load booking types: $e');
-    }
-  }
-
-  Future<void> fetchPaymentTerms() async {
-    try {
-      final response = await http.post(
-        Uri.parse('${AppConstants.BASE_URL}/users/getPytTermDisc'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({"coBrId": UserSession.coBrId ?? ''}),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as List;
-        setState(() {
-          paymentTerms =
-              data
-                  .map(
-                    (e) => PytTermDisc(
-                      key: e['pytTermDiscKey']?.toString() ?? '',
-                      name: e['pytTermDiscName']?.toString() ?? '',
-                    ),
-                  )
-                  .toList();
-        });
-      } else {
-        print('API Error: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error fetching payment terms: $e');
-    }
-  }
-
-  Future<void> fetchAndMapConsignees({
-    required String key,
-    required String CoBrId,
-  }) async {
-    try {
-      Map<String, dynamic> responseMap = await ApiService.fetchConsinees(
-        key: key,
-        CoBrId: CoBrId,
-      );
-
-      if (responseMap['statusCode'] == 200) {
-        if (responseMap['result'] is List) {
-          setState(() {
-            consignees =
-                responseMap['result']
-                    .map((e) => Consignee.fromJson(e))
-                    .toList();
-          });
-        }
-      } else {
-        print('API Error: ${responseMap['statusCode']}');
-      }
-    } catch (e) {
-      print('Error fetching consignees: $e');
-    }
-  }
-
-  Future<void> fetchAndPrintSalesOrderNumber() async {
-    if (docId == "-1") {
-      // New order - get next number
-      Map<String, dynamic> salesOrderData = await ApiService.getSalesOrderData(
-        coBrId: UserSession.coBrId ?? '',
-        userId: UserSession.userName ?? '',
-        fcYrId: UserSession.userFcYr ?? '',
-        barcode: "true",
-      );
-
-      if (salesOrderData.isNotEmpty &&
-          salesOrderData.containsKey('salesOrderNo')) {
-        String salesOrderNo = salesOrderData['salesOrderNo'];
-        setState(() {
-          _orderControllers.orderNo.text = salesOrderNo;
-        });
-      }
-    } else {
-      // Existing order - use docId
-      setState(() {
-        _orderControllers.orderNo.text = docId;
-      });
-    }
-  }
 
 Future<String> insertFinalSalesOrder(String orderDataJson) async {
   try {
@@ -334,30 +216,33 @@ Future<String> insertFinalSalesOrder(String orderDataJson) async {
       addedItems = List<Map<String, dynamic>>.from(args['addedItems']);
       print('Initial addedItems: $addedItems');
     }
-    if (docId == "-1") {
+    // if (docId == "-1") {
       _styleManager._initializeControllers();
       _initializeQuantitiesAndColors();
-    }
+    // }
 
     // Fetch dropdown data first to ensure partyList is populated
     await _dropdownData.loadAllDropdownData();
-    print(
-      'Dropdown data loaded: partyList=${_dropdownData.partyList.length} parties',
-    );
+   
 
     // Fetch order details from the new API
-    if (docId != '-1') {
+    // if (docId != '-1') {
       try {
-        final response = await http.post(
+        var response;
+        if(docId != '-1'){
+         response = await http.post(
           Uri.parse('${AppConstants.BASE_URL}/users/detailsForEdit'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({"doc_id": docId}),
         );
-
+        }
         print(
           'detailsForEdit API Response: ${response.statusCode}, Body: ${response.body}',
         );
-
+            if(docId == '-1'){
+              response.statusCode = 200;
+              response.body = jsonEncode(EditOrderData.detailsForEdit);
+            }
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
           print('Order details fetched: $data');
@@ -371,16 +256,8 @@ Future<String> insertFinalSalesOrder(String orderDataJson) async {
               );
             } else {
               // Fallback to partyList if partyName is missing
-              final party = _dropdownData.partyList.firstWhere(
-                (e) => e['ledKey'] == data['Led_Key']?.toString(),
-                orElse: () => {'ledKey': '', 'ledName': 'Select Party'},
-              );
-              _orderControllers.selectedPartyKey = data['Led_Key']?.toString();
-              _orderControllers.selectedParty =
-                  party['ledName'] ?? 'Select Party';
-              print(
-                'Set party from partyList: ${_orderControllers.selectedParty} (${_orderControllers.selectedPartyKey})',
-              );
+              
+             
             }
 
             // Set broker
@@ -415,21 +292,10 @@ Future<String> insertFinalSalesOrder(String orderDataJson) async {
                     : _OrderControllers.formatDate(DateTime.now());
             _orderControllers.remark.text = data['Remark']?.toString() ?? '';
 
-            // Update additionalInfo
-            _additionalInfo.addAll({
-              'paymentdays': data['PytDays']?.toString() ?? '0',
-              'refno': data['RefNo']?.toString() ?? '',
-            });
+           
           });
 
-          // Fetch consignees after setting party
-          if (_orderControllers.selectedPartyKey != null) {
-            await fetchAndMapConsignees(
-              key: _orderControllers.selectedPartyKey!,
-              CoBrId: UserSession.coBrId ?? '',
-            );
-            print('Consignees fetched: ${consignees.length}');
-          }
+      
         } else {
           print('Error fetching order details: ${response.statusCode}');
           ScaffoldMessenger.of(context).showSnackBar(
@@ -446,14 +312,12 @@ Future<String> insertFinalSalesOrder(String orderDataJson) async {
           SnackBar(content: Text('Error fetching order details: $e')),
         );
       }
-    }
+    // }
 
     await Future.wait([
       _styleManager.fetchOrderItems(
-        barcode: barcodeMode,
         doc_Id: docId.toString(),
       ),
-      fetchPaymentTerms(),
     ]);
 
     if (docId == '-1' && addedItems.isNotEmpty) {
@@ -558,16 +422,6 @@ Future<String> insertFinalSalesOrder(String orderDataJson) async {
     return DateFormat('yyyy-MM-dd').format(futureDate);
   }
 
-  String calculateDueDate() {
-    final paymentDays = _additionalInfo['paymentdays'];
-    if (paymentDays != null &&
-        paymentDays is String &&
-        int.tryParse(paymentDays) != null) {
-      return calculateFutureDateFromString(paymentDays);
-    }
-    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    return today;
-  }
 
   Future<void> _saveOrderLocally() async {
     if (!_formKey.currentState!.validate()) return;
@@ -599,24 +453,10 @@ Future<String> insertFinalSalesOrder(String orderDataJson) async {
       "fcYr_id": UserSession.userFcYr ?? '25',
       "data": {
         "customer": _orderControllers.selectedPartyKey ?? '',
-        "consignee": _additionalInfo['consignee'] ?? '',
-        "salesman":
-            _additionalInfo['salesman'] ??
-            _orderControllers.salesPersonKey ??
-            '',
+       
         "orderdate": formatDate(_orderControllers.date.text, false),
         "delivarydate": formatDate(_orderControllers.deliveryDate.text, false),
-        "refno": _additionalInfo['refno'] ?? '',
         "date": '',
-        "paymentterms":
-            _additionalInfo['paymentterms'] ??
-            _orderControllers.pytTermDiscKey ??
-            '',
-        "paymentdays":
-            _additionalInfo['paymentdays'] ??
-            _orderControllers.creditPeriod?.toString() ??
-            '0',
-        "duedate": calculateDueDate(),
         "broker": _orderControllers.selectedBrokerKey ?? '',
         "comission":
             _orderControllers.comm.text.isEmpty
@@ -628,7 +468,6 @@ Future<String> insertFinalSalesOrder(String orderDataJson) async {
             _orderControllers.deliveryDays.text.isEmpty
                 ? '0'
                 : _orderControllers.deliveryDays.text,
-        "bookingtype": _additionalInfo['bookingtype'] ?? '',
       },
       "items":
           EditOrderData.data
@@ -759,15 +598,15 @@ Future<String> insertFinalSalesOrder(String orderDataJson) async {
                           onPartySelected: _handlePartySelection,
                           updateTotals: _updateTotals,
                           saveOrder: _handleSave,
-                          additionalInfo: _additionalInfo,
-                          consignees: consignees,
-                          paymentTerms: paymentTerms,
-                          bookingTypes: _bookingTypes,
-                          onAdditionalInfoUpdated: (newInfo) {
-                            setState(() {
-                              _additionalInfo = newInfo;
-                            });
-                          },
+                          // additionalInfo: _additionalInfo,
+                          // consignees: consignees,
+                          // paymentTerms: paymentTerms,
+                          // bookingTypes: _bookingTypes,
+                          // onAdditionalInfoUpdated: (newInfo) {
+                          //   setState(() {
+                          //     _additionalInfo = newInfo;
+                          //   });
+                          // },
                             isSaving: _isSaving,
                         )
                         : _StyleCardsView(
@@ -979,7 +818,7 @@ Future<String> insertFinalSalesOrder(String orderDataJson) async {
     _orderControllers.selectedPartyKey = key;
     UserSession.userLedKey = key;
     try {
-      await fetchAndMapConsignees(key: key, CoBrId: UserSession.coBrId ?? '');
+      //await fetchAndMapConsignees(key: key, CoBrId: UserSession.coBrId ?? '');
       final details = await _dropdownData.fetchLedgerDetails(key);
       _dropdownData.updateDependentFields(
         details,
@@ -1125,11 +964,7 @@ class _OrderControllers {
     List<Map<String, String>> brokers,
     List<Map<String, String>> transporters,
   ) {
-    pytTermDiscKey = details['pytTermDiscKey']?.toString();
-    salesPersonKey = details['salesPersonKey']?.toString();
-    creditPeriod = details['creditPeriod'] as int?;
-    salesLedKey = details['salesLedKey']?.toString();
-    ledgerName = details['ledgerName']?.toString();
+
 
     final partyBrokerKey = details['brokerKey']?.toString() ?? '';
     if (partyBrokerKey.isNotEmpty) {
@@ -1154,23 +989,25 @@ class _OrderControllers {
 }
 
 class _DropdownData {
-  List<Map<String, String>> partyList = [];
   List<Map<String, String>> brokerList = [];
   List<Map<String, String>> transporterList = [];
-  List<Map<String, String>> salesPersonList = [];
 
   Future<void> loadAllDropdownData() async {
     try {
+      if(EditOrderData.doc_id != '-1'){
       final results = await Future.wait([
-        _fetchLedgers("w"),
         _fetchLedgers("B"),
         _fetchLedgers("T"),
-        _fetchLedgers("S"),
       ]);
-      partyList = results[0];
-      brokerList = results[1];
-      transporterList = results[2];
-      salesPersonList = results[3];
+      brokerList = results[0];
+      transporterList = results[1];
+      EditOrderData.brokerList = brokerList;
+      EditOrderData.transporterList = transporterList;
+      }
+      else if(EditOrderData.doc_id == '-1'){
+        brokerList = EditOrderData.brokerList;
+        transporterList = EditOrderData.transporterList;
+      }
     } catch (e) {
       print('Error loading dropdown data: $e');
     }
@@ -1370,7 +1207,6 @@ class _StyleManager {
   }
 
   Future<void> fetchOrderItems({
-    required bool barcode,
     required String doc_Id,
   }) async {
     docId = doc_Id;
@@ -2079,11 +1915,7 @@ class _OrderForm extends StatefulWidget {
   final Function(String?, String?) onPartySelected;
   final VoidCallback updateTotals;
   final Future<void> Function() saveOrder;
-  final Map<String, dynamic> additionalInfo;
-  final List<Consignee> consignees;
-  final List<PytTermDisc> paymentTerms;
-  final List<Item> bookingTypes;
-  final Function(Map<String, dynamic>) onAdditionalInfoUpdated;
+
     final bool isSaving;
 
   const _OrderForm({
@@ -2092,11 +1924,6 @@ class _OrderForm extends StatefulWidget {
     required this.onPartySelected,
     required this.updateTotals,
     required this.saveOrder,
-    required this.additionalInfo,
-    required this.consignees,
-    required this.paymentTerms,
-    required this.bookingTypes,
-    required this.onAdditionalInfoUpdated,
       required this.isSaving,
   });
 
@@ -2112,77 +1939,11 @@ class _OrderFormState extends State<_OrderForm> {
       'OrderForm initState: userType=${UserSession.userType}, '
       'selectedParty=${widget.controllers.selectedParty}, '
       'selectedPartyKey=${widget.controllers.selectedPartyKey}, '
-      'partyList=${widget.dropdownData.partyList.length} parties',
+    
     );
-
-    if (UserSession.userType == 'C' &&
-        widget.controllers.selectedParty == null) {
-      final party = widget.dropdownData.partyList.firstWhere(
-        (e) => e['ledKey'] == UserSession.userLedKey,
-        orElse: () => {'ledKey': '', 'ledName': 'Select Party'},
-      );
-      if (party['ledKey']!.isNotEmpty) {
-        print(
-          'Setting party for customer: ${party['ledName']} (${party['ledKey']})',
-        );
-        setState(() {
-          widget.controllers.selectedParty = party['ledName'];
-          widget.controllers.selectedPartyKey = party['ledKey'];
-        });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          widget.onPartySelected(party['ledName'], party['ledKey']);
-        });
-      } else {
-        print('No party found for userLedKey=${UserSession.userLedKey}');
-        setState(() {
-          widget.controllers.selectedParty = 'Select Party';
-        });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('No party found for userLedKey')),
-          );
-        });
-      }
-    }
-
-    if (UserSession.userType == 'S' &&
-        widget.controllers.salesPersonKey == null) {
-      final salesman = widget.dropdownData.salesPersonList.firstWhere(
-        (e) => e['ledKey'] == UserSession.userLedKey,
-        orElse: () => {'ledKey': '', 'ledName': ''},
-      );
-      if (salesman['ledKey']!.isNotEmpty) {
-        print(
-          'Setting salesman: ${salesman['ledName']} (${salesman['ledKey']})',
-        );
-        widget.controllers.salesPersonKey = salesman['ledKey'];
-        widget.additionalInfo['salesman'] = salesman['ledKey'];
-      } else {
-        print('No salesman found for userLedKey=${UserSession.userLedKey}');
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('No salesman found for userLedKey')),
-          );
-        });
-      }
-    }
-
-    // Trigger party selection if already set
-    if (widget.controllers.selectedParty != null &&
-        widget.controllers.selectedPartyKey != null &&
-        widget.controllers.selectedParty != 'Select Party') {
-      print(
-        'Triggering onPartySelected for existing party: '
-        '${widget.controllers.selectedParty} (${widget.controllers.selectedPartyKey})',
-      );
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        widget.onPartySelected(
-          widget.controllers.selectedParty,
-          widget.controllers.selectedPartyKey,
-        );
-      });
-    }
   }
+
+
 
   @override
   void didUpdateWidget(covariant _OrderForm oldWidget) {
@@ -2233,11 +1994,41 @@ class _OrderFormState extends State<_OrderForm> {
             "Select Date",
             widget.controllers.date,
             isDate: true,
+            readOnly: true,
             onTap: () => _selectDate(context, widget.controllers.date),
           ),
         ),
         const SizedBox(height: 12),
-        _buildPartyDropdownRow(context),
+        TextFormField(
+            enabled: false, 
+            initialValue: widget.controllers.selectedParty, 
+            decoration: InputDecoration(
+              labelText: "Party Name",
+              labelStyle: TextStyle(
+                color:
+                    Colors.grey[600], 
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.zero,
+                borderSide: BorderSide(color: Colors.grey[600]!),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.zero,
+                borderSide: BorderSide(color: Colors.grey[600]!),
+              ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.zero,
+                borderSide: BorderSide(color: Colors.grey[600]!),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+            ),
+            style: TextStyle(
+              color: Colors.grey[600], 
+            ),
+          ),
+        //_buildPartyDropdownRow(context),
         _buildDropdown(
           "Broker",
           "B",
@@ -2247,9 +2038,16 @@ class _OrderFormState extends State<_OrderForm> {
             widget.controllers.selectedBrokerKey = key;
             widget.controllers.selectedBroker = val;
             if (key != null) {
+              if(EditOrderData.doc_id == '-1'){
+                widget.controllers.comm.text = EditOrderData.commission;
+              }
+              else{
+
               final commission = await widget.dropdownData
                   .fetchCommissionPercentage(key);
               widget.controllers.comm.text = commission;
+              EditOrderData.commission = commission;
+              }
             }
             setState(() {});
           },
@@ -2349,56 +2147,6 @@ class _OrderFormState extends State<_OrderForm> {
     );
   }
 
-  Widget _buildPartyDropdownRow(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: DropdownSearch<String>(
-            popupProps: PopupProps.menu(
-              showSearchBox: true,
-              searchFieldProps: TextFieldProps(
-                decoration: InputDecoration(
-                  hintText: 'Search party...',
-                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                  border: const OutlineInputBorder(
-                    borderRadius: BorderRadius.zero,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                ),
-              ),
-            ),
-            items:
-                widget.dropdownData.partyList
-                    .map((e) => e['ledName']!)
-                    .toList(),
-            selectedItem: widget.controllers.selectedParty,
-            dropdownDecoratorProps: DropDownDecoratorProps(
-              dropdownSearchDecoration: InputDecoration(
-                labelText: 'Party Name',
-                border: const OutlineInputBorder(
-                  borderRadius: BorderRadius.zero,
-                ),
-              ),
-            ),
-            dropdownBuilder: (context, selectedItem) {
-              return SizedBox(
-                width: double.infinity, // Take full width
-                child: Text(
-                  selectedItem ?? 'Select Party',
-                  style: TextStyle(color: Colors.grey[600]),
-                  overflow: TextOverflow.ellipsis, // Add ellipsis for overflow
-                  maxLines: 1, // Ensure single line
-                ),
-              );
-            },
-            onChanged: null, // Disable selection
-            enabled: false, // Disable interaction
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildDropdown(
     String label,
     String ledCat,
@@ -2451,8 +2199,6 @@ class _OrderFormState extends State<_OrderForm> {
 
   List<Map<String, String>> _getLedgerList(String ledCat) {
     switch (ledCat) {
-      case 'w':
-        return widget.dropdownData.partyList;
       case 'B':
         return widget.dropdownData.brokerList;
       case 'T':
@@ -2468,7 +2214,7 @@ class _OrderFormState extends State<_OrderForm> {
         orElse: () => {'ledKey': ''},
       )['ledKey'];
 
-  String _getSearchHint(String label) {
+  String _getSearchHint(String label) {           
     switch (label.toLowerCase()) {
       case 'party name':
         return 'Search party...';
@@ -2552,211 +2298,5 @@ class _OrderFormState extends State<_OrderForm> {
     if (picked != null) {
       controller.text = _OrderControllers.formatDate(picked);
     }
-  }
-}
-
-class AddMoreInfoDialog extends StatefulWidget {
-  final List<Map<String, String>> salesPersonList;
-  final String? partyLedKey;
-  final String? pytTermDiscKey;
-  final String? salesPersonKey;
-  final int? creditPeriod;
-  final String? salesLedKey;
-  final String? ledgerName;
-  final Map<String, dynamic> additionalInfo;
-  final List<Consignee> consignees;
-  final List<PytTermDisc> paymentTerms;
-  final List<Item> bookingTypes;
-  final Function(Map<String, dynamic>) onValueChanged;
-  final bool isSalesmanDropdownEnabled;
-
-  const AddMoreInfoDialog({
-    required this.salesPersonList,
-    required this.partyLedKey,
-    required this.pytTermDiscKey,
-    required this.salesPersonKey,
-    required this.creditPeriod,
-    required this.salesLedKey,
-    required this.ledgerName,
-    required this.additionalInfo,
-    required this.consignees,
-    required this.paymentTerms,
-    required this.bookingTypes,
-    required this.onValueChanged,
-    required this.isSalesmanDropdownEnabled,
-  });
-
-  @override
-  _AddMoreInfoDialogState createState() => _AddMoreInfoDialogState();
-}
-
-class _AddMoreInfoDialogState extends State<AddMoreInfoDialog> {
-  late TextEditingController _refNoController;
-  late TextEditingController _stationController;
-  late TextEditingController _paymentDaysController;
-  String? _selectedSalesman;
-  String? _selectedSalesmanKey;
-  String? _selectedConsignee;
-  String? _selectedPaymentTerm;
-  String? _selectedBookingType;
-
-  @override
-  void initState() {
-    super.initState();
-    _refNoController = TextEditingController(
-      text: widget.additionalInfo['refno'] ?? '',
-    );
-    _stationController = TextEditingController(
-      text: widget.additionalInfo['station'] ?? '',
-    );
-    _paymentDaysController = TextEditingController(
-      text: widget.additionalInfo['paymentdays'] ?? '',
-    );
-    _selectedSalesman =
-        widget.salesPersonList.firstWhere(
-          (e) =>
-              e['ledKey'] ==
-              (widget.additionalInfo['salesman'] ?? widget.salesPersonKey),
-          orElse: () => {'ledName': ''},
-        )['ledName'];
-    _selectedSalesmanKey =
-        widget.additionalInfo['salesman'] ?? widget.salesPersonKey;
-    _selectedConsignee = widget.additionalInfo['consignee'];
-    _selectedPaymentTerm =
-        widget.additionalInfo['paymentterms'] ?? widget.pytTermDiscKey;
-    _selectedBookingType = widget.additionalInfo['bookingtype'];
-  }
-
-  @override
-  void dispose() {
-    _refNoController.dispose();
-    _stationController.dispose();
-    _paymentDaysController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Add More Information'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownSearch<String>(
-              popupProps: PopupProps.menu(showSearchBox: true),
-              items: widget.salesPersonList.map((e) => e['ledName']!).toList(),
-              selectedItem: _selectedSalesman,
-              dropdownDecoratorProps: DropDownDecoratorProps(
-                dropdownSearchDecoration: InputDecoration(
-                  labelText: 'Salesman',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              onChanged:
-                  widget.isSalesmanDropdownEnabled
-                      ? (val) {
-                        setState(() {
-                          _selectedSalesman = val;
-                          _selectedSalesmanKey =
-                              widget.salesPersonList.firstWhere(
-                                (e) => e['ledName'] == val,
-                                orElse: () => {'ledKey': ''},
-                              )['ledKey'];
-                        });
-                      }
-                      : null,
-              enabled: widget.isSalesmanDropdownEnabled,
-            ),
-            SizedBox(height: 10),
-            DropdownSearch<String>(
-              popupProps: PopupProps.menu(showSearchBox: true),
-              items: widget.consignees.map((e) => e.ledName).toList(),
-              selectedItem: _selectedConsignee,
-              dropdownDecoratorProps: DropDownDecoratorProps(
-                dropdownSearchDecoration: InputDecoration(
-                  labelText: 'Consignee',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              onChanged: (val) => setState(() => _selectedConsignee = val),
-            ),
-            SizedBox(height: 10),
-            DropdownSearch<String>(
-              popupProps: PopupProps.menu(showSearchBox: true),
-              items: widget.paymentTerms.map((e) => e.name).toList(),
-              selectedItem: _selectedPaymentTerm,
-              dropdownDecoratorProps: DropDownDecoratorProps(
-                dropdownSearchDecoration: InputDecoration(
-                  labelText: 'Payment Terms',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              onChanged: (val) => setState(() => _selectedPaymentTerm = val),
-            ),
-            SizedBox(height: 10),
-            DropdownSearch<String>(
-              popupProps: PopupProps.menu(showSearchBox: true),
-              items: widget.bookingTypes.map((e) => e.itemName).toList(),
-              selectedItem: _selectedBookingType,
-              dropdownDecoratorProps: DropDownDecoratorProps(
-                dropdownSearchDecoration: InputDecoration(
-                  labelText: 'Booking Type',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              onChanged: (val) => setState(() => _selectedBookingType = val),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: _refNoController,
-              decoration: InputDecoration(
-                labelText: 'Reference No',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: _stationController,
-              decoration: InputDecoration(
-                labelText: 'Station',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: _paymentDaysController,
-              decoration: InputDecoration(
-                labelText: 'Payment Days',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: () {
-            final newInfo = {
-              'salesman': _selectedSalesmanKey,
-              'consignee': _selectedConsignee,
-              'paymentterms': _selectedPaymentTerm,
-              'bookingtype': _selectedBookingType,
-              'refno': _refNoController.text,
-              'station': _stationController.text,
-              'paymentdays': _paymentDaysController.text,
-            };
-            widget.onValueChanged(newInfo);
-            Navigator.pop(context, newInfo);
-          },
-          child: Text('Save'),
-        ),
-      ],
-    );
   }
 }
