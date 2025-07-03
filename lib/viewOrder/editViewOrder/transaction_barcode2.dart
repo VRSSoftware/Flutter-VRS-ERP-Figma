@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:vrs_erp_figma/catalog/imagezoom.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/CatalogOrderData.dart';
-import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_data.dart'; // ✅ EditOrderData
+import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_data.dart';
 
 class TransactionBarcode2 extends StatefulWidget {
-  const TransactionBarcode2({super.key, required List<CatalogOrderData> orderData}); // Removed parameter
+  const TransactionBarcode2({super.key, required });
 
   @override
   State<TransactionBarcode2> createState() => _TransactionBarcode2State();
@@ -76,6 +76,7 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
   Widget buildOrderItem(CatalogOrderData catalogOrder, BuildContext context) {
     final catalog = catalogOrder.catalog;
     final matrix = catalogOrder.orderMatrix;
+    final styleKey = catalog.styleCode;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,9 +274,14 @@ class _TransactionBarcode2State extends State<TransactionBarcode2> {
                     contentPadding: EdgeInsets.symmetric(vertical: 8),
                   ),
                   onChanged: (val) {
-                    setState(() {
-                      // You can update the matrix value here if needed
-                    });
+                    final newQty = int.tryParse(val) ?? 0;
+                    final row = matrix.matrix.firstWhere((row) => row.length > sizeIndex);
+                    final matrixData = row[sizeIndex].split(',');
+                    if (matrixData.length >= 3) {
+                      matrixData[2] = newQty.toString();
+                      row[sizeIndex] = matrixData.join(',');
+                    }
+                    setState(() {});
                   },
                 ),
               ),

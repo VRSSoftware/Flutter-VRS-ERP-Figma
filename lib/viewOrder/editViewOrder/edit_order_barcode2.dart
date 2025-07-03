@@ -324,7 +324,8 @@ class _EditOrderBarcode2State extends State<EditOrderBarcode2>
       body: TabBarView(
         controller: _tabController,
         children: [
-          TransactionBarcode2(orderData: orderData),
+          TransactionBarcode2(),
+          // TransactionBarcode2(orderData: orderData),
           const CustomerDetailBarcode2(),
         ],
       ),
