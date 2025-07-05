@@ -742,7 +742,9 @@
 
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:vrs_erp_figma/catalog/imagezoom.dart';
+import 'package:vrs_erp_figma/models/CartModel.dart';
 import '../constants/app_constants.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -1212,6 +1214,10 @@ class _StyleCardState extends State<StyleCard> {
 
       if (response.statusCode == 200) {
         widget.onRemove();
+                  Provider.of<CartModel>(
+            context,
+            listen: false,
+          ).removeItem(sCode); 
       } else {
         _showErrorDialog(context, "Failed to delete item.");
       }

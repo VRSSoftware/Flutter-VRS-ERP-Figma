@@ -45,4 +45,9 @@ class CartModel extends ChangeNotifier {
   void refreshAddedItems() {
     notifyListeners();
   }
+
+  void removeItem(String sCode) {
+     _addedItems.remove(sCode);
+    notifyListeners();
+  }
 }

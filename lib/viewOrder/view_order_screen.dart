@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/models/CartModel.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/screens/home_screen.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
@@ -299,6 +301,10 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   try {
     final response = await insertFinalSalesOrder(orderDataJson);
     if (response != null && response != "fail") {
+       Provider.of<CartModel>(
+            context,
+            listen: false,
+          ).clearAddedItems(); 
       // Format the order number as "SO" + response body
       final formattedOrderNo = "SO$response";
       

@@ -12,6 +12,8 @@ import 'package:vrs_erp_figma/viewOrder/editViewOrder/addMoreItemsForEdit.dart';
 import 'package:vrs_erp_figma/viewOrder/editViewOrder/customer_details_tab.dart';
 import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_data.dart';
 import 'package:vrs_erp_figma/viewOrder/editViewOrder/transaction_tab.dart';
+import 'package:vrs_erp_figma/viewOrder/editViewOrder/transaction_tab2.dart';
+import 'package:vrs_erp_figma/viewOrder/editViewOrder/transaction_tab3.dart';
 
 enum ActiveTab { transaction, customerDetails }
 
@@ -601,7 +603,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                                   : ActiveTab.customerDetails;
                         });
                       },
-                      children: [TransactionTab(), CustomerDetailTab()],
+                      children: [TransactionTab3(), CustomerDetailTab()],
                     )
                     : const Center(child: CircularProgressIndicator()),
           ),
