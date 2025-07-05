@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-class KeyName {
-  final String key;
-  final String name;
-
-  KeyName({required this.key, required this.name});
-}
+import 'package:vrs_erp_figma/models/CatalogOrderData.dart';
+import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_data.dart';
 
 class CustomerDetailTab extends StatefulWidget {
   const CustomerDetailTab({super.key});
@@ -16,28 +11,9 @@ class CustomerDetailTab extends StatefulWidget {
 }
 
 class _CustomerDetailTabState extends State<CustomerDetailTab> {
-  // Read-only
-  String orderDate = '2025-06-27';
-  String partyName = 'ABC Garments';
+  String? selectedBrokerKey;
+  String? selectedTransporterKey;
 
-  // Dropdown data
-  List<KeyName> brokerList = [
-    KeyName(key: 'B1', name: 'Broker One'),
-    KeyName(key: 'B2', name: 'Broker Two'),
-    KeyName(key: 'B3', name: 'Broker Three'),
-  ];
-
-  List<KeyName> transporterList = [
-    KeyName(key: 'T1', name: 'Transporter One'),
-    KeyName(key: 'T2', name: 'Transporter Two'),
-    KeyName(key: 'T3', name: 'Transporter Three'),
-  ];
-
-  // Selected values
-  KeyName? selectedBroker;
-  KeyName? selectedTransporter;
-
-  // Controllers
   final TextEditingController commController = TextEditingController();
   final TextEditingController deliveryDaysController = TextEditingController();
   final TextEditingController deliveryDateController = TextEditingController();
@@ -46,13 +22,33 @@ class _CustomerDetailTabState extends State<CustomerDetailTab> {
   @override
   void initState() {
     super.initState();
-    // Example preset (simulate API fetch)
-    selectedBroker = brokerList.first;
-    selectedTransporter = transporterList[1];
-    commController.text = '5';
-    deliveryDaysController.text = '7';
-    deliveryDateController.text = '2025-07-05';
-    remarkController.text = 'Handle with care';
+
+    if (EditOrderData.brokerList.any((item) => item['key'] == EditOrderData.brokerKey)) {
+      selectedBrokerKey = EditOrderData.brokerKey;
+    }
+
+    if (EditOrderData.transporterList.any((item) => item['key'] == EditOrderData.transporterKey)) {
+      selectedTransporterKey = EditOrderData.transporterKey;
+    }
+
+    commController.text = EditOrderData.commission;
+    deliveryDaysController.text = EditOrderData.deliveryDays;
+    deliveryDateController.text = EditOrderData.deliveryDate;
+    remarkController.text = EditOrderData.remark;
+
+    commController.addListener(updateEditOrderData);
+    deliveryDaysController.addListener(updateEditOrderData);
+    deliveryDateController.addListener(updateEditOrderData);
+    remarkController.addListener(updateEditOrderData);
+  }
+
+  void updateEditOrderData() {
+    EditOrderData.brokerKey = selectedBrokerKey ?? '';
+    EditOrderData.transporterKey = selectedTransporterKey ?? '';
+    EditOrderData.commission = commController.text;
+    EditOrderData.deliveryDays = deliveryDaysController.text;
+    EditOrderData.deliveryDate = deliveryDateController.text;
+    EditOrderData.remark = remarkController.text;
   }
 
   @override
@@ -62,52 +58,45 @@ class _CustomerDetailTabState extends State<CustomerDetailTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 🔹 Date
-          buildReadOnlyField('Date', orderDate),
-
-          // 🔹 Party Name
-          buildReadOnlyField('Party Name', partyName),
-
-          // 🔹 Broker (Searchable Dropdown)
-          buildSearchableDropdown(
+          buildReadOnlyField('Date', EditOrderData.detailsForEdit),
+          buildReadOnlyField('Party Name', EditOrderData.partyName),
+          const SizedBox(height: 10),
+          buildDropdownField(
             label: 'Broker',
-            value: selectedBroker,
-            items: brokerList,
-            onSelected: (val) => setState(() => selectedBroker = val),
+            value: selectedBrokerKey,
+            items: EditOrderData.brokerList,
+            onChanged: (val) {
+              setState(() {
+                selectedBrokerKey = val;
+                updateEditOrderData();
+              });
+            },
           ),
-
-          // 🔹 Commission %
           buildTextField('Commission %', commController, TextInputType.number),
-
-          // 🔹 Transporter (Searchable Dropdown)
-          buildSearchableDropdown(
+          buildDropdownField(
             label: 'Transporter',
-            value: selectedTransporter,
-            items: transporterList,
-            onSelected: (val) => setState(() => selectedTransporter = val),
+            value: selectedTransporterKey,
+            items: EditOrderData.transporterList,
+            onChanged: (val) {
+              setState(() {
+                selectedTransporterKey = val;
+                updateEditOrderData();
+              });
+            },
           ),
-
-          // 🔹 Delivery Days
           buildTextField('Delivery Days', deliveryDaysController, TextInputType.number),
-
-          // 🔹 Delivery Date (Date Picker)
           GestureDetector(
             onTap: pickDeliveryDate,
             child: AbsorbPointer(
               child: buildTextField('Delivery Date', deliveryDateController, TextInputType.text),
             ),
           ),
-
-          // 🔹 Remark
           buildTextField('Remark', remarkController, TextInputType.text),
-
-          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  /// 🔥 Read-Only Field
   Widget buildReadOnlyField(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,7 +117,6 @@ class _CustomerDetailTabState extends State<CustomerDetailTab> {
     );
   }
 
-  /// 🔥 Text Input Field
   Widget buildTextField(String label, TextEditingController controller, TextInputType type) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
@@ -151,46 +139,32 @@ class _CustomerDetailTabState extends State<CustomerDetailTab> {
     );
   }
 
-  /// 🔥 Searchable Dropdown (Manual)
-  Widget buildSearchableDropdown({
+  Widget buildDropdownField({
     required String label,
-    required KeyName? value,
-    required List<KeyName> items,
-    required Function(KeyName) onSelected,
+    required String? value,
+    required List<Map<String, String>> items,
+    required Function(String?) onChanged,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label),
           const SizedBox(height: 6),
-          GestureDetector(
-            onTap: () {
-              showDialog(
-                context: context,
-                builder: (context) => _DropdownSearchDialog(
-                  label: label,
-                  items: items,
-                  selected: value,
-                  onSelected: onSelected,
-                ),
+          DropdownButtonFormField<String>(
+            value: value,
+            items: items.map((item) {
+              return DropdownMenuItem<String>(
+                value: item['key'],
+                child: Text(item['name'] ?? ''),
               );
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade400),
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(value?.name ?? 'Select $label'),
-                  const Icon(Icons.arrow_drop_down),
-                ],
-              ),
+            }).toList(),
+            onChanged: onChanged,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             ),
           ),
         ],
@@ -198,8 +172,7 @@ class _CustomerDetailTabState extends State<CustomerDetailTab> {
     );
   }
 
-  /// 🔥 Date Picker for Delivery Date
-  void pickDeliveryDate() async {
+  Future<void> pickDeliveryDate() async {
     DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.tryParse(deliveryDateController.text) ?? DateTime.now(),
@@ -207,80 +180,19 @@ class _CustomerDetailTabState extends State<CustomerDetailTab> {
       lastDate: DateTime(2030),
     );
     if (picked != null) {
-      deliveryDateController.text = DateFormat('yyyy-MM-dd').format(picked);
+      setState(() {
+        deliveryDateController.text = DateFormat('yyyy-MM-dd').format(picked);
+        updateEditOrderData();
+      });
     }
   }
-}
-
-/// 🔥 Custom Dialog for Searchable Dropdown
-class _DropdownSearchDialog extends StatefulWidget {
-  final String label;
-  final List<KeyName> items;
-  final KeyName? selected;
-  final Function(KeyName) onSelected;
-
-  const _DropdownSearchDialog({
-    required this.label,
-    required this.items,
-    required this.selected,
-    required this.onSelected,
-  });
 
   @override
-  State<_DropdownSearchDialog> createState() => _DropdownSearchDialogState();
-}
-
-class _DropdownSearchDialogState extends State<_DropdownSearchDialog> {
-  String searchQuery = '';
-
-  @override
-  Widget build(BuildContext context) {
-    List<KeyName> filteredItems = widget.items
-        .where((e) => e.name.toLowerCase().contains(searchQuery.toLowerCase()))
-        .toList();
-
-    return AlertDialog(
-      title: Text('Select ${widget.label}'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            decoration: const InputDecoration(
-              hintText: 'Search...',
-              isDense: true,
-            ),
-            onChanged: (val) {
-              setState(() => searchQuery = val);
-            },
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.maxFinite,
-            height: 300,
-            child: ListView.builder(
-              itemCount: filteredItems.length,
-              itemBuilder: (context, index) {
-                final item = filteredItems[index];
-                final isSelected = widget.selected?.key == item.key;
-                return ListTile(
-                  title: Text(item.name),
-                  trailing: isSelected ? const Icon(Icons.check, color: Colors.green) : null,
-                  onTap: () {
-                    widget.onSelected(item);
-                    Navigator.pop(context);
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          child: const Text('Cancel'),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ],
-    );
+  void dispose() {
+    commController.dispose();
+    deliveryDaysController.dispose();
+    deliveryDateController.dispose();
+    remarkController.dispose();
+    super.dispose();
   }
 }

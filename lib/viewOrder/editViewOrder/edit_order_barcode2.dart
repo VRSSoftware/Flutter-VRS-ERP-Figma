@@ -32,6 +32,7 @@ class _EditOrderBarcode2State extends State<EditOrderBarcode2>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     if (widget.docId != '-1') {
+      EditOrderData.clear();
       EditOrderData.doc_id = widget.docId;
       fetchOrderItems(doc_Id: widget.docId);
       fetchOrderHeaderDetails(widget.docId);
@@ -216,7 +217,7 @@ class _EditOrderBarcode2State extends State<EditOrderBarcode2>
   Future<void> _saveEditedOrder() async {
     final payload = {
       "doc_id": EditOrderData.doc_id,
-      "login_id": UserSession.userId ?? 'admin',
+      "login_id": UserSession.userName ?? 'admin',
       "coBr_id": UserSession.coBrId ?? '01',
       "fcYr_id": UserSession.userFcYr ?? '25',
       "data": {
@@ -265,7 +266,7 @@ class _EditOrderBarcode2State extends State<EditOrderBarcode2>
     try {
       final response = await http.post(
         Uri.parse(
-          '${AppConstants.BASE_URL}/orderRegister/saveEditedSalesOrder',
+          '${AppConstants.BASE_URL}/orderRegister/saveEditedSalesOrderBarcode',
         ),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
@@ -290,73 +291,86 @@ class _EditOrderBarcode2State extends State<EditOrderBarcode2>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-   appBar: AppBar(
-  backgroundColor: Colors.blue,
-  automaticallyImplyLeading: false, // disable default back arrow
-  leading: IconButton(
-    icon: const Icon(Icons.arrow_back_ios, color: Colors.white), // 👈 iOS back icon
-    onPressed: () {
-      Navigator.of(context).pop(); // 👈 go back when pressed
-    },
-  ),
-  title: const Text(
-    'Update Order',
-    style: TextStyle(
-      color: Colors.white,
-    ),
-  ),
-  bottom: PreferredSize(
-    preferredSize: const Size.fromHeight(90),
-    child: Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-          color: Colors.blue,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      appBar: AppBar(
+        backgroundColor: Colors.blue,
+        automaticallyImplyLeading: false, // disable default back arrow
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.white,
+          ), // 👈 iOS back icon
+          onPressed: () {
+            Navigator.of(context).pop(); // 👈 go back when pressed
+          },
+        ),
+        title: const Text(
+          'Update Order',
+          style: TextStyle(color: Colors.white),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(90),
+          child: Column(
             children: [
-              Flexible(
-                child: Text(
-                  'Total: ₹${_calculateTotalAmount().toStringAsFixed(2)}',
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                  overflow: TextOverflow.ellipsis,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 8.0,
+                  horizontal: 16.0,
+                ),
+                color: Colors.blue,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        'Total: ₹${_calculateTotalAmount().toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    _divider(),
+                    Flexible(
+                      child: Text(
+                        'Items: ${_calculateTotalItems()}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    _divider(),
+                    Flexible(
+                      child: Text(
+                        'Qty: ${_calculateTotalQuantity()}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              _divider(),
-              Flexible(
-                child: Text(
-                  'Items: ${_calculateTotalItems()}',
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              _divider(),
-              Flexible(
-                child: Text(
-                  'Qty: ${_calculateTotalQuantity()}',
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                  overflow: TextOverflow.ellipsis,
+              Container(
+                color: Colors.white,
+                child: TabBar(
+                  controller: _tabController,
+                  tabs: const [
+                    Tab(text: 'Transactions'),
+                    Tab(text: 'Customer Details'),
+                  ],
+                  labelColor: Colors.blue,
+                  unselectedLabelColor: Colors.grey,
                 ),
               ),
             ],
           ),
         ),
-        Container(
-          color: Colors.white,
-          child: TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(text: 'Transactions'),
-              Tab(text: 'Customer Details'),
-            ],
-            labelColor: Colors.blue,
-            unselectedLabelColor: Colors.grey,
-          ),
-        ),
-      ],
-    ),
-  ),
-),
+      ),
 
       body: TabBarView(
         controller: _tabController,

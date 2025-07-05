@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:vrs_erp_figma/catalog/imagezoom.dart';
 import 'package:vrs_erp_figma/models/CatalogOrderData.dart';
 import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_data.dart';
-import '../../constants/app_constants.dart';
-
+import 'package:vrs_erp_figma/constants/app_constants.dart';
 
 class TransactionTab extends StatefulWidget {
   const TransactionTab({super.key});
@@ -59,7 +59,7 @@ class _TransactionTabState extends State<TransactionTab> {
       'mrp': double.tryParse(parts[0]) ?? 0,
       'wsp': double.tryParse(parts[1]) ?? 0,
       'qty': int.tryParse(parts[2]) ?? 0,
-      'stock': int.tryParse(parts[3]) ?? 0,
+      'stock': double.tryParse(parts[3]) ?? 0,
     };
   }
 
@@ -86,28 +86,141 @@ class _TransactionTabState extends State<TransactionTab> {
     });
   }
 
-  Widget _buildHeader(String label, int flex) {
-    return Expanded(
-      flex: flex,
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        color: Colors.grey[200],
-        child: Text(
-          label,
-          style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
+  Widget _buildCatalogInfoCard(CatalogOrderData catalogOrder) {
+    final catalog = catalogOrder.catalog;
+    final imageUrl = catalog.fullImagePath.contains("http")
+        ? catalog.fullImagePath
+        : '${AppConstants.BASE_URL}/images${catalog.fullImagePath}';
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onDoubleTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ImageZoomScreen(imageUrls: [imageUrl]),
+              ),
+            );
+          },
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.28,
+            height: 150,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Image.network(
+              imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+            ),
+          ),
         ),
-      ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                catalog.styleCode,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red.shade900,
+                ),
+              ),
+              Text(
+                catalog.shadeName,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Colors.blue.shade900,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Table(
+                columnWidths: const {
+                  0: FixedColumnWidth(100),
+                  1: FixedColumnWidth(10),
+                  2: FlexColumnWidth(),
+                },
+                defaultVerticalAlignment: TableCellVerticalAlignment.top,
+                children: [
+                  _buildTableRow('Remark', catalog.remark),
+                  _buildTableRow('Stk Type',
+                      catalog.upcoming_Stk == '1' ? 'Upcoming' : 'Ready'),
+                  _buildTableRow('Stock Qty',
+                      _calculateStockQty(catalogOrder).toString(),
+                      valueColor: Colors.green[700]),
+                  _buildTableRow('Order Qty',
+                      _calculateOrderQty(catalogOrder).toString(),
+                      valueColor: Colors.orange[800]),
+                  _buildTableRow('Order Amount',
+                      _calculateOrderAmount(catalogOrder).toStringAsFixed(2),
+                      valueColor: Colors.purple[800]),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildSizeRow(
-    CatalogOrderData order,
-    String shade,
-    String size,
-  ) {
+  TableRow _buildTableRow(String title, String value, {Color? valueColor}) {
+    return TableRow(children: [
+      Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+      const Text(":"),
+      Text(value, style: TextStyle(color: valueColor)),
+    ]);
+  }
+
+  int _calculateStockQty(CatalogOrderData order) {
+    int total = 0;
+    for (var row in order.orderMatrix.matrix) {
+      for (var cell in row) {
+        final parts = cell.split(',');
+        if (parts.length >= 4) {
+          total += int.tryParse(parts[3]) ?? 0;
+        }
+      }
+    }
+    return total;
+  }
+
+  int _calculateOrderQty(CatalogOrderData order) {
+    int total = 0;
+    for (var row in order.orderMatrix.matrix) {
+      for (var cell in row) {
+        final parts = cell.split(',');
+        if (parts.length >= 3) {
+          total += int.tryParse(parts[2]) ?? 0;
+        }
+      }
+    }
+    return total;
+  }
+
+  double _calculateOrderAmount(CatalogOrderData order) {
+    double total = 0;
+    for (var row in order.orderMatrix.matrix) {
+      for (var cell in row) {
+        final parts = cell.split(',');
+        if (parts.length >= 3) {
+          final wsp = double.tryParse(parts[1]) ?? 0;
+          final qty = int.tryParse(parts[2]) ?? 0;
+          total += wsp * qty;
+        }
+      }
+    }
+    return total;
+  }
+
+  Widget _buildSizeRow(CatalogOrderData order, String shade, String size) {
     final styleKey = order.catalog.styleKey;
     final value = _getMatrixValue(order, shade, size);
-
     final qtyController = controllers[styleKey]![shade]![size]!;
 
     return Row(
@@ -135,6 +248,20 @@ class _TransactionTabState extends State<TransactionTab> {
     );
   }
 
+  Widget _buildHeader(String label, int flex) {
+    return Expanded(
+      flex: flex,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        color: Colors.grey[200],
+        child: Text(
+          label,
+          style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -151,36 +278,8 @@ class _TransactionTabState extends State<TransactionTab> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Image.network(
-                      order.catalog.fullImagePath.contains("http")
-                          ? order.catalog.fullImagePath
-                          : '${AppConstants.BASE_URL}/images${order.catalog.fullImagePath}',
-                      width: 60,
-                      height: 80,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(Icons.error),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(order.catalog.styleCode,
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: Colors.blue,
-                              )),
-                          const SizedBox(height: 4),
-                          Text('Shades: ${shades.join(', ')}'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
+                _buildCatalogInfoCard(order),
+                const SizedBox(height: 10),
 
                 // 🔹 Shade Selector
                 Wrap(

@@ -5,8 +5,6 @@
 // import 'package:vrs_erp_figma/constants/app_constants.dart';
 // import 'package:vrs_erp_figma/models/CatalogItem.dart';
 
-
-
 // class CatalogBookingTable extends StatefulWidget {
 //   final String itemSubGrpKey;
 //   final String itemKey;
@@ -822,19 +820,24 @@
 //   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 // }
 
-
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/CatalogItem.dart';
+import 'package:vrs_erp_figma/models/CatalogOrderData.dart';
+import 'package:vrs_erp_figma/models/OrderMatrix.dart';
+import 'package:vrs_erp_figma/models/catalog.dart';
+import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_data.dart';
+import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_screen.dart';
 
 class CatalogBookingTable extends StatefulWidget {
   final String itemSubGrpKey;
   final String itemKey;
   final String styleKey;
   final VoidCallback onSuccess;
+  final bool? isEdit;
 
   const CatalogBookingTable({
     super.key,
@@ -842,6 +845,7 @@ class CatalogBookingTable extends StatefulWidget {
     required this.itemKey,
     required this.styleKey,
     required this.onSuccess,
+    this.isEdit,
   });
 
   @override
@@ -867,6 +871,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
   bool isLoading = true;
   List<String> _copiedRow = [];
   TextEditingController noteController = TextEditingController();
+  bool isEdit = false;
 
   int get totalQty {
     int total = 0;
@@ -884,6 +889,9 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
     itemSubGrpKey = widget.itemSubGrpKey;
     itemKey = widget.itemKey;
     styleKey = widget.styleKey;
+    setState(() {
+      isEdit = widget.isEdit ?? false;
+    });
     fetchCatalogData();
   }
 
@@ -916,7 +924,8 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
       if (data.isNotEmpty) {
         final items = data.map((e) => CatalogItem.fromJson(e)).toList();
 
-        final uniqueSizes = items.map((e) => e.sizeName).toSet().toList()..sort();
+        final uniqueSizes =
+            items.map((e) => e.sizeName).toSet().toList()..sort();
         final uniqueColors = items.map((e) => e.shadeName).toSet().toList();
 
         sizeMrpMap = {};
@@ -937,14 +946,15 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
             for (var size in sizes) {
               final match = items.firstWhere(
                 (item) => item.shadeName == color && item.sizeName == size,
-                orElse: () => CatalogItem(
-                  styleCode: styleCode,
-                  shadeName: color,
-                  sizeName: size,
-                  clQty: 0,
-                  mrp: sizeMrpMap[size] ?? 0,
-                  wsp: sizeWspMap[size] ?? 0,
-                ),
+                orElse:
+                    () => CatalogItem(
+                      styleCode: styleCode,
+                      shadeName: color,
+                      sizeName: size,
+                      clQty: 0,
+                      mrp: sizeMrpMap[size] ?? 0,
+                      wsp: sizeWspMap[size] ?? 0,
+                    ),
               );
               final controller = TextEditingController();
               controller.addListener(() => setState(() {}));
@@ -1041,16 +1051,17 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
                           _copySizeQtyInAllShade();
                         }
                       },
-                      itemBuilder: (BuildContext context) => [
-                        const PopupMenuItem(
-                          value: 'copy_qty_all_shade',
-                          child: Text('Copy Qty in All Shade'),
-                        ),
-                        const PopupMenuItem(
-                          value: 'copy_size_qty_all_shade',
-                          child: Text('Copy Size Qty in All Shade'),
-                        ),
-                      ],
+                      itemBuilder:
+                          (BuildContext context) => [
+                            const PopupMenuItem(
+                              value: 'copy_qty_all_shade',
+                              child: Text('Copy Qty in All Shade'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'copy_size_qty_all_shade',
+                              child: Text('Copy Size Qty in All Shade'),
+                            ),
+                          ],
                     ),
                   ],
                 ),
@@ -1179,7 +1190,6 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
             border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
             contentPadding: const EdgeInsets.all(16),
             labelText: 'Total Qty',
-           
           ),
         ),
       ),
@@ -1214,9 +1224,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: totalQty > 0 ? AppColors.primaryColor : Colors.grey,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(0),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
         ),
         onPressed: totalQty > 0 ? _submitOrder : null,
       ),
@@ -1329,9 +1337,11 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
                               GestureDetector(
                                 onTap: () {
                                   Navigator.of(context).pop();
-                                  final firstQty = controllers[color]?.values.first.text;
+                                  final firstQty =
+                                      controllers[color]?.values.first.text;
                                   for (var size in sizes) {
-                                    controllers[color]?[size]?.text = firstQty ?? '0';
+                                    controllers[color]?[size]?.text =
+                                        firstQty ?? '0';
                                   }
                                 },
                                 child: Container(
@@ -1354,7 +1364,8 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
                                   Navigator.of(context).pop();
                                   List<String> copiedRow = [];
                                   for (var size in sizes) {
-                                    final qty = controllers[color]?[size]?.text ?? '0';
+                                    final qty =
+                                        controllers[color]?[size]?.text ?? '0';
                                     copiedRow.add(qty);
                                   }
                                   _copiedRow = copiedRow;
@@ -1378,7 +1389,8 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
                                 onTap: () {
                                   Navigator.of(context).pop();
                                   for (int j = 0; j < sizes.length; j++) {
-                                    controllers[color]?[sizes[j]]?.text = _copiedRow[j];
+                                    controllers[color]?[sizes[j]]?.text =
+                                        _copiedRow[j];
                                   }
                                 },
                                 child: Container(
@@ -1418,19 +1430,21 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
         ),
         ...sizes.map((size) {
           final controller = controllers[color]?[size];
-          final originalQty = catalogItems
-              .firstWhere(
-                (item) => item.shadeName == color && item.sizeName == size,
-                orElse: () => CatalogItem(
-                  styleCode: styleCode,
-                  shadeName: color,
-                  sizeName: size,
-                  clQty: 0,
-                  mrp: sizeMrpMap[size] ?? 0,
-                  wsp: sizeWspMap[size] ?? 0,
-                ),
-              )
-              .clQty;
+          final originalQty =
+              catalogItems
+                  .firstWhere(
+                    (item) => item.shadeName == color && item.sizeName == size,
+                    orElse:
+                        () => CatalogItem(
+                          styleCode: styleCode,
+                          shadeName: color,
+                          sizeName: size,
+                          clQty: 0,
+                          mrp: sizeMrpMap[size] ?? 0,
+                          wsp: sizeWspMap[size] ?? 0,
+                        ),
+                  )
+                  .clQty;
 
           return TableCell(
             verticalAlignment: TableCellVerticalAlignment.middle,
@@ -1454,6 +1468,90 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
     );
   }
 
+  // Future<void> _submitOrder() async {
+  //   List<Future> apiCalls = [];
+
+  //   for (var colorEntry in controllers.entries) {
+  //     String color = colorEntry.key;
+  //     for (var sizeEntry in colorEntry.value.entries) {
+  //       String size = sizeEntry.key;
+  //       String qty = sizeEntry.value.text;
+  //       if (qty.isNotEmpty && int.tryParse(qty) != null && int.parse(qty) > 0) {
+  //         final payload = {
+  //           "userId": userId,
+  //           "coBrId": coBrId,
+  //           "fcYrId": fcYrId,
+  //           "data": {
+  //             "designcode": styleCode,
+  //             "mrp": sizeMrpMap[size]?.toStringAsFixed(0) ?? '0',
+  //             "WSP": sizeWspMap[size]?.toStringAsFixed(0) ?? '0',
+  //             "size": size,
+  //             "TotQty": totalQty.toString(),
+  //             "Note": noteController.text,
+  //             "color": color,
+  //             "Qty": qty,
+  //             "cobrid": coBrId,
+  //             "user": userId.toLowerCase(),
+  //             "barcode": "",
+  //           },
+  //           "typ": 0,
+  //         };
+
+  //         apiCalls.add(
+  //           http.post(
+  //             Uri.parse(
+  //               '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
+  //             ),
+  //             headers: {'Content-Type': 'application/json'},
+  //             body: jsonEncode(payload),
+  //           ),
+  //         );
+  //       }
+  //     }
+  //   }
+
+  //   try {
+  //     final responses = await Future.wait(apiCalls);
+  //     if (responses.every((r) => r.statusCode == 200)) {
+  //       if (mounted) {
+  //         showDialog(
+  //           context: context,
+  //           builder: (_) => AlertDialog(
+  //             title: const Text("Success"),
+  //             content: const Text("Booking submitted."),
+  //             actions: [
+  //               TextButton(
+  //                 onPressed: () {
+  //                   Navigator.pop(context);
+  //                   Navigator.pop(context);
+  //                   widget.onSuccess();
+  //                 },
+  //                 child: const Text("OK"),
+  //               ),
+  //             ],
+  //           ),
+  //         );
+  //       }
+  //     }
+  //   } catch (e) {
+  //     if (mounted) {
+  //       showDialog(
+  //         context: context,
+  //         builder: (_) => AlertDialog(
+  //           title: const Text("Error"),
+  //           content: Text("Failed to submit: $e"),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: () => Navigator.pop(context),
+  //               child: const Text("OK"),
+  //             ),
+  //           ],
+  //         ),
+  //       );
+  //     }
+  //   }
+  // }
+
   Future<void> _submitOrder() async {
     List<Future> apiCalls = [];
 
@@ -1462,39 +1560,107 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
       for (var sizeEntry in colorEntry.value.entries) {
         String size = sizeEntry.key;
         String qty = sizeEntry.value.text;
-        if (qty.isNotEmpty && int.tryParse(qty) != null && int.parse(qty) > 0) {
-          final payload = {
-            "userId": userId,
-            "coBrId": coBrId,
-            "fcYrId": fcYrId,
-            "data": {
-              "designcode": styleCode,
-              "mrp": sizeMrpMap[size]?.toStringAsFixed(0) ?? '0',
-              "WSP": sizeWspMap[size]?.toStringAsFixed(0) ?? '0',
-              "size": size,
-              "TotQty": totalQty.toString(),
-              "Note": noteController.text,
-              "color": color,
-              "Qty": qty,
-              "cobrid": coBrId,
-              "user": userId.toLowerCase(),
-              "barcode": "",
-            },
-            "typ": 0,
-          };
 
-          apiCalls.add(
-            http.post(
-              Uri.parse(
-                '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
+        if (qty.isNotEmpty && int.tryParse(qty) != null && int.parse(qty) > 0) {
+          if (!isEdit) {
+            // Normal mode - API call
+            final payload = {
+              "userId": userId,
+              "coBrId": coBrId,
+              "fcYrId": fcYrId,
+              "data": {
+                "designcode": styleCode,
+                "mrp": sizeMrpMap[size]?.toStringAsFixed(0) ?? '0',
+                "WSP": sizeWspMap[size]?.toStringAsFixed(0) ?? '0',
+                "size": size,
+                "TotQty": totalQty.toString(),
+                "Note": noteController.text,
+                "color": color,
+                "Qty": qty,
+                "cobrid": coBrId,
+                "user": userId.toLowerCase(),
+                "barcode": "",
+              },
+              "typ": 0,
+            };
+
+            apiCalls.add(
+              http.post(
+                Uri.parse(
+                  '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
+                ),
+                headers: {'Content-Type': 'application/json'},
+                body: jsonEncode(payload),
               ),
-              headers: {'Content-Type': 'application/json'},
-              body: jsonEncode(payload),
-            ),
-          );
+            );
+          }
         }
       }
     }
+
+    if (isEdit) {
+      // Build shades and sizes list
+      final sizes = controllers.values.first.keys.toList();
+      final shades = controllers.keys.toList();
+
+      // Build matrix
+      final matrix =
+          shades.map((shade) {
+            return sizes.map((size) {
+              final qty = controllers[shade]?[size]?.text ?? '0';
+              final mrp = sizeMrpMap[size]?.toStringAsFixed(0) ?? '0';
+              final wsp = sizeWspMap[size]?.toStringAsFixed(0) ?? '0';
+              final stock = '0';
+              return '$mrp,$wsp,$qty,$stock';
+            }).toList();
+          }).toList();
+
+      final catalog = Catalog(
+        itemSubGrpKey: '',
+        itemSubGrpName: '',
+        itemKey: '',
+        itemName: '',
+        brandKey: '',
+        brandName: '',
+        styleKey: '',
+        styleCode: styleCode,
+        shadeKey: '',
+        shadeName: shades.join(','),
+        styleSizeId: '',
+        sizeName: sizes.join(','),
+        mrp: 0.0,
+        wsp: 0.0,
+        onlyMRP: 0.0,
+        clqty: 0,
+        total: totalQty,
+        fullImagePath: '',
+        remark: noteController.text,
+        imageId: '',
+        sizeDetails: '',
+        sizeDetailsWithoutWSp: '',
+        sizeWithMrp: '',
+        styleCodeWithcount: styleCode,
+        onlySizes: sizes.join(','),
+        sizeWithWsp: '',
+        createdDate: '',
+        shadeImages: '',
+        upcoming_Stk: '0',
+        barcode: '',
+      );
+
+      final newData = CatalogOrderData(
+        catalog: catalog,
+        orderMatrix: OrderMatrix(sizes: sizes, matrix: matrix, shades: shades),
+      );
+
+      EditOrderData.data.add(newData);
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => EditOrderScreen(docId: "-1")),
+      );
+    }
+    else{
 
     try {
       final responses = await Future.wait(apiCalls);
@@ -1502,20 +1668,21 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
         if (mounted) {
           showDialog(
             context: context,
-            builder: (_) => AlertDialog(
-              title: const Text("Success"),
-              content: const Text("Booking submitted."),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pop(context);
-                    widget.onSuccess();
-                  },
-                  child: const Text("OK"),
+            builder:
+                (_) => AlertDialog(
+                  title: const Text("Success"),
+                  content: const Text("Booking submitted."),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.pop(context);
+                        widget.onSuccess();
+                      },
+                      child: const Text("OK"),
+                    ),
+                  ],
                 ),
-              ],
-            ),
           );
         }
       }
@@ -1523,19 +1690,21 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
       if (mounted) {
         showDialog(
           context: context,
-          builder: (_) => AlertDialog(
-            title: const Text("Error"),
-            content: Text("Failed to submit: $e"),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("OK"),
+          builder:
+              (_) => AlertDialog(
+                title: const Text("Error"),
+                content: Text("Failed to submit: $e"),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("OK"),
+                  ),
+                ],
               ),
-            ],
-          ),
         );
       }
     }
+  }
   }
 }
 
@@ -1582,10 +1751,11 @@ class _TableHeaderCell extends StatelessWidget {
 class _DiagonalLinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.grey.shade400
-      ..strokeWidth = 1
-      ..style = PaintingStyle.stroke;
+    final paint =
+        Paint()
+          ..color = Colors.grey.shade400
+          ..strokeWidth = 1
+          ..style = PaintingStyle.stroke;
     canvas.drawLine(Offset.zero, Offset(size.width, size.height), paint);
   }
 
@@ -1596,10 +1766,11 @@ class _DiagonalLinePainter extends CustomPainter {
 class PriceTagPaint extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    Paint paint = Paint()
-      ..color = AppColors.primaryColor
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.fill;
+    Paint paint =
+        Paint()
+          ..color = AppColors.primaryColor
+          ..strokeCap = StrokeCap.round
+          ..style = PaintingStyle.fill;
 
     Path path = Path();
 

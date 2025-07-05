@@ -63,6 +63,7 @@ class _OrderPageState extends State<OrderPage> {
   String fromDate = "";
   String toDate = "";
   List<Brand> selectedBrands = [];
+  bool isEdit = false;
 
   @override
   void initState() {
@@ -76,14 +77,17 @@ class _OrderPageState extends State<OrderPage> {
         setState(() {
           itemKey = args['itemKey']?.toString();
           itemSubGrpKey = args['itemSubGrpKey']?.toString();
-          coBr = args['coBr']?.toString();
-          fcYrId = args['fcYrId']?.toString();
+          coBr = UserSession.coBrId;
+          fcYrId = UserSession.userFcYr;
           itemNamee = args['itemName']?.toString();
+          isEdit = args['edit'] ?? false;
         });
 
         if (coBr != null && fcYrId != null) {
           _fetchAddedItems(coBr!, fcYrId!);
-          _fetchCartCount();
+          if(!isEdit) {
+            _fetchCartCount();
+          }
         }
 
         if (itemSubGrpKey != null && coBr != null) {
@@ -442,7 +446,7 @@ class _OrderPageState extends State<OrderPage> {
           },
         ),
         actions: [
-          IconButton(
+         isEdit ? Container() : IconButton(
             icon: Stack(
               children: [
                 const Icon(CupertinoIcons.cart_badge_plus, color: Colors.white),
@@ -961,7 +965,7 @@ class _OrderPageState extends State<OrderPage> {
                                           () =>
                                               _showBookingDialog(context, item),
                                       child: Text(
-                                        'BOOK NOW',
+                                       isEdit ? 'Add more' : 'BOOK NOW',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: isLargeScreen ? 14 : 12,
@@ -1196,7 +1200,7 @@ class _OrderPageState extends State<OrderPage> {
                             ),
                             onPressed: () => _showBookingDialog(context, item),
                             child: Text(
-                              'BOOK NOW',
+                              isEdit ? 'Add more' : 'BOOK NOW',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: isLargeScreen ? 14 : 12,
@@ -1411,7 +1415,7 @@ class _OrderPageState extends State<OrderPage> {
                       ),
                       onPressed: () => _showBookingDialog(context, item),
                       child: Text(
-                        'BOOK NOW',
+                        isEdit ? 'Add more' : 'BOOK NOW',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: isLargeScreen ? 14 : 12,
@@ -1569,7 +1573,7 @@ class _OrderPageState extends State<OrderPage> {
                           ),
                     ),
                   ),
-              child: const Text("Book Now"),
+              child:  Text(isEdit ? 'Add more' : 'BOOK NOW'),
             ),
           ),
           Container(height: 42, width: 2, color: buttonColor),
@@ -1740,7 +1744,9 @@ void _showBookingDialog(BuildContext context, Catalog item) {
         itemSubGrpKey: item.itemSubGrpKey.toString(),
         itemKey: item.itemKey.toString(),
         styleKey: item.styleKey.toString(),
+        isEdit : isEdit,
         onSuccess: () {
+          if(!isEdit){
           setState(() {
             addedItems.add(item.styleCode); // Update local addedItems
           });
@@ -1752,6 +1758,7 @@ void _showBookingDialog(BuildContext context, Catalog item) {
             _fetchAddedItems(coBr!, fcYrId!); // Re-fetch added items
             Navigator.pop(context);
           });
+          } 
         },
       ),
     ),
