@@ -242,6 +242,27 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
 
   Future<void> _saveOrderLocally() async {
     if (!_formKey.currentState!.validate()) return;
+    
+      String? consigneeLedKey = '';
+  String? stationStnKey = '';
+  final selectedConsigneeName = _additionalInfo['consignee']?.toString();
+  if (selectedConsigneeName != null && selectedConsigneeName.isNotEmpty) {
+    final selectedConsignee = consignees.firstWhere(
+      (consignee) => consignee.ledName == selectedConsigneeName,
+      orElse: () => Consignee(
+        ledKey: '',
+        ledName: '',
+        stnKey: '',
+        stnName: '',
+        paymentTermsKey: '',
+        paymentTermsName: '',
+        pytTermDiscdays: '0',
+      ),
+    );
+    consigneeLedKey = selectedConsignee.ledKey;
+    stationStnKey = selectedConsignee.stnKey;
+  }
+
 
     final orderData = {
       "saleorderno": _orderControllers.orderNo.text,
@@ -255,8 +276,8 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
       "totitem": _orderControllers.totalItem.text,
       "totqty": _orderControllers.totalQty.text,
       "remark": _orderControllers.remark.text,
-      "consignee": _additionalInfo['consignee'] ?? '',
-      "station": _additionalInfo['station'] ?? '',
+     "consignee": consigneeLedKey,
+    "station": stationStnKey,  
       "paymentterms": _additionalInfo['paymentterms'] ??
           _orderControllers.pytTermDiscKey ??
           '',
