@@ -535,6 +535,55 @@ class ApiService {
       throw Exception('Error fetching order register: $e');
     }
   }
+  static Future<List<RegisterOrder>> fetchPackingRegister({
+    required String fromDate,
+    required String toDate,
+    String? custKey,
+    required String coBrId,
+    String? salesPerson,
+    String? status,
+    String? dlvFromDate,
+    String? dlvToDate,
+    String? userName,
+    String? lastSavedOrderId,
+    int? pageNo,
+    int? pageSize,
+    
+  }) async {
+    try {
+      final url = Uri.parse(
+        '${AppConstants.BASE_URL}/orderBooking/getPackingRegister',
+      );
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'fromDate': fromDate,
+          'toDate': toDate,
+          'custKey': custKey,
+          'coBrId': coBrId,
+          'salesPerson': salesPerson,
+          'status': status,
+          'dlvFromDate': dlvFromDate,
+          'dlvToDate': dlvToDate,
+          'userName': userName,
+          'lastsavedorderid': lastSavedOrderId,
+          'pageNo' : pageNo
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => RegisterOrder.fromJson(json)).toList();
+      } else {
+        throw Exception(
+          'Failed to load order register: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error fetching order register: $e');
+    }
+  }
 
   static Future<Map<String, dynamic>> fetchPayTerms({
     required String coBrId,

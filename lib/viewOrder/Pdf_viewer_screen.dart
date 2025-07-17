@@ -42,7 +42,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       final docId = widget.orderNo.replaceAll(RegExp(r'[^0-9]'), '');
       final dio = Dio();
       final response = await dio.post(
-        '${AppConstants.Pdf_url}/api/values/order2',
+        '${AppConstants.Pdf_url}/api/values/order4',
         data: {"doc_id": docId},
         options: Options(responseType: ResponseType.bytes),
       );

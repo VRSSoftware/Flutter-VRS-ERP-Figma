@@ -258,23 +258,23 @@ class _CustomerMasterDialogState extends State<CustomerMasterDialog> {
     );
   }
 
-  Future<void> onSave() async {
-    if (_formKey.currentState!.validate()) {
-      final data = {
-        "partyname": partyNameController.text,
-        "contactperson": contactPersonController.text,
-        "whatsappno": whatsappController.text,
-        "salestypeDDL": selectedSalesType?.key,
-        "gstno": gstController.text,
-        "address": addressController.text,
-        "stationDDL": selectedStation?.key,
-        "brokerDDL": selectedBroker?.key,
-        "transportDDL": selectedTransporter?.key,
-        "salespersonDDL": selectedSalesPerson?.key,
-        "paymenttermsDDL": selectedPaymentTerms?.key,
-        "creditdays": creditDaysController.text,
-        "createddate": DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now()),
-      };
+Future<void> onSave() async {
+  if (_formKey.currentState!.validate()) {
+    final data = {
+      "partyname": partyNameController.text,
+      "contactperson": contactPersonController.text,
+      "whatsappno": whatsappController.text,
+      "salestypeDDL": selectedSalesType?.key ?? '',
+      "gstno": gstController.text,
+      "address": addressController.text,
+      "stationDDL": selectedStation?.key ?? '',
+      "brokerDDL": selectedBroker?.key ?? '',
+      "transportDDL": selectedTransporter?.key ?? '',
+      "salespersonDDL": selectedSalesPerson?.key ?? '', // This ensures empty string if null
+      "paymenttermsDDL": selectedPaymentTerms?.key ?? '',
+      "creditdays": creditDaysController.text,
+      "createddate": DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now()),
+    };
 
       try {
         // Show loading indicator

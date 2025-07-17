@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -41,8 +42,8 @@ class _LoginPageState extends State<LoginScreen> {
     _fetchCompanies();
     _fetchFinancialYears();
     setState(() {
-      //_passwordController.text = 'Admin';
-    //  _usernameController.text = 'admin';
+      _passwordController.text = 'Admin';
+     _usernameController.text = 'admin';
     });
   }
 
@@ -50,7 +51,9 @@ class _LoginPageState extends State<LoginScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       isRegistered = prefs.getString('isRegistered');
-      // isRegistered = '1';
+      if(kIsWeb){
+      isRegistered = '1';
+      }
     });
   }
 Future<void> _fetchCompanies() async {
@@ -203,6 +206,7 @@ Future<void> _fetchCompanies() async {
         UserSession.dbUser = data['dbUserName'];
         UserSession.dbPassword = data['dbPassword'];
         UserSession.dbSource = data['dbSource'];
+        UserSession.dbSourceForRpt = data['dbSourceForRpt'];
       });
       
       // Print for debugging (remove in production)
@@ -210,6 +214,7 @@ Future<void> _fetchCompanies() async {
       print('Name: ${UserSession.dbName}');
       print('User: ${UserSession.dbUser}');
       print('Source: ${UserSession.dbSource}');
+      print('SourceForRpt: ${UserSession.dbSourceForRpt}');
     } else {
       print('Failed to load database credentials: ${response.statusCode}');
     }

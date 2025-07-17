@@ -506,6 +506,17 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             buttonWidth,
           ),
+          
+          _buildFeatureButton(
+            context,
+            'assets/images/register.png',
+            'Packing Register',
+            () {
+              setState(() => selectedFeature = 'Packing Register');
+              Navigator.pushNamed(context, '/packingOrders');
+            },
+            buttonWidth,
+          ),
           _buildFeatureButton(
             context,
             'assets/images/report.png',
