@@ -282,157 +282,157 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     final pdf = pw.Document();
 
     pdf.addPage(
-      pw.Page(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
         build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              // First row - Company name centered
-              pw.Center(
-                child: pw.Text(
-                  'VRS Software Pvt Ltd',
-                  style: pw.TextStyle(
-                    fontSize: 16,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
+          return [
+            // Company name centered
+            pw.Center(
+              child: pw.Text(
+                UserSession.coBrName ?? 'VRS Software',
+                style: pw.TextStyle(
+                  fontSize: 16,
+                  fontWeight: pw.FontWeight.bold,
                 ),
               ),
+            ),
 
-              pw.SizedBox(height: 10),
+            pw.SizedBox(height: 10),
 
-              // Second row - Print date right-aligned
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.end,
-                children: [
-                  pw.Text(
-                    'Print Date: ${DateTime.now().toString().substring(0, 19)}',
-                    style: const pw.TextStyle(fontSize: 12),
-                  ),
-                ],
-              ),
+            // Print date right-aligned
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.end,
+              children: [
+                pw.Text(
+                  'Print Date: ${DateTime.now().toString().substring(0, 19)}',
+                  style: const pw.TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
 
-              pw.SizedBox(height: 20),
-              pw.Table(
-                border: pw.TableBorder.all(),
-                columnWidths: {
-                  0: const pw.FlexColumnWidth(4),
-                  1: const pw.FlexColumnWidth(2),
-                  2: const pw.FlexColumnWidth(2),
-                  3: const pw.FlexColumnWidth(3),
-                },
-                children: [
-                  pw.TableRow(
-                    decoration: const pw.BoxDecoration(
-                      color: PdfColors.grey200,
+            pw.SizedBox(height: 20),
+
+            // Table
+            pw.Table(
+              border: pw.TableBorder.all(),
+              columnWidths: {
+                0: const pw.FlexColumnWidth(4),
+                1: const pw.FlexColumnWidth(2),
+                2: const pw.FlexColumnWidth(2),
+                3: const pw.FlexColumnWidth(3),
+              },
+              children: [
+                // Header Row
+                pw.TableRow(
+                  decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                  children: [
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(8),
+                      child: pw.Text(
+                        'Customer Name',
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                      ),
                     ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(8),
+                      child: pw.Text(
+                        'Total Order',
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                      ),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(8),
+                      child: pw.Text(
+                        'Total Qty',
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                      ),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(8),
+                      child: pw.Text(
+                        'Total Amt',
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Data Rows
+                ...widget.orderDetails.map((order) {
+                  return pw.TableRow(
                     children: [
                       pw.Padding(
                         padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(
-                          'Customer Name',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
+                        child: pw.Text(order['customernamewithcity'] ?? ''),
                       ),
                       pw.Padding(
                         padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(
-                          'Total Order',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
+                        child: pw.Text(order['totalorder'].toString()),
                       ),
                       pw.Padding(
                         padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(
-                          'Total Qty',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
+                        child: pw.Text(order['totalqty'].toString()),
                       ),
                       pw.Padding(
                         padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(
-                          'Total Amt',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
+                        child: pw.Text(order['totalamt'].toString()),
                       ),
                     ],
-                  ),
-                  ...widget.orderDetails.map((order) {
-                    return pw.TableRow(
-                      children: [
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(8),
-                          child: pw.Text(order['customernamewithcity'] ?? ''),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(8),
-                          child: pw.Text(order['totalorder'].toString()),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(8),
-                          child: pw.Text(order['totalqty'].toString()),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(8),
-                          child: pw.Text(order['totalamt'].toString()),
-                        ),
-                      ],
-                    );
-                  }).toList(),
-                  pw.TableRow(
-                    decoration: const pw.BoxDecoration(
-                      color: PdfColors.grey200,
+                  );
+                }).toList(),
+
+                // Total Row
+                pw.TableRow(
+                  decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                  children: [
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(8),
+                      child: pw.Text(
+                        'Total',
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                      ),
                     ),
-                    children: [
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(
-                          'Total',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(8),
+                      child: pw.Text(
+                        widget.orderDetails
+                            .fold<int>(
+                              0,
+                              (sum, item) => sum + (item['totalorder'] as int),
+                            )
+                            .toString(),
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                       ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(
-                          widget.orderDetails
-                              .fold<int>(
-                                0,
-                                (sum, item) =>
-                                    sum + (item['totalorder'] as int),
-                              )
-                              .toString(),
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(8),
+                      child: pw.Text(
+                        widget.orderDetails
+                            .fold<int>(
+                              0,
+                              (sum, item) => sum + (item['totalqty'] as int),
+                            )
+                            .toString(),
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                       ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(
-                          widget.orderDetails
-                              .fold<int>(
-                                0,
-                                (sum, item) => sum + (item['totalqty'] as int),
-                              )
-                              .toString(),
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(8),
+                      child: pw.Text(
+                        widget.orderDetails
+                            .fold<int>(
+                              0,
+                              (sum, item) => sum + (item['totalamt'] as int),
+                            )
+                            .toString(),
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                       ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(
-                          widget.orderDetails
-                              .fold<int>(
-                                0,
-                                (sum, item) => sum + (item['totalamt'] as int),
-                              )
-                              .toString(),
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          );
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ];
         },
       ),
     );

@@ -783,7 +783,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
             (word) => word[0].toUpperCase() + word.substring(1).toLowerCase(),
           )
           .join('');
-
+  print(formattedOrderType);
       final response = await http.post(
         Uri.parse('${AppConstants.BASE_URL}/report/getReportsDetail'),
         headers: {'Content-Type': 'application/json'},
@@ -817,7 +817,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
           "Detail": 1,
         }),
       );
-
+print("@@@@@order detail Response body:${response.body}");
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data is List) {
