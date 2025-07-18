@@ -13,6 +13,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/dashboard/CustomerOrderDetailReportScreen.dart';
 import 'package:vrs_erp_figma/dashboard/data.dart';
 
 class CustomerOrderDetailsPage extends StatefulWidget {
@@ -314,6 +315,35 @@ class _CustomerOrderDetailsPageState extends State<CustomerOrderDetailsPage> {
     );
   }
 
+
+Future<List<Map<String, dynamic>>> _fetchCustomerWiseReport() async {
+  try {
+    final response = await http.post(
+      Uri.parse('${AppConstants.BASE_URL}/report/customer-wise1'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "FromDate": DateFormat('yyyy-MM-dd').format(widget.fromDate),
+        "ToDate": DateFormat('yyyy-MM-dd').format(widget.toDate),
+        "CustKey": widget.custKey,
+        "CoBr_Id": UserSession.coBrId,
+        "orderType": widget.orderType,
+        "All": false,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as List;
+      return data.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Failed to load report: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error fetching report: $e');
+    return [];
+  }
+}
+
+
   void _handleDownloadAll() {
     ScaffoldMessenger.of(
       context,
@@ -330,15 +360,39 @@ class _CustomerOrderDetailsPageState extends State<CustomerOrderDetailsPage> {
     );
   }
 
-  void _handleViewAll() {
+void _handleViewAll() async {
+  try {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Viewing all orders ${_appBarViewChecked ? 'with images' : ''}',
+      const SnackBar(content: Text('Loading detailed report...')),
+    );
+
+    final detailedData = await _fetchCustomerWiseReport();
+    
+    if (detailedData.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No data available')),
+      );
+      return;
+    }
+
+    // Navigate to a new screen to show the detailed report
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CustomerOrderDetailReportScreen(
+          customerName: widget.customerName,
+          fromDate: widget.fromDate,
+          toDate: widget.toDate,
+          reportData: detailedData,
         ),
       ),
     );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $e')),
+    );
   }
+}
 
   Future<void> _launchWhatsApp(String phoneNumber) async {
   final whatsappUrl = "https://wa.me/$phoneNumber";
