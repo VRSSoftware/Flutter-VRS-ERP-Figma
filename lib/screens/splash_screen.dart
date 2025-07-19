@@ -7,8 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/screens/login_screen.dart';
 import 'package:vrs_erp_figma/screens/register_screen.dart';
-
-
+import 'package:flutter/foundation.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -21,7 +20,10 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
+          if(!kIsWeb){  
+      // isRegistered = '1';
     _fetchDeviceInfo();
+      }
   }
 
   String? deviceId;
@@ -31,7 +33,11 @@ class _SplashScreenState extends State<SplashScreen> {
 
     String? coBrId = prefs.getString('coBrId');
     int? userId = prefs.getInt('userId');
+
     String? isRegistered = prefs.getString('isRegistered');
+    if (kIsWeb) {
+      isRegistered = '1';
+    }
 
     if (isRegistered == '1') {
       Navigator.pushReplacement(
@@ -59,15 +65,12 @@ class _SplashScreenState extends State<SplashScreen> {
             context,
             MaterialPageRoute(builder: (context) => LoginScreen()),
           );
-        }
-        else{
+        } else {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => RegisterScreen()),
           );
         }
-
-
       } catch (e) {
         print('Error: $e');
         // _showPopupMessage(context, "An error occurred. Please try again.");
