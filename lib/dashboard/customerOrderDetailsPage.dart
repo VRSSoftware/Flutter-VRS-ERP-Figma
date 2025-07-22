@@ -13,7 +13,6 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
-import 'package:vrs_erp_figma/dashboard/CustomerOrderDetailReportScreen.dart';
 import 'package:vrs_erp_figma/dashboard/data.dart';
 
 class CustomerOrderDetailsPage extends StatefulWidget {
@@ -146,7 +145,7 @@ class _CustomerOrderDetailsPageState extends State<CustomerOrderDetailsPage> {
                 case 'whatsapp':
                   _handleWhatsAppShareAll();
                   break;
-                case 'view':
+                case 'viewAll':
                   _handleViewAll();
                   break;
                 case 'withImage':
@@ -192,7 +191,7 @@ class _CustomerOrderDetailsPageState extends State<CustomerOrderDetailsPage> {
                     ),
                   ),
                   PopupMenuItem<String>(
-                    value: 'view',
+                    value: 'viewAll',
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12.0,
@@ -316,20 +315,27 @@ class _CustomerOrderDetailsPageState extends State<CustomerOrderDetailsPage> {
   }
 
 
-Future<List<Map<String, dynamic>>> _fetchCustomerWiseReport() async {
+Future<List<Map<String, dynamic>>> _fetchFullCustomerReport() async {
   try {
+    final requestBody = {
+      "FromDate": DateFormat('yyyy-MM-dd').format(widget.fromDate),
+      "ToDate": DateFormat('yyyy-MM-dd').format(widget.toDate),
+      "CustKey": widget.custKey,
+      "CoBr_Id": UserSession.coBrId,
+      "orderType": widget.orderType,
+      "All": false, // Get full report
+    };
+
+    print("Request Body: ${jsonEncode(requestBody)}");
+
     final response = await http.post(
       Uri.parse('${AppConstants.BASE_URL}/report/customer-wise1'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        "FromDate": DateFormat('yyyy-MM-dd').format(widget.fromDate),
-        "ToDate": DateFormat('yyyy-MM-dd').format(widget.toDate),
-        "CustKey": widget.custKey,
-        "CoBr_Id": UserSession.coBrId,
-        "orderType": widget.orderType,
-        "All": false,
-      }),
+      body: jsonEncode(requestBody),
     );
+
+    print("Response Status: ${response.statusCode}");
+    print("Response Body: ${response.body}");
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body) as List;
@@ -338,11 +344,10 @@ Future<List<Map<String, dynamic>>> _fetchCustomerWiseReport() async {
       throw Exception('Failed to load report: ${response.statusCode}');
     }
   } catch (e) {
-    print('Error fetching report: $e');
+    print('Error fetching full customer report: $e');
     return [];
   }
 }
-
 
   void _handleDownloadAll() {
     ScaffoldMessenger.of(
@@ -363,10 +368,10 @@ Future<List<Map<String, dynamic>>> _fetchCustomerWiseReport() async {
 void _handleViewAll() async {
   try {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Loading detailed report...')),
+      const SnackBar(content: Text('Generating report...')),
     );
 
-    final detailedData = await _fetchCustomerWiseReport();
+    final detailedData = await _fetchFullCustomerReport();
     
     if (detailedData.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -375,18 +380,8 @@ void _handleViewAll() async {
       return;
     }
 
-    // Navigate to a new screen to show the detailed report
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CustomerOrderDetailReportScreen(
-          customerName: widget.customerName,
-          fromDate: widget.fromDate,
-          toDate: widget.toDate,
-          reportData: detailedData,
-        ),
-      ),
-    );
+    // Generate and open PDF for the entire report
+    await _generateAndOpenFullPdf(detailedData);
   } catch (e) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Error: $e')),
@@ -394,6 +389,346 @@ void _handleViewAll() async {
   }
 }
 
+Future<void> _generateAndOpenFullPdf(List<Map<String, dynamic>> detailedData) async {
+  final pdf = await _generateFullCustomerPDF(detailedData);
+  final directory = await getApplicationDocumentsDirectory();
+  final filePath = '${directory.path}/customer_${widget.customerName}_orders.pdf';
+  final file = File(filePath);
+  await file.writeAsBytes(await pdf.save());
+  await OpenFile.open(file.path);
+}                               
+
+
+Future<pw.Document> _generateFullCustomerPDF(List<Map<String, dynamic>> detailedData) async {
+  final pdf = pw.Document();
+
+  final fromDate = DateFormat('dd-MM-yyyy').format(widget.fromDate);
+  final toDate = DateFormat('dd-MM-yyyy').format(widget.toDate);
+
+  // Group data by ItemName + OrderNo + Color
+  Map<String, List<Map<String, dynamic>>> groupedData = {};
+  for (var item in detailedData) {
+    String key = '${item['ItemName']}_${item['OrderNo']}_${item['Color']}';
+    groupedData.putIfAbsent(key, () => []).add(item);
+  }
+
+  // Function to get image URL
+  String _getImageUrl(Map<String, dynamic> item) {
+    print("ooooooooooooooooooooooooooooooooooo");
+    print(UserSession.onlineImage);
+    if (UserSession.onlineImage == '0') {
+      final imagePath = item['Style_Image'] ?? '';
+      final imageName = imagePath.split('/').last.split('?').first;
+      if (imageName.isEmpty) {
+        return '';
+      }
+      return '${AppConstants.BASE_URL}/images/$imageName';
+    } else if (UserSession.onlineImage == '1') {
+      return item['Style_Image'] ?? '';
+    }
+    return '';
+  }
+
+  // Function to load image for PDF
+  Future<pw.ImageProvider?> _loadImage(String imageUrl) async {
+    if (imageUrl.isEmpty) return null;
+    try {
+      final response = await http.get(Uri.parse(imageUrl));
+      if (response.statusCode == 200) {
+        return pw.MemoryImage(response.bodyBytes);
+      }
+    } catch (e) {
+      print('Error loading image $imageUrl: $e');
+    }
+    return null;
+  }
+
+  // Precompute table rows with images
+  List<pw.TableRow> tableRows = [];
+  
+  // Add table header
+  tableRows.add(
+    pw.TableRow(
+      decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+      children: [
+        pw.Padding(
+          padding: const pw.EdgeInsets.all(4),
+          child: pw.Text('No', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.all(4),
+          child: pw.Text(_appBarViewChecked ? 'Image/ItemName' : 'ItemName',
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.all(4),
+          child: pw.Text('Order No.', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.all(4),
+          child: pw.Text('Color', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.all(4),
+          child: pw.Text('Size', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.all(4),
+          child: pw.Text('Order Qty.', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.all(4),
+          child: pw.Text('Delv. Qty.', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.all(4),
+          child: pw.Text('Settle Qty.', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.all(4),
+          child: pw.Text('Pend. Qty.', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        ),
+      ],
+    ),
+  );
+
+  // Generate data rows
+  for (var entry in groupedData.entries) {
+    final groupItems = entry.value;
+    final groupRows = await Future.wait(
+      List.generate(groupItems.length, (i) async {
+        final item = groupItems[i];
+        final isFirstRow = i == 0;
+        final isLastRow = i == groupItems.length - 1;
+        final groupIndex = groupedData.keys.toList().indexOf(entry.key) + 1;
+
+        // Load image and display both image and ItemName for the first row if _appBarViewChecked is true
+        pw.Widget itemNameCell;
+        if (_appBarViewChecked && isFirstRow) {
+          final imageUrl = _getImageUrl(item);
+          final image = await _loadImage(imageUrl);
+          itemNameCell = pw.Container(
+            height: 60.0 * groupItems.length, // Increased height to accommodate both image and text
+            child: pw.Column(
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              children: [
+                image != null
+                    ? pw.Container(
+                        height: 40,
+                        child: pw.Image(image, fit: pw.BoxFit.contain),
+                      )
+                    : pw.Container(
+                        height: 40,
+                        alignment: pw.Alignment.center,
+                        child: pw.Text(
+                          '📷', // Unicode camera icon as a placeholder
+                          style: pw.TextStyle(fontSize: 20, color: PdfColors.grey),
+                        ),
+                      ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  item['ItemName']?.toString() ?? '',
+                  style: const pw.TextStyle(fontSize: 10),
+                ),
+              ],
+            ),
+          );
+        } else {
+          itemNameCell = isFirstRow
+              ? pw.Text(item['ItemName']?.toString() ?? '')
+              : pw.Text('');
+        }
+
+        // Custom border to remove horizontal lines within the group, except for the last row
+        final border = pw.TableBorder(
+          left: const pw.BorderSide(),
+          right: const pw.BorderSide(),
+          top: isFirstRow ? const pw.BorderSide() : pw.BorderSide.none,
+          bottom: isLastRow ? const pw.BorderSide() : pw.BorderSide.none,
+        );
+
+        return pw.TableRow(
+          decoration: pw.BoxDecoration(border: border),
+          children: [
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(4),
+              child: pw.Text(isFirstRow ? groupIndex.toString() : ''),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(4),
+              child: itemNameCell,
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(4),
+              child: pw.Text(isFirstRow ? '${item['OrderNo'] ?? ''}\n(${item['OrderDate'] ?? ''})' : ''),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(4),
+              child: pw.Text(isFirstRow ? item['Color']?.toString() ?? '' : ''),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(4),
+              child: pw.Text(item['Size']?.toString() ?? ''),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(4),
+              child: pw.Text((item['OrderQty'] ?? 0).toString()),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(4),
+              child: pw.Text((item['DelvQty'] ?? 0).toString()),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(4),
+              child: pw.Text((item['SettleQty'] ?? 0).toString()),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(4),
+              child: pw.Text((item['PendingQty'] ?? 0).toString()),
+            ),
+          ],
+        );
+      }),
+    );
+    tableRows.addAll(groupRows);
+  }
+
+  // Add total row
+  tableRows.add(
+    pw.TableRow(
+      decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+      children: [
+        pw.Padding(
+          padding: const pw.EdgeInsets.all(4),
+          child: pw.Text('Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        ),
+        for (int i = 0; i < 4; i++) pw.Text(''),
+        pw.Padding(
+          padding: const pw.EdgeInsets.all(4),
+          child: pw.Text(
+            detailedData.fold<int>(0, (sum, item) => sum + ((item['OrderQty'] ?? 0) as num).toInt()).toString(),
+            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+          ),
+        ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.all(4),
+          child: pw.Text(
+            detailedData.fold<int>(0, (sum, item) => sum + ((item['DelvQty'] ?? 0) as num).toInt()).toString(),
+            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+          ),
+        ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.all(4),
+          child: pw.Text(
+            detailedData.fold<int>(0, (sum, item) => sum + ((item['SettleQty'] ?? 0) as num).toInt()).toString(),
+            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+          ),
+        ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.all(4),
+          child: pw.Text(
+            detailedData.fold<int>(0, (sum, item) => sum + ((item['PendingQty'] ?? 0) as num).toInt()).toString(),
+            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  pdf.addPage(
+    pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      build: (context) {
+        return [
+          // Blue Header
+          pw.Container(
+            color: PdfColors.blue,
+            padding: const pw.EdgeInsets.all(10),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.center,
+                        children: [
+                          pw.Text(
+                            'Order Register - Party Wise',
+                            style: pw.TextStyle(
+                              fontSize: 16,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.white,
+                            ),
+                          ),
+                          pw.Text(
+                            UserSession.coBrName ?? 'VRS Software Pvt Ltd',
+                            style: pw.TextStyle(
+                              fontSize: 14,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.white,
+                            ),
+                          ),
+                          pw.Text(
+                            '1234567890',
+                            style: pw.TextStyle(
+                              fontSize: 12,
+                              color: PdfColors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    pw.Text(
+                      'Print Date: ${DateFormat('dd-MM-yyyy HH:mm:ss').format(DateTime.now())}',
+                      style: pw.TextStyle(fontSize: 10, color: PdfColors.white),
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 5),
+                pw.Text(
+                  'Date: $fromDate to $toDate',
+                  style: pw.TextStyle(fontSize: 12, color: PdfColors.white),
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 10),
+
+          // Party Name
+          pw.Text(
+            widget.customerName.toUpperCase(),
+            style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 10),
+
+          // Table
+          pw.Table(
+            border: pw.TableBorder.all(),
+            columnWidths: {
+              0: pw.FixedColumnWidth(25), // No
+              1: pw.FixedColumnWidth(100), // ItemName (or Image/ItemName if checked)
+              2: pw.FixedColumnWidth(75), // Order No.
+              3: pw.FixedColumnWidth(50), // Color
+              4: pw.FixedColumnWidth(40), // Size
+              5: pw.FixedColumnWidth(50), // Order Qty.
+              6: pw.FixedColumnWidth(50), // Delv. Qty.
+              7: pw.FixedColumnWidth(50), // Settle Qty.
+              8: pw.FixedColumnWidth(50), // Pend. Qty.
+            },
+            children: tableRows,
+          ),
+        ];
+      },
+    ),
+  );
+
+  return pdf;
+}
+ 
+ 
+ 
   Future<void> _launchWhatsApp(String phoneNumber) async {
   final whatsappUrl = "https://wa.me/$phoneNumber";
   if (await canLaunch(whatsappUrl)) {
@@ -885,6 +1220,7 @@ Row(
     );
   }
 }
+
 class _OrderPopupMenu extends StatelessWidget {
   final Map<String, dynamic> order;
   final bool viewChecked;
