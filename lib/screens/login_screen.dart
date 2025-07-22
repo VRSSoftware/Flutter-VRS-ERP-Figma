@@ -144,7 +144,13 @@ Future<void> _fetchCompanies() async {
       );
       if (response.statusCode == 200) {
         setState(() {
+          if(response.body!='1'){
+          UserSession.onlineImage ='0';
+
+          }else{
           UserSession.onlineImage = response.body.trim();
+
+          }
           print("Online Image Setting: ${UserSession.onlineImage}");
         });
       }
