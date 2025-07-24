@@ -10,6 +10,8 @@ import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/dashboard/data.dart';
@@ -114,6 +116,7 @@ class _CustomerOrderDetailsPageState extends State<CustomerOrderDetailsPage> {
       });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -348,22 +351,162 @@ class _CustomerOrderDetailsPageState extends State<CustomerOrderDetailsPage> {
     }
   }
 
-  void _handleDownloadAll() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Downloading all orders...')));
+  Future<String> _savePDF(pw.Document pdf, String fileNamePrefix) async {
+    String filePath = '';
+
+    try {
+      // Request storage permissions
+      if (Platform.isAndroid) {
+        var status = await Permission.storage.request();
+        if (!status.isGranted) {
+          status = await Permission.manageExternalStorage.request();
+          if (!status.isGranted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Storage permission denied')),
+            );
+            return '';
+          }
+        }
+      }
+
+      // Determine the downloads directory
+      Directory? downloadsDir;
+      if (Platform.isAndroid) {
+        downloadsDir = Directory('/storage/emulated/0/Download');
+        if (!await downloadsDir.exists()) {
+          downloadsDir = await getExternalStorageDirectory();
+        }
+      } else if (Platform.isIOS) {
+        downloadsDir = await getApplicationDocumentsDirectory();
+      }
+
+      if (downloadsDir != null) {
+        final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+        final file = File(
+          '${downloadsDir.path}/$fileNamePrefix$timestamp.pdf',
+        );
+        await file.writeAsBytes(await pdf.save());
+        filePath = file.path;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unable to access Downloads directory')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving PDF: $e')),
+      );
+    }
+
+    return filePath;
   }
 
-  void _handleWhatsAppShareAll() {
+  void _handleDownloadAll() async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Generating full report...')),
+      );
+
+      final detailedData = await _fetchFullCustomerReport();
+      if (detailedData.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No data available')),
+        );
+        return;
+      }
+
+      final pdf = await _generateFullCustomerPDF(detailedData);
+      final filePath = await _savePDF(pdf, 'CustomerOrderReport_');
+
+      if (filePath.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF saved to: $filePath'),
+            action: SnackBarAction(
+              label: 'Open',
+              onPressed: () => OpenFile.open(filePath),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
+  void _handleOrderDownload(Map<String, dynamic> order) async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Generating order: ${order['OrderNo']}...')),
+      );
+
+      final detailedData = await _fetchCustomerWiseReport(order['OrderId'] ?? 0);
+      if (detailedData.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No data available for this order')),
+        );
+        return;
+      }
+
+      final pdf = await _generatePDF(order, detailedData);
+      final filePath = await _savePDF(
+        pdf, 
+        'Order_${order['OrderNo']}_'
+      );
+
+      if (filePath.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF saved to: $filePath'),
+            action: SnackBarAction(
+              label: 'Open',
+              onPressed: () => OpenFile.open(filePath),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
+void _handleWhatsAppShareAll() async {
+  try {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Sharing all orders ${_appBarViewChecked ? 'with images' : ''}',
-        ),
-      ),
+      const SnackBar(content: Text('Generating and sharing full report...')),
+    );
+
+    final detailedData = await _fetchFullCustomerReport();
+    if (detailedData.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No data available to share')),
+      );
+      return;
+    }
+
+    final pdf = await _generateFullCustomerPDF(detailedData);
+    final directory = await getTemporaryDirectory();
+    final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+    final filePath = '${directory.path}/CustomerOrderReport_$timestamp.pdf';
+    final file = File(filePath);
+    await file.writeAsBytes(await pdf.save());
+
+    // Share the PDF using the native share dialog
+    await Share.shareFiles(
+      [filePath],
+      text: 'Customer Order Report',
+      subject: 'Customer Order Report',
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error sharing report: $e')),
     );
   }
-
+}
   void _handleViewAll() async {
     try {
       ScaffoldMessenger.of(
@@ -443,7 +586,7 @@ Future<pw.Document> _generateFullCustomerPDF(
     return null;
   }
 
-  // Precompute images for each group
+  // Precompute images for each group if checkbox is checked
   Map<String, pw.ImageProvider?> imageCache = {};
   if (_appBarViewChecked) {
     for (var key in groupedData.keys) {
@@ -465,13 +608,9 @@ Future<pw.Document> _generateFullCustomerPDF(
         num totalSettle = 0;
         num totalPend = 0;
 
-        // Add table header
-        widgets.add(
-          pw.Container(
-            color: PdfColors.grey200,
-            child: pw.Table(
-              border: pw.TableBorder.all(width: 0.5),
-              columnWidths: {
+        // Define column widths dynamically based on _appBarViewChecked
+        final columnWidths = _appBarViewChecked
+            ? {
                 0: const pw.FixedColumnWidth(30), // No
                 1: const pw.FixedColumnWidth(60), // Image
                 2: const pw.FixedColumnWidth(80), // ItemName
@@ -482,7 +621,26 @@ Future<pw.Document> _generateFullCustomerPDF(
                 7: const pw.FixedColumnWidth(40), // Delv.
                 8: const pw.FixedColumnWidth(40), // Settle
                 9: const pw.FixedColumnWidth(40), // Pend.
-              },
+              }
+            : {
+                0: const pw.FixedColumnWidth(30), // No
+                1: const pw.FixedColumnWidth(100), // ItemName (increased width)
+                2: const pw.FixedColumnWidth(100), // Order No. (increased width)
+                3: const pw.FixedColumnWidth(80), // Color (increased width)
+                4: const pw.FixedColumnWidth(40), // Size
+                5: const pw.FixedColumnWidth(40), // Ord.
+                6: const pw.FixedColumnWidth(40), // Delv.
+                7: const pw.FixedColumnWidth(40), // Settle
+                8: const pw.FixedColumnWidth(40), // Pend.
+              };
+
+        // Add table header
+        widgets.add(
+          pw.Container(
+            color: PdfColors.grey200,
+            child: pw.Table(
+              border: pw.TableBorder.all(width: 0.5),
+              columnWidths: columnWidths,
               children: [
                 pw.TableRow(
                   children: [
@@ -493,13 +651,14 @@ Future<pw.Document> _generateFullCustomerPDF(
                         style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                       ),
                     ),
-                    pw.Padding(
-                      padding: const pw.EdgeInsets.all(4),
-                      child: pw.Text(
-                        'Image',
-                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                    if (_appBarViewChecked)
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(4),
+                        child: pw.Text(
+                          'Image',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
                       ),
-                    ),
                     pw.Padding(
                       padding: const pw.EdgeInsets.all(4),
                       child: pw.Text(
@@ -570,23 +729,19 @@ Future<pw.Document> _generateFullCustomerPDF(
           num entryOrder = 0, entryDelv = 0, entrySettle = 0, entryPend = 0;
 
           // Create image cell
-          pw.Widget imageCell;
-          if (_appBarViewChecked) {
-            final image = imageCache[key];
-            imageCell = image != null
-                ? pw.Image(image, fit: pw.BoxFit.contain)
-                : pw.Text(
-                    'Image Not Available',
-                    style: pw.TextStyle(fontSize: 10, color: PdfColors.grey),
-                    textAlign: pw.TextAlign.center,
-                  );
-          } else {
-            imageCell = pw.Text(
-              '',
-              style: const pw.TextStyle(fontSize: 10),
-              textAlign: pw.TextAlign.center,
-            );
-          }
+          pw.Widget imageCell = _appBarViewChecked
+              ? (imageCache[key] != null
+                  ? pw.Image(imageCache[key]!, fit: pw.BoxFit.contain)
+                  : pw.Text(
+                      'Image Not Available',
+                      style: pw.TextStyle(fontSize: 10, color: PdfColors.grey),
+                      textAlign: pw.TextAlign.center,
+                    ))
+              : pw.Text(
+                  '',
+                  style: const pw.TextStyle(fontSize: 10),
+                  textAlign: pw.TextAlign.center,
+                );
 
           // Create itemName cell
           pw.Widget itemNameCell = pw.Text(
@@ -634,23 +789,35 @@ Future<pw.Document> _generateFullCustomerPDF(
 
           // Calculate maxCellHeight based on content
           final numRows = groupItems.length;
-          final baseRowHeight = 18.0; // Default height per row (10pt text + 4+4 padding)
+          final baseRowHeight = 18.0;
           final imageHeight = _appBarViewChecked ? 40.0 : baseRowHeight;
           final subtableHeight = numRows * baseRowHeight;
-          final maxCellHeight = (subtableHeight > imageHeight ? subtableHeight : imageHeight);
+          final maxCellHeight =
+              (subtableHeight > imageHeight ? subtableHeight : imageHeight);
           final rowHeight = maxCellHeight / numRows;
+
+          // Define row column widths
+          final rowColumnWidths = _appBarViewChecked
+              ? {
+                  0: const pw.FixedColumnWidth(30), // No
+                  1: const pw.FixedColumnWidth(60), // Image
+                  2: const pw.FixedColumnWidth(80), // ItemName
+                  3: const pw.FixedColumnWidth(80), // Order No.
+                  4: const pw.FixedColumnWidth(60), // Color
+                  5: const pw.FixedColumnWidth(200), // Subtable
+                }
+              : {
+                  0: const pw.FixedColumnWidth(30), // No
+                  1: const pw.FixedColumnWidth(100), // ItemName
+                  2: const pw.FixedColumnWidth(100), // Order No.
+                  3: const pw.FixedColumnWidth(80), // Color
+                  4: const pw.FixedColumnWidth(200), // Subtable
+                };
 
           widgets.add(
             pw.Table(
               border: pw.TableBorder.all(width: 0.5),
-              columnWidths: {
-                0: const pw.FixedColumnWidth(30), // No
-                1: const pw.FixedColumnWidth(60), // Image
-                2: const pw.FixedColumnWidth(80), // ItemName
-                3: const pw.FixedColumnWidth(80), // Order No.
-                4: const pw.FixedColumnWidth(60), // Color
-                5: const pw.FixedColumnWidth(200), // Subtable
-              },
+              columnWidths: rowColumnWidths,
               children: [
                 pw.TableRow(
                   children: [
@@ -660,12 +827,13 @@ Future<pw.Document> _generateFullCustomerPDF(
                       alignment: pw.Alignment.center,
                       child: pw.Text('$serial'),
                     ),
-                    pw.Container(
-                      height: maxCellHeight,
-                      padding: const pw.EdgeInsets.all(4),
-                      alignment: pw.Alignment.center,
-                      child: imageCell,
-                    ),
+                    if (_appBarViewChecked)
+                      pw.Container(
+                        height: maxCellHeight,
+                        padding: const pw.EdgeInsets.all(4),
+                        alignment: pw.Alignment.center,
+                        child: imageCell,
+                      ),
                     pw.Container(
                       height: maxCellHeight,
                       padding: const pw.EdgeInsets.all(4),
@@ -695,12 +863,20 @@ Future<pw.Document> _generateFullCustomerPDF(
                         3: const pw.FixedColumnWidth(40),
                         4: const pw.FixedColumnWidth(40),
                       },
-                      children: subTableRows.map((row) => pw.TableRow(
-                        children: row.children.map((cell) => pw.Container(
-                          height: rowHeight,
-                          child: cell,
-                        )).toList(),
-                      )).toList(),
+                      children: subTableRows
+                          .map(
+                            (row) => pw.TableRow(
+                              children: row.children
+                                  .map(
+                                    (cell) => pw.Container(
+                                      height: rowHeight,
+                                      child: cell,
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                          )
+                          .toList(),
                     ),
                   ],
                 ),
@@ -720,13 +896,21 @@ Future<pw.Document> _generateFullCustomerPDF(
         widgets.add(
           pw.Table(
             border: pw.TableBorder.all(width: 0.5),
-            columnWidths: {
-              0: const pw.FixedColumnWidth(315), // Merged column for No, Image, ItemName, Order No., Color, Size
-              1: const pw.FixedColumnWidth(36), // Ord
-              2: const pw.FixedColumnWidth(36), // Delv
-              3: const pw.FixedColumnWidth(36), // Settle
-              4: const pw.FixedColumnWidth(36), // Pend
-            },
+            columnWidths: _appBarViewChecked
+                ? {
+                    0: const pw.FixedColumnWidth(315), // Merged column
+                    1: const pw.FixedColumnWidth(40), // Ord
+                    2: const pw.FixedColumnWidth(40), // Delv
+                    3: const pw.FixedColumnWidth(40), // Settle
+                    4: const pw.FixedColumnWidth(40), // Pend
+                  }
+                : {
+                    0: const pw.FixedColumnWidth(350), // Merged column
+                    1: const pw.FixedColumnWidth(40), // Ord
+                    2: const pw.FixedColumnWidth(40), // Delv
+                    3: const pw.FixedColumnWidth(40), // Settle
+                    4: const pw.FixedColumnWidth(40), // Pend
+                  },
             children: [
               pw.TableRow(
                 decoration: const pw.BoxDecoration(color: PdfColors.grey300),
@@ -856,6 +1040,7 @@ Future<pw.Document> _generateFullCustomerPDF(
 
   return pdf;
 }
+ 
   Future<void> _launchWhatsApp(String phoneNumber) async {
     final whatsappUrl = "https://wa.me/$phoneNumber";
     if (await canLaunch(whatsappUrl)) {
@@ -1292,163 +1477,77 @@ Future<pw.Document> _generateFullCustomerPDF(
     );
   }
 
-  void _handleOrderDownload(Map<String, dynamic> order) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Downloading order: ${order['OrderNo']}')),
-    );
-  }
 
-  void _handleOrderWhatsAppShare(Map<String, dynamic> order) {
-    final withImage = _orderViewChecked[order['OrderNo']] ?? false;
+void _handleOrderWhatsAppShare(Map<String, dynamic> order) async {
+  try {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Sharing order ${order['OrderNo']} ${withImage ? 'with image' : ''}',
-        ),
-      ),
+      SnackBar(content: Text('Generating and sharing order: ${order['OrderNo']}...')),
     );
-  }
 
-  void _handleOrderView(Map<String, dynamic> order) {
-    final withImage = _orderViewChecked[order['OrderNo']] ?? false;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Viewing order ${order['OrderNo']} ${withImage ? 'with image' : ''}',
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSummaryCard(String title, String value) {
-    IconData iconData;
-    switch (title) {
-      case 'Total Orders':
-        iconData = Icons.receipt_long;
-        break;
-      case 'Total Qty':
-        iconData = Icons.format_list_numbered;
-        break;
-      case 'Total Amount':
-        iconData = Icons.currency_rupee;
-        break;
-      default:
-        iconData = Icons.info;
+    final detailedData = await _fetchCustomerWiseReport(order['OrderId'] ?? 0);
+    if (detailedData.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No data available for this order')),
+      );
+      return;
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color.fromARGB(255, 182, 181, 181)!),
-        borderRadius: BorderRadius.circular(0),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(iconData, size: 20, color: Colors.blue[700]),
-            const SizedBox(height: 6),
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
-              ),
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 3),
-            Text(
-              value,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: Colors.blue[900],
-              ),
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
+    final pdf = await _generatePDF(order, detailedData);
+    final directory = await getTemporaryDirectory();
+    final filePath = '${directory.path}/Order_${order['OrderNo']}.pdf';
+    final file = File(filePath);
+    await file.writeAsBytes(await pdf.save());
+
+    // Share the PDF using the native share dialog
+    await Share.shareFiles(
+      [filePath],
+      text: 'Order ${order['OrderNo']} Report',
+      subject: 'Order ${order['OrderNo']} Report',
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error sharing order: $e')),
     );
   }
 }
 
-class _OrderPopupMenu extends StatelessWidget {
-  final Map<String, dynamic> order;
-  final bool viewChecked;
-  final ValueChanged<bool> onViewCheckedChanged;
-  final VoidCallback onDownload;
-  final VoidCallback onWhatsApp;
-  final VoidCallback onView;
-  final String orderType;
-
-  const _OrderPopupMenu({
-    required this.order,
-    required this.viewChecked,
-    required this.onViewCheckedChanged,
-    required this.onDownload,
-    required this.onWhatsApp,
-    required this.onView,
-    required this.orderType,
-  });
-
   Future<List<Map<String, dynamic>>> _fetchCustomerWiseReport(int docId) async {
-    try {
-      final requestBody = {
-        "CoBr_Id": UserSession.coBrId,
-        "orderType": orderType,
-        "DocId": docId,
-        "All": true,
-      };
+  try {
+    final requestBody = {
+      "CoBr_Id": UserSession.coBrId,
+      "orderType": widget.orderType,
+      "DocId": docId,
+      "All": true,
+    };
 
-      print("📤 Request Body:\n${jsonEncode(requestBody)}");
+    print("📤 Request Body:\n${jsonEncode(requestBody)}");
 
-      final response = await http.post(
-        Uri.parse('${AppConstants.BASE_URL}/report/customer-wise'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(requestBody),
-      );
+    final response = await http.post(
+      Uri.parse('${AppConstants.BASE_URL}/report/customer-wise'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(requestBody),
+    );
 
-      print("📥 Response Body:\n${response.body}");
+    print("📥 Response Body:\n${response.body}");
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as List;
-        return data.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception('Failed to load report: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error fetching report: $e');
-      return [];
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as List;
+      return data.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Failed to load report: ${response.statusCode}');
     }
+  } catch (e) {
+    print('Error fetching report: $e');
+    return [];
   }
+}
 
-  Future<void> _generateAndOpenPdf(BuildContext context) async {
-    // Fetch detailed data
-    final detailedData = await _fetchCustomerWiseReport(order['OrderId'] ?? 0);
-
-    final pdf = await _generatePDF(order, detailedData); // Pass detailed data
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/order_${order['OrderNo']}.pdf');
-    await file.writeAsBytes(await pdf.save());
-
-    // Open the PDF
-    await OpenFile.open(file.path);
-  }
-
-
-// Modified _generatePDF method in _OrderPopupMenu class
 Future<pw.Document> _generatePDF(
   Map<String, dynamic> orderData,
   List<Map<String, dynamic>> detailedData,
 ) async {
   final pdf = pw.Document();
-  final bool withImage = viewChecked;
+  final bool withImage = _orderViewChecked[orderData['OrderNo']] ?? false;
   final fromDate = DateFormat('dd-MM-yyyy').format(
     DateFormat('yyyy-MM-dd').parse(
       detailedData.isNotEmpty ? detailedData[0]['FromDate'] : '2025-07-17',
@@ -1496,7 +1595,7 @@ Future<pw.Document> _generatePDF(
     return null;
   }
 
-  // Precompute images for each group
+  // Precompute images for each group if checkbox is checked
   Map<String, pw.ImageProvider?> imageCache = {};
   if (withImage) {
     for (var key in groupedData.keys) {
@@ -1518,24 +1617,39 @@ Future<pw.Document> _generatePDF(
         num totalSettle = 0;
         num totalPend = 0;
 
-        // Add table header
-        widgets.add(
-          pw.Container(
-            color: PdfColors.grey200,
-            child: pw.Table(
-              border: pw.TableBorder.all(width: 0.5),
-              columnWidths: {
+        // Define column widths dynamically based on withImage
+        final columnWidths = withImage
+            ? {
                 0: const pw.FixedColumnWidth(30), // No
                 1: const pw.FixedColumnWidth(60), // Image
                 2: const pw.FixedColumnWidth(80), // ItemName
                 3: const pw.FixedColumnWidth(80), // Order No.
                 4: const pw.FixedColumnWidth(60), // Color
                 5: const pw.FixedColumnWidth(40), // Size
-                6: const pw.FixedColumnWidth(40), // Order Qty.
-                7: const pw.FixedColumnWidth(40), // Delv. Qty.
-                8: const pw.FixedColumnWidth(40), // Settle Qty.
-                9: const pw.FixedColumnWidth(40), // Pend. Qty.
-              },
+                6: const pw.FixedColumnWidth(40), // Ord.
+                7: const pw.FixedColumnWidth(40), // Delv.
+                8: const pw.FixedColumnWidth(40), // Settle
+                9: const pw.FixedColumnWidth(40), // Pend.
+              }
+            : {
+                0: const pw.FixedColumnWidth(30), // No
+                1: const pw.FixedColumnWidth(100), // ItemName
+                2: const pw.FixedColumnWidth(100), // Order No.
+                3: const pw.FixedColumnWidth(80), // Color
+                4: const pw.FixedColumnWidth(40), // Size
+                5: const pw.FixedColumnWidth(40), // Ord.
+                6: const pw.FixedColumnWidth(40), // Delv.
+                7: const pw.FixedColumnWidth(40), // Settle
+                8: const pw.FixedColumnWidth(40), // Pend.
+              };
+
+        // Add table header
+        widgets.add(
+          pw.Container(
+            color: PdfColors.grey200,
+            child: pw.Table(
+              border: pw.TableBorder.all(width: 0.5),
+              columnWidths: columnWidths,
               children: [
                 pw.TableRow(
                   children: [
@@ -1546,13 +1660,14 @@ Future<pw.Document> _generatePDF(
                         style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                       ),
                     ),
-                    pw.Padding(
-                      padding: const pw.EdgeInsets.all(4),
-                      child: pw.Text(
-                        'Image',
-                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                    if (withImage)
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(4),
+                        child: pw.Text(
+                          'Image',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        ),
                       ),
-                    ),
                     pw.Padding(
                       padding: const pw.EdgeInsets.all(4),
                       child: pw.Text(
@@ -1623,23 +1738,19 @@ Future<pw.Document> _generatePDF(
           num entryOrder = 0, entryDelv = 0, entrySettle = 0, entryPend = 0;
 
           // Create image cell
-          pw.Widget imageCell;
-          if (withImage) {
-            final image = imageCache[key];
-            imageCell = image != null
-                ? pw.Image(image, fit: pw.BoxFit.contain)
-                : pw.Text(
-                    'Image Not Available',
-                    style: pw.TextStyle(fontSize: 10, color: PdfColors.grey),
-                    textAlign: pw.TextAlign.center,
-                  );
-          } else {
-            imageCell = pw.Text(
-              '',
-              style: const pw.TextStyle(fontSize: 10),
-              textAlign: pw.TextAlign.center,
-            );
-          }
+          pw.Widget imageCell = withImage
+              ? (imageCache[key] != null
+                  ? pw.Image(imageCache[key]!, fit: pw.BoxFit.contain)
+                  : pw.Text(
+                      'Image Not Available',
+                      style: pw.TextStyle(fontSize: 10, color: PdfColors.grey),
+                      textAlign: pw.TextAlign.center,
+                    ))
+              : pw.Text(
+                  '',
+                  style: const pw.TextStyle(fontSize: 10),
+                  textAlign: pw.TextAlign.center,
+                );
 
           // Create itemName cell
           pw.Widget itemNameCell = pw.Text(
@@ -1690,20 +1801,32 @@ Future<pw.Document> _generatePDF(
           final baseRowHeight = 18.0;
           final imageHeight = withImage ? 40.0 : baseRowHeight;
           final subtableHeight = numRows * baseRowHeight;
-          final maxCellHeight = (subtableHeight > imageHeight ? subtableHeight : imageHeight);
+          final maxCellHeight =
+              (subtableHeight > imageHeight ? subtableHeight : imageHeight);
           final rowHeight = maxCellHeight / numRows;
+
+          // Define row column widths
+          final rowColumnWidths = withImage
+              ? {
+                  0: const pw.FixedColumnWidth(30), // No
+                  1: const pw.FixedColumnWidth(60), // Image
+                  2: const pw.FixedColumnWidth(80), // ItemName
+                  3: const pw.FixedColumnWidth(80), // Order No.
+                  4: const pw.FixedColumnWidth(60), // Color
+                  5: const pw.FixedColumnWidth(200), // Subtable
+                }
+              : {
+                  0: const pw.FixedColumnWidth(30), // No
+                  1: const pw.FixedColumnWidth(100), // ItemName
+                  2: const pw.FixedColumnWidth(100), // Order No.
+                  3: const pw.FixedColumnWidth(80), // Color
+                  4: const pw.FixedColumnWidth(200), // Subtable
+                };
 
           widgets.add(
             pw.Table(
               border: pw.TableBorder.all(width: 0.5),
-              columnWidths: {
-                0: const pw.FixedColumnWidth(30), // No
-                1: const pw.FixedColumnWidth(60), // Image
-                2: const pw.FixedColumnWidth(80), // ItemName
-                3: const pw.FixedColumnWidth(80), // Order No.
-                4: const pw.FixedColumnWidth(60), // Color
-                5: const pw.FixedColumnWidth(200), // Subtable
-              },
+              columnWidths: rowColumnWidths,
               children: [
                 pw.TableRow(
                   children: [
@@ -1713,12 +1836,13 @@ Future<pw.Document> _generatePDF(
                       alignment: pw.Alignment.center,
                       child: pw.Text('$serial'),
                     ),
-                    pw.Container(
-                      height: maxCellHeight,
-                      padding: const pw.EdgeInsets.all(4),
-                      alignment: pw.Alignment.center,
-                      child: imageCell,
-                    ),
+                    if (withImage)
+                      pw.Container(
+                        height: maxCellHeight,
+                        padding: const pw.EdgeInsets.all(4),
+                        alignment: pw.Alignment.center,
+                        child: imageCell,
+                      ),
                     pw.Container(
                       height: maxCellHeight,
                       padding: const pw.EdgeInsets.all(4),
@@ -1748,12 +1872,20 @@ Future<pw.Document> _generatePDF(
                         3: const pw.FixedColumnWidth(40),
                         4: const pw.FixedColumnWidth(40),
                       },
-                      children: subTableRows.map((row) => pw.TableRow(
-                        children: row.children.map((cell) => pw.Container(
-                          height: rowHeight,
-                          child: cell,
-                        )).toList(),
-                      )).toList(),
+                      children: subTableRows
+                          .map(
+                            (row) => pw.TableRow(
+                              children: row.children
+                                  .map(
+                                    (cell) => pw.Container(
+                                      height: rowHeight,
+                                      child: cell,
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                          )
+                          .toList(),
                     ),
                   ],
                 ),
@@ -1773,13 +1905,21 @@ Future<pw.Document> _generatePDF(
         widgets.add(
           pw.Table(
             border: pw.TableBorder.all(width: 0.5),
-            columnWidths: {
-              0: const pw.FixedColumnWidth(350), // Merged column for No, Image, ItemName, Order No., Color, Size
-              1: const pw.FixedColumnWidth(40), // Ord
-              2: const pw.FixedColumnWidth(40), // Delv
-              3: const pw.FixedColumnWidth(40), // Settle
-              4: const pw.FixedColumnWidth(40), // Pend
-            },
+            columnWidths: withImage
+                ? {
+                    0: const pw.FixedColumnWidth(350), // Merged column
+                    1: const pw.FixedColumnWidth(40), // Ord
+                    2: const pw.FixedColumnWidth(40), // Delv
+                    3: const pw.FixedColumnWidth(40), // Settle
+                    4: const pw.FixedColumnWidth(40), // Pend
+                  }
+                : {
+                    0: const pw.FixedColumnWidth(390), // Merged column
+                    1: const pw.FixedColumnWidth(40), // Ord
+                    2: const pw.FixedColumnWidth(40), // Delv
+                    3: const pw.FixedColumnWidth(40), // Settle
+                    4: const pw.FixedColumnWidth(40), // Pend
+                  },
             children: [
               pw.TableRow(
                 decoration: const pw.BoxDecoration(color: PdfColors.grey300),
@@ -1914,6 +2054,131 @@ Future<pw.Document> _generatePDF(
 
   return pdf;
 }
+  void _handleOrderView(Map<String, dynamic> order) {
+    final withImage = _orderViewChecked[order['OrderNo']] ?? false;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Viewing order ${order['OrderNo']} ${withImage ? 'with image' : ''}',
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(String title, String value) {
+    IconData iconData;
+    switch (title) {
+      case 'Total Orders':
+        iconData = Icons.receipt_long;
+        break;
+      case 'Total Qty':
+        iconData = Icons.format_list_numbered;
+        break;
+      case 'Total Amount':
+        iconData = Icons.currency_rupee;
+        break;
+      default:
+        iconData = Icons.info;
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color.fromARGB(255, 182, 181, 181)!),
+        borderRadius: BorderRadius.circular(0),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(iconData, size: 20, color: Colors.blue[700]),
+            const SizedBox(height: 6),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              value,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Colors.blue[900],
+              ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+class _OrderPopupMenu extends StatelessWidget {
+  final Map<String, dynamic> order;
+  final bool viewChecked;
+  final ValueChanged<bool> onViewCheckedChanged;
+  final VoidCallback onDownload;
+  final VoidCallback onWhatsApp;
+  final VoidCallback onView;
+  final String orderType;
+
+  const _OrderPopupMenu({
+    required this.order,
+    required this.viewChecked,
+    required this.onViewCheckedChanged,
+    required this.onDownload,
+    required this.onWhatsApp,
+    required this.onView,
+    required this.orderType,
+  });
+
+  Future<void> _generateAndOpenPdf(BuildContext context) async {
+    try {
+      // Access the parent state to call methods
+      final parentState =
+          context.findAncestorStateOfType<_CustomerOrderDetailsPageState>();
+      if (parentState == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: Unable to access parent state')),
+        );
+        return;
+      }
+
+      // Fetch detailed data using the parent state's method
+      final detailedData =
+          await parentState._fetchCustomerWiseReport(order['OrderId'] ?? 0);
+
+      if (detailedData.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No data available for this order')),
+        );
+        return;
+      }
+
+      // Generate PDF using the parent state's method
+      final pdf = await parentState._generatePDF(order, detailedData);
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/order_${order['OrderNo']}.pdf');
+      await file.writeAsBytes(await pdf.save());
+
+      // Open the PDF
+      await OpenFile.open(file.path);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error generating PDF: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
@@ -1927,99 +2192,94 @@ Future<pw.Document> _generatePDF(
             onWhatsApp();
             break;
           case 'view':
-            await _generateAndOpenPdf(context); // Generate and open PDF
+            await _generateAndOpenPdf(context); // Use the updated method
             break;
           case 'withImage':
             break;
         }
       },
-      itemBuilder:
-          (BuildContext context) => <PopupMenuEntry<String>>[
-            PopupMenuItem<String>(
-              value: 'download',
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12.0,
-                  vertical: 0.0,
-                ),
-                leading: Icon(
-                  Icons.download,
-                  size: 18,
-                  color: Colors.blue[700],
-                ),
-                title: Text(
-                  'Download',
-                  style: GoogleFonts.poppins(fontSize: 12),
-                ),
-              ),
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+        PopupMenuItem<String>(
+          value: 'download',
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12.0,
+              vertical: 0.0,
             ),
-            PopupMenuItem<String>(
-              value: 'whatsapp',
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12.0,
-                  vertical: 0.0,
-                ),
-                leading: Icon(Icons.share, size: 18, color: Colors.blue[700]),
-                title: Text('Share', style: GoogleFonts.poppins(fontSize: 12)),
-              ),
+            leading: Icon(
+              Icons.download,
+              size: 18,
+              color: Colors.blue[700],
             ),
-            PopupMenuItem<String>(
-              value: 'view',
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12.0,
-                  vertical: 0.0,
-                ),
-                leading: Icon(
-                  Icons.visibility,
-                  size: 18,
-                  color: Colors.blue[700],
-                ),
-                title: Text('View', style: GoogleFonts.poppins(fontSize: 12)),
-              ),
+            title: Text(
+              'Download',
+              style: GoogleFonts.poppins(fontSize: 12),
             ),
-            PopupMenuItem<String>(
-              value: 'withImage',
-              child: StatefulBuilder(
-                builder: (BuildContext context, StateSetter setState) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12.0,
-                      vertical: 6.0,
-                    ),
-                 child: Row(
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'whatsapp',
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12.0,
+              vertical: 0.0,
+            ),
+            leading: Icon(Icons.share, size: 18, color: Colors.blue[700]),
+            title: Text('Share', style: GoogleFonts.poppins(fontSize: 12)),
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'view',
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12.0,
+              vertical: 0.0,
+            ),
+            leading: Icon(
+              Icons.visibility,
+              size: 18,
+              color: Colors.blue[700],
+            ),
+            title: Text('View', style: GoogleFonts.poppins(fontSize: 12)),
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'withImage',
+          child: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12.0,
+                  vertical: 6.0,
+                ),
+                child: Row(
                   children: [
                     Checkbox(
                       value: viewChecked,
                       onChanged: (bool? newValue) {
                         setState(() {
-                          // Update local state for immediate UI feedback
                           onViewCheckedChanged(newValue ?? false);
                         });
-                        // Also update the parent state immediately
-                        onViewCheckedChanged(newValue ?? false);
                       },
-                          activeColor: Colors.blue[700],
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: const VisualDensity(
-                            horizontal: -4,
-                            vertical: -4,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'With Image',
-                          style: GoogleFonts.poppins(fontSize: 12),
-                        ),
-                      ],
+                      activeColor: Colors.blue[700],
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: const VisualDensity(
+                        horizontal: -4,
+                        vertical: -4,
+                      ),
                     ),
-                  );
-                },
-              ),
-            ),
-          ],
+                    const SizedBox(width: 6),
+                    Text(
+                      'With Image',
+                      style: GoogleFonts.poppins(fontSize: 12),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
