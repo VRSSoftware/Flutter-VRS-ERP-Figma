@@ -142,96 +142,94 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text(
-          'Order Details',
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: AppColors.primaryColor,
-        elevation: 1,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.receipt_long, color: Colors.white, size: 24),
-            tooltip: 'Order Status',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const OrderStatus()),
-              );
-            },
+ appBar: AppBar(
+  title: const Text(
+    'Order Details',
+    style: TextStyle(color: Colors.white),
+  ),
+  backgroundColor: AppColors.primaryColor,
+  elevation: 1,
+  leading: IconButton(
+    icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+    onPressed: () => Navigator.pop(context),
+  ),
+  actions: [
+    IconButton(
+      icon: const Icon(Icons.receipt_long, color: Colors.white, size: 24),
+      tooltip: 'Order Status',
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const OrderStatus()),
+        );
+      },
+    ),
+    PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert, color: Colors.white),
+      offset: const Offset(0, 40), // Positions the menu below the three-dot icon
+      onSelected: (String value) {
+        switch (value) {
+          case 'download':
+            _handleDownload();
+            break;
+          case 'whatsapp':
+            _handleWhatsAppShare();
+            break;
+          case 'view':
+            _handleView();
+            break;
+        }
+      },
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+        const PopupMenuItem<String>(
+          value: 'download',
+          child: ListTile(
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 0.0,
+            ),
+            leading: Icon(
+              Icons.download,
+              size: 20,
+              color: Colors.blue,
+            ),
+            title: Text('Download'),
           ),
-
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onSelected: (String value) {
-              switch (value) {
-                case 'download':
-                  _handleDownload();
-                  break;
-                case 'whatsapp':
-                  _handleWhatsAppShare();
-                  break;
-                case 'view':
-                  _handleView();
-                  break;
-              }
-            },
-            itemBuilder:
-                (BuildContext context) => <PopupMenuEntry<String>>[
-                  const PopupMenuItem<String>(
-                    value: 'download',
-                    child: ListTile(
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 0.0,
-                      ),
-                      leading: Icon(
-                        Icons.download,
-                        size: 20,
-                        color: Colors.blue,
-                      ),
-                      title: Text('Download'),
-                    ),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'whatsapp',
-                    child: ListTile(
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 0.0,
-                      ),
-                      leading: FaIcon(
-                        FontAwesomeIcons.whatsapp,
-                        size: 20,
-                        color: Colors.green,
-                      ),
-                      title: Text('WhatsApp'),
-                    ),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'view',
-                    child: ListTile(
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 0.0,
-                      ),
-                      leading: FaIcon(
-                        FontAwesomeIcons.eye,
-                        size: 18,
-                        color: Colors.blue,
-                      ),
-                      title: Text('View'),
-                    ),
-                  ),
-                ],
+        ),
+        const PopupMenuItem<String>(
+          value: 'whatsapp',
+          child: ListTile(
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 0.0,
+            ),
+            leading: FaIcon(
+              FontAwesomeIcons.whatsapp,
+              size: 20,
+              color: Colors.green,
+            ),
+            title: Text('WhatsApp'),
           ),
-        ],
-      ),
-
+        ),
+        const PopupMenuItem<String>(
+          value: 'view',
+          child: ListTile(
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 0.0,
+            ),
+            leading: FaIcon(
+              FontAwesomeIcons.eye,
+              size: 18,
+              color: Colors.blue,
+            ),
+            title: Text('View'),
+          ),
+        ),
+      ],
+    ),
+  ],
+),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
         child: SingleChildScrollView(
