@@ -40,23 +40,39 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   bool isLoading = true;
   bool barcodeMode = false;
   ActiveTab _activeTab = ActiveTab.transaction;
+  double? mrkDown;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final args =
-          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-      if (args != null && args.containsKey('barcode')) {
+@override
+void initState() {
+  super.initState();
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+    if (args != null) {
+      if (args.containsKey('barcode')) {
         barcodeMode = args['barcode'] as bool;
       }
-      _initializeData();
-      _setInitialDates();
-      fetchAndPrintSalesOrderNumber();
-      _styleManager.updateTotalsCallback = _updateTotals;
-      _loadBookingTypes();
-    });
-  }
+
+      if (args.containsKey('mrkDown')) {
+        setState(() {
+          mrkDown = args['mrkDown'];
+        });
+
+        print("sssssssssssssssssssssssssss");
+        print(mrkDown);
+      }
+    }
+
+    _initializeData();
+    _setInitialDates();
+    fetchAndPrintSalesOrderNumber();
+    _styleManager.updateTotalsCallback = _updateTotals;
+    _loadBookingTypes();
+  });
+}
+
 
   Future<void> _loadBookingTypes() async {
     try {
@@ -321,6 +337,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => PdfViewerScreen(
+                      rptName: 'SalesOrder',
                       orderNo: formattedOrderNo,
                       whatsappNo: _orderControllers.whatsAppMobileNo,
                       partyName: _orderControllers.selectedPartyName ?? '', 

@@ -405,9 +405,9 @@ Widget build(BuildContext context) {
                 const Divider(),
                 ..._iconPaths.keys
                     .where((title) {
-                      if (UserSession.userType != 'C') return true;
-                      return title != 'Stock Report';
-                    })
+                        if (UserSession.userType != 'C') return true;
+                        return title != 'Stock Report' && title != 'Dashboard';
+                      })
                     .map((title) => _buildDrawerItem(title, _getRouteFromSection(title))),
                 const Divider(),
                 _buildLogoutButton(),

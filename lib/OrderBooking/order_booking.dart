@@ -65,7 +65,7 @@
 //       fcYrId: UserSession.userFcYr??'',
 //       barcode: showBarcodeWidget ? 'true' : 'false',
 //     );
-    
+
 //     final cartModel = Provider.of<CartModel>(context, listen: false);
 //     cartModel.updateCount(data['cartItemCount'] ?? 0);
 //   } catch (e) {
@@ -459,6 +459,7 @@
 //   }
 // }
 
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -470,8 +471,10 @@ import 'package:vrs_erp_figma/OrderBooking/orderbooking_drawer.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/dashboard/orderStatus.dart';
 import 'package:vrs_erp_figma/models/CartModel.dart';
+import 'package:vrs_erp_figma/models/PartyWithSpclMarkDwn.dart';
 import 'package:vrs_erp_figma/models/category.dart';
 import 'package:vrs_erp_figma/models/item.dart';
+import 'package:vrs_erp_figma/models/keyName.dart';
 import 'package:vrs_erp_figma/register/register.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
@@ -500,6 +503,8 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
   bool _isLoadingCategories = true;
   bool _isLoadingItems = false;
   bool hasFiltered = false;
+  List<PartyWithSpclMarkDwn> partyList = [];
+  PartyWithSpclMarkDwn? selectedParty;
   // int _cartItemCount = 0;
 
   Set<String> _activeFilters = {'mrp', 'wsp', 'shades', 'stylecode'};
@@ -519,7 +524,19 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
     if (coBr != null && fcYrId != null) {
       _fetchCartCount();
     }
+    fetchPartyList();
   }
+
+fetchPartyList() async {
+  final fetchedResponse = await ApiService.fetchPartyWithSpclMarkDwn(
+    ledCat: 'w',
+    coBrId: UserSession.coBrId ?? '',
+  );
+
+  setState(() {
+    partyList = List<PartyWithSpclMarkDwn>.from(fetchedResponse['result'] ?? []);
+  });
+}
 
   // Replace the existing _fetchCartCount method
   Future<void> _fetchCartCount() async {
@@ -579,21 +596,23 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
         ),
         backgroundColor: AppColors.primaryColor,
         elevation: 1,
-        leading: showBarcodeWidget
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                onPressed: () {
-                  setState(() {
-                    showBarcodeWidget = false;
-                  });
-                },
-              )
-            : Builder(
-                builder: (context) => IconButton(
-                  icon: const Icon(Icons.menu, color: Colors.white),
-                  onPressed: () => Scaffold.of(context).openDrawer(),
+        leading:
+            showBarcodeWidget
+                ? IconButton(
+                  icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                  onPressed: () {
+                    setState(() {
+                      showBarcodeWidget = false;
+                    });
+                  },
+                )
+                : Builder(
+                  builder:
+                      (context) => IconButton(
+                        icon: const Icon(Icons.menu, color: Colors.white),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                      ),
                 ),
-              ),
         automaticallyImplyLeading: false,
         // actions: [
         //   // Show filter icon only in barcode mode
@@ -695,66 +714,67 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
         //   //   ),
         //   // ),
         // ],
-      actions: [
-  // Cart Icon for both modes (Order Booking and Barcode)
-  IconButton(
-    icon: Stack(
-      children: [
-        const Icon(CupertinoIcons.cart_badge_plus, color: Colors.white),
-        if (cartModel.count >= 0)
-          Positioned(
-            right: 0,
-            top: 0,
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              constraints: const BoxConstraints(
-                minWidth: 14,
-                minHeight: 14,
-              ),
-              child: Text(
-                '${cartModel.count}',
-                style: const TextStyle(color: Colors.white, fontSize: 8),
-                textAlign: TextAlign.center,
-              ),
+        actions: [
+          // Cart Icon for both modes (Order Booking and Barcode)
+          IconButton(
+            icon: Stack(
+              children: [
+                const Icon(CupertinoIcons.cart_badge_plus, color: Colors.white),
+                if (cartModel.count >= 0)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 14,
+                        minHeight: 14,
+                      ),
+                      child: Text(
+                        '${cartModel.count}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
             ),
+            onPressed: () {
+              if (showBarcodeWidget) {
+                Navigator.pushNamed(
+                  context,
+                  '/viewOrder2',
+                  arguments: {'barcode': showBarcodeWidget},
+                ).then((_) => _fetchCartCount());
+              } else {
+                Navigator.pushNamed(
+                  context,
+                  '/viewOrder',
+                  arguments: {'barcode': showBarcodeWidget},
+                ).then((_) => _fetchCartCount());
+              }
+            },
           ),
-      ],
-    ),
-    onPressed: () {
-      if (showBarcodeWidget) {
-        Navigator.pushNamed(
-          context,
-          '/viewOrder2',
-          arguments: {'barcode': showBarcodeWidget},
-        ).then((_) => _fetchCartCount());
-      } else {
-        Navigator.pushNamed(
-          context,
-          '/viewOrder',
-          arguments: {'barcode': showBarcodeWidget},
-        ).then((_) => _fetchCartCount());
-      }
-    },
-  ),
 
-  // Orders icon
-  IconButton(
-    icon: const Icon(Icons.receipt_long, color: Colors.white, size: 24),
-    tooltip: 'My Orders',
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => RegisterPage()),
-      );
-    },
-  ),
-],
-
-      
+          // Orders icon
+          IconButton(
+            icon: const Icon(Icons.receipt_long, color: Colors.white, size: 24),
+            tooltip: 'My Orders',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => RegisterPage()),
+              );
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0), // Reduced padding
@@ -769,6 +789,92 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownSearch<PartyWithSpclMarkDwn>(
+                              items: partyList,
+                              selectedItem: selectedParty,
+                              itemAsString: (PartyWithSpclMarkDwn? u) => u?.ledName ?? '',
+                              onChanged:
+                                  (value) =>
+                                      setState(() => selectedParty = value),
+                              popupProps: PopupProps.menu(
+                                showSearchBox: true,
+                                containerBuilder:
+                                    (context, popupWidget) => Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(0),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.grey.withOpacity(0.5),
+                                            spreadRadius: 2,
+                                            blurRadius: 5,
+                                            offset: Offset(0, 3),
+                                          ),
+                                        ],
+                                      ),
+                                      child: popupWidget,
+                                    ),
+                              ),
+                              dropdownDecoratorProps: DropDownDecoratorProps(
+                                dropdownSearchDecoration: InputDecoration(
+                                  labelText: 'Select Party',
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(0),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // Row(
+                      //   children: [
+                      // DropdownSearch<KeyName>(
+                      //   items: ledgerList,
+                      //   selectedItem: selectedLedger,
+                      //   itemAsString: (KeyName? u) => u?.name ?? '',
+                      //   onChanged:
+                      //       (value) =>
+                      //           setState(() => selectedLedger = value),
+                      //   popupProps: PopupProps.menu(
+                      //     showSearchBox: true,
+                      //     containerBuilder:
+                      //         (context, popupWidget) => Container(
+                      //           decoration: BoxDecoration(
+                      //             color: Colors.white, // Menu background
+                      //             borderRadius: BorderRadius.circular(0),
+                      //             boxShadow: [
+                      //               BoxShadow(
+                      //                 color: Colors.grey.withOpacity(0.5),
+                      //                 spreadRadius: 2,
+                      //                 blurRadius: 5,
+                      //                 offset: Offset(0, 3),
+                      //               ),
+                      //             ],
+                      //           ),
+                      //           child: popupWidget,
+                      //         ),
+                      //   ),
+                      //   dropdownDecoratorProps: DropDownDecoratorProps(
+                      //     dropdownSearchDecoration: InputDecoration(
+                      //       labelText: 'Select Party',
+                      //       filled: true,
+                      //       fillColor: Colors.white,
+                      //       border: OutlineInputBorder(
+                      //         borderRadius: BorderRadius.circular(0),
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
+                      //   ],
+                      // ),
                       SizedBox(
                         width: double.infinity,
                         child: Row(
@@ -823,78 +929,93 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
                               ),
                             )
                             : Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                                child: Wrap(
-                                  spacing: 8, // Reduced gap between buttons
-                                  runSpacing: 10,
-                                  alignment: WrapAlignment.start,
-                                  children: _categories.map((category) {
-                                    return SizedBox(
-                                      width: buttonWidth, // Increased width
-                                      child: OutlinedButton(
-                                        onPressed: () {
-                                          setState(() {
-                                            // _selectedCategoryKey = category.itemSubGrpKey;
-                                            // _selectedCategoryName = category.itemSubGrpName;
-                                            // if (_selectedCategoryKey == '-1') {
-                                            //   _items = _allItems;
-                                            // } else {
-                                            //   _items = _allItems
-                                            //       .where(
-                                            //         (item) => item.itemSubGrpKey == _selectedCategoryKey,
-                                            //       )
-                                            //       .toList();
-                                            // }
-                                          });
-                                          Navigator.pushNamed(
-                                            context,
-                                            '/orderpage',
-                                            arguments: {
-                                              'itemKey': null,
-                                              'itemSubGrpKey': category.itemSubGrpKey,
-                                              'itemName': category.itemSubGrpName.trim(),
-                                              'coBr': coBr,
-                                              'fcYrId': fcYrId,
-                                            },
-                                          );
-                                        },
-                                        style: ButtonStyle(
-                                          backgroundColor: MaterialStateProperty.all(
-                                            _selectedCategoryKey == category.itemSubGrpKey
-                                                ? AppColors.primaryColor
-                                                : Colors.white,
-                                          ),
-                                          side: MaterialStateProperty.all(
-                                            BorderSide(
-                                              color: AppColors.primaryColor,
-                                              width: 1,
-                                            ),
-                                          ),
-                                          shape: MaterialStateProperty.all(
-                                            RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(0),
-                                            ),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          category.itemSubGrpName,
-                                          textAlign: TextAlign.center, // Center text
-                                          style: TextStyle(
-                                            color: _selectedCategoryKey == category.itemSubGrpKey
-                                                ? Colors.white
-                                                : AppColors.primaryColor,
-                                            fontSize: 14, // Consistent font size
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8.0,
                               ),
+                              child: Wrap(
+                                spacing: 8, // Reduced gap between buttons
+                                runSpacing: 10,
+                                alignment: WrapAlignment.start,
+                                children:
+                                    _categories.map((category) {
+                                      return SizedBox(
+                                        width: buttonWidth, // Increased width
+                                        child: OutlinedButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              // _selectedCategoryKey = category.itemSubGrpKey;
+                                              // _selectedCategoryName = category.itemSubGrpName;
+                                              // if (_selectedCategoryKey == '-1') {
+                                              //   _items = _allItems;
+                                              // } else {
+                                              //   _items = _allItems
+                                              //       .where(
+                                              //         (item) => item.itemSubGrpKey == _selectedCategoryKey,
+                                              //       )
+                                              //       .toList();
+                                              // }
+                                            });
+                                            Navigator.pushNamed(
+                                              context,
+                                              '/orderpage',
+                                              arguments: {
+                                                'itemKey': null,
+                                                'itemSubGrpKey':
+                                                    category.itemSubGrpKey,
+                                                'itemName':
+                                                    category.itemSubGrpName
+                                                        .trim(),
+                                                'coBr': coBr,
+                                                'fcYrId': fcYrId,
+                                                'selectedParty':selectedParty
+                                              },
+                                            );
+                                          },
+                                          style: ButtonStyle(
+                                            backgroundColor:
+                                                MaterialStateProperty.all(
+                                                  _selectedCategoryKey ==
+                                                          category.itemSubGrpKey
+                                                      ? AppColors.primaryColor
+                                                      : Colors.white,
+                                                ),
+                                            side: MaterialStateProperty.all(
+                                              BorderSide(
+                                                color: AppColors.primaryColor,
+                                                width: 1,
+                                              ),
+                                            ),
+                                            shape: MaterialStateProperty.all(
+                                              RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(0),
+                                              ),
+                                            ),
+                                          ),
+                                          child: Text(
+                                            category.itemSubGrpName,
+                                            textAlign:
+                                                TextAlign.center, // Center text
+                                            style: TextStyle(
+                                              color:
+                                                  _selectedCategoryKey ==
+                                                          category.itemSubGrpKey
+                                                      ? Colors.white
+                                                      : AppColors.primaryColor,
+                                              fontSize:
+                                                  14, // Consistent font size
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                              ),
+                            ),
                         const SizedBox(height: 20),
-                        if (_selectedCategoryKey != null) _buildCategoryItems(buttonWidth),
+                        if (_selectedCategoryKey != null)
+                          _buildCategoryItems(buttonWidth),
                       ],
-                    const Spacer(),
+                      const Spacer(),
                     ],
                   ),
                 ),
@@ -903,16 +1024,17 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
           },
         ),
       ),
-      bottomNavigationBar: BottomNavigationWidget(
-        currentIndex: 2, // Highlight Order icon
-        onTap: (index) {
-          if (index == 0) Navigator.pushNamed(context, '/home');
-          if (index == 1) Navigator.pushNamed(context, '/catalog');
-          if (index == 2) return; // Already on Order
-          if (index == 3) Navigator.pushNamed(context, '/stockReport');
-          if (index == 4) Navigator.pushNamed(context, '/dashboard');
-        },
-      ),
+      bottomNavigationBar: BottomNavigationWidget(currentScreen:  '/orderbooking',),
+      // bottomNavigationBar: BottomNavigationWidget(
+      //   currentIndex: 2, // Highlight Order icon
+      //   onTap: (index) {
+      //     if (index == 0) Navigator.pushNamed(context, '/home');
+      //     if (index == 1) Navigator.pushNamed(context, '/catalog');
+      //     if (index == 2) return; // Already on Order
+      //     if (index == 3) Navigator.pushNamed(context, '/stockReport');
+      //     if (index == 4) Navigator.pushNamed(context, '/dashboard');
+      //   },
+      // ),
     );
   }
 
@@ -932,57 +1054,59 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
         const SizedBox(height: 10),
         _isLoadingItems
             ? Center(
-                              child: LoadingAnimationWidget.waveDots(
-                                color: AppColors.primaryColor,
-                                size: 30,
-                              ),
-                            )
-            : Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Wrap(
-                  spacing: 8, // Reduced gap between buttons
-                  runSpacing: 10,
-                  alignment: WrapAlignment.start,
-                  children: _items.map((item) {
-                    return SizedBox(
-                      width: buttonWidth, // Increased width
-                      height: buttonHeight,
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.grey.shade300),
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(0), 
-                          ),
-                        ),
-                        onPressed: () {
-                          print(item.itemKey);
-                          print(item.itemSubGrpKey);
-                          Navigator.pushNamed(
-                            context,
-                            '/orderpage',
-                            arguments: {
-                              'itemKey': item.itemKey,
-                              'itemName': item.itemName.trim(),
-                              'itemSubGrpKey': item.itemSubGrpKey,
-                              'coBr': coBr,
-                              'fcYrId': fcYrId,
-                            },
-                          ).then((_) => _fetchCartCount());
-                        },
-                        child: Text( 
-                          item.itemName,
-                          textAlign: TextAlign.center, 
-                          style: const TextStyle(
-                            color: Colors.black87,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
+              child: LoadingAnimationWidget.waveDots(
+                color: AppColors.primaryColor,
+                size: 30,
               ),
+            )
+            : Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Wrap(
+                spacing: 8, // Reduced gap between buttons
+                runSpacing: 10,
+                alignment: WrapAlignment.start,
+                children:
+                    _items.map((item) {
+                      return SizedBox(
+                        width: buttonWidth, // Increased width
+                        height: buttonHeight,
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.grey.shade300),
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(0),
+                            ),
+                          ),
+                          onPressed: () {
+                            print(item.itemKey);
+                            print(item.itemSubGrpKey);
+                            Navigator.pushNamed(
+                              context,
+                              '/orderpage',
+                              arguments: {
+                                'itemKey': item.itemKey,
+                                'itemName': item.itemName.trim(),
+                                'itemSubGrpKey': item.itemSubGrpKey,
+                                'coBr': coBr,
+                                'fcYrId': fcYrId,
+                                'selectedParty':selectedParty
+                              },
+                            ).then((_) => _fetchCartCount());
+                          },
+                          child: Text(
+                            item.itemName,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.black87,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+              ),
+            ),
       ],
     );
   }

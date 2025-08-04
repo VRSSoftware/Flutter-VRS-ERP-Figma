@@ -687,14 +687,15 @@ Future<void> _fetchCatalogItems() async {
         child: Icon(Icons.filter_alt_outlined, color: Colors.white),
         tooltip: 'Filter',
       ),
-      bottomNavigationBar: BottomNavigationWidget(
-        currentIndex: 1,
-        onTap: (index) {
-          if (index == 0) Navigator.pushNamed(context, '/home');
-          if (index == 1) return;
-          if (index == 2) Navigator.pushNamed(context, '/orderbooking');
-        },
-      ),
+      bottomNavigationBar: BottomNavigationWidget(currentScreen:  '/catalog',),
+      // bottomNavigationBar: BottomNavigationWidget(
+      //   currentIndex: 1,
+      //   onTap: (index) {
+      //     if (index == 0) Navigator.pushNamed(context, '/home');
+      //     if (index == 1) return;
+      //     if (index == 2) Navigator.pushNamed(context, '/orderbooking');
+      //   },
+      // ),
     );
   }
 

@@ -1146,16 +1146,17 @@ class _StockReportPageState extends State<StockReportPage> {
           tooltip: 'Filter Options',
         ),
       ),
-      bottomNavigationBar: BottomNavigationWidget(
-        currentIndex: 4, // 👈 Highlight Order icon
-        onTap: (index) {
-          if (index == 0) Navigator.pushNamed(context, '/home');
-          if (index == 1) Navigator.pushNamed(context, '/catalog');
-          if (index == 2) Navigator.pushNamed(context, '/orderbooking');
-          if (index == 3) Navigator.pushNamed(context, '/dashboard');
-          if (index == 4) return;
-        },
-      ),
+      bottomNavigationBar: BottomNavigationWidget(currentScreen:  '/stockReport',),
+      // bottomNavigationBar: BottomNavigationWidget(
+      //   currentIndex: 4, // 👈 Highlight Order icon
+      //   onTap: (index) {
+      //     if (index == 0) Navigator.pushNamed(context, '/home');
+      //     if (index == 1) Navigator.pushNamed(context, '/catalog');
+      //     if (index == 2) Navigator.pushNamed(context, '/orderbooking');
+      //     if (index == 3) Navigator.pushNamed(context, '/dashboard');
+      //     if (index == 4) return;
+      //   },
+      // ),
     );
   }
 

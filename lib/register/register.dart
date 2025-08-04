@@ -1502,6 +1502,7 @@ Expanded(
                         context,
                         MaterialPageRoute(
                           builder: (context) => PdfViewerScreen(
+                            rptName: 'SalesOrder',
                             orderNo: registerOrder.orderId,
                             whatsappNo: registerOrder.whatsAppMobileNo,
                                   partyName: registerOrder.partyName, // Use partyLedKey from RegisterOrder

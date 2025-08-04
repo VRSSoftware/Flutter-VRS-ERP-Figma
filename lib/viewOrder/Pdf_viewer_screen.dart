@@ -14,6 +14,7 @@ class PdfViewerScreen extends StatefulWidget {
   final String? whatsappNo;
     final String partyName; 
      final String orderDate; 
+     final String rptName;
 
   const PdfViewerScreen({
     Key? key,
@@ -21,6 +22,7 @@ class PdfViewerScreen extends StatefulWidget {
     required this.whatsappNo,
     required this.partyName,
      required this.orderDate, 
+     required this.rptName,
   }) : super(key: key);
 
   @override
@@ -28,7 +30,8 @@ class PdfViewerScreen extends StatefulWidget {
 }
 
 class _PdfViewerScreenState extends State<PdfViewerScreen> {
-  String? filePath;
+  String? filePath = '';
+  String rptName = '';
   bool isLoading = true;
 
   @override
@@ -40,10 +43,19 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   Future<void> _loadPdf() async {
     try {
       final docId = widget.orderNo.replaceAll(RegExp(r'[^0-9]'), '');
+      rptName = widget.rptName;
       final dio = Dio();
       final response = await dio.post(
-        '${AppConstants.Pdf_url}/api/values/order4',
-        data: {"doc_id": docId},
+        // '${AppConstants.Pdf_url}/api/values/order5',
+        '${AppConstants.Pdf_url}/api/order/pdf',
+        data: {"doc_id": docId,
+        "rptName": rptName,
+        "dbName": UserSession.dbName,
+        "dbUser": UserSession.dbUser,
+        "dbPassword": UserSession.dbPassword,
+        "dbServer": UserSession.dbSourceForRpt,
+        "rptPath": UserSession.rptPath,
+        },
         options: Options(responseType: ResponseType.bytes),
       );
 
@@ -56,6 +68,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         setState(() {
           filePath = path;
           isLoading = false;
+          rptName = widget.rptName;
         });
       } else {
         _showError('Failed to load PDF: ${response.statusCode}');

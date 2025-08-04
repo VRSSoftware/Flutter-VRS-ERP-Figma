@@ -439,28 +439,30 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
       ),
-      bottomNavigationBar: BottomNavigationWidget(
-        currentIndex: 0,
-        onTap: (index) {
-          if (index == 0) return;
-          if (index == 1) {
-            setState(() => selectedFeature = 'Catalog');
-            Navigator.pushNamed(context, '/catalog');
-          } else if (index == 2) {
-            setState(() => selectedFeature = 'Order Booking');
-            Navigator.pushNamed(context, '/orderbooking');
-          } else if (index == 3) {
-            setState(() => selectedFeature = 'Stock Report');
-            Navigator.pushNamed(context, '/stockReport');
-          } else if (index == 4) {
-            setState(() => selectedFeature = 'Dashboard');
-            Navigator.pushNamed(context, '/dashboard');
-          } else if (index == 5) {
-            setState(() => selectedFeature = 'Order Register');
-            Navigator.pushNamed(context, '/orderRegister');
-          }
-        },
-      ),
+     
+      bottomNavigationBar:  BottomNavigationWidget(currentScreen:  '/home',),
+      // bottomNavigationBar: BottomNavigationWidget(
+      //   currentIndex: 0,
+      //   onTap: (index) {
+      //     if (index == 0) return;
+      //     if (index == 1) {
+      //       setState(() => selectedFeature = 'Catalog');
+      //       Navigator.pushNamed(context, '/catalog');
+      //     } else if (index == 2) {
+      //       setState(() => selectedFeature = 'Order Booking');
+      //       Navigator.pushNamed(context, '/orderbooking');
+      //     } else if (index == 3) {
+      //       setState(() => selectedFeature = 'Stock Report');
+      //       Navigator.pushNamed(context, '/stockReport');
+      //     } else if (index == 4) {
+      //       setState(() => selectedFeature = 'Dashboard');
+      //       Navigator.pushNamed(context, '/dashboard');
+      //     } else if (index == 5) {
+      //       setState(() => selectedFeature = 'Order Register');
+      //       Navigator.pushNamed(context, '/orderRegister');
+      //     }
+      //   },
+      // ),
     );
   }
 
@@ -519,6 +521,17 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           _buildFeatureButton(
             context,
+            'assets/images/register.png',
+            'Sale Bill Register',
+            () {
+              setState(() => selectedFeature = 'Sale Bill Register');
+              Navigator.pushNamed(context, '/saleBillRegister');
+            },
+            buttonWidth,
+          ),
+          UserSession.userType == 'A'?
+          _buildFeatureButton(
+            context,
             'assets/images/report.png',
             'Stock Report',
             () {
@@ -526,7 +539,8 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.pushNamed(context, '/stockReport');
             },
             buttonWidth,
-          ),
+          ) : Container(),
+          UserSession.userType == 'A'?
           _buildFeatureButton(
             context,
             'assets/images/dashboard.png',
@@ -536,7 +550,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.pushNamed(context, '/dashboard');
             },
             buttonWidth,
-          ),
+          ) : Container(),
         ],
       ),
     );

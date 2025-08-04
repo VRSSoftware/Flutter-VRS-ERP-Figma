@@ -74,6 +74,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
         "transporter": EditOrderData.transporterKey,
         "remark": EditOrderData.remark,
         "delivaryday": EditOrderData.deliveryDays,
+        "customer":EditOrderData.partyKey,
       },
       "items":
           EditOrderData.data.expand((item) {

@@ -8,12 +8,15 @@ import 'package:vrs_erp_figma/dashboard/dashboard.dart';
 import 'package:vrs_erp_figma/models/CartModel.dart';
 import 'package:vrs_erp_figma/privacypolicy/deleteAccount.dart';
 import 'package:vrs_erp_figma/privacypolicy/privacypolicy.dart';
+import 'package:vrs_erp_figma/register/packing.dart';
 import 'package:vrs_erp_figma/register/register.dart';
 import 'package:vrs_erp_figma/catalog/catalog_screen.dart';
+import 'package:vrs_erp_figma/register/saleBillRegister.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 
 import 'package:vrs_erp_figma/screens/home_screen.dart';
 import 'package:vrs_erp_figma/screens/login_screen.dart';
+import 'package:vrs_erp_figma/screens/mdns/MdnsDiscoveryScreen.dart';
 import 'package:vrs_erp_figma/screens/splash_screen.dart';
 import 'package:vrs_erp_figma/stockReport/stockreportpage.dart';
 import 'package:vrs_erp_figma/viewOrder/view_order.dart';
@@ -71,10 +74,13 @@ class MyApp extends StatelessWidget {
         '/deleteAccount': (context) => DeleteAccountPage(),
         '/setting': (context) => PrivacyPolicyPage(),
         '/drawer': (context) => DrawerScreen(),
+        '/packingOrders': (context) => PackingPage(),
+        '/saleBillRegister': (context) => SaleBillRegisterPage(),
       },
 
-      // home: LoginScreen(),
-      home: SplashScreen(),
+      home: LoginScreen(),
+      // home: SplashScreen(),
+      // home: MdnsDiscoveryScreen(),
     );
   }
 }

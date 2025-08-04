@@ -431,6 +431,7 @@ class _ViewOrderScreenBarcodeState extends State<ViewOrderScreenBarcode> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => PdfViewerScreen(
+                      rptName: '',
                       orderNo: formattedOrderNo, // Use formatted order number
                       whatsappNo: _orderControllers.whatsAppMobileNo,
                       partyName: _orderControllers.selectedPartyName ?? '', 

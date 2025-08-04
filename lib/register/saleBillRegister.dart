@@ -28,12 +28,12 @@ import 'package:vrs_erp_figma/viewOrder/editViewOrder/edit_order_screen.dart';
 import '../constants/app_constants.dart';
 import '../models/consignee.dart';
 
-class PackingPage extends StatefulWidget {
+class SaleBillRegisterPage extends StatefulWidget {
   @override
-  _PackingPageState createState() => _PackingPageState();
+  _SaleBillRegisterPageState createState() => _SaleBillRegisterPageState();
 }
 
-class _PackingPageState extends State<PackingPage> {
+class _SaleBillRegisterPageState extends State<SaleBillRegisterPage> {
   bool isLoading = false;
   List<RegisterOrder> registerOrderList = [];
   DateTime? fromDate;
@@ -135,7 +135,7 @@ class _PackingPageState extends State<PackingPage> {
     });
 
     try {
-      final orders = await ApiService.fetchPackingRegister(
+      final orders = await ApiService.fetchSaleBillRegister(
         fromDate: fromDateController.text,
         toDate: toDateController.text,
         custKey:
@@ -337,15 +337,14 @@ class _PackingPageState extends State<PackingPage> {
                                     try {
                                       final dio = Dio();
                                       final response = await dio.post(
-                                        '${AppConstants.Pdf_url}/api/values5',
+                                        '${AppConstants.Pdf_url}/api/values/order5',
                                         data: {
                                           "doc_id": docId,
-                                          "rptName": 'Packing',
+                                          "rptName": "SaleBillGST",
                                           "dbName": UserSession.dbName,
                                           "dbUser": UserSession.dbUser,
                                           "dbPassword": UserSession.dbPassword,
-                                          "dbServer":
-                                              UserSession.dbSourceForRpt,
+                                          "dbServer":UserSession.dbSourceForRpt,
                                           "rptPath": UserSession.rptPath,
                                         },
                                         options: Options(
@@ -437,7 +436,7 @@ class _PackingPageState extends State<PackingPage> {
                             '${AppConstants.Pdf_url}/api/values/order5',
                             data: {
                               "doc_id": registerOrder.orderId,
-                              "rptName": 'Packing',
+                              "rptName": "SaleBillGST",
                               "dbName": UserSession.dbName,
                               "dbUser": UserSession.dbUser,
                               "dbPassword": UserSession.dbPassword,
@@ -542,7 +541,7 @@ class _PackingPageState extends State<PackingPage> {
                           MaterialPageRoute(
                             builder:
                                 (context) => PdfViewerScreen(
-                                  rptName: 'Packing',
+                                  rptName: 'SaleBillGST',
                                   orderNo: registerOrder.orderId,
                                   whatsappNo: registerOrder.whatsAppMobileNo,
                                   partyName: registerOrder.partyName,
@@ -957,7 +956,7 @@ class _PackingPageState extends State<PackingPage> {
       drawer: DrawerScreen(),
       appBar: AppBar(
         title: const Text(
-          'Packing Register',
+          'Sale Bill Register',
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: AppColors.primaryColor,

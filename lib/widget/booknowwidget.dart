@@ -838,6 +838,7 @@ class CatalogBookingTable extends StatefulWidget {
   final String styleKey;
   final VoidCallback onSuccess;
   final bool? isEdit;
+  final double? markDwn;
 
   const CatalogBookingTable({
     super.key,
@@ -846,6 +847,7 @@ class CatalogBookingTable extends StatefulWidget {
     required this.styleKey,
     required this.onSuccess,
     this.isEdit,
+    this.markDwn,
   });
 
   @override
@@ -872,6 +874,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
   List<String> _copiedRow = [];
   TextEditingController noteController = TextEditingController();
   bool isEdit = false;
+  double? markDwn = 0.0;
 
   int get totalQty {
     int total = 0;
@@ -891,6 +894,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
     styleKey = widget.styleKey;
     setState(() {
       isEdit = widget.isEdit ?? false;
+      markDwn = widget.markDwn;
     });
     fetchCatalogData();
   }
@@ -932,7 +936,13 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
         sizeWspMap = {};
         for (var item in items) {
           sizeMrpMap[item.sizeName] = item.mrp;
-          sizeWspMap[item.sizeName] = item.wsp;
+          if (markDwn == 0.0 || markDwn == null) {
+            sizeWspMap[item.sizeName] = item.wsp;
+          } else {
+            double mrp = item.mrp;
+            double discountedWsp = mrp - (mrp * markDwn! / 100);
+            sizeWspMap[item.sizeName] = discountedWsp;
+          }
         }
 
         setState(() {
@@ -1140,7 +1150,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
               columnWidths: _buildColumnWidths(maxWidth),
               children: [
                 _buildPriceRow("MRP", sizeMrpMap, FontWeight.w600),
-                _buildPriceRow("WSP", sizeWspMap, FontWeight.w400),
+                _buildPriceRow(markDwn==0.0? "WSP" : "Rate", sizeWspMap, FontWeight.w400),
                 _buildHeaderRow(),
                 for (var i = 0; i < colors.length; i++)
                   _buildQuantityRow(colors[i], i),
@@ -1659,26 +1669,42 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
         context,
         MaterialPageRoute(builder: (context) => EditOrderScreen(docId: "-1")),
       );
-    }
-    else{
-
-    try {
-      final responses = await Future.wait(apiCalls);
-      if (responses.every((r) => r.statusCode == 200)) {
+    } else {
+      try {
+        final responses = await Future.wait(apiCalls);
+        if (responses.every((r) => r.statusCode == 200)) {
+          if (mounted) {
+            showDialog(
+              context: context,
+              builder:
+                  (_) => AlertDialog(
+                    title: const Text("Success"),
+                    content: const Text("Booking submitted."),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.pop(context);
+                          widget.onSuccess();
+                        },
+                        child: const Text("OK"),
+                      ),
+                    ],
+                  ),
+            );
+          }
+        }
+      } catch (e) {
         if (mounted) {
           showDialog(
             context: context,
             builder:
                 (_) => AlertDialog(
-                  title: const Text("Success"),
-                  content: const Text("Booking submitted."),
+                  title: const Text("Error"),
+                  content: Text("Failed to submit: $e"),
                   actions: [
                     TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.pop(context);
-                        widget.onSuccess();
-                      },
+                      onPressed: () => Navigator.pop(context),
                       child: const Text("OK"),
                     ),
                   ],
@@ -1686,25 +1712,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
           );
         }
       }
-    } catch (e) {
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder:
-              (_) => AlertDialog(
-                title: const Text("Error"),
-                content: Text("Failed to submit: $e"),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text("OK"),
-                  ),
-                ],
-              ),
-        );
-      }
     }
-  }
   }
 }
 

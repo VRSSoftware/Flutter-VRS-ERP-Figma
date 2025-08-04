@@ -212,6 +212,7 @@ Future<void> _fetchCompanies() async {
         UserSession.dbUser = data['dbUserName'];
         UserSession.dbPassword = data['dbPassword'];
         UserSession.dbSource = data['dbSource'];
+        // UserSession.dbSourceForRpt = data['dbSourceForRpt'];
         UserSession.dbSourceForRpt = data['dbSourceForRpt'];
       });
       

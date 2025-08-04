@@ -10,6 +10,7 @@ import 'package:vrs_erp_figma/OrderBooking/booking2/multipleorderbooking.dart';
 import 'package:vrs_erp_figma/catalog/filter.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/models/CartModel.dart';
+import 'package:vrs_erp_figma/models/PartyWithSpclMarkDwn.dart';
 import 'package:vrs_erp_figma/models/brand.dart';
 import 'package:vrs_erp_figma/models/catalog.dart';
 import 'package:vrs_erp_figma/models/shade.dart';
@@ -59,13 +60,15 @@ class _OrderPageState extends State<OrderPage> {
   List<Brand> selectedBrands = [];
   bool isEdit = false;
   String itemNamee = '';
+  PartyWithSpclMarkDwn? selectedParty;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
       if (args != null) {
         setState(() {
@@ -75,6 +78,7 @@ class _OrderPageState extends State<OrderPage> {
           fcYrId = UserSession.userFcYr;
           itemNamee = args['itemName']?.toString() ?? '';
           isEdit = args['edit'] ?? false;
+          selectedParty = args['selectedParty'];
         });
 
         if (coBr != null && fcYrId != null) {
@@ -104,7 +108,9 @@ class _OrderPageState extends State<OrderPage> {
 
   Future<void> _fetchStylesByItemGrpKey(String itemGrpKey) async {
     try {
-      final fetchedStyles = await ApiService.fetchStylesByItemGrpKey(itemGrpKey);
+      final fetchedStyles = await ApiService.fetchStylesByItemGrpKey(
+        itemGrpKey,
+      );
       setState(() {
         styles = fetchedStyles;
       });
@@ -145,7 +151,9 @@ class _OrderPageState extends State<OrderPage> {
           sizes = fetchedSizes;
         });
       } else if (itemSubGrpKey != null) {
-        final fetchedSizes = await ApiService.fetchStylesSizeByItemGrpKey(itemSubGrpKey!);
+        final fetchedSizes = await ApiService.fetchStylesSizeByItemGrpKey(
+          itemSubGrpKey!,
+        );
         setState(() {
           sizes = fetchedSizes;
         });
@@ -180,16 +188,19 @@ class _OrderPageState extends State<OrderPage> {
     if (cartModel.addedItems.contains(item.styleCode)) {
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Item Already Booked'),
-          content: Text('The item "${item.styleCodeWithcount}" is already in your cart.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
+        builder:
+            (context) => AlertDialog(
+              title: const Text('Item Already Booked'),
+              content: Text(
+                'The item "${item.styleCodeWithcount}" is already in your cart.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
             ),
-          ],
-        ),
       );
       return;
     }
@@ -243,9 +254,18 @@ class _OrderPageState extends State<OrderPage> {
         cobr: coBr!,
         sortBy: sortBy,
         // styleKey: selectedStyles.length == 1 ? selectedStyles[0].styleKey : null,
-        styleKey: selectedStyles.isEmpty ? null : selectedStyles.map((s) => s.styleKey).join(','),
-        shadeKey: selectedShades.isEmpty ? null : selectedShades.map((s) => s.shadeKey).join(','),
-        sizeKey: selectedSize.isEmpty ? null : selectedSize.map((s) => s.itemSizeKey).join(','),
+        styleKey:
+            selectedStyles.isEmpty
+                ? null
+                : selectedStyles.map((s) => s.styleKey).join(','),
+        shadeKey:
+            selectedShades.isEmpty
+                ? null
+                : selectedShades.map((s) => s.shadeKey).join(','),
+        sizeKey:
+            selectedSize.isEmpty
+                ? null
+                : selectedSize.map((s) => s.itemSizeKey).join(','),
         fromMRP: fromMRP.isEmpty ? null : fromMRP,
         toMRP: toMRP.isEmpty ? null : toMRP,
         fromDate: fromDate.isEmpty ? null : fromDate,
@@ -265,16 +285,33 @@ class _OrderPageState extends State<OrderPage> {
       List<Catalog> wspFilteredCatalogs = items;
 
       if (wspFrom != null && wspTo != null) {
-        wspFilteredCatalogs = wspFilteredCatalogs.where((catalog) => catalog.wsp >= wspFrom && catalog.wsp <= wspTo).toList();
+        wspFilteredCatalogs =
+            wspFilteredCatalogs
+                .where(
+                  (catalog) => catalog.wsp >= wspFrom && catalog.wsp <= wspTo,
+                )
+                .toList();
       } else if (wspFrom != null) {
-        wspFilteredCatalogs = wspFilteredCatalogs.where((catalog) => catalog.wsp >= wspFrom).toList();
+        wspFilteredCatalogs =
+            wspFilteredCatalogs
+                .where((catalog) => catalog.wsp >= wspFrom)
+                .toList();
       } else if (wspTo != null) {
-        wspFilteredCatalogs = wspFilteredCatalogs.where((catalog) => catalog.wsp <= wspTo).toList();
+        wspFilteredCatalogs =
+            wspFilteredCatalogs
+                .where((catalog) => catalog.wsp <= wspTo)
+                .toList();
       }
 
       if (selectedStyles.isNotEmpty) {
-        final selectedStyleKeys = selectedStyles.map((style) => style.styleKey).toSet();
-        wspFilteredCatalogs = wspFilteredCatalogs.where((catalog) => selectedStyleKeys.contains(catalog.styleKey)).toList();
+        final selectedStyleKeys =
+            selectedStyles.map((style) => style.styleKey).toSet();
+        wspFilteredCatalogs =
+            wspFilteredCatalogs
+                .where(
+                  (catalog) => selectedStyleKeys.contains(catalog.styleKey),
+                )
+                .toList();
       }
 
       setState(() {
@@ -343,14 +380,19 @@ class _OrderPageState extends State<OrderPage> {
 
   String toTitleCase(String text) {
     if (text.isEmpty) return text;
-    return text.toLowerCase().split(' ').map((word) => word[0].toUpperCase() + word.substring(1)).join(' ');
+    return text
+        .toLowerCase()
+        .split(' ')
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
   }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isLargeScreen = screenWidth > 600;
-    final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+    final isPortrait =
+        MediaQuery.of(context).orientation == Orientation.portrait;
     final cartModel = Provider.of<CartModel>(context);
     return Scaffold(
       backgroundColor: Colors.white,
@@ -371,39 +413,53 @@ class _OrderPageState extends State<OrderPage> {
           isEdit
               ? Container()
               : IconButton(
-                  icon: Stack(
-                    children: [
-                      const Icon(CupertinoIcons.cart_badge_plus, color: Colors.white),
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(6),
+                icon: Stack(
+                  children: [
+                    const Icon(
+                      CupertinoIcons.cart_badge_plus,
+                      color: Colors.white,
+                    ),
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 14,
+                          minHeight: 14,
+                        ),
+                        child: Text(
+                          '${cartModel.count}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
                           ),
-                          constraints: const BoxConstraints(
-                            minWidth: 14,
-                            minHeight: 14,
-                          ),
-                          child: Text(
-                            '${cartModel.count}',
-                            style: const TextStyle(color: Colors.white, fontSize: 8),
-                            textAlign: TextAlign.center,
-                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
-                    ],
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/viewOrder');
-                    _fetchCartCount();
-                  },
+                    ),
+                  ],
                 ),
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/viewOrder',
+                    arguments: {'mrkDown': selectedParty?.splMkDown ?? 0.00},
+                  );
+                  _fetchCartCount();
+                },
+              ),
           IconButton(
             icon: Icon(
-              viewOption == 0 ? Icons.grid_on : viewOption == 1 ? Icons.view_list : Icons.expand,
+              viewOption == 0
+                  ? Icons.grid_on
+                  : viewOption == 1
+                  ? Icons.view_list
+                  : Icons.expand,
               color: Colors.white,
             ),
             onPressed: () {
@@ -413,125 +469,162 @@ class _OrderPageState extends State<OrderPage> {
             },
           ),
           Builder(
-            builder: (context) => IconButton(
-              icon: Icon(Icons.more_vert, color: Colors.white),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return Dialog(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: BorderSide(color: Colors.grey.shade300, width: 1),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.all(MediaQuery.of(context).size.width > 600 ? 24.0 : 16.0),
-                        child: StatefulBuilder(
-                          builder: (context, setStateDialog) {
-                            return SingleChildScrollView(
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxWidth: MediaQuery.of(context).size.width > 600 ? 600 : 440,
-                                  minWidth: 320,
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Options",
-                                      style: TextStyle(
-                                        fontSize: MediaQuery.of(context).size.width > 600 ? 22 : 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+            builder:
+                (context) => IconButton(
+                  icon: Icon(Icons.more_vert, color: Colors.white),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return Dialog(
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: BorderSide(
+                              color: Colors.grey.shade300,
+                              width: 1,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.all(
+                              MediaQuery.of(context).size.width > 600
+                                  ? 24.0
+                                  : 16.0,
+                            ),
+                            child: StatefulBuilder(
+                              builder: (context, setStateDialog) {
+                                return SingleChildScrollView(
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxWidth:
+                                          MediaQuery.of(context).size.width >
+                                                  600
+                                              ? 600
+                                              : 440,
+                                      minWidth: 320,
                                     ),
-                                    const SizedBox(height: 20),
-                                    LayoutBuilder(
-                                      builder: (context, constraints) {
-                                        final isWide = constraints.maxWidth > 400;
-                                        return isWide
-                                            ? Row(
-                                                children: [
-                                                  Expanded(
-                                                    child: Column(
-                                                      children: [
-                                                        _buildToggleRow(
-                                                          "Show Product",
-                                                          showProduct,
-                                                          (val) {
-                                                            showProduct = val;
-                                                            setStateDialog(() {});
-                                                          },
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 16),
-                                                  Expanded(
-                                                    child: Column(
-                                                      children: [
-                                                        _buildToggleRow(
-                                                          "Show Size",
-                                                          showSizes,
-                                                          (val) {
-                                                            showSizes = val;
-                                                            setStateDialog(() {});
-                                                          },
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
-                                              )
-                                            : Column(
-                                                children: [
-                                                  _buildToggleRow(
-                                                    "Show Size",
-                                                    showSizes,
-                                                    (val) {
-                                                      showSizes = val;
-                                                      setStateDialog(() {});
-                                                    },
-                                                  ),
-                                                  _buildToggleRow(
-                                                    "Show Product",
-                                                    showProduct,
-                                                    (val) {
-                                                      showProduct = val;
-                                                      setStateDialog(() {});
-                                                    },
-                                                  ),
-                                                ],
-                                              );
-                                      },
-                                    ),
-                                    const SizedBox(height: 20),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: TextButton(
-                                        onPressed: () => Navigator.of(context).pop(),
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                          child: Text(
-                                            "Close",
-                                            style: TextStyle(fontSize: MediaQuery.of(context).size.width > 600 ? 18 : 16),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Options",
+                                          style: TextStyle(
+                                            fontSize:
+                                                MediaQuery.of(
+                                                          context,
+                                                        ).size.width >
+                                                        600
+                                                    ? 22
+                                                    : 18,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                      ),
+                                        const SizedBox(height: 20),
+                                        LayoutBuilder(
+                                          builder: (context, constraints) {
+                                            final isWide =
+                                                constraints.maxWidth > 400;
+                                            return isWide
+                                                ? Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Column(
+                                                        children: [
+                                                          _buildToggleRow(
+                                                            "Show Product",
+                                                            showProduct,
+                                                            (val) {
+                                                              showProduct = val;
+                                                              setStateDialog(
+                                                                () {},
+                                                              );
+                                                            },
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 16),
+                                                    Expanded(
+                                                      child: Column(
+                                                        children: [
+                                                          _buildToggleRow(
+                                                            "Show Size",
+                                                            showSizes,
+                                                            (val) {
+                                                              showSizes = val;
+                                                              setStateDialog(
+                                                                () {},
+                                                              );
+                                                            },
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                )
+                                                : Column(
+                                                  children: [
+                                                    _buildToggleRow(
+                                                      "Show Size",
+                                                      showSizes,
+                                                      (val) {
+                                                        showSizes = val;
+                                                        setStateDialog(() {});
+                                                      },
+                                                    ),
+                                                    _buildToggleRow(
+                                                      "Show Product",
+                                                      showProduct,
+                                                      (val) {
+                                                        showProduct = val;
+                                                        setStateDialog(() {});
+                                                      },
+                                                    ),
+                                                  ],
+                                                );
+                                          },
+                                        ),
+                                        const SizedBox(height: 20),
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: TextButton(
+                                            onPressed:
+                                                () =>
+                                                    Navigator.of(context).pop(),
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 16.0,
+                                                  ),
+                                              child: Text(
+                                                "Close",
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      MediaQuery.of(
+                                                                context,
+                                                              ).size.width >
+                                                              600
+                                                          ? 18
+                                                          : 16,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
           ),
         ],
       ),
@@ -545,50 +638,55 @@ class _OrderPageState extends State<OrderPage> {
                   horizontal: isLargeScreen ? 16.0 : 8.0,
                   vertical: 8.0,
                 ),
-                child: isLoading
-                    ? Center(
-                        child: LoadingAnimationWidget.waveDots(
-                          color: AppColors.primaryColor,
-                          size: 30,
-                        ),
-                      )
-                    : hasError
+                child:
+                    isLoading
                         ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  errorMessage ?? "Failed to load items",
-                                  style: TextStyle(color: Colors.red),
-                                  textAlign: TextAlign.center,
-                                ),
-                                SizedBox(height: 16),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      hasError = false;
-                                      pageNo = 1;
-                                      catalogItems.clear();
-                                    });
-                                    _fetchCatalogItems();
-                                  },
-                                  child: Text("Retry"),
-                                ),
-                              ],
-                            ),
-                          )
-                        : catalogItems.isEmpty
-                            ? Center(child: Text("No Item Available"))
-                            : LayoutBuilder(
-                                builder: (context, constraints) {
-                                  if (viewOption == 0) {
-                                    return _buildGridView(constraints, isLargeScreen, isPortrait);
-                                  } else if (viewOption == 1) {
-                                    return _buildListView(constraints, isLargeScreen);
-                                  }
-                                  return _buildExpandedView(isLargeScreen);
-                                },
+                          child: LoadingAnimationWidget.waveDots(
+                            color: AppColors.primaryColor,
+                            size: 30,
+                          ),
+                        )
+                        : hasError
+                        ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                errorMessage ?? "Failed to load items",
+                                style: TextStyle(color: Colors.red),
+                                textAlign: TextAlign.center,
                               ),
+                              SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    hasError = false;
+                                    pageNo = 1;
+                                    catalogItems.clear();
+                                  });
+                                  _fetchCatalogItems();
+                                },
+                                child: Text("Retry"),
+                              ),
+                            ],
+                          ),
+                        )
+                        : catalogItems.isEmpty
+                        ? Center(child: Text("No Item Available"))
+                        : LayoutBuilder(
+                          builder: (context, constraints) {
+                            if (viewOption == 0) {
+                              return _buildGridView(
+                                constraints,
+                                isLargeScreen,
+                                isPortrait,
+                              );
+                            } else if (viewOption == 1) {
+                              return _buildListView(constraints, isLargeScreen);
+                            }
+                            return _buildExpandedView(isLargeScreen);
+                          },
+                        ),
               ),
             ),
           ),
@@ -607,9 +705,16 @@ class _OrderPageState extends State<OrderPage> {
     );
   }
 
-  Widget _buildGridView(BoxConstraints constraints, bool isLargeScreen, bool isPortrait) {
+  Widget _buildGridView(
+    BoxConstraints constraints,
+    bool isLargeScreen,
+    bool isPortrait,
+  ) {
     final filteredItems = _getFilteredItems();
-    final crossAxisCount = isPortrait ? (isLargeScreen ? 3 : 2) : (constraints.maxWidth ~/ 300).clamp(3, 4);
+    final crossAxisCount =
+        isPortrait
+            ? (isLargeScreen ? 3 : 2)
+            : (constraints.maxWidth ~/ 300).clamp(3, 4);
 
     return GridView.builder(
       controller: _scrollController,
@@ -686,7 +791,8 @@ class _OrderPageState extends State<OrderPage> {
                             ),
                             child: LayoutBuilder(
                               builder: (context, constraints) {
-                                final maxImageHeight = constraints.maxWidth * 1.2;
+                                final maxImageHeight =
+                                    constraints.maxWidth * 1.2;
                                 return ConstrainedBox(
                                   constraints: BoxConstraints(
                                     maxHeight: maxImageHeight,
@@ -699,10 +805,16 @@ class _OrderPageState extends State<OrderPage> {
                                         _getImageUrl(item),
                                         fit: BoxFit.contain,
                                         width: double.infinity,
-                                        errorBuilder: (context, error, stackTrace) {
+                                        errorBuilder: (
+                                          context,
+                                          error,
+                                          stackTrace,
+                                        ) {
                                           return Container(
                                             color: Colors.grey.shade300,
-                                            child: const Center(child: Icon(Icons.error)),
+                                            child: const Center(
+                                              child: Icon(Icons.error),
+                                            ),
                                           );
                                         },
                                       ),
@@ -721,14 +833,17 @@ class _OrderPageState extends State<OrderPage> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Padding(
-                                padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
+                                padding: EdgeInsets.all(
+                                  isLargeScreen ? 16 : 12,
+                                ),
                                 child: Table(
                                   columnWidths: const {
                                     0: IntrinsicColumnWidth(),
                                     1: FixedColumnWidth(8),
                                     2: FlexColumnWidth(),
                                   },
-                                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                                  defaultVerticalAlignment:
+                                      TableCellVerticalAlignment.middle,
                                   children: [
                                     TableRow(
                                       children: [
@@ -768,12 +883,15 @@ class _OrderPageState extends State<OrderPage> {
                                             scrollDirection: Axis.horizontal,
                                             child: Text(
                                               item.sizeWithMrp,
-                                              style: _valueTextStyle(isLargeScreen),
+                                              style: _valueTextStyle(
+                                                isLargeScreen,
+                                              ),
                                             ),
                                           ),
                                         ],
                                       ),
-                                    if (showSizes && item.sizeName.isNotEmpty) _buildSpacerRow(),
+                                    if (showSizes && item.sizeName.isNotEmpty)
+                                      _buildSpacerRow(),
                                     if (showProduct)
                                       TableRow(
                                         children: [
@@ -783,7 +901,9 @@ class _OrderPageState extends State<OrderPage> {
                                             scrollDirection: Axis.horizontal,
                                             child: Text(
                                               item.itemName,
-                                              style: _valueTextStyle(isLargeScreen),
+                                              style: _valueTextStyle(
+                                                isLargeScreen,
+                                              ),
                                             ),
                                           ),
                                         ],
@@ -793,17 +913,29 @@ class _OrderPageState extends State<OrderPage> {
                               ),
                               if (!isAdded && selectedItems.length <= 1)
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8.0,
+                                    vertical: 6.0,
+                                  ),
                                   child: SizedBox(
                                     width: double.infinity,
                                     child: ElevatedButton(
                                       style: ButtonStyle(
-                                        backgroundColor: MaterialStateProperty.all(AppColors.primaryColor),
+                                        backgroundColor:
+                                            MaterialStateProperty.all(
+                                              AppColors.primaryColor,
+                                            ),
                                         shape: MaterialStateProperty.all(
-                                          RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
+                                          RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              0,
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                      onPressed: () => _showBookingDialog(context, item),
+                                      onPressed:
+                                          () =>
+                                              _showBookingDialog(context, item),
                                       child: Text(
                                         isEdit ? 'Add more' : 'BOOK NOW',
                                         style: TextStyle(
@@ -817,14 +949,24 @@ class _OrderPageState extends State<OrderPage> {
                                 ),
                               if (isAdded)
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8.0,
+                                    vertical: 6.0,
+                                  ),
                                   child: SizedBox(
                                     width: double.infinity,
                                     child: ElevatedButton(
                                       style: ButtonStyle(
-                                        backgroundColor: MaterialStateProperty.all(Colors.green),
+                                        backgroundColor:
+                                            MaterialStateProperty.all(
+                                              Colors.green,
+                                            ),
                                         shape: MaterialStateProperty.all(
-                                          RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
+                                          RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              0,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                       onPressed: null,
@@ -889,8 +1031,13 @@ class _OrderPageState extends State<OrderPage> {
           onTap: () => _toggleItemSelection(item),
           child: Card(
             elevation: isSelected ? 8 : 4,
-            margin: EdgeInsets.symmetric(vertical: 8, horizontal: isLargeScreen ? 16 : 8),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
+            margin: EdgeInsets.symmetric(
+              vertical: 8,
+              horizontal: isLargeScreen ? 16 : 8,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(0),
+            ),
             color: isSelected ? Colors.blue.shade50 : Colors.white,
             child: Stack(
               children: [
@@ -898,12 +1045,18 @@ class _OrderPageState extends State<OrderPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ClipRRect(
-                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(0), topRight: Radius.circular(0)),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(0),
+                        topRight: Radius.circular(0),
+                      ),
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           final maxImageHeight = constraints.maxWidth * 1.2;
                           return ConstrainedBox(
-                            constraints: BoxConstraints(maxHeight: maxImageHeight, minHeight: constraints.maxWidth),
+                            constraints: BoxConstraints(
+                              maxHeight: maxImageHeight,
+                              minHeight: constraints.maxWidth,
+                            ),
                             child: Image.network(
                               _getImageUrl(item),
                               fit: BoxFit.contain,
@@ -928,7 +1081,8 @@ class _OrderPageState extends State<OrderPage> {
                           1: FixedColumnWidth(8),
                           2: FlexColumnWidth(),
                         },
-                        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                        defaultVerticalAlignment:
+                            TableCellVerticalAlignment.middle,
                         children: [
                           TableRow(
                             children: [
@@ -973,7 +1127,8 @@ class _OrderPageState extends State<OrderPage> {
                                 ),
                               ],
                             ),
-                          if (showSizes && item.sizeName.isNotEmpty) _buildSpacerRow(),
+                          if (showSizes && item.sizeName.isNotEmpty)
+                            _buildSpacerRow(),
                           if (showProduct)
                             TableRow(
                               children: [
@@ -993,13 +1148,22 @@ class _OrderPageState extends State<OrderPage> {
                     ),
                     if (!isAdded && selectedItems.length <= 1)
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8.0,
+                          vertical: 6.0,
+                        ),
                         child: SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all(AppColors.primaryColor),
-                              shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(0))),
+                              backgroundColor: MaterialStateProperty.all(
+                                AppColors.primaryColor,
+                              ),
+                              shape: MaterialStateProperty.all(
+                                RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(0),
+                                ),
+                              ),
                             ),
                             onPressed: () => _showBookingDialog(context, item),
                             child: Text(
@@ -1015,13 +1179,22 @@ class _OrderPageState extends State<OrderPage> {
                       ),
                     if (isAdded)
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8.0,
+                          vertical: 6.0,
+                        ),
                         child: SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all(Colors.green),
-                              shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(0))),
+                              backgroundColor: MaterialStateProperty.all(
+                                Colors.green,
+                              ),
+                              shape: MaterialStateProperty.all(
+                                RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(0),
+                                ),
+                              ),
                             ),
                             onPressed: null,
                             child: Text(
@@ -1078,7 +1251,10 @@ class _OrderPageState extends State<OrderPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ClipRRect(
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(0), topRight: Radius.circular(0)),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(0),
+                  topRight: Radius.circular(0),
+                ),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final maxImageHeight = constraints.maxWidth * 1.2;
@@ -1158,7 +1334,8 @@ class _OrderPageState extends State<OrderPage> {
                           ),
                         ],
                       ),
-                    if (showSizes && item.sizeName.isNotEmpty) _buildSpacerRow(),
+                    if (showSizes && item.sizeName.isNotEmpty)
+                      _buildSpacerRow(),
                     if (showProduct)
                       TableRow(
                         children: [
@@ -1178,13 +1355,22 @@ class _OrderPageState extends State<OrderPage> {
               ),
               if (!isAdded && selectedItems.length <= 1)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8.0,
+                    vertical: 6.0,
+                  ),
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(AppColors.primaryColor),
-                        shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(0))),
+                        backgroundColor: MaterialStateProperty.all(
+                          AppColors.primaryColor,
+                        ),
+                        shape: MaterialStateProperty.all(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(0),
+                          ),
+                        ),
                       ),
                       onPressed: () => _showBookingDialog(context, item),
                       child: Text(
@@ -1200,13 +1386,22 @@ class _OrderPageState extends State<OrderPage> {
                 ),
               if (isAdded)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8.0,
+                    vertical: 6.0,
+                  ),
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(Colors.green),
-                        shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(0))),
+                        backgroundColor: MaterialStateProperty.all(
+                          Colors.green,
+                        ),
+                        shape: MaterialStateProperty.all(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(0),
+                          ),
+                        ),
                       ),
                       onPressed: null,
                       child: Text(
@@ -1266,21 +1461,27 @@ class _OrderPageState extends State<OrderPage> {
   }
 
   TableRow _buildSpacerRow() {
-    return const TableRow(children: [SizedBox(height: 8), SizedBox(height: 8), SizedBox(height: 8)]);
+    return const TableRow(
+      children: [SizedBox(height: 8), SizedBox(height: 8), SizedBox(height: 8)],
+    );
   }
 
   Widget _buildBottomButtons(bool isLargeScreen) {
     return SafeArea(
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: isLargeScreen ? 24 : 12, vertical: 5),
-        child: isLargeScreen
-            ? Row(children: _buildButtonChildren(isLargeScreen))
-            : Wrap(
-                alignment: WrapAlignment.spaceEvenly,
-                spacing: 8,
-                runSpacing: 8,
-                children: _buildButtonChildren(isLargeScreen),
-              ),
+        padding: EdgeInsets.symmetric(
+          horizontal: isLargeScreen ? 24 : 12,
+          vertical: 5,
+        ),
+        child:
+            isLargeScreen
+                ? Row(children: _buildButtonChildren(isLargeScreen))
+                : Wrap(
+                  alignment: WrapAlignment.spaceEvenly,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _buildButtonChildren(isLargeScreen),
+                ),
       ),
     );
   }
@@ -1302,25 +1503,33 @@ class _OrderPageState extends State<OrderPage> {
                 backgroundColor: Colors.white,
                 foregroundColor: buttonColor,
                 shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(topLeft: Radius.circular(8), bottomLeft: Radius.circular(8)),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    bottomLeft: Radius.circular(8),
+                  ),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MultiCatalogBookingPage(
-                    catalogs: selectedItems,
-                    onSuccess: () {
-                      setState(() {
-                        selectedItems.clear();
-                      });
-                      _fetchCartCount();
-                      Provider.of<CartModel>(context, listen: false).refreshAddedItems();
-                    },
+              onPressed:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => MultiCatalogBookingPage(
+                            catalogs: selectedItems,
+                            onSuccess: () {
+                              setState(() {
+                                selectedItems.clear();
+                              });
+                              _fetchCartCount();
+                              Provider.of<CartModel>(
+                                context,
+                                listen: false,
+                              ).refreshAddedItems();
+                            },
+                          ),
+                    ),
                   ),
-                ),
-              ),
               child: Text(isEdit ? 'Add more' : 'BOOK NOW'),
             ),
           ),
@@ -1332,21 +1541,26 @@ class _OrderPageState extends State<OrderPage> {
                 foregroundColor: buttonColor,
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CreateOrderScreen(
-                    catalogs: selectedItems,
-                    onSuccess: () {
-                      setState(() {
-                        selectedItems.clear();
-                      });
-                      _fetchCartCount();
-                      Provider.of<CartModel>(context, listen: false).refreshAddedItems();
-                    },
+              onPressed:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => CreateOrderScreen(
+                            catalogs: selectedItems,
+                            onSuccess: () {
+                              setState(() {
+                                selectedItems.clear();
+                              });
+                              _fetchCartCount();
+                              Provider.of<CartModel>(
+                                context,
+                                listen: false,
+                              ).refreshAddedItems();
+                            },
+                          ),
+                    ),
                   ),
-                ),
-              ),
               child: const Icon(Icons.shopping_cart),
             ),
           ),
@@ -1357,25 +1571,33 @@ class _OrderPageState extends State<OrderPage> {
                 backgroundColor: Colors.white,
                 foregroundColor: buttonColor,
                 shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(topRight: Radius.circular(8), bottomRight: Radius.circular(8)),
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(8),
+                    bottomRight: Radius.circular(8),
+                  ),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CreateOrderScreen3(
-                    catalogs: selectedItems,
-                    onSuccess: () {
-                      setState(() {
-                        selectedItems.clear();
-                      });
-                      _fetchCartCount();
-                      Provider.of<CartModel>(context, listen: false).refreshAddedItems();
-                    },
+              onPressed:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => CreateOrderScreen3(
+                            catalogs: selectedItems,
+                            onSuccess: () {
+                              setState(() {
+                                selectedItems.clear();
+                              });
+                              _fetchCartCount();
+                              Provider.of<CartModel>(
+                                context,
+                                listen: false,
+                              ).refreshAddedItems();
+                            },
+                          ),
+                    ),
                   ),
-                ),
-              ),
               child: const Icon(Icons.assignment),
             ),
           ),
@@ -1384,7 +1606,10 @@ class _OrderPageState extends State<OrderPage> {
     );
 
     return [
-      if (selectedItems.isNotEmpty) isLargeScreen ? Expanded(child: unifiedButtonGroup) : unifiedButtonGroup,
+      if (selectedItems.isNotEmpty)
+        isLargeScreen
+            ? Expanded(child: unifiedButtonGroup)
+            : unifiedButtonGroup,
     ];
   }
 
@@ -1465,22 +1690,27 @@ class _OrderPageState extends State<OrderPage> {
   void _showBookingDialog(BuildContext context, Catalog item) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        insetPadding: EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-        child: CatalogBookingTable(
-          itemSubGrpKey: item.itemSubGrpKey.toString(),
-          itemKey: item.itemKey.toString(),
-          styleKey: item.styleKey.toString(),
-          isEdit: isEdit,
-          onSuccess: () {
-            if (!isEdit) {
-              Provider.of<CartModel>(context, listen: false).addItem(item.styleCode);
-              _fetchCartCount();
-            }
-          },
-        ),
-      ),
+      builder:
+          (context) => Dialog(
+            insetPadding: EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+            child: CatalogBookingTable(
+              itemSubGrpKey: item.itemSubGrpKey.toString(),
+              itemKey: item.itemKey.toString(),
+              styleKey: item.styleKey.toString(),
+              isEdit: isEdit,
+              markDwn: selectedParty?.splMkDown ?? 0.00,
+              onSuccess: () {
+                if (!isEdit) {
+                  Provider.of<CartModel>(
+                    context,
+                    listen: false,
+                  ).addItem(item.styleCode);
+                  _fetchCartCount();
+                }
+              },
+            ),
+          ),
     );
   }
 
