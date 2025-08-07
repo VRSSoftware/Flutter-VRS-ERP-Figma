@@ -20,6 +20,10 @@ import 'package:vrs_erp_figma/services/app_services.dart';
 import 'package:vrs_erp_figma/widget/booknowwidget.dart';
 
 class OrderPage extends StatefulWidget {
+  final String? name;
+
+    const OrderPage({Key? key, this.name}) : super(key: key);
+
   @override
   _OrderPageState createState() => _OrderPageState();
 }
@@ -61,6 +65,8 @@ class _OrderPageState extends State<OrderPage> {
   bool isEdit = false;
   String itemNamee = '';
   PartyWithSpclMarkDwn? selectedParty;
+  String? name;
+  String? type;
 
   @override
   void initState() {
@@ -79,6 +85,7 @@ class _OrderPageState extends State<OrderPage> {
           itemNamee = args['itemName']?.toString() ?? '';
           isEdit = args['edit'] ?? false;
           selectedParty = args['selectedParty'];
+          type = args['type'];
         });
 
         if (coBr != null && fcYrId != null) {
@@ -935,7 +942,7 @@ class _OrderPageState extends State<OrderPage> {
                                       ),
                                       onPressed:
                                           () =>
-                                              _showBookingDialog(context, item),
+                                              _showBookingDialog(context, item, type!),
                                       child: Text(
                                         isEdit ? 'Add more' : 'BOOK NOW',
                                         style: TextStyle(
@@ -1165,7 +1172,7 @@ class _OrderPageState extends State<OrderPage> {
                                 ),
                               ),
                             ),
-                            onPressed: () => _showBookingDialog(context, item),
+                            onPressed: () => _showBookingDialog(context, item, type!),
                             child: Text(
                               isEdit ? 'Add more' : 'BOOK NOW',
                               style: TextStyle(
@@ -1363,16 +1370,16 @@ class _OrderPageState extends State<OrderPage> {
                     width: double.infinity,
                     child: ElevatedButton(
                       style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(
+                        backgroundColor: WidgetStateProperty.all(
                           AppColors.primaryColor,
                         ),
-                        shape: MaterialStateProperty.all(
+                        shape: WidgetStateProperty.all(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(0),
                           ),
                         ),
                       ),
-                      onPressed: () => _showBookingDialog(context, item),
+                      onPressed: () => _showBookingDialog(context, item, type!),
                       child: Text(
                         isEdit ? 'Add more' : 'BOOK NOW',
                         style: TextStyle(
@@ -1394,10 +1401,10 @@ class _OrderPageState extends State<OrderPage> {
                     width: double.infinity,
                     child: ElevatedButton(
                       style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(
+                        backgroundColor: WidgetStateProperty.all(
                           Colors.green,
                         ),
-                        shape: MaterialStateProperty.all(
+                        shape: WidgetStateProperty.all(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(0),
                           ),
@@ -1687,7 +1694,8 @@ class _OrderPageState extends State<OrderPage> {
     }
   }
 
-  void _showBookingDialog(BuildContext context, Catalog item) {
+  void _showBookingDialog(BuildContext context, Catalog item, String typee) {
+    debugPrint(typee);
     showDialog(
       context: context,
       builder:
@@ -1700,6 +1708,7 @@ class _OrderPageState extends State<OrderPage> {
               styleKey: item.styleKey.toString(),
               isEdit: isEdit,
               markDwn: selectedParty?.splMkDown ?? 0.00,
+              type: typee,
               onSuccess: () {
                 if (!isEdit) {
                   Provider.of<CartModel>(

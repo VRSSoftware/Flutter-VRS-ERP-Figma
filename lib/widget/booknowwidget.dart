@@ -825,6 +825,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/constants/constants.dart';
 import 'package:vrs_erp_figma/models/CatalogItem.dart';
 import 'package:vrs_erp_figma/models/CatalogOrderData.dart';
 import 'package:vrs_erp_figma/models/OrderMatrix.dart';
@@ -839,6 +840,7 @@ class CatalogBookingTable extends StatefulWidget {
   final VoidCallback onSuccess;
   final bool? isEdit;
   final double? markDwn;
+  final String? type;
 
   const CatalogBookingTable({
     super.key,
@@ -848,6 +850,7 @@ class CatalogBookingTable extends StatefulWidget {
     required this.onSuccess,
     this.isEdit,
     this.markDwn,
+    this.type,
   });
 
   @override
@@ -875,6 +878,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
   TextEditingController noteController = TextEditingController();
   bool isEdit = false;
   double? markDwn = 0.0;
+  String? type;
 
   int get totalQty {
     int total = 0;
@@ -895,6 +899,7 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
     setState(() {
       isEdit = widget.isEdit ?? false;
       markDwn = widget.markDwn;
+      type = widget.type;
     });
     fetchCatalogData();
   }
@@ -1150,7 +1155,11 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
               columnWidths: _buildColumnWidths(maxWidth),
               children: [
                 _buildPriceRow("MRP", sizeMrpMap, FontWeight.w600),
-                _buildPriceRow(markDwn==0.0? "WSP" : "Rate", sizeWspMap, FontWeight.w400),
+                _buildPriceRow(
+                  markDwn == 0.0 ? "WSP" : "Rate",
+                  sizeWspMap,
+                  FontWeight.w400,
+                ),
                 _buildHeaderRow(),
                 for (var i = 0; i < colors.length; i++)
                   _buildQuantityRow(colors[i], i),
@@ -1594,15 +1603,32 @@ class _CatalogBookingTableState extends State<CatalogBookingTable> {
               "typ": 0,
             };
 
-            apiCalls.add(
-              http.post(
-                Uri.parse(
-                  '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
+            debugPrint(widget.type);
+            debugPrint(widget.type);
+            debugPrint(widget.type);
+            debugPrint(widget.type);
+
+            if (widget.type == Constants.packing) {
+              apiCalls.add(
+                http.post(
+                  Uri.parse(
+                    '${AppConstants.BASE_URL}/orderBooking/InsertPackingCart',
+                  ),
+                  headers: {'Content-Type': 'application/json'},
+                  body: jsonEncode(payload),
                 ),
-                headers: {'Content-Type': 'application/json'},
-                body: jsonEncode(payload),
-              ),
-            );
+              );
+            } else {
+              apiCalls.add(
+                http.post(
+                  Uri.parse(
+                    '${AppConstants.BASE_URL}/orderBooking/Insertsalesorderdetails',
+                  ),
+                  headers: {'Content-Type': 'application/json'},
+                  body: jsonEncode(payload),
+                ),
+              );
+            }
           }
         }
       }

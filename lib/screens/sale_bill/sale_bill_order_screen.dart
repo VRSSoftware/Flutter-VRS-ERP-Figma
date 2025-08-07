@@ -6,10 +6,8 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
-
-import 'package:vrs_erp_figma/OrderBooking/orderbooking_drawer.dart';
+import 'package:vrs_erp_figma/OrderBooking/barcode/barcodewidget.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
-import 'package:vrs_erp_figma/constants/constants.dart';
 import 'package:vrs_erp_figma/dashboard/orderStatus.dart';
 import 'package:vrs_erp_figma/models/CartModel.dart';
 import 'package:vrs_erp_figma/models/PartyWithSpclMarkDwn.dart';
@@ -19,16 +17,15 @@ import 'package:vrs_erp_figma/models/keyName.dart';
 import 'package:vrs_erp_figma/register/register.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/services/app_services.dart';
-import 'package:vrs_erp_figma/OrderBooking/barcode/barcodewidget.dart';
 import 'package:vrs_erp_figma/widget/bottom_navbar.dart';
 import 'package:vrs_erp_figma/widget/filterdailogwidget.dart';
 
-class OrderBookingScreen extends StatefulWidget {
+class SaleBillBookingScreen extends StatefulWidget {
   @override
-  _OrderBookingScreenState createState() => _OrderBookingScreenState();
+  _SaleBillBookingScreenState createState() => _SaleBillBookingScreenState();
 }
 
-class _OrderBookingScreenState extends State<OrderBookingScreen> {
+class _SaleBillBookingScreenState extends State<SaleBillBookingScreen> {
   int _currentIndex = 0;
   final CarouselSliderController _carouselController =
       CarouselSliderController();
@@ -44,9 +41,6 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
   bool _isLoadingCategories = true;
   bool _isLoadingItems = false;
   bool hasFiltered = false;
-  List<PartyWithSpclMarkDwn> partyList = [];
-  PartyWithSpclMarkDwn? selectedParty;
-  // int _cartItemCount = 0;
 
   Set<String> _activeFilters = {'mrp', 'wsp', 'shades', 'stylecode'};
 
@@ -65,19 +59,8 @@ class _OrderBookingScreenState extends State<OrderBookingScreen> {
     if (coBr != null && fcYrId != null) {
       _fetchCartCount();
     }
-    fetchPartyList();
+
   }
-
-fetchPartyList() async {
-  final fetchedResponse = await ApiService.fetchPartyWithSpclMarkDwn(
-    ledCat: 'w',
-    coBrId: UserSession.coBrId ?? '',
-  );
-
-  setState(() {
-    partyList = List<PartyWithSpclMarkDwn>.from(fetchedResponse['result'] ?? []);
-  });
-}
 
   // Replace the existing _fetchCartCount method
   Future<void> _fetchCartCount() async {
@@ -132,7 +115,7 @@ fetchPartyList() async {
       drawer: DrawerScreen(),
       appBar: AppBar(
         title: Text(
-          showBarcodeWidget ? 'Barcode' : 'Order Booking',
+          showBarcodeWidget ? 'Barcode' : 'Sale Bill',
           style: const TextStyle(color: Colors.white),
         ),
         backgroundColor: AppColors.primaryColor,
@@ -156,7 +139,7 @@ fetchPartyList() async {
                 ),
         automaticallyImplyLeading: false,
         actions: [
-          // Cart Icon for both modes (Order Booking and Barcode)
+          // Cart Icon for both modes (SaleBill and Barcode)
           IconButton(
             icon: Stack(
               children: [
@@ -231,91 +214,6 @@ fetchPartyList() async {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownSearch<PartyWithSpclMarkDwn>(
-                              items: partyList,
-                              selectedItem: selectedParty,
-                              itemAsString: (PartyWithSpclMarkDwn? u) => u?.ledName ?? '',
-                              onChanged:
-                                  (value) =>
-                                      setState(() => selectedParty = value),
-                              popupProps: PopupProps.menu(
-                                showSearchBox: true,
-                                containerBuilder:
-                                    (context, popupWidget) => Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(0),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.grey.withOpacity(0.5),
-                                            spreadRadius: 2,
-                                            blurRadius: 5,
-                                            offset: Offset(0, 3),
-                                          ),
-                                        ],
-                                      ),
-                                      child: popupWidget,
-                                    ),
-                              ),
-                              dropdownDecoratorProps: DropDownDecoratorProps(
-                                dropdownSearchDecoration: InputDecoration(
-                                  labelText: 'Select Party',
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(0),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // Row(
-                      //   children: [
-                      // DropdownSearch<KeyName>(
-                      //   items: ledgerList,
-                      //   selectedItem: selectedLedger,
-                      //   itemAsString: (KeyName? u) => u?.name ?? '',
-                      //   onChanged:
-                      //       (value) =>
-                      //           setState(() => selectedLedger = value),
-                      //   popupProps: PopupProps.menu(
-                      //     showSearchBox: true,
-                      //     containerBuilder:
-                      //         (context, popupWidget) => Container(
-                      //           decoration: BoxDecoration(
-                      //             color: Colors.white, // Menu background
-                      //             borderRadius: BorderRadius.circular(0),
-                      //             boxShadow: [
-                      //               BoxShadow(
-                      //                 color: Colors.grey.withOpacity(0.5),
-                      //                 spreadRadius: 2,
-                      //                 blurRadius: 5,
-                      //                 offset: Offset(0, 3),
-                      //               ),
-                      //             ],
-                      //           ),
-                      //           child: popupWidget,
-                      //         ),
-                      //   ),
-                      //   dropdownDecoratorProps: DropDownDecoratorProps(
-                      //     dropdownSearchDecoration: InputDecoration(
-                      //       labelText: 'Select Party',
-                      //       filled: true,
-                      //       fillColor: Colors.white,
-                      //       border: OutlineInputBorder(
-                      //         borderRadius: BorderRadius.circular(0),
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ),
-                      //   ],
-                      // ),
                       SizedBox(
                         width: double.infinity,
                         child: Row(
@@ -330,7 +228,7 @@ fetchPartyList() async {
                               },
                             ),
                             const Text(
-                              "Order Booking Barcode Wise",
+                              "Sale Bill Barcode Wise",
                               style: TextStyle(fontWeight: FontWeight.w600),
                             ),
                           ],
@@ -408,8 +306,7 @@ fetchPartyList() async {
                                                         .trim(),
                                                 'coBr': coBr,
                                                 'fcYrId': fcYrId,
-                                                'selectedParty':selectedParty,
-                                                'type': Constants.saleBill,
+                                                
                                               },
                                             );
                                           },
@@ -511,8 +408,8 @@ fetchPartyList() async {
                             ),
                           ),
                           onPressed: () {
-                            print(item.itemKey);
-                            print(item.itemSubGrpKey);
+                            debugPrint(item.itemKey);
+                            debugPrint(item.itemSubGrpKey);
                             Navigator.pushNamed(
                               context,
                               '/orderpage',
@@ -522,8 +419,6 @@ fetchPartyList() async {
                                 'itemSubGrpKey': item.itemSubGrpKey,
                                 'coBr': coBr,
                                 'fcYrId': fcYrId,
-                                'selectedParty':selectedParty,
-                                'type': Constants.saleBill,
                               },
                             ).then((_) => _fetchCartCount());
                           },

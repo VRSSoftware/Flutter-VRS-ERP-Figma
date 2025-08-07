@@ -420,18 +420,27 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
               ? const Center(child: CircularProgressIndicator())
               : widget.catalogs.isEmpty
               ? const Center(child: Text("No items selected"))
-              : SingleChildScrollView(
-                child: Column(
-                  children: List.generate(widget.catalogs.length, (index) {
-                    final catalog = widget.catalogs[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 24),
-                      child: _buildItemBookingSection(context, catalog),
-                    );
-                  }),
-                ),
+              : Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          ...List.generate(widget.catalogs.length, (index) {
+                            final catalog = widget.catalogs[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 24),
+                              child: _buildItemBookingSection(context, catalog),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ),
+                  _buildBottomBar(), // Fixed at the bottom
+                ],
               ),
-      bottomNavigationBar: _buildBottomBar(),
+      // bottomNavigationBar: _buildBottomBar(),
     );
   }
 
@@ -649,64 +658,65 @@ class _MultiCatalogBookingPageState extends State<MultiCatalogBookingPage> {
     );
   }
 
-Widget _buildCatalogTable(Catalog catalog) {
-  final sizes = sizesMap[catalog.styleCode] ?? [];
-  final screenWidth = MediaQuery.of(context).size.width;
+  Widget _buildCatalogTable(Catalog catalog) {
+    final sizes = sizesMap[catalog.styleCode] ?? [];
+    final screenWidth = MediaQuery.of(context).size.width;
 
-  // Minimum table width: base column + 80px per size
-  final baseTableWidth = 100 + (80 * sizes.length);
-  // Use max(screen width, baseTableWidth) to ensure responsive scroll on small screens
-  final requiredTableWidth = screenWidth > baseTableWidth
-      ? screenWidth
-      : baseTableWidth.toDouble();
+    // Minimum table width: base column + 80px per size
+    final baseTableWidth = 100 + (80 * sizes.length);
+    // Use max(screen width, baseTableWidth) to ensure responsive scroll on small screens
+    final requiredTableWidth =
+        screenWidth > baseTableWidth ? screenWidth : baseTableWidth.toDouble();
 
-  return Container(
-    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    decoration: BoxDecoration(
-      border: Border.all(color: Colors.grey.shade500),
-      borderRadius: BorderRadius.circular(0),
-    ),
-    child: SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minWidth: requiredTableWidth),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: Table(
-            border: TableBorder.symmetric(
-              inside: BorderSide(color: Colors.grey.shade400, width: 1),
-            ),
-            columnWidths: _buildColumnWidths(),
-            children: [
-              _buildPriceRow(
-                "MRP",
-                sizeMrpMap[catalog.styleCode] ?? {},
-                FontWeight.w600,
-                sizes,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade500),
+        borderRadius: BorderRadius.circular(0),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: requiredTableWidth),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.vertical,
+            child: Table(
+              border: TableBorder.symmetric(
+                inside: BorderSide(color: Colors.grey.shade400, width: 1),
               ),
-              _buildPriceRow(
-                "WSP",
-                sizeWspMap[catalog.styleCode] ?? {},
-                FontWeight.w400,
-                sizes,
-              ),
-              _buildHeaderRow(catalog.styleCode, sizes),
-              for (var i = 0;
-                  i < (colorsMap[catalog.styleCode]?.length ?? 0);
-                  i++)
-                _buildQuantityRow(
-                  catalog,
-                  colorsMap[catalog.styleCode]![i],
-                  i,
+              columnWidths: _buildColumnWidths(),
+              children: [
+                _buildPriceRow(
+                  "MRP",
+                  sizeMrpMap[catalog.styleCode] ?? {},
+                  FontWeight.w600,
                   sizes,
                 ),
-            ],
+                _buildPriceRow(
+                  "WSP",
+                  sizeWspMap[catalog.styleCode] ?? {},
+                  FontWeight.w400,
+                  sizes,
+                ),
+                _buildHeaderRow(catalog.styleCode, sizes),
+                for (
+                  var i = 0;
+                  i < (colorsMap[catalog.styleCode]?.length ?? 0);
+                  i++
+                )
+                  _buildQuantityRow(
+                    catalog,
+                    colorsMap[catalog.styleCode]![i],
+                    i,
+                    sizes,
+                  ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Map<int, TableColumnWidth> _buildColumnWidths() {
     const baseWidth = 100.0;
@@ -717,64 +727,64 @@ Widget _buildCatalogTable(Catalog catalog) {
     };
   }
 
-Widget _buildBottomBar() {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    color: Colors.white,
-    child: Row(
-      children: [
+  Widget _buildBottomBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      color: Colors.white,
+      child: Row(
+        children: [
           // Cancel button
-        Expanded(
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.close, color: AppColors.primaryColor),
-            label: const Text(
-              'Cancel',
-              style: TextStyle(fontSize: 16, color: AppColors.primaryColor),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(0),
-                side: const BorderSide(color: AppColors.primaryColor, width: 2),
+          Expanded(
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.close, color: AppColors.primaryColor),
+              label: const Text(
+                'Cancel',
+                style: TextStyle(fontSize: 16, color: AppColors.primaryColor),
               ),
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(0),
+                  side: const BorderSide(
+                    color: AppColors.primaryColor,
+                    width: 2,
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              onPressed: () => Navigator.pop(context),
             ),
-            onPressed: () => Navigator.pop(context),
           ),
-        ),
-            const SizedBox(width: 16), // Space between buttons
-        // Submit All button
-        Expanded(
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text(
-              'Submit All',
-              style: TextStyle(fontSize: 16, color: Colors.white),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor:
+          const SizedBox(width: 16), // Space between buttons
+          // Submit All button
+          Expanded(
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                'Submit All',
+                style: TextStyle(fontSize: 16, color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    widget.catalogs.any((c) => getTotalQty(c.styleCode) > 0)
+                        ? AppColors.primaryColor
+                        : Colors.grey,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(0),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              onPressed:
                   widget.catalogs.any((c) => getTotalQty(c.styleCode) > 0)
-                      ? AppColors.primaryColor
-                      : Colors.grey,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(0),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 16),
+                      ? _submitAllOrders
+                      : null,
             ),
-            onPressed: widget.catalogs.any((c) => getTotalQty(c.styleCode) > 0)
-                ? _submitAllOrders
-                : null,
           ),
-        ),
-
-    
-
- 
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   TableRow _buildPriceRow(
     String label,

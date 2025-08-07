@@ -8,7 +8,7 @@ import 'package:vrs_erp_figma/dashboard/dashboard.dart';
 import 'package:vrs_erp_figma/models/CartModel.dart';
 import 'package:vrs_erp_figma/privacypolicy/deleteAccount.dart';
 import 'package:vrs_erp_figma/privacypolicy/privacypolicy.dart';
-import 'package:vrs_erp_figma/register/packing.dart';
+import 'package:vrs_erp_figma/register/packingRegisterScreen.dart';
 import 'package:vrs_erp_figma/register/register.dart';
 import 'package:vrs_erp_figma/catalog/catalog_screen.dart';
 import 'package:vrs_erp_figma/register/saleBillRegister.dart';
@@ -17,6 +17,8 @@ import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/screens/home_screen.dart';
 import 'package:vrs_erp_figma/screens/login_screen.dart';
 import 'package:vrs_erp_figma/screens/mdns/MdnsDiscoveryScreen.dart';
+import 'package:vrs_erp_figma/screens/packing/packing_order_screen.dart';
+import 'package:vrs_erp_figma/screens/sale_bill/sale_bill_order_screen.dart';
 import 'package:vrs_erp_figma/screens/splash_screen.dart';
 import 'package:vrs_erp_figma/stockReport/stockreportpage.dart';
 import 'package:vrs_erp_figma/viewOrder/view_order.dart';
@@ -67,7 +69,7 @@ class MyApp extends StatelessWidget {
         '/orderpage': (context) => OrderPage(),
         '/viewOrders': (context) => ViewOrderScreens(),
         '/viewOrder': (context) => ViewOrderScreen(),
-        '/viewOrder2': (context) => ViewOrderScreenBarcode(),
+        '/viewOrderBarcode': (context) => ViewOrderScreenBarcode(),
         '/registerOrders': (context) => RegisterPage(),
         '/stockReport': (context) => StockReportPage(),
         '/dashboard': (context) => OrderSummaryPage(),
@@ -75,6 +77,8 @@ class MyApp extends StatelessWidget {
         '/setting': (context) => PrivacyPolicyPage(),
         '/drawer': (context) => DrawerScreen(),
         '/packingOrders': (context) => PackingPage(),
+        '/packingBooking': (context) => PackingBookingScreen(),
+        '/SaleBillBookingScreen': (context) => SaleBillBookingScreen(),
         '/saleBillRegister': (context) => SaleBillRegisterPage(),
       },
 
