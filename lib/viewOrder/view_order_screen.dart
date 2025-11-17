@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/constants/constants.dart';
 import 'package:vrs_erp_figma/models/CartModel.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/screens/home_screen.dart';
@@ -51,18 +52,18 @@ void initState() {
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
     if (args != null) {
-      if (args.containsKey('barcode')) {
-        barcodeMode = args['barcode'] as bool;
+      if (args.containsKey(Constants.barcode)) {
+        barcodeMode = args[Constants.barcode] as bool;
       }
 
-      if (args.containsKey('mrkDown')) {
-        setState(() {
-          mrkDown = args['mrkDown'];
-        });
+      // if (args.containsKey('mrkDown')) {
+      //   setState(() {
+      //     mrkDown = args['mrkDown'];
+      //   });
 
-        print("sssssssssssssssssssssssssss");
-        print(mrkDown);
-      }
+      //   print("sssssssssssssssssssssssssss");
+      //   print(mrkDown);
+      // }
     }
 
     _initializeData();

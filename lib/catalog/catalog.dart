@@ -1742,7 +1742,7 @@ List<String> _getImageUrl(Catalog catalog) {
   print('fullImagePath for catalog ${catalog.styleCode}: $fullImagePath');
   print('Base URL: ${AppConstants.BASE_URL}');
 
-  if (shadeImages.isNotEmpty) {
+  if (shadeImages.isNotEmpty && false) {
     final imageEntries = shadeImages.split(',').map((entry) => entry.trim()).toList();
     List<String> imageUrls = [];
     for (var entry in imageEntries) {
@@ -1760,7 +1760,8 @@ List<String> _getImageUrl(Catalog catalog) {
     final fileName = fullImagePath.split('/').last.split('?').first;
     if (fileName.isEmpty) return [''];
     final url = '${AppConstants.BASE_URL}/images/$fileName';
-    return [url];
+    // return [url];
+    return [fullImagePath];
   }
 
   return [''];

@@ -176,13 +176,13 @@ class _PackingBookingScreenState extends State<PackingBookingScreen> {
                 Navigator.pushNamed(
                   context,
                   '/viewOrderBarcode',
-                  arguments: {'barcode': showBarcodeWidget},
+                  arguments: {Constants.barcode: showBarcodeWidget},
                 ).then((_) => _fetchCartCount());
               } else {
                 Navigator.pushNamed(
                   context,
                   '/viewOrder',
-                  arguments: {'barcode': showBarcodeWidget},
+                  arguments: {Constants.barcode: showBarcodeWidget},
                 ).then((_) => _fetchCartCount());
               }
             },
@@ -307,7 +307,8 @@ class _PackingBookingScreenState extends State<PackingBookingScreen> {
                                                         .trim(),
                                                 'coBr': coBr,
                                                 'fcYrId': fcYrId,
-                                                
+                                                'type': Constants.PACKING,
+                                                Constants.TRANSACTION_TYPE : Constants.PACKING
                                               },
                                             );
                                           },
@@ -411,7 +412,7 @@ class _PackingBookingScreenState extends State<PackingBookingScreen> {
                           onPressed: () {
                             debugPrint(item.itemKey);
                             debugPrint(item.itemSubGrpKey);
-                            Navigator.pushNamed(
+                            Navigator.pushNamed(   
                               context,
                               '/orderpage',
                               arguments: {
@@ -420,8 +421,9 @@ class _PackingBookingScreenState extends State<PackingBookingScreen> {
                                 'itemSubGrpKey': item.itemSubGrpKey,
                                 'coBr': coBr,
                                 'fcYrId': fcYrId,
-                                'type': Constants.packing,
-                              },
+                                'type': Constants.PACKING,
+                                Constants.TRANSACTION_TYPE : Constants.PACKING
+                              }, 
                             ).then((_) => _fetchCartCount());
                           },
                           child: Text(

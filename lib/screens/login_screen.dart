@@ -44,7 +44,7 @@ class _LoginPageState extends State<LoginScreen> {
     _fetchFinancialYears();
     setState(() {
       _passwordController.text = 'Admin';
-     _usernameController.text = 'admin';
+      _usernameController.text = 'admin';
     });
   }
 
@@ -52,59 +52,61 @@ class _LoginPageState extends State<LoginScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       isRegistered = prefs.getString('isRegistered');
-      if(kIsWeb){
-      isRegistered = '1';
+      if (kIsWeb) {
+        isRegistered = '1';
       }
     });
   }
-Future<void> _fetchCompanies() async {
-  final url = '${AppConstants.BASE_URL}/users/cobr';
-  try {
-    final response = await http
-        .get(Uri.parse(url))
-        .timeout(const Duration(seconds: 10));
 
-    print("responsebody: ${response.body}");
+  Future<void> _fetchCompanies() async {
+    final url = '${AppConstants.BASE_URL}/users/cobr';
+    try {
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 10));
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      // Initialize SharedPreferences
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      setState(() {
-        _companies.clear();
-        _companies.addAll(
-          data.map((e) => e as Map<String, dynamic>).toList(),
-        );
-        _isLoadingCompanies = false;
+      print("responsebody: ${response.body}");
 
-        if (_companies.isNotEmpty && _companies.length == 1) {
-          _selectedCompany = _companies[0];
-          // Save to SharedPreferences and UserSession
-          prefs.setString('coBrId', _selectedCompany?["coBrId"] ?? '');
-          prefs.setString('coBrName', _selectedCompany?["coBr_name"] ?? '');
-          UserSession.coBrId = _selectedCompany?["coBrId"];
-          UserSession.coBrName = _selectedCompany?["coBr_name"];
-        }
-      });
-    } else if (response.statusCode == 404) {
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        // Initialize SharedPreferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        setState(() {
+          _companies.clear();
+          _companies.addAll(
+            data.map((e) => e as Map<String, dynamic>).toList(),
+          );
+          _isLoadingCompanies = false;
+
+          if (_companies.isNotEmpty && _companies.length == 1) {
+            _selectedCompany = _companies[0];
+            // Save to SharedPreferences and UserSession
+            prefs.setString('coBrId', _selectedCompany?["coBrId"] ?? '');
+            prefs.setString('coBrName', _selectedCompany?["coBr_name"] ?? '');
+            UserSession.coBrId = _selectedCompany?["coBrId"];
+            UserSession.coBrName = _selectedCompany?["coBr_name"];
+          }
+        });
+      } else if (response.statusCode == 404) {
+        await Future.delayed(const Duration(seconds: 2));
+        _fetchCompanies(); // Retry on 404
+      }
+    } on SocketException catch (_) {
+      // Retry on no internet
       await Future.delayed(const Duration(seconds: 2));
-      _fetchCompanies(); // Retry on 404
+      _fetchCompanies();
+    } on TimeoutException catch (_) {
+      // Retry on request timeout
+      await Future.delayed(const Duration(seconds: 2));
+      _fetchCompanies();
+    } catch (e) {
+      setState(() {
+        _isLoadingCompanies = false;
+      });
+      _showPopupMessage(context, "Error fetching companies: $e");
     }
-  } on SocketException catch (_) {
-    // Retry on no internet
-    await Future.delayed(const Duration(seconds: 2));
-    _fetchCompanies();
-  } on TimeoutException catch (_) {
-    // Retry on request timeout
-    await Future.delayed(const Duration(seconds: 2));
-    _fetchCompanies();
-  } catch (e) {
-    setState(() {
-      _isLoadingCompanies = false;
-    });
-    _showPopupMessage(context, "Error fetching companies: $e");
   }
-}
+
   Future<void> _fetchFinancialYears() async {
     final url = '${AppConstants.BASE_URL}/users/fcyr';
     try {
@@ -145,12 +147,10 @@ Future<void> _fetchCompanies() async {
       );
       if (response.statusCode == 200) {
         setState(() {
-          if(response.body!='1'){
-          UserSession.onlineImage ='0';
-
-          }else{
-          UserSession.onlineImage = response.body.trim();
-
+          if (response.body != '1') {
+            UserSession.onlineImage = '0';
+          } else {
+            UserSession.onlineImage = response.body.trim();
           }
           print("Online Image Setting: ${UserSession.onlineImage}");
         });
@@ -199,37 +199,36 @@ Future<void> _fetchCompanies() async {
     return ""; // Return empty string if any failure
   }
 
-
   Future<void> fetchDatabaseCredentials() async {
-  try {
-    final response = await http.get(
-      Uri.parse('${AppConstants.BASE_URL}/users/database-credentials'),
-    );
+    try {
+      final response = await http.get(
+        Uri.parse('${AppConstants.BASE_URL}/users/database-credentials'),
+      );
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      setState(() {
-        UserSession.dbName = data['dbName'];
-        UserSession.dbUser = data['dbUserName'];
-        UserSession.dbPassword = data['dbPassword'];
-        UserSession.dbSource = data['dbSource'];
-        // UserSession.dbSourceForRpt = data['dbSourceForRpt'];
-        UserSession.dbSourceForRpt = data['dbSourceForRpt'];
-      });
-      
-      // Print for debugging (remove in production)
-      print('Database Credentials Loaded:');
-      print('Name: ${UserSession.dbName}');
-      print('User: ${UserSession.dbUser}');
-      print('Source: ${UserSession.dbSource}');
-      print('SourceForRpt: ${UserSession.dbSourceForRpt}');
-    } else {
-      print('Failed to load database credentials: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        setState(() {
+          UserSession.dbName = data['dbName'];
+          UserSession.dbUser = data['dbUserName'];
+          UserSession.dbPassword = data['dbPassword'];
+          UserSession.dbSource = data['dbSource'];
+          // UserSession.dbSourceForRpt = data['dbSourceForRpt'];
+          UserSession.dbSourceForRpt = data['dbSourceForRpt'];
+        });
+
+        // Print for debugging (remove in production)
+        print('Database Credentials Loaded:');
+        print('Name: ${UserSession.dbName}');
+        print('User: ${UserSession.dbUser}');
+        print('Source: ${UserSession.dbSource}');
+        print('SourceForRpt: ${UserSession.dbSourceForRpt}');
+      } else {
+        print('Failed to load database credentials: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching database credentials: $e');
     }
-  } catch (e) {
-    print('Error fetching database credentials: $e');
   }
-}
 
   Future<void> login(BuildContext context) async {
     setState(() {
@@ -274,7 +273,8 @@ Future<void> _fetchCompanies() async {
             UserSession.userLedKey = responseData["ledKey"];
             UserSession.name = responseData["name"];
 
-           if ((responseData['userName'] as String).trim() == _usernameController.text.trim()) {
+            if ((responseData['userName'] as String).trim() ==
+                _usernameController.text.trim()) {
               await fetchOnlineImageSetting(); // API CALL HERE
               UserSession.rptPath = await fetchAppSetting('606');
               AppConstants.whatsappKey = await fetchAppSetting('541');
@@ -323,7 +323,7 @@ Future<void> _fetchCompanies() async {
         "You have to register first. Device not registered",
       );
     }
-        setState(() {
+    setState(() {
       _isLoading = false;
     });
   }
@@ -464,6 +464,253 @@ Future<void> _fetchCompanies() async {
   //   );
   // }
   @override
+  // Widget build(BuildContext context) {
+  //   return Scaffold(
+  //     backgroundColor: Colors.white,
+  //     resizeToAvoidBottomInset: false,
+  //     appBar: AppBar(
+  //       backgroundColor: Colors.transparent,
+  //       elevation: 0,
+  //       actions: [
+  //         IconButton(
+  //           icon: Icon(Icons.settings, color: Colors.black),
+  //           onPressed: () {
+  //             Navigator.push(
+  //               context,
+  //               MaterialPageRoute(builder: (_) => BaseUrlSettingsScreen()),
+  //             );
+  //           },
+  //         ),
+  //       ],
+  //     ),
+  //     body: SafeArea(
+  //       child: LayoutBuilder(
+  //         builder: (context, constraints) {
+  //           return SingleChildScrollView(
+  //             physics:
+  //                 constraints.maxHeight < 600
+  //                     ? AlwaysScrollableScrollPhysics()
+  //                     : NeverScrollableScrollPhysics(),
+  //             child: ConstrainedBox(
+  //               constraints: BoxConstraints(minHeight: constraints.maxHeight),
+  //               child: IntrinsicHeight(
+  //                 child: Form(
+  //                   key: _formKey,
+  //                   child: Column(
+  //                     mainAxisSize: MainAxisSize.max,
+  //                     mainAxisAlignment:
+  //                         MainAxisAlignment
+  //                             .center, // Center the form vertically
+  //                     children: [
+  //                       Stack(
+  //                         alignment: Alignment.bottomCenter,
+  //                         clipBehavior: Clip.none,
+  //                         children: [
+  //                           Image.asset(
+  //                             "assets/images/background.png",
+  //                             width: double.infinity,
+  //                             height: constraints.maxHeight * 0.23,
+  //                             fit: BoxFit.cover,
+  //                           ),
+  //                           Positioned(
+  //                             bottom: -40,
+  //                             child: CircleAvatar(
+  //                               radius: 50,
+  //                               backgroundColor: Colors.white,
+  //                               child: ClipOval(
+  //                                 child: Image.asset(
+  //                                   "assets/images/logo.png",
+  //                                   width: 300,
+  //                                   height: 350,
+  //                                   fit: BoxFit.contain,
+  //                                 ),
+  //                               ),
+  //                             ),
+  //                           ),
+  //                         ],
+  //                       ),
+  //                       SizedBox(height: 50),
+  //                       Padding(
+  //                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
+  //                         child: Column(
+  //                           children: [
+  //                             Text(
+  //                               "Login Now",
+  //                               style: TextStyle(
+  //                                 fontSize: 20,
+  //                                 fontWeight: FontWeight.bold,
+  //                               ),
+  //                             ),
+  //                             SizedBox(height: 8),
+  //                             _buildTextField(
+  //                               "User",
+  //                               "Enter your username",
+  //                               controller: _usernameController,
+  //                               focusNode: _usernameFocus,
+  //                               nextFocus: _passwordFocus,
+  //                               validator:
+  //                                   (value) =>
+  //                                       value == null || value.isEmpty
+  //                                           ? 'Username is required'
+  //                                           : null,
+  //                             ),
+  //                             _buildTextField(
+  //                               "Password",
+  //                               "Enter your password",
+  //                               obscureText: true,
+  //                               controller: _passwordController,
+  //                               focusNode: _passwordFocus,
+  //                               nextFocus: _companyFocus,
+  //                               validator:
+  //                                   (value) =>
+  //                                       value == null || value.isEmpty
+  //                                           ? 'Password is required'
+  //                                           : null,
+  //                             ),
+  //                             _buildDropdown(
+  //                               "Company",
+  //                               "Select your Company",
+  //                               items: _companies,
+  //                               value: _selectedCompany,
+  //                               focusNode: _companyFocus,
+  //                               nextFocus: _yearFocus,
+  //                               onChanged:
+  //                                   (val) =>
+  //                                       setState(() => _selectedCompany = val),
+  //                               validator:
+  //                                   (value) =>
+  //                                       value == null
+  //                                           ? 'Please select a company'
+  //                                           : null,
+  //                             ),
+  //                             _buildDropdown(
+  //                               "Year",
+  //                               "Select Year",
+  //                               items: _years,
+  //                               value: _selectedYear,
+  //                               focusNode: _yearFocus,
+  //                               onChanged:
+  //                                   (val) =>
+  //                                       setState(() => _selectedYear = val),
+  //                               validator:
+  //                                   (value) =>
+  //                                       value == null
+  //                                           ? 'Please select a year'
+  //                                           : null,
+  //                             ),
+  //                             SizedBox(height: 8),
+  //                             Container(
+  //                               width: double.infinity,
+  //                               height: 45,
+  //                               decoration: BoxDecoration(
+  //                                 borderRadius: BorderRadius.circular(0),
+  //                                 gradient: LinearGradient(
+  //                                   colors: [
+  //                                     AppColors.primaryColor,
+  //                                     AppColors.maroon,
+  //                                   ],
+  //                                   begin: Alignment.centerLeft,
+  //                                   end: Alignment.centerRight,
+  //                                 ),
+  //                               ),
+  //                               child: ElevatedButton(
+  //                                 onPressed:
+  //                                     _isLoading
+  //                                         ? null
+  //                                         : () => login(
+  //                                           context,
+  //                                         ), // Disable button when loading
+  //                                 style: ElevatedButton.styleFrom(
+  //                                   backgroundColor: Colors.transparent,
+  //                                   shadowColor: Colors.transparent,
+  //                                   shape: RoundedRectangleBorder(
+  //                                     borderRadius: BorderRadius.circular(0),
+  //                                   ),
+  //                                 ),
+  //                                 child:
+  //                                     _isLoading
+  //                                         ? Row(
+  //                                           mainAxisAlignment:
+  //                                               MainAxisAlignment.center,
+  //                                           mainAxisSize: MainAxisSize.min,
+  //                                           children: [
+  //                                             const Text(
+  //                                               'Log in...',
+  //                                               style: TextStyle(
+  //                                                 fontSize: 16,
+  //                                                 fontWeight: FontWeight.w500,
+  //                                                 color:
+  //                                                     Colors
+  //                                                         .white, // Changed to white to match button theme
+  //                                               ),
+  //                                             ),
+  //                                             const SizedBox(width: 12),
+  //                                             const SizedBox(
+  //                                               width: 20,
+  //                                               height: 20,
+  //                                               child: CircularProgressIndicator(
+  //                                                 strokeWidth: 2.5,
+  //                                                 color:
+  //                                                     Colors
+  //                                                         .white, // Changed to white to match button theme
+  //                                               ),
+  //                                             ),
+  //                                           ],
+  //                                         )
+  //                                         : const Text(
+  //                                           "Log in",
+  //                                           style: TextStyle(
+  //                                             fontSize: 16,
+  //                                             color: Colors.white,
+  //                                           ),
+  //                                         ),
+  //                               ),
+  //                             ),
+  //                             isRegistered == '1'
+  //                                 ? Container()
+  //                                 : TextButton(
+  //                                   onPressed:
+  //                                       () => Navigator.push(
+  //                                         context,
+  //                                         MaterialPageRoute(
+  //                                           builder:
+  //                                               (context) => RegisterScreen(),
+  //                                         ),
+  //                                       ),
+  //                                   child: RichText(
+  //                                     text: TextSpan(
+  //                                       text: "New user? ",
+  //                                       style: TextStyle(
+  //                                         color: Colors.black,
+  //                                         fontSize: 14,
+  //                                       ),
+  //                                       children: [
+  //                                         TextSpan(
+  //                                           text: "Register here",
+  //                                           style: TextStyle(
+  //                                             color: AppColors.primaryColor,
+  //                                             fontWeight: FontWeight.bold,
+  //                                           ),
+  //                                         ),
+  //                                       ],
+  //                                     ),
+  //                                   ),
+  //                                 ),
+  //                           ],
+  //                         ),
+  //                       ),
+  //                       // Removed Spacer() to allow centering
+  //                     ],
+  //                   ),
+  //                 ),
+  //               ),
+  //             ),
+  //           );
+  //         },
+  //       ),
+  //     ),
+  //   );
+  // }
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -486,210 +733,230 @@ Future<void> _fetchCompanies() async {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics:
-                  constraints.maxHeight < 600
-                      ? AlwaysScrollableScrollPhysics()
-                      : NeverScrollableScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment:
-                          MainAxisAlignment
-                              .center, // Center the form vertically
-                      children: [
-                        Stack(
-                          alignment: Alignment.bottomCenter,
-                          clipBehavior: Clip.none,
+            final screenWidth = MediaQuery.of(context).size.width;
+            final containerWidth = screenWidth > 600 ? 500.0 : double.infinity;
+
+            return Center(
+              child: Container(
+                width: containerWidth,
+                child: SingleChildScrollView(
+                  physics:
+                      constraints.maxHeight < 600
+                          ? AlwaysScrollableScrollPhysics()
+                          : NeverScrollableScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: IntrinsicHeight(
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.max,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Image.asset(
-                              "assets/images/background.png",
-                              width: double.infinity,
-                              height: constraints.maxHeight * 0.23,
-                              fit: BoxFit.cover,
-                            ),
-                            Positioned(
-                              bottom: -40,
-                              child: CircleAvatar(
-                                radius: 50,
-                                backgroundColor: Colors.white,
-                                child: ClipOval(
-                                  child: Image.asset(
-                                    "assets/images/logo.png",
-                                    width: 300,
-                                    height: 350,
-                                    fit: BoxFit.contain,
+                            Stack(
+                              alignment: Alignment.bottomCenter,
+                              clipBehavior: Clip.none,
+                              children: [
+                                Image.asset(
+                                  "assets/images/background.png",
+                                  width: double.infinity,
+                                  height: constraints.maxHeight * 0.23,
+                                  fit: BoxFit.cover,
+                                ),
+                                Positioned(
+                                  bottom: -40,
+                                  child: CircleAvatar(
+                                    radius: 50,
+                                    backgroundColor: Colors.white,
+                                    child: ClipOval(
+                                      child: Image.asset(
+                                        "assets/images/logo.png",
+                                        width: 300,
+                                        height: 350,
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
                                   ),
                                 ),
+                              ],
+                            ),
+                            SizedBox(height: 50),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    "Login Now",
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  _buildTextField(
+                                    "User",
+                                    "Enter your username",
+                                    controller: _usernameController,
+                                    focusNode: _usernameFocus,
+                                    nextFocus: _passwordFocus,
+                                    validator:
+                                        (value) =>
+                                            value == null || value.isEmpty
+                                                ? 'Username is required'
+                                                : null,
+                                  ),
+                                  _buildTextField(
+                                    "Password",
+                                    "Enter your password",
+                                    obscureText: true,
+                                    controller: _passwordController,
+                                    focusNode: _passwordFocus,
+                                    nextFocus: _companyFocus,
+                                    validator:
+                                        (value) =>
+                                            value == null || value.isEmpty
+                                                ? 'Password is required'
+                                                : null,
+                                  ),
+                                  _buildDropdown(
+                                    "Company",
+                                    "Select your Company",
+                                    items: _companies,
+                                    value: _selectedCompany,
+                                    focusNode: _companyFocus,
+                                    nextFocus: _yearFocus,
+                                    onChanged:
+                                        (val) => setState(
+                                          () => _selectedCompany = val,
+                                        ),
+                                    validator:
+                                        (value) =>
+                                            value == null
+                                                ? 'Please select a company'
+                                                : null,
+                                  ),
+                                  _buildDropdown(
+                                    "Year",
+                                    "Select Year",
+                                    items: _years,
+                                    value: _selectedYear,
+                                    focusNode: _yearFocus,
+                                    onChanged:
+                                        (val) =>
+                                            setState(() => _selectedYear = val),
+                                    validator:
+                                        (value) =>
+                                            value == null
+                                                ? 'Please select a year'
+                                                : null,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Container(
+                                    width: double.infinity,
+                                    height: 45,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(0),
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          AppColors.primaryColor,
+                                          AppColors.maroon,
+                                        ],
+                                        begin: Alignment.centerLeft,
+                                        end: Alignment.centerRight,
+                                      ),
+                                    ),
+                                    child: ElevatedButton(
+                                      onPressed:
+                                          _isLoading
+                                              ? null
+                                              : () => login(context),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.transparent,
+                                        shadowColor: Colors.transparent,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            0,
+                                          ),
+                                        ),
+                                      ),
+                                      child:
+                                          _isLoading
+                                              ? Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Text(
+                                                    'Log in...',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  const SizedBox(
+                                                    width: 20,
+                                                    height: 20,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth: 2.5,
+                                                          color: Colors.white,
+                                                        ),
+                                                  ),
+                                                ],
+                                              )
+                                              : const Text(
+                                                "Log in",
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                    ),
+                                  ),
+                                  isRegistered == '1'
+                                      ? Container()
+                                      : TextButton(
+                                        onPressed:
+                                            () => Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (context) =>
+                                                        RegisterScreen(),
+                                              ),
+                                            ),
+                                        child: RichText(
+                                          text: TextSpan(
+                                            text: "New user? ",
+                                            style: TextStyle(
+                                              color: Colors.black,
+                                              fontSize: 14,
+                                            ),
+                                            children: [
+                                              TextSpan(
+                                                text: "Register here",
+                                                style: TextStyle(
+                                                  color: AppColors.primaryColor,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                        SizedBox(height: 50),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Column(
-                            children: [
-                              Text(
-                                "Login Now",
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              _buildTextField(
-                                "User",
-                                "Enter your username",
-                                controller: _usernameController,
-                                focusNode: _usernameFocus,
-                                nextFocus: _passwordFocus,
-                                validator:
-                                    (value) =>
-                                        value == null || value.isEmpty
-                                            ? 'Username is required'
-                                            : null,
-                              ),
-                              _buildTextField(
-                                "Password",
-                                "Enter your password",
-                                obscureText: true,
-                                controller: _passwordController,
-                                focusNode: _passwordFocus,
-                                nextFocus: _companyFocus,
-                                validator:
-                                    (value) =>
-                                        value == null || value.isEmpty
-                                            ? 'Password is required'
-                                            : null,
-                              ),
-                              _buildDropdown(
-                                "Company",
-                                "Select your Company",
-                                items: _companies,
-                                value: _selectedCompany,
-                                focusNode: _companyFocus,
-                                nextFocus: _yearFocus,
-                                onChanged:
-                                    (val) =>
-                                        setState(() => _selectedCompany = val),
-                                validator:
-                                    (value) =>
-                                        value == null
-                                            ? 'Please select a company'
-                                            : null,
-                              ),
-                              _buildDropdown(
-                                "Year",
-                                "Select Year",
-                                items: _years,
-                                value: _selectedYear,
-                                focusNode: _yearFocus,
-                                onChanged:
-                                    (val) =>
-                                        setState(() => _selectedYear = val),
-                                validator:
-                                    (value) =>
-                                        value == null
-                                            ? 'Please select a year'
-                                            : null,
-                              ),
-                              SizedBox(height: 8),
-                           Container(
-  width: double.infinity,
-  height: 45,
-  decoration: BoxDecoration(
-    borderRadius: BorderRadius.circular(0),
-    gradient: LinearGradient(
-      colors: [
-        AppColors.primaryColor,
-        AppColors.maroon,
-      ],
-      begin: Alignment.centerLeft,
-      end: Alignment.centerRight,
-    ),
-  ),
-  child: ElevatedButton(
-    onPressed: _isLoading ? null : () => login(context), // Disable button when loading
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.transparent,
-      shadowColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(0),
-      ),
-    ),
-    child: _isLoading
-        ? Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Log in...',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white, // Changed to white to match button theme
-                ),
-              ),
-              const SizedBox(width: 12),
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  color: Colors.white, // Changed to white to match button theme
-                ),
-              ),
-            ],
-          )
-        : const Text(
-            "Log in",
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white,
-            ),
-          ),
-  ),
-),
-                              isRegistered == '1'
-                                  ? Container()
-                                  : TextButton(
-                                    onPressed:
-                                        () => Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder:
-                                                (context) => RegisterScreen(),
-                                          ),
-                                        ),
-                                    child: RichText(
-                                      text: TextSpan(
-                                        text: "New user? ",
-                                        style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 14,
-                                        ),
-                                        children: [
-                                          TextSpan(
-                                            text: "Register here",
-                                            style: TextStyle(
-                                              color: AppColors.primaryColor,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                            ],
-                          ),
-                        ),
-                        // Removed Spacer() to allow centering
-                      ],
+                      ),
                     ),
                   ),
                 ),

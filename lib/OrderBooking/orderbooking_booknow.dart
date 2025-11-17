@@ -9,6 +9,7 @@ import 'package:vrs_erp_figma/OrderBooking/booking2/booking3.dart';
 import 'package:vrs_erp_figma/OrderBooking/booking2/multipleorderbooking.dart';
 import 'package:vrs_erp_figma/catalog/filter.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/constants/constants.dart';
 import 'package:vrs_erp_figma/models/CartModel.dart';
 import 'package:vrs_erp_figma/models/PartyWithSpclMarkDwn.dart';
 import 'package:vrs_erp_figma/models/brand.dart';
@@ -67,6 +68,7 @@ class _OrderPageState extends State<OrderPage> {
   PartyWithSpclMarkDwn? selectedParty;
   String? name;
   String? type;
+  String? transactionType;
 
   @override
   void initState() {
@@ -86,6 +88,7 @@ class _OrderPageState extends State<OrderPage> {
           isEdit = args['edit'] ?? false;
           selectedParty = args['selectedParty'];
           type = args['type'];
+          transactionType = args[Constants.TRANSACTION_TYPE];
         });
 
         if (coBr != null && fcYrId != null) {

@@ -561,7 +561,7 @@ class _SaleBillRegisterPageState extends State<SaleBillRegisterPage> {
                           ),
                         );
                         break;
-                      case 'edit2':
+                      case 'edit':
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -618,34 +618,34 @@ class _SaleBillRegisterPageState extends State<SaleBillRegisterPage> {
                             ],
                           ),
                         ),
-                        // const PopupMenuItem<String>(
-                        //   value: 'editBarcode',
-                        //   child: Row(
-                        //     children: [
-                        //       Icon(
-                        //         Icons.edit,
-                        //         color: Colors.blue,
-                        //         size: 20,
-                        //       ),
-                        //       SizedBox(width: 8),
-                        //       Text('Edit Barcode', style: TextStyle(fontSize: 14)),
-                        //     ],
-                        //   ),
-                        // ),
-                        // const PopupMenuItem<String>(
-                        //   value: 'edit2',
-                        //   child: Row(
-                        //     children: [
-                        //       Icon(
-                        //         Icons.edit,
-                        //         color: Colors.blue,
-                        //         size: 20,
-                        //       ),
-                        //       SizedBox(width: 8),
-                        //       Text('Edit', style: TextStyle(fontSize: 14)),
-                        //     ],
-                        //   ),
-                        // ),
+                        const PopupMenuItem<String>(
+                          value: 'editBarcode',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.edit,
+                                color: Colors.blue,
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Text('Edit Barcode', style: TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem<String>(
+                          value: 'edit2',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.edit,
+                                color: Colors.blue,
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Text('Edit', style: TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                        ),
                       ],
                 ),
               ],

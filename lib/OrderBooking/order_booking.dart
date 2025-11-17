@@ -192,13 +192,13 @@ fetchPartyList() async {
                 Navigator.pushNamed(
                   context,
                   '/viewOrderBarcode',
-                  arguments: {'barcode': showBarcodeWidget},
+                  arguments: {Constants.barcode: showBarcodeWidget},
                 ).then((_) => _fetchCartCount());
               } else {
                 Navigator.pushNamed(
                   context,
                   '/viewOrder',
-                  arguments: {'barcode': showBarcodeWidget},
+                  arguments: {Constants.barcode: showBarcodeWidget},
                 ).then((_) => _fetchCartCount());
               }
             },
@@ -231,49 +231,49 @@ fetchPartyList() async {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownSearch<PartyWithSpclMarkDwn>(
-                              items: partyList,
-                              selectedItem: selectedParty,
-                              itemAsString: (PartyWithSpclMarkDwn? u) => u?.ledName ?? '',
-                              onChanged:
-                                  (value) =>
-                                      setState(() => selectedParty = value),
-                              popupProps: PopupProps.menu(
-                                showSearchBox: true,
-                                containerBuilder:
-                                    (context, popupWidget) => Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(0),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.grey.withOpacity(0.5),
-                                            spreadRadius: 2,
-                                            blurRadius: 5,
-                                            offset: Offset(0, 3),
-                                          ),
-                                        ],
-                                      ),
-                                      child: popupWidget,
-                                    ),
-                              ),
-                              dropdownDecoratorProps: DropDownDecoratorProps(
-                                dropdownSearchDecoration: InputDecoration(
-                                  labelText: 'Select Party',
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(0),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                      // Row(
+                      //   children: [
+                      //     Expanded(
+                      //       child: DropdownSearch<PartyWithSpclMarkDwn>(
+                      //         items: partyList,
+                      //         selectedItem: selectedParty,
+                      //         itemAsString: (PartyWithSpclMarkDwn? u) => u?.ledName ?? '',
+                      //         onChanged:
+                      //             (value) =>
+                      //                 setState(() => selectedParty = value),
+                      //         popupProps: PopupProps.menu(
+                      //           showSearchBox: true,
+                      //           containerBuilder:
+                      //               (context, popupWidget) => Container(
+                      //                 decoration: BoxDecoration(
+                      //                   color: Colors.white,
+                      //                   borderRadius: BorderRadius.circular(0),
+                      //                   boxShadow: [
+                      //                     BoxShadow(
+                      //                       color: Colors.grey.withOpacity(0.5),
+                      //                       spreadRadius: 2,
+                      //                       blurRadius: 5,
+                      //                       offset: Offset(0, 3),
+                      //                     ),
+                      //                   ],
+                      //                 ),
+                      //                 child: popupWidget,
+                      //               ),
+                      //         ),
+                      //         // dropdownDecoratorProps: DropDownDecoratorProps(
+                      //         //   dropdownSearchDecoration: InputDecoration(
+                      //         //     labelText: 'Select Party',
+                      //         //     filled: true,
+                      //         //     fillColor: Colors.white,
+                      //         //     border: OutlineInputBorder(
+                      //         //       borderRadius: BorderRadius.circular(0),
+                      //         //     ),
+                      //         //   ),
+                      //         // ),
+                      //       // ),
+                      //     ),
+                      //   ],
+                      // ),
 
                       // Row(
                       //   children: [
@@ -409,7 +409,7 @@ fetchPartyList() async {
                                                 'coBr': coBr,
                                                 'fcYrId': fcYrId,
                                                 'selectedParty':selectedParty,
-                                                'type': Constants.saleBill,
+                                                'type': Constants.SALE_BILL,
                                               },
                                             );
                                           },
@@ -523,7 +523,7 @@ fetchPartyList() async {
                                 'coBr': coBr,
                                 'fcYrId': fcYrId,
                                 'selectedParty':selectedParty,
-                                'type': Constants.saleBill,
+                                'type': Constants.SALE_BILL,
                               },
                             ).then((_) => _fetchCartCount());
                           },

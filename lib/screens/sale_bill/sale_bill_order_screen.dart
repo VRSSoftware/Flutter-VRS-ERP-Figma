@@ -8,6 +8,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import 'package:vrs_erp_figma/OrderBooking/barcode/barcodewidget.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/constants/constants.dart';
 import 'package:vrs_erp_figma/dashboard/orderStatus.dart';
 import 'package:vrs_erp_figma/models/CartModel.dart';
 import 'package:vrs_erp_figma/models/PartyWithSpclMarkDwn.dart';
@@ -175,13 +176,13 @@ class _SaleBillBookingScreenState extends State<SaleBillBookingScreen> {
                 Navigator.pushNamed(
                   context,
                   '/viewOrderBarcode',
-                  arguments: {'barcode': showBarcodeWidget},
+                  arguments: {Constants.barcode: showBarcodeWidget}, 
                 ).then((_) => _fetchCartCount());
               } else {
                 Navigator.pushNamed(
                   context,
                   '/viewOrder',
-                  arguments: {'barcode': showBarcodeWidget},
+                  arguments: {Constants.barcode: showBarcodeWidget},
                 ).then((_) => _fetchCartCount());
               }
             },

@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:vrs_erp_figma/catalog/imagezoom.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
+import 'package:vrs_erp_figma/constants/constants.dart';
 import 'package:vrs_erp_figma/register/register.dart';
 import 'package:vrs_erp_figma/screens/drawer_screen.dart';
 import 'package:vrs_erp_figma/screens/home_screen.dart';
@@ -53,8 +54,8 @@ class _EditOrderScreenBarcodeState extends State<EditOrderScreenBarcode> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final args =
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-      if (args != null && args.containsKey('barcode')) {
-        barcodeMode = args['barcode'] as bool;
+      if (args != null && args.containsKey(Constants.barcode)) {
+        barcodeMode = args[Constants.barcode] as bool;
       }
       _initializeData();
       _setInitialDates();

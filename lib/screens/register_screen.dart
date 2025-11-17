@@ -1,4 +1,3 @@
-
 // import 'package:device_info_plus/device_info_plus.dart';
 // import 'package:flutter/material.dart';
 // import 'package:http/http.dart' as http;
@@ -7,7 +6,6 @@
 // import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:vrs_erp_figma/constants/app_constants.dart';
 // import 'package:vrs_erp_figma/screens/login_screen.dart';
-
 
 // class RegisterScreen extends StatefulWidget {
 //   @override
@@ -411,7 +409,7 @@
 //                             ],
 //                           ),
 //                         ),
-//                         Spacer(), 
+//                         Spacer(),
 //                       ],
 //                     ),
 //                   ),
@@ -508,7 +506,7 @@
 //   }
 // }
 
-
+import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
@@ -518,7 +516,6 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vrs_erp_figma/constants/app_constants.dart';
 import 'package:vrs_erp_figma/screens/login_screen.dart';
-
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -626,7 +623,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
       );
 
-      if (response.statusCode == 200 && response.body == "Device successfully installed and activated.") {
+      if (response.statusCode == 200 &&
+          response.body == "Device successfully installed and activated.") {
         // Save deviceId to SharedPreferences upon successful registration
         if (deviceId != null) {
           await _saveDeviceIdToPrefs(deviceId!);
@@ -686,9 +684,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final deviceInfoPlugin = DeviceInfoPlugin();
 
     try {
-      AndroidDeviceInfo androidInfo = await deviceInfoPlugin.androidInfo;
-      deviceId = androidInfo.id;
-      print("Device ID: $deviceId");
+      // AndroidDeviceInfo androidInfo = await deviceInfoPlugin.androidInfo;
+      // deviceId = androidInfo.id;
+      // print("Device ID: $deviceId");
+      if (Platform.isAndroid) {
+        final androidInfo = await deviceInfoPlugin.androidInfo;
+        deviceId = androidInfo.id;
+        print("Android Device ID: ${androidInfo.id}");
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfoPlugin.iosInfo;
+        deviceId = iosInfo.identifierForVendor ?? '';
+        print("iOS Identifier: ${iosInfo.identifierForVendor}");
+      }
 
       // Save deviceId locally
       await _saveDeviceIdToPrefs(deviceId);
@@ -760,253 +767,268 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _registrationIdFocus.dispose();
     super.dispose();
   }
-@override
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: Colors.white,
-    resizeToAvoidBottomInset: true,
-    body: SafeArea(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            physics:
-                constraints.maxHeight < 600
-                    ? AlwaysScrollableScrollPhysics()
-                    : NeverScrollableScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: IntrinsicHeight(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.center, // Center vertically
-                    children: [
-                      Stack(
-                        alignment: Alignment.bottomCenter,
-                        clipBehavior: Clip.none,
-                        children: [
-                          Image.asset(
-                            "assets/images/background.png",
-                            width: double.infinity,
-                            height: constraints.maxHeight * 0.23,
-                            fit: BoxFit.cover,
-                          ),
-                          Positioned(
-                            bottom: -40,
-                            child: CircleAvatar(
-                              radius: 50,
-                              backgroundColor: Colors.white,
-                              child: ClipOval(
-                                child: Image.asset(
-                                  "assets/images/new_logo.png",
-                                  width: 90,
-                                  height: 90,
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 50),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: true,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics:
+                  constraints.maxHeight < 600
+                      ? AlwaysScrollableScrollPhysics()
+                      : NeverScrollableScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment:
+                          MainAxisAlignment.center, // Center vertically
+                      children: [
+                        Stack(
+                          alignment: Alignment.bottomCenter,
+                          clipBehavior: Clip.none,
                           children: [
-                            Text(
-                              "Register Now",
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Image.asset(
+                              "assets/images/background.png",
+                              width: double.infinity,
+                              height: constraints.maxHeight * 0.23,
+                              fit: BoxFit.cover,
                             ),
-                            SizedBox(height: 8),
-                            _buildTextField(
-                              "Email ID",
-                              "",
-                              _emailController,
-                              (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Email is required';
-                                }
-                                return null;
-                              },
-                              focusNode: _emailFocus,
-                              nextFocus: _mobileFocus,
-                            ),
-                            _buildTextField(
-                              "Mobile No",
-                              "",
-                              _mobileController,
-                              (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Mobile number is required';
-                                }
-                                if (value.length != 10) {
-                                  return 'Enter a valid 10-digit mobile number';
-                                }
-                                return null;
-                              },
-                              focusNode: _mobileFocus,
-                              nextFocus: _companyIdFocus,
-                            ),
-                            _buildTextField(
-                              "Company ID",
-                              "",
-                              _companyIdController,
-                              (value) {
-                                if (value!.isEmpty)
-                                  return 'Company Name is required';
-                                return null;
-                              },
-                              focusNode: _companyIdFocus,
-                              nextFocus: _registrationIdFocus,
-                            ),
-                            _buildTextField(
-                              "Serial No",
-                              "",
-                              _registrationIdController,
-                              (value) {
-                                if (value == null || value.trim().isEmpty)
-                                  return 'Serial No is required';
-                                return null;
-                              },
-                              focusNode: _registrationIdFocus,
-                              isLastField: true,
-                              textInputAction: TextInputAction.done,
-                            ),
-                            SizedBox(height: 15),
-                            if (deviceId != null)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 10.0),
-                                child: Text(
-                                  "Device ID: $deviceId",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: const Color.fromARGB(
-                                      221,
-                                      104,
-                                      103,
-                                      103,
-                                    ),
+                            Positioned(
+                              bottom: -40,
+                              child: CircleAvatar(
+                                radius: 50,
+                                backgroundColor: Colors.white,
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    "assets/images/new_logo.png",
+                                    width: 90,
+                                    height: 90,
+                                    fit: BoxFit.contain,
                                   ),
-                                ),
-                              ),
-                            _buildRegisterButton(),
-                            TextButton(
-                              onPressed: () {
-                                goToLoginScreen();
-                              },
-                              child: RichText(
-                                text: TextSpan(
-                                  text: "Already Registered? ",
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 14,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: "Login here",
-                                      style: TextStyle(
-                                        color: AppColors.primaryColor,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
                                 ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
+                        SizedBox(height: 50),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                "Register Now",
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              _buildTextField(
+                                "Email ID",
+                                "",
+                                _emailController,
+                                (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Email is required';
+                                  }
+                                  return null;
+                                },
+                                focusNode: _emailFocus,
+                                nextFocus: _mobileFocus,
+                              ),
+                              _buildTextField(
+                                "Mobile No",
+                                "",
+                                _mobileController,
+                                (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Mobile number is required';
+                                  }
+                                  if (value.length != 10) {
+                                    return 'Enter a valid 10-digit mobile number';
+                                  }
+                                  return null;
+                                },
+                                focusNode: _mobileFocus,
+                                nextFocus: _companyIdFocus,
+                              ),
+                              _buildTextField(
+                                "Company ID",
+                                "",
+                                _companyIdController,
+                                (value) {
+                                  if (value!.isEmpty)
+                                    return 'Company Name is required';
+                                  return null;
+                                },
+                                focusNode: _companyIdFocus,
+                                nextFocus: _registrationIdFocus,
+                              ),
+                              _buildTextField(
+                                "Serial No",
+                                "",
+                                _registrationIdController,
+                                (value) {
+                                  if (value == null || value.trim().isEmpty)
+                                    return 'Serial No is required';
+                                  return null;
+                                },
+                                focusNode: _registrationIdFocus,
+                                isLastField: true,
+                                textInputAction: TextInputAction.done,
+                              ),
+                              SizedBox(height: 15),
+                              if (deviceId != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 10.0),
+                                  child: Text(
+                                    "Device ID: $deviceId",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: const Color.fromARGB(
+                                        221,
+                                        104,
+                                        103,
+                                        103,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              _buildRegisterButton(),
+                              TextButton(
+                                onPressed: () {
+                                  goToLoginScreen();
+                                },
+                                child: RichText(
+                                  text: TextSpan(
+                                    text: "Already Registered? ",
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 14,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                        text: "Login here",
+                                        style: TextStyle(
+                                          color: AppColors.primaryColor,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          );
-        },
-      ),
-    ),
-  );
-}
-
-Widget _buildTextField(
-  String label,
-  String hint,
-  TextEditingController controller,
-  String? Function(String?) validator, {
-  FocusNode? focusNode,
-  FocusNode? nextFocus,
-  bool isLastField = false,
-  TextInputAction textInputAction = TextInputAction.next,
-}) {
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-        ),
-        SizedBox(height: 3),
-        TextFormField(
-          controller: controller,
-          focusNode: focusNode,
-          textInputAction: textInputAction,
-          onFieldSubmitted: (value) {
-            if (!isLastField) {
-              nextFocus?.requestFocus();
-            } else {
-              focusNode?.unfocus();
-            }
+            );
           },
-          decoration: InputDecoration(
-            hintText: hint,
-            contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.zero, // Remove rounded corners
-              borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.zero, // Remove rounded corners
-              borderSide: BorderSide(color: AppColors.primaryColor, width: 3.0),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.zero, // Remove rounded corners
-              borderSide: BorderSide(color: AppColors.primaryColor, width: 2.0),
-            ),
-            isDense: true,
-            errorStyle: TextStyle(height: 0.9),
-          ),
-          validator: validator,
         ),
-      ],
-    ),
-  );
-}
+      ),
+    );
+  }
 
-Widget _buildRegisterButton() {
-  return Container(
-    width: double.infinity,
-    height: 45,
-    child: ElevatedButton(
-      onPressed: _isLoading ? null :  _handleRegister,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primaryColor, // Solid color, no gradient
-        shadowColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero, // Remove rounded corners
+  Widget _buildTextField(
+    String label,
+    String hint,
+    TextEditingController controller,
+    String? Function(String?) validator, {
+    FocusNode? focusNode,
+    FocusNode? nextFocus,
+    bool isLastField = false,
+    TextInputAction textInputAction = TextInputAction.next,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          SizedBox(height: 3),
+          TextFormField(
+            controller: controller,
+            focusNode: focusNode,
+            textInputAction: textInputAction,
+            onFieldSubmitted: (value) {
+              if (!isLastField) {
+                nextFocus?.requestFocus();
+              } else {
+                focusNode?.unfocus();
+              }
+            },
+            decoration: InputDecoration(
+              hintText: hint,
+              contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.zero, // Remove rounded corners
+                borderSide: BorderSide(
+                  color: AppColors.primaryColor,
+                  width: 2.0,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.zero, // Remove rounded corners
+                borderSide: BorderSide(
+                  color: AppColors.primaryColor,
+                  width: 3.0,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.zero, // Remove rounded corners
+                borderSide: BorderSide(
+                  color: AppColors.primaryColor,
+                  width: 2.0,
+                ),
+              ),
+              isDense: true,
+              errorStyle: TextStyle(height: 0.9),
+            ),
+            validator: validator,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRegisterButton() {
+    return Container(
+      width: double.infinity,
+      height: 45,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _handleRegister,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryColor, // Solid color, no gradient
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.zero, // Remove rounded corners
+          ),
         ),
+        child:
+            _isLoading
+                ? CircularProgressIndicator()
+                : Text(
+                  "Register",
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                ),
       ),
-      child: _isLoading ? CircularProgressIndicator() :  Text(
-        "Register",
-        style: TextStyle(fontSize: 16, color: Colors.white),
-      ),
-    ),
-  );
-}}
+    );
+  }
+}
